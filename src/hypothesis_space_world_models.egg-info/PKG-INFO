@@ -1,0 +1,78 @@
+Metadata-Version: 2.4
+Name: hypothesis-space-world-models
+Version: 0.1.0
+Summary: Experiments on recovering dynamics under progressively relaxed hypothesis spaces.
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: matplotlib>=3.8
+Requires-Dist: numpy>=1.26
+Requires-Dist: torch>=2.2
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+
+# Hypothesis Space Recovery
+
+## Core Question
+
+How much structure must be built into a model class before the true dynamics can be reliably recovered?
+
+The goal is to study this by starting with a model whose output space is restricted so that the true solution is guaranteed to be representable, then progressively relaxing those restrictions.
+
+## Initial Test System
+
+Simple Harmonic Oscillator:
+
+x'' + omega^2 x = 0
+
+with solution family:
+
+x(t) = a cos(omega t) + b sin(omega t)
+
+## Stage 0: Exact Solution-Space Model
+
+The first model should not be a generic neural network.
+
+It should have a neural encoder that maps initial conditions to coefficients:
+
+(x0, v0) -> (a, b)
+
+Then a fixed decoder constructs the trajectory:
+
+x_hat(t) = a cos(omega t) + b sin(omega t)
+
+The decoder is not learned. This guarantees the model can only output trajectories in the SHO solution family.
+
+Stage 0 is only a proof of concept that the architecture contains the exact solution family. Since the dynamics are analytically enforced by the decoder, the primary metrics are:
+
+- coefficient recovery
+- trajectory reconstruction error
+
+## Relaxation Experiments
+
+After Stage 0 works, progressively relax the hypothesis space:
+
+1. Exact SHO solution-space decoder with known omega
+2. SHO solution-space decoder with learnable omega
+3. Larger Fourier-style basis
+4. General linear dynamics model
+5. Hamiltonian dynamics model
+6. Fully neural autoregressive dynamics model
+
+## Evaluation
+
+For Stage 0, compare models using:
+
+- coefficient recovery
+- trajectory reconstruction error
+
+For later stages with learned dynamics, compare models using:
+
+- coefficient recovery
+- trajectory reconstruction error
+- long-horizon rollout error
+- recovery of governing equation structure
+- energy conservation error
+
+## Goal
+
+Determine how relaxing architectural constraints affects whether the learned model recovers the true governing dynamics and whether it maintains accurate long-horizon prediction.
