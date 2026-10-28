@@ -1,0 +1,34 @@
+{
+  "protocol": "common_panel_active_acquisition_v1",
+  "status": "PROSPECTIVE_BEFORE_SCIENCE",
+  "hypothesis": "The recurring subgroup is detectable, but a 32-center callable does not reconstruct its nonlinear response on disjoint states. Additional response locations may help; disagreement-guided locations should outperform equal-count random locations if the retained callable ensemble contains useful acquisition information.",
+  "world": "new opened-development world only; no confirmation",
+  "generator": "4D hidden P3 callable recurrence plus system-specific linear maps; eight of sixteen acquisition systems selected is a supplied capacity choice, not discovered cardinality",
+  "allowed_access": "controlled resets and one-step responses at chosen states for acquisition systems; target systems still provide exactly 32 controlled context transitions",
+  "candidate_pool": {"size": 256, "domain": "uniform [-1,1]^4", "sealed_before_responses": true},
+  "selection": "eight leave-one-selected-system-out RBF callables fitted on the initial panel; greedy score equals output disagreement times distance from already selected support; 16 states; no candidate response is read before indices persist",
+  "arms": {"original32": 32, "random48": 48, "adaptive48": 48},
+  "controls": "random and adaptive receive equal extra responses, kernel centers, coefficient solve, target context and query bank; original32 isolates more-data effect",
+  "retained_knowledge": "per arm, callable centers and 4-vector RBF weights; 256 scalars at 32 centers or 384 at 48 centers",
+  "per_target_inference": "16 linear coefficients plus one callable coefficient from 32 observed transitions",
+  "gates": {
+    "more_data": "random/original <=0.80 and >=6/8 recurrent-system wins",
+    "intelligent_acquisition": "adaptive/random <=0.85 and >=6/8 recurrent-system wins",
+    "active_absolute": "adaptive/original <=0.80 and >=6/8 recurrent-system wins",
+    "unrelated_harm": "adaptive/linear <=1.10 aggregate"
+  },
+  "qualification": "This is an engineered controlled-probe support diagnostic. It changes information cost, uses heuristic disagreement rather than calibrated uncertainty, and does not establish passive inference or open-ended dynamics discovery.",
+  "ceilings": {
+    "generated_transitions": 3072,
+    "generated_rhs_evaluations": 3072,
+    "coefficient_factorizations": 160,
+    "kernel_factorizations": 11,
+    "svds": 3,
+    "prediction_blocks": 20,
+    "score_blocks": 112,
+    "candidate_states_scored": 2048,
+    "wall_seconds": 300,
+    "peak_RSS_bytes": 1073741824,
+    "artifact_bytes": 33554432
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "protocol": "common_panel_labelblind_callable_recurrence_v1",
+  "status": "PROSPECTIVE_BEFORE_SCIENCE",
+  "scientific_question": "Can identical-state response panels expose a recurring callable across systems, allowing label-blind acquisition that transfers to new systems better than an alignment-destroyed capacity-matched control?",
+  "scope": {
+    "state_dimension": 4,
+    "transition": "known Euler y=x+0.05*f(x)",
+    "generator": "system-specific linear 4x4 term plus either a shared hidden smooth callable or an independently drawn smooth callable",
+    "learner_inputs": "controlled one-step (x,y) pairs only",
+    "supplied_structure": [
+      "state layout and dt=0.05",
+      "Euler differencing",
+      "additive linear-plus-one-callable decomposition",
+      "exactly eight of sixteen acquisition systems selected by label-blind centrality",
+      "one scalar outer coefficient for the callable"
+    ],
+    "hidden_from_scientific_decisions": [
+      "reuse labels",
+      "generator callable weights",
+      "system linear matrices",
+      "outer coefficients",
+      "development group labels until predictions persist"
+    ],
+    "qualification": "This is a controlled-probe recurrence-acquisition diagnostic, not passive single-trajectory inference, arbitrary graph discovery, unique factorization, or general physics discovery."
+  },
+  "data": {
+    "acquisition_systems": 16,
+    "acquisition_banks_per_system": {"baseline": 32, "cluster": 16, "module_train": 32, "admission": 16},
+    "development_systems_if_admitted": 16,
+    "development_banks_per_system": {"context": 32, "query": 64},
+    "development_generation": "only after both aligned-seed admission decisions are frozen"
+  },
+  "arms": {
+    "aligned": "SVD/centrality and callable learning preserve common-state row alignment",
+    "shuffled": "same method and capacity with independent deterministic row permutations per system",
+    "random": "same callable architecture with frozen random weights",
+    "no_module": "system-specific linear fit only"
+  },
+  "model": {
+    "callable": "4-32-32-4 tanh MLP, 1,348 retained parameters",
+    "per_system_aligned_quantities": 17,
+    "per_system_no_module_quantities": 16,
+    "optimizer": "Adam lr=0.003, 400 full-batch updates, two fixed seeds",
+    "ridge": 1e-6
+  },
+  "admission": {
+    "data": "acquisition-only held admission bank",
+    "aligned_over_no_module": "<=0.80 in each seed",
+    "aligned_wins": ">=6/8 selected systems in each seed",
+    "development_opening": "only if both aligned seeds pass"
+  },
+  "development_gates": {
+    "aligned_over_no_module_on_hidden_reuse": "<=0.80 and >=6/8 wins in each seed",
+    "aligned_over_shuffled_on_hidden_reuse": "<=0.85 and >=6/8 wins in each seed",
+    "aligned_over_random_on_hidden_reuse": "<=0.85 and >=6/8 wins in each seed",
+    "unrelated_harm": "aligned/no_module <=1.10 aggregate in each seed"
+  },
+  "ceilings": {
+    "generated_transitions": 3072,
+    "generated_rhs_evaluations": 3072,
+    "shared_fits": 4,
+    "gradient_updates": 1600,
+    "module_training_rows": 409600,
+    "coefficient_factorizations": 144,
+    "svds": 2,
+    "prediction_blocks": 74,
+    "score_blocks": 192,
+    "wall_seconds": 300,
+    "peak_RSS_bytes": 1073741824,
+    "artifact_bytes": 33554432
+  },
+  "no_followup_confirmation_in_this_protocol": true
+}

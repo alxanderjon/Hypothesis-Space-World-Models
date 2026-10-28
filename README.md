@@ -224,3 +224,7 @@ setup.json must include:
 ## Goal
 
 Determine how relaxing architectural constraints affects whether the learned model recovers the true governing dynamics and whether it maintains accurate long-horizon prediction.
+
+## Research handover
+
+Research was stopped on 28 October 2026 for an independent reassessment. See the [handover and evidence snapshot](docs/research-handover-2026-10-28.md) for the objective, exact experimental contracts, results, limitations and artifact inventory. Archived continuation instructions are inactive.

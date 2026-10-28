@@ -1,0 +1,38 @@
+{
+  "protocol": "common_panel_nonlinear_recurrence_v1",
+  "status": "PROSPECTIVE_BEFORE_SCIENCE",
+  "predecessor_attribution_sha256": "239bbe39cc3422930252685ab8dc2e1e32934fd6d29d0c7e4650fbd5bd617260",
+  "causal_change": "Replace the hidden random tanh callable with h(x)=P3(x)M, P3(t)=(5t^3-3t)/2. Under the declared independent uniform state measure this is mean-zero and orthogonal to constant and linear coordinates. M is generator-only and differs independently for unrelated systems.",
+  "unchanged": "label-blind top-eight centrality selection, aligned/shuffled arms, generic 4-32-32-4 learner, seeds, banks, optimizer, per-system solve, admission and development gates",
+  "scientific_question": "Can aligned common-state evidence acquire a recurring genuinely nonlinear callable when low-order affine response shortcuts are removed from the generator distribution?",
+  "scope": {
+    "state_dimension": 4,
+    "transition": "known Euler y=x+0.05*f(x)",
+    "learner_inputs": "controlled one-step (x,y) pairs only",
+    "hidden_generator_prior": "coordinatewise cubic Legendre features mixed by a hidden 4x4 matrix",
+    "learner_knows_generator_formula": false,
+    "qualification": "Engineered controlled-probe causal benchmark. A pass would show learned reuse on this recurrent nonlinear distribution, not passive inference, unknown-language discovery, or arbitrary physics."
+  },
+  "admission": {"aligned_over_no_module": "<=0.80 each seed", "aligned_wins": ">=6/8 each seed", "development_opening": "only after both aligned decisions persist"},
+  "development_gates": {
+    "aligned_over_no_module_on_hidden_reuse": "<=0.80 and >=6/8 wins each seed",
+    "aligned_over_shuffled_on_hidden_reuse": "<=0.85 and >=6/8 wins each seed",
+    "aligned_over_random_on_hidden_reuse": "<=0.85 and >=6/8 wins each seed",
+    "unrelated_harm": "aligned/no_module <=1.10 each seed"
+  },
+  "ceilings": {
+    "generated_transitions": 3072,
+    "generated_rhs_evaluations": 3072,
+    "shared_fits": 4,
+    "gradient_updates": 1600,
+    "module_training_rows": 409600,
+    "coefficient_factorizations": 144,
+    "svds": 2,
+    "prediction_blocks": 74,
+    "score_blocks": 192,
+    "wall_seconds": 300,
+    "peak_RSS_bytes": 1073741824,
+    "artifact_bytes": 33554432
+  },
+  "confirmation": "none in this protocol; a new generator world is opened only after an unchanged-gate development pass"
+}

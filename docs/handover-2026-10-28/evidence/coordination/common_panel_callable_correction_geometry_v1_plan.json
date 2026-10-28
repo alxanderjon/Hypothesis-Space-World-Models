@@ -1,0 +1,11 @@
+{
+  "protocol": "common_panel_callable_correction_geometry_v1",
+  "status": "PROSPECTIVE_BEFORE_DERIVED_ARITHMETIC",
+  "inputs": "two saved prediction arrays only; deterministic query-state banks reconstructed from sealed seeds",
+  "target_labels_used": false,
+  "model_or_teacher_calls": 0,
+  "training_or_updates": 0,
+  "summaries": ["affine fraction of context-induced correction", "aligned/shuffled correction cosine", "centered correction cosine", "correction RMS"],
+  "counts": {"saved_prediction_arrays_read": 2, "affine_lstsq": 128, "derived_system_rows": 64},
+  "interpretation": "A high affine fraction or aligned/shuffled cosine supports a low-order shared-prior shortcut; it does not prove causality or raw-observation non-identifiability."
+}

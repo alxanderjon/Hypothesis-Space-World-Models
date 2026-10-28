@@ -1,0 +1,29 @@
+{
+  "protocol": "common_panel_active_acquisition_v1_confirmation",
+  "status": "PROSPECTIVE_BEFORE_CONFIRMATION",
+  "frozen_development_result_sha256": "fd17b333e704cf54c31eb9588766ab57806ec95a9a2e30c40ce37c2d4d9d77eb",
+  "frozen_driver_sha256": "a745ae5664c9064ef5199d7e04c9ce8e456d3460308a323b80034d15cfc1b7d5",
+  "only_change": "WORLD 2026105000 to 2026105100 through a sealed wrapper",
+  "hypothesis": "The frozen active-state acquisition procedure replicates its random-data and adaptive-selection advantages in a new generator world.",
+  "unchanged": "candidate pool, leave-one-system-out disagreement, greedy rule, observation counts, RBF estimator, target context, gates and operation ceilings",
+  "gates": {
+    "more_data": "random/original <=0.80 and >=6/8 recurrent-system wins",
+    "intelligent_acquisition": "adaptive/random <=0.85 and >=6/8 recurrent-system wins",
+    "active_absolute": "adaptive/original <=0.80 and >=6/8 recurrent-system wins",
+    "unrelated_harm": "adaptive/linear <=1.10 aggregate"
+  },
+  "qualification": "Fresh-world confirmation of an engineered controlled-probe acquisition procedure. It is not passive inference, calibrated uncertainty, or transfer of one frozen callable across different hidden functions.",
+  "ceilings": {
+    "generated_transitions": 3072,
+    "generated_rhs_evaluations": 3072,
+    "coefficient_factorizations": 160,
+    "kernel_factorizations": 11,
+    "svds": 3,
+    "prediction_blocks": 20,
+    "score_blocks": 112,
+    "candidate_states_scored": 2048,
+    "wall_seconds": 300,
+    "peak_RSS_bytes": 1073741824,
+    "artifact_bytes": 33554432
+  }
+}

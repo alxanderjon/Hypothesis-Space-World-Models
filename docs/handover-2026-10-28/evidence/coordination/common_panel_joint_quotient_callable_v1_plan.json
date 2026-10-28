@@ -1,0 +1,25 @@
+{
+  "protocol": "common_panel_joint_quotient_callable_v1",
+  "status": "PROSPECTIVE_BEFORE_SCIENCE",
+  "scientific_question": "Does same-panel quotienting of the system-specific linear subspace expose the recurring nonlinear callable that failed under cross-bank two-stage residualization?",
+  "mechanism": "On the common 32-state acquisition panel, project each system response onto the orthogonal complement of its best linear state map; select eight systems by label-blind residual centrality; learn one 32-center RBF representative of the shared quotient function. Per-system inference jointly fits 16 linear coefficients plus one callable coefficient.",
+  "generator": "new world; hidden P3 nonlinear callable matrices, system-specific linear matrices, eight recurrent and eight unrelated systems; labels and matrices unavailable to fitting/admission",
+  "arms": ["aligned quotient RBF", "row-shuffled quotient RBF", "linear-only"],
+  "admission": {"aligned_over_linear": "<=0.80", "aligned_wins": ">=6/8", "development_opening": "only after aligned admission persists"},
+  "development_gates": {"aligned_over_linear_reuse": "<=0.80 and >=6/8 wins", "aligned_over_shuffled_reuse": "<=0.85 and >=6/8 wins", "unrelated_harm": "aligned/linear <=1.10"},
+  "retained_knowledge": "32 centers x4 plus 32x4 kernel output weights =256 scalars",
+  "per_system_inferred_quantities": {"with_callable": 17, "linear_only": 16},
+  "qualification": "Controlled-probe engineered recurrence diagnostic using known Euler differencing and an additive linear-plus-callable prior. Not passive inference, unique factorization, or arbitrary mechanism discovery.",
+  "ceilings": {
+    "generated_transitions": 2560,
+    "generated_rhs_evaluations": 2560,
+    "coefficient_factorizations": 82,
+    "kernel_factorizations": 2,
+    "svds": 2,
+    "prediction_blocks": 8,
+    "score_blocks": 80,
+    "wall_seconds": 300,
+    "peak_RSS_bytes": 1073741824,
+    "artifact_bytes": 33554432
+  }
+}

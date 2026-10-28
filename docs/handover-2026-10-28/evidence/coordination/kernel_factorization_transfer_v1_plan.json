@@ -1,0 +1,42 @@
+{
+  "protocol": "kernel_factorization_transfer_v1",
+  "status": "PROSPECTIVE_BEFORE_SCIENCE",
+  "question": "Can training-only observations select a reusable function factorization that improves later systems beyond a fixed joint kernel, random structure, and equal-data per-system structure search?",
+  "world_schedule": ["axis_additive", "rotated_additive", "pairwise_interaction", "axis_additive", "rotated_additive", "pairwise_interaction"],
+  "supplied_grammar": {
+    "joint": "one isotropic 4D RBF",
+    "axis_additive": "sum of four 1D RBFs in observed coordinates",
+    "rotated_additive": "sum of four 1D RBFs after one prospectively fixed orthogonal transform",
+    "pairwise": "sum of six 2D RBFs over observed coordinate pairs"
+  },
+  "supplied_assumptions": "4D state; Euler dt=0.05; affine plus smooth nonlinear residual; fixed four-member kernel grammar; declared stream boundary connecting acquisition and later systems. No equation, coefficients, true structure label, or query response is used for selection.",
+  "data_per_world": "8 acquisition systems: fit48+selection32; 8 later systems: context48+query64",
+  "selection": "minimum mean next-state MSE across acquisition systems on selection32; stable candidate order tie break; bandwidths and ridge fixed prospectively",
+  "later_arms": {
+    "retained": "reuse acquisition-selected structure; one 48-row fit/system",
+    "joint": "fixed joint RBF; one 48-row fit/system",
+    "random": "deterministic outcome-independent candidate; one 48-row fit/system",
+    "scratch": "choose among four structures using a 24/24 context split, then refit chosen structure on all 48 rows"
+  },
+  "gates": {
+    "retained_vs_joint": "aggregate ratio <=0.80 and >=32/48 wins",
+    "retained_vs_random": "aggregate ratio <=0.80 and >=32/48 wins",
+    "retained_vs_scratch": "aggregate ratio <=1.10",
+    "type_nonharm": "retained/joint <=1.00 for each of the three hidden generator types",
+    "selection_repeatability": "the same structure is selected in both streams of at least 2/3 generator types"
+  },
+  "ceilings": {
+    "generated_transitions": 9216,
+    "generated_rhs_evaluations": 9216,
+    "coefficient_factorizations": 576,
+    "kernel_factorizations": 576,
+    "kernel_entries": 1990656,
+    "prediction_blocks": 576,
+    "score_blocks": 576,
+    "structure_selections": 54,
+    "wall_seconds": 180,
+    "peak_RSS_bytes": 1073741824,
+    "artifact_bytes": 67108864
+  },
+  "qualification": "This is an engineered recurrence diagnostic. It tests data-driven selection inside a supplied four-kernel grammar and declared same-stream recurrence, not open-ended structure discovery, arbitrary dynamics, or unique identifiability."
+}

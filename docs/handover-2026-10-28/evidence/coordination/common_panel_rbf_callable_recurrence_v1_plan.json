@@ -1,0 +1,32 @@
+{
+  "protocol": "common_panel_rbf_callable_recurrence_v1",
+  "status": "PROSPECTIVE_BEFORE_SCIENCE",
+  "causal_change": "Replace the failed 4-32-32-4 gradient-trained callable with a deterministic 32-center Gaussian RBF callable fitted to the same label-blind residual average. Keep the nonlinear P3 generator and all observation banks unchanged in a new world.",
+  "scientific_question": "Was nonlinear recurrence acquisition blocked by the parametric MLP fit, or does the aligned residual evidence also fail with a direct nonparametric callable?",
+  "kernel": {"centers": "the 32 acquisition module-training states", "bandwidth": "median nonzero pairwise center distance", "ridge": 1e-6, "output_weights": 128, "stored_center_scalars": 128, "total_retained_scalars": 256},
+  "per_system_quantities": {"with_callable": 17, "without_callable": 16},
+  "arms": ["aligned_RBF", "row-shuffled_RBF", "frozen_random_MLP", "no_module"],
+  "admission": {"aligned_over_no_module": "<=0.80", "aligned_wins": ">=6/8", "development_opening": "only after aligned admission persists"},
+  "development_gates": {
+    "aligned_over_no_module_on_hidden_reuse": "<=0.80 and >=6/8 wins",
+    "aligned_over_shuffled_on_hidden_reuse": "<=0.85 and >=6/8 wins",
+    "aligned_over_random_on_hidden_reuse": "<=0.85 and >=6/8 wins",
+    "unrelated_harm": "aligned/no_module <=1.10"
+  },
+  "qualification": "Controlled-probe, engineered recurrent-nonlinearity diagnostic. It does not establish passive inference, open-ended representation growth, or arbitrary mechanism discovery.",
+  "ceilings": {
+    "generated_transitions": 3072,
+    "generated_rhs_evaluations": 3072,
+    "shared_fits": 2,
+    "gradient_updates": 0,
+    "module_training_rows": 0,
+    "coefficient_factorizations": 98,
+    "svds": 2,
+    "prediction_blocks": 38,
+    "score_blocks": 96,
+    "wall_seconds": 300,
+    "peak_RSS_bytes": 1073741824,
+    "artifact_bytes": 33554432
+  },
+  "confirmation": "none in this protocol"
+}

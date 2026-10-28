@@ -1,0 +1,563 @@
+{
+  "actual": {
+    "http_range_requests": 351,
+    "network_bytes": 154597545,
+    "peak_RSS_bytes": 60801024,
+    "persisted_bytes_before_manifest": 3173575,
+    "wall_seconds": 147.897453208
+  },
+  "confirmation": "five reserved indices per file were selected but not downloaded; diffusion-sorption mechanism entirely unopened",
+  "files": [
+    {
+      "development_indices": [
+        6999,
+        7396,
+        7534,
+        7841,
+        8625
+      ],
+      "etag": "\"184e10f3fe42e45b742d1d22d1ab1154-8\"",
+      "name": "advection_beta0.2",
+      "network_bytes": 20590929,
+      "official_full_file_md5_unverified": "d47b52c1be4b6bcaa8748a8df2f5fbb8",
+      "original_shape": [
+        10000,
+        201,
+        1024
+      ],
+      "remote_file_bytes": 8232966952,
+      "reserved_not_downloaded_indices": [
+        8855,
+        9155,
+        9199,
+        9244,
+        9346
+      ],
+      "resolved_url": "https://s3.tik.uni-stuttgart.de/fokus-dv-prod-2/10.18419/darus-2986/18b0112a156-dbe65df47680?response-content-disposition=attachment%3B%20filename%2A%3DUTF-8%27%271D_Advection_Sols_beta0.2.hdf5&response-content-type=application%2Fx-hdf5&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261028T192600Z&X-Amz-SignedHeaders=host&X-Amz-Credential=ZYFB5FYVYI021REQFP7K%2F20261028%2Fdataverse%2Fs3%2Faws4_request&X-Amz-Expires=172800&X-Amz-Signature=e96b7123eb4176b65cc8b1e3b54d9076bae0bee3917566436e6dcb52c8b428e7",
+      "retained_shape": [
+        25,
+        101,
+        64
+      ],
+      "role": "source",
+      "root_attrs": {
+        "beta": "0.2"
+      },
+      "selection_seed": 14617971076569320611,
+      "source_url": "https://darus.uni-stuttgart.de/api/access/datafile/255671",
+      "training_indices": [
+        19,
+        303,
+        1132,
+        1753,
+        1885,
+        2226,
+        2369,
+        2601,
+        2880,
+        4217,
+        4237,
+        4252,
+        4452,
+        4880,
+        4919,
+        5245,
+        5619,
+        6111,
+        6749,
+        6853
+      ]
+    },
+    {
+      "development_indices": [
+        8102,
+        8131,
+        8536,
+        8711,
+        8871
+      ],
+      "etag": "\"e1095264cada946732a4613f7a3c4fb4-8\"",
+      "name": "advection_beta1.0",
+      "network_bytes": 20590929,
+      "official_full_file_md5_unverified": "1fe41923a4123db55bf4e89bea32e142",
+      "original_shape": [
+        10000,
+        201,
+        1024
+      ],
+      "remote_file_bytes": 8232966952,
+      "reserved_not_downloaded_indices": [
+        9357,
+        9596,
+        9776,
+        9823,
+        9952
+      ],
+      "resolved_url": "https://s3.tik.uni-stuttgart.de/fokus-dv-prod-2/10.18419/darus-2986/18b0112a1b9-12f39a97517c?response-content-disposition=attachment%3B%20filename%2A%3DUTF-8%27%271D_Advection_Sols_beta1.0.hdf5&response-content-type=application%2Fx-hdf5&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261028T192619Z&X-Amz-SignedHeaders=host&X-Amz-Credential=ZYFB5FYVYI021REQFP7K%2F20261028%2Fdataverse%2Fs3%2Faws4_request&X-Amz-Expires=172800&X-Amz-Signature=12765e1a9fd0c0324a2c42780998dabac62e7ff3df86b5beacb56c97a01146f5",
+      "retained_shape": [
+        25,
+        101,
+        64
+      ],
+      "role": "source",
+      "root_attrs": {
+        "beta": "1.0"
+      },
+      "selection_seed": 13504351432981441284,
+      "source_url": "https://darus.uni-stuttgart.de/api/access/datafile/255675",
+      "training_indices": [
+        688,
+        1665,
+        2644,
+        3726,
+        4016,
+        4024,
+        4032,
+        4186,
+        4270,
+        4471,
+        6047,
+        6366,
+        6495,
+        6799,
+        7075,
+        7102,
+        7246,
+        7308,
+        7958,
+        7977
+      ]
+    },
+    {
+      "development_indices": [
+        6010,
+        6168,
+        6411,
+        6926,
+        7066
+      ],
+      "etag": "\"86b8d70e88b53fcfba387c76192a73a8-8\"",
+      "name": "advection_beta4.0",
+      "network_bytes": 20590929,
+      "official_full_file_md5_unverified": "a87b03ff425496360e2732921805f47d",
+      "original_shape": [
+        10000,
+        201,
+        1024
+      ],
+      "remote_file_bytes": 8232966952,
+      "reserved_not_downloaded_indices": [
+        7593,
+        8062,
+        8930,
+        9820,
+        9889
+      ],
+      "resolved_url": "https://s3.tik.uni-stuttgart.de/fokus-dv-prod-2/10.18419/darus-2986/18b0112a155-2a12328bf8f0?response-content-disposition=attachment%3B%20filename%2A%3DUTF-8%27%271D_Advection_Sols_beta4.0.hdf5&response-content-type=application%2Fx-hdf5&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261028T192634Z&X-Amz-SignedHeaders=host&X-Amz-Credential=ZYFB5FYVYI021REQFP7K%2F20261028%2Fdataverse%2Fs3%2Faws4_request&X-Amz-Expires=172800&X-Amz-Signature=479d2b3b1321b6df9a341e65ee63cdbb296eade3522200944ea5c8d70459fddf",
+      "retained_shape": [
+        25,
+        101,
+        64
+      ],
+      "role": "source",
+      "root_attrs": {
+        "beta": "4.0"
+      },
+      "selection_seed": 4769950643777340283,
+      "source_url": "https://darus.uni-stuttgart.de/api/access/datafile/255676",
+      "training_indices": [
+        517,
+        610,
+        1153,
+        1256,
+        1432,
+        1575,
+        1613,
+        1644,
+        1677,
+        1917,
+        2070,
+        2791,
+        3403,
+        3763,
+        4412,
+        4416,
+        4656,
+        4670,
+        4795,
+        5835
+      ]
+    },
+    {
+      "development_indices": [
+        8209,
+        8299,
+        8305,
+        8472,
+        8565
+      ],
+      "etag": "\"a6e12e43b2ee19b0296e3640159fa104-8\"",
+      "name": "burgers_nu0.004",
+      "network_bytes": 20590961,
+      "official_full_file_md5_unverified": "435e1fecb8a64a0b4563bb8d09f81c33",
+      "original_shape": [
+        10000,
+        201,
+        1024
+      ],
+      "remote_file_bytes": 8232968312,
+      "reserved_not_downloaded_indices": [
+        8686,
+        9090,
+        9233,
+        9306,
+        9398
+      ],
+      "resolved_url": "https://s3.tik.uni-stuttgart.de/fokus-dv-prod-2/10.18419/darus-2986/18c00ffbbc4-1f17ba69684e?response-content-disposition=attachment%3B%20filename%2A%3DUTF-8%27%271D_Burgers_Sols_Nu0.004.hdf5&response-content-type=application%2Fx-hdf5&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261028T192653Z&X-Amz-SignedHeaders=host&X-Amz-Credential=ZYFB5FYVYI021REQFP7K%2F20261028%2Fdataverse%2Fs3%2Faws4_request&X-Amz-Expires=172800&X-Amz-Signature=969466cdbb1ddd151167459585a4535220ffc1ee6c54282190cb415bd1e897dd",
+      "retained_shape": [
+        25,
+        101,
+        64
+      ],
+      "role": "source",
+      "root_attrs": {
+        "Nu": "0.004"
+      },
+      "selection_seed": 15202528036999978757,
+      "source_url": "https://darus.uni-stuttgart.de/api/access/datafile/268191",
+      "training_indices": [
+        29,
+        325,
+        603,
+        964,
+        984,
+        1139,
+        1698,
+        1795,
+        2222,
+        3412,
+        3429,
+        3554,
+        4840,
+        4934,
+        5443,
+        6849,
+        6869,
+        6883,
+        6917,
+        7697
+      ]
+    },
+    {
+      "development_indices": [
+        6352,
+        6405,
+        6643,
+        7371,
+        8528
+      ],
+      "etag": "\"07b5a241acc319b9383c8259aa14c88b-8\"",
+      "name": "burgers_nu0.04",
+      "network_bytes": 20590961,
+      "official_full_file_md5_unverified": "16f4c7afaf8c16238be157e54c9297c7",
+      "original_shape": [
+        10000,
+        201,
+        1024
+      ],
+      "remote_file_bytes": 8232968312,
+      "reserved_not_downloaded_indices": [
+        8535,
+        8860,
+        9069,
+        9808,
+        9897
+      ],
+      "resolved_url": "https://s3.tik.uni-stuttgart.de/fokus-dv-prod-2/10.18419/darus-2986/18d84478953-e806e22b9fc7?response-content-disposition=attachment%3B%20filename%2A%3DUTF-8%27%271D_Burgers_Sols_Nu0.04.hdf5&response-content-type=application%2Fx-hdf5&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261028T192712Z&X-Amz-SignedHeaders=host&X-Amz-Credential=ZYFB5FYVYI021REQFP7K%2F20261028%2Fdataverse%2Fs3%2Faws4_request&X-Amz-Expires=172800&X-Amz-Signature=0927322b9839f87b8e962f8763a4bd10d48b59aa2b1d63f6e5615b5bd587dcf1",
+      "retained_shape": [
+        25,
+        101,
+        64
+      ],
+      "role": "source",
+      "root_attrs": {
+        "Nu": "0.04"
+      },
+      "selection_seed": 5665058534378157294,
+      "source_url": "https://darus.uni-stuttgart.de/api/access/datafile/281362",
+      "training_indices": [
+        706,
+        784,
+        958,
+        1107,
+        1271,
+        1522,
+        1770,
+        2588,
+        2922,
+        3097,
+        4066,
+        4241,
+        4303,
+        4495,
+        4941,
+        4999,
+        5181,
+        5241,
+        5515,
+        5880
+      ]
+    },
+    {
+      "development_indices": [
+        7052,
+        7401,
+        7810,
+        7937,
+        8747
+      ],
+      "etag": "\"27a38fa34ab61584ea88e8c91aa933d5-8\"",
+      "name": "burgers_nu0.4",
+      "network_bytes": 20590961,
+      "official_full_file_md5_unverified": "58327a6107e8f9defb5075677cc42533",
+      "original_shape": [
+        10000,
+        201,
+        1024
+      ],
+      "remote_file_bytes": 8232968312,
+      "reserved_not_downloaded_indices": [
+        9148,
+        9299,
+        9327,
+        9511,
+        9559
+      ],
+      "resolved_url": "https://s3.tik.uni-stuttgart.de/fokus-dv-prod-2/10.18419/darus-2986/18c00ffbb2d-c61cb7ebf9da?response-content-disposition=attachment%3B%20filename%2A%3DUTF-8%27%271D_Burgers_Sols_Nu0.4.hdf5&response-content-type=application%2Fx-hdf5&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261028T192729Z&X-Amz-SignedHeaders=host&X-Amz-Credential=ZYFB5FYVYI021REQFP7K%2F20261028%2Fdataverse%2Fs3%2Faws4_request&X-Amz-Expires=172800&X-Amz-Signature=45b3adf02bc77b40b7019bd66989db720a4df9c9ffec84dd65b7803bd91d5d8e",
+      "retained_shape": [
+        25,
+        101,
+        64
+      ],
+      "role": "source",
+      "root_attrs": {
+        "Nu": "0.4"
+      },
+      "selection_seed": 15339751949461590182,
+      "source_url": "https://darus.uni-stuttgart.de/api/access/datafile/268192",
+      "training_indices": [
+        182,
+        806,
+        843,
+        1155,
+        1798,
+        1900,
+        2109,
+        2236,
+        2451,
+        2574,
+        3796,
+        4018,
+        4762,
+        5049,
+        5095,
+        5315,
+        5376,
+        5546,
+        6063,
+        6178
+      ]
+    },
+    {
+      "development_indices": [
+        8231,
+        8506,
+        8656,
+        8678,
+        8919
+      ],
+      "etag": "\"c004fd61974e67f6864722b545a07083-790\"",
+      "name": "reacdiff_nu0.5_rho1",
+      "network_bytes": 10350625,
+      "official_full_file_md5_unverified": "69a429239778d529cd419ed5888ea835",
+      "original_shape": [
+        10000,
+        101,
+        1024
+      ],
+      "remote_file_bytes": 4136968376,
+      "reserved_not_downloaded_indices": [
+        9007,
+        9080,
+        9108,
+        9228,
+        9639
+      ],
+      "resolved_url": "https://s3.tik.uni-stuttgart.de/fokus-dv-prod-1/10.18419/darus-2986/1814ea29681-56a8a4fdc934?response-content-disposition=attachment%3B%20filename%2A%3DUTF-8%27%27ReacDiff_Nu0.5_Rho1.0.hdf5&response-content-type=application%2Fx-hdf5&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261028T192745Z&X-Amz-SignedHeaders=host&X-Amz-Credential=ZYFB5FYVYI021REQFP7K%2F20261028%2Fdataverse%2Fs3%2Faws4_request&X-Amz-Expires=172800&X-Amz-Signature=449d801b7b683bc35606aeece55846c94dd94c2bc97fa067c599f7cc422f53d0",
+      "retained_shape": [
+        25,
+        101,
+        64
+      ],
+      "role": "development",
+      "root_attrs": {
+        "Nu": "0.5",
+        "rho": "1.0"
+      },
+      "selection_seed": 9909914575487111942,
+      "source_url": "https://darus.uni-stuttgart.de/api/access/datafile/133177",
+      "training_indices": [
+        111,
+        247,
+        924,
+        1465,
+        2983,
+        3052,
+        3694,
+        4916,
+        4939,
+        5024,
+        5324,
+        5889,
+        6220,
+        6521,
+        6603,
+        6771,
+        6828,
+        7474,
+        7703,
+        8184
+      ]
+    },
+    {
+      "development_indices": [
+        8166,
+        8193,
+        8327,
+        8389,
+        8678
+      ],
+      "etag": "\"f123cf0caba2d7f57e91d2bd4c52fa2f-790\"",
+      "name": "reacdiff_nu1_rho2",
+      "network_bytes": 10350625,
+      "official_full_file_md5_unverified": "112c01a76447162bd67c8c1073f58ca",
+      "original_shape": [
+        10000,
+        101,
+        1024
+      ],
+      "remote_file_bytes": 4136968376,
+      "reserved_not_downloaded_indices": [
+        8695,
+        8697,
+        8902,
+        9362,
+        9467
+      ],
+      "resolved_url": "https://s3.tik.uni-stuttgart.de/fokus-dv-prod-1/10.18419/darus-2986/1814eaeb112-4a50d95eb63a?response-content-disposition=attachment%3B%20filename%2A%3DUTF-8%27%27ReacDiff_Nu1.0_Rho2.0.hdf5&response-content-type=application%2Fx-hdf5&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261028T192800Z&X-Amz-SignedHeaders=host&X-Amz-Credential=ZYFB5FYVYI021REQFP7K%2F20261028%2Fdataverse%2Fs3%2Faws4_request&X-Amz-Expires=172800&X-Amz-Signature=4d5c95817f93b8cbb1bcc60e458d283a5445de848ffb4b5c4c6c9ca746ffba7d",
+      "retained_shape": [
+        25,
+        101,
+        64
+      ],
+      "role": "development",
+      "root_attrs": {
+        "Nu": "1.0",
+        "rho": "2.0"
+      },
+      "selection_seed": 15170299139679886210,
+      "source_url": "https://darus.uni-stuttgart.de/api/access/datafile/133183",
+      "training_indices": [
+        1260,
+        1376,
+        1476,
+        1551,
+        1920,
+        1941,
+        2031,
+        2124,
+        2412,
+        2446,
+        3040,
+        3680,
+        3867,
+        4382,
+        4447,
+        5007,
+        6967,
+        7205,
+        7561,
+        8094
+      ]
+    },
+    {
+      "development_indices": [
+        8222,
+        8460,
+        8464,
+        8539,
+        8628
+      ],
+      "etag": "\"07ad669db2c0b69df4cfa15d952f9fd8-790\"",
+      "name": "reacdiff_nu5_rho10",
+      "network_bytes": 10350625,
+      "official_full_file_md5_unverified": "264c80af0e2a6cc1f70e87275e0f6ac4",
+      "original_shape": [
+        10000,
+        101,
+        1024
+      ],
+      "remote_file_bytes": 4136968376,
+      "reserved_not_downloaded_indices": [
+        8873,
+        8912,
+        8949,
+        9726,
+        9759
+      ],
+      "resolved_url": "https://s3.tik.uni-stuttgart.de/fokus-dv-prod-1/10.18419/darus-2986/1814ebcab22-a3ff3ec57c4a?response-content-disposition=attachment%3B%20filename%2A%3DUTF-8%27%27ReacDiff_Nu5.0_Rho10.0.hdf5&response-content-type=application%2Fx-hdf5&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261028T192814Z&X-Amz-SignedHeaders=host&X-Amz-Credential=ZYFB5FYVYI021REQFP7K%2F20261028%2Fdataverse%2Fs3%2Faws4_request&X-Amz-Expires=172800&X-Amz-Signature=14970ed457e41c2dfb27af2d3cd59679490f7d24ff33689eb6c16d4f028370c1",
+      "retained_shape": [
+        25,
+        101,
+        64
+      ],
+      "role": "development",
+      "root_attrs": {
+        "Nu": "5.0",
+        "rho": "10.0"
+      },
+      "selection_seed": 913670220187975419,
+      "source_url": "https://darus.uni-stuttgart.de/api/access/datafile/133190",
+      "training_indices": [
+        1229,
+        1567,
+        1730,
+        1941,
+        2032,
+        2079,
+        2240,
+        2324,
+        2428,
+        3559,
+        3725,
+        4210,
+        4350,
+        4495,
+        4530,
+        4712,
+        5554,
+        6945,
+        7310,
+        7712
+      ]
+    }
+  ],
+  "limits": {
+    "network_bytes": 178257920,
+    "peak_RSS_bytes": 1073741824,
+    "persisted_bytes": 33554432,
+    "wall_seconds": 600
+  },
+  "protocol": "pdebench_range_subset_v1",
+  "status": "COMPLETE"
+}

@@ -1,0 +1,11 @@
+{
+  "protocol": "learned_response_acquisition_policy_v1_recovery1",
+  "status": "PROSPECTIVE_ADDITIVE_RECOVERY_BEFORE_REPEATED_WORK",
+  "original_error": "TypeError serializing numpy.bool_ in admission_decision.json after all reserved-family admission calculations completed",
+  "preserved_policy_freeze": true,
+  "preserved_selection_indices": true,
+  "forbidden_repetition": "six training worlds, 192 reward rows and two policy fits",
+  "required_repetition": "reserved P7 acquisition responses and five callable-arm admission calculations because their arrays/values were not persisted",
+  "original_spent_counts": {"generated_transitions": 11264, "generated_rhs_evaluations": 11264, "coefficient_factorizations": 4912, "kernel_factorizations": 259, "svds": 7, "policy_factorizations": 2, "prediction_blocks": 462, "score_blocks": 1664, "candidate_states_scored": 1792, "reward_rows": 192},
+  "recovery_ceilings": {"generated_transitions": 3584, "generated_rhs_evaluations": 3584, "coefficient_factorizations": 256, "kernel_factorizations": 5, "svds": 1, "prediction_blocks": 20, "score_blocks": 176, "wall_seconds": 120, "peak_RSS_bytes": 1073741824, "artifact_bytes": 33554432}
+}

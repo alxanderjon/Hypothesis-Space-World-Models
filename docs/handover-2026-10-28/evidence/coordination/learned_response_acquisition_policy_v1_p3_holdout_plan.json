@@ -1,0 +1,32 @@
+{
+  "protocol": "learned_response_acquisition_policy_v1_p3_holdout",
+  "status": "PROSPECTIVE_BEFORE_SCIENCE",
+  "frozen_policy_sha256": "729cfc44e22888da12ee36c9c347f273eb87102307afdefc8121bec17f4ed62f",
+  "question": "Does the frozen response-conditioned acquisition policy outperform equal-count random acquisition on a new P3 world where the callable representation has previously passed admission?",
+  "changes": "new P3 world only; zero policy refitting, reward recomputation, architecture change, or model selection",
+  "arms": ["original32", "random48", "learned_state_only48", "learned_context48", "frozen_disagreement48"],
+  "gates": {
+    "admission": "context callable <=0.80x linear and >=6/8 wins",
+    "context_vs_random": "<=0.85 and >=6/8 wins",
+    "context_vs_state_only": "<=0.85 and >=6/8 wins",
+    "context_vs_heuristic": "<=0.85 and >=6/8 wins",
+    "context_vs_original": "<=0.80 and >=6/8 wins",
+    "unrelated_harm": "<=1.10"
+  },
+  "qualification": "Opened same-family diagnostic for a frozen linear acquisition policy. A pass would establish only useful selection within the engineered cubic callable regime, not cross-family acquisition, uncertainty calibration, or general dynamics discovery.",
+  "ceilings": {
+    "generated_transitions": 3584,
+    "generated_rhs_evaluations": 3584,
+    "coefficient_factorizations": 256,
+    "kernel_factorizations": 13,
+    "svds": 1,
+    "policy_fits": 0,
+    "prediction_blocks": 28,
+    "score_blocks": 176,
+    "candidate_states_scored": 256,
+    "reward_rows": 0,
+    "wall_seconds": 120,
+    "peak_RSS_bytes": 1073741824,
+    "artifact_bytes": 33554432
+  }
+}

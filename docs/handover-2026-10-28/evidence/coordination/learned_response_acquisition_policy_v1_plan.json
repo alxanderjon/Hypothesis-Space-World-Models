@@ -1,0 +1,15 @@
+{
+  "protocol": "learned_response_acquisition_policy_v1",
+  "status": "PROSPECTIVE_BEFORE_SCIENCE",
+  "question": "Can a response-conditioned acquisition scorer learned across training worlds choose 16 response locations that transfer to a reserved callable distribution better than equal-count random, a learned state-only design, and the frozen disagreement heuristic?",
+  "world_split": {"policy_training": "3 P3 and 3 P5 worlds", "opened_development": "1 P7 world", "confirmation": "none in this protocol"},
+  "policy": {"context_features": 18, "state_only_features": 9, "model": "ridge-linear with fixed lambda 1e-3 and training-only standardization", "retained_context_scalars": 55, "retained_state_only_scalars": 28},
+  "accessible_state": "candidate x, x^2, norm, distance to initial support, and leave-one-selected-system-out RBF predictive mean/variance derived from initial observed responses",
+  "offline_reward": "log reduction in aggregate selected-system error on a disjoint acquisition-validation bank after adding exactly one candidate state; all candidate responses are training-world-only",
+  "development_arms": ["original32", "random48", "learned_state_only48", "learned_context48", "frozen_disagreement48"],
+  "observation_budget": {"per_training_world_per_system": 96, "per_development_acquisition_system_per_extra_arm": 48, "per_target_system_all_arms": 32},
+  "supplied_assumptions": ["4D state", "known Euler dt=.05", "additive system-linear plus one callable", "exactly eight of sixteen systems retained", "Legendre P3/P5 training and P7 reserved distribution"],
+  "gates": {"context_vs_random": "<=0.85 and >=6/8 wins", "context_vs_state_only": "<=0.85 and >=6/8 wins", "context_vs_heuristic": "<=0.85 and >=6/8 wins", "context_vs_original": "<=0.80 and >=6/8 wins", "unrelated_harm": "context/linear <=1.10"},
+  "qualification": "Tests learned acquisition within an engineered Legendre hierarchy and controlled resets. It does not establish calibrated uncertainty, passive inference, or arbitrary function discovery.",
+  "ceilings": {"generated_transitions": 12800, "generated_rhs_evaluations": 12800, "coefficient_factorizations": 5008, "kernel_factorizations": 259, "svds": 7, "policy_factorizations": 2, "prediction_blocks": 472, "score_blocks": 1760, "candidate_states_scored": 1792, "reward_rows": 192, "wall_seconds": 300, "peak_RSS_bytes": 1073741824, "artifact_bytes": 33554432}
+}

@@ -1,0 +1,32 @@
+{
+  "context_shape": [
+    2,
+    64,
+    6
+  ],
+  "fits": 0,
+  "gradient_norm": 47.99776077270508,
+  "initial_loss": 2.9618051052093506,
+  "note": "Disposable gradient-flow update only; no checkpoint or scientific prediction persisted.",
+  "one_step_parameter_delta": 0.29921025037765503,
+  "parameter_count": 995588,
+  "prediction_shape": [
+    2,
+    64,
+    4
+  ],
+  "query_shape": [
+    2,
+    64,
+    2
+  ],
+  "scientific_updates": 0,
+  "source_field_mean": -0.08450125902891159,
+  "source_field_std": 0.6390268802642822,
+  "status": "PREFLIGHT_COMPLETE",
+  "target_shape": [
+    2,
+    64,
+    4
+  ]
+}

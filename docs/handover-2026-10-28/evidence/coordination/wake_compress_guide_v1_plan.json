@@ -1,0 +1,62 @@
+{
+  "protocol": "wake_compress_guide_v1",
+  "status": "PROSPECTIVE_BEFORE_SCIENCE",
+  "question": "Does jointly retaining compressed callable abstractions and an observation-conditioned search guide improve later-system discovery beyond either component alone at identical online search budget?",
+  "typed_base_language": {
+    "input_type": "scalar expression over x in R4",
+    "terminals": ["x0", "x1", "x2", "x3"],
+    "unary": ["sin", "tanh", "relu"],
+    "binary": ["add", "mul"],
+    "maximum_base_ast_depth": 4,
+    "finite_semantically_deduplicated_bank": 2048,
+    "numeric_parameters": "one fitted outer scalar callable loading per output coordinate plus a fitted 4x4 affine map; no internal numeric holes"
+  },
+  "generator": {
+    "state_dimension": 4,
+    "dt": 0.05,
+    "acquisition_systems": 16,
+    "later_expressible_systems": 16,
+    "later_outside_finite_bank_systems": 8,
+    "observations": "acquisition fit32/select16; later context32/query64",
+    "reuse": "two hidden subtrees selected prospectively from recurring subtrees of the frozen base bank; acquisition programs contain them; eight later programs are new compositions of them; eight later programs are nonreuse base-bank programs",
+    "outside_finite_bank": "smooth random RBF callables constructed outside the declared finite AST bank and depth budget; this is not a claim of mathematical non-approximability"
+  },
+  "ambiguity": "retain up to four candidates within max(1e-10, 1% of target selection energy) of the best selection MSE; compression and guide targets average uniformly across retained hypotheses",
+  "compression": {
+    "discovery_systems": 12,
+    "admission_systems": 4,
+    "criterion": "expected description-length saving across at least three independently solved discovery systems; definition cost included",
+    "maximum_library_macros": 2,
+    "admission": "same 512-candidate search on admission observations; accept sequentially only when aggregate selection MSE is <=0.80 of the current library and solved count does not decrease; otherwise rollback"
+  },
+  "guide": "ridge-linear map from permitted observation summaries to production-count targets averaged across retained hypotheses after admitted-macro substitution",
+  "later_arms": ["neither", "library_only", "guide_only", "both"],
+  "online_budget": "exactly 512 candidate evaluations and 512 outer coefficient fits per arm/system; no query labels, generator programs, family labels or reuse labels",
+  "abstention": "best context-selection MSE exceeds max(1e-8, 10 times the acquisition-system 95th percentile); threshold frozen before later query responses",
+  "gates": {
+    "joint_reuse_benefit": "both/neither query MSE <=0.80 and >=6/8 wins",
+    "library_increment": "both/guide_only <=0.85 and >=6/8 wins",
+    "guide_increment": "both/library_only <=0.85 and >=6/8 wins",
+    "nonreuse_nonharm": "both/neither <=1.10",
+    "abstention": ">=6/8 outside-bank abstentions and <=2/16 expressible abstentions",
+    "library_admission": ">=1 macro admitted without rollback"
+  },
+  "ceilings": {
+    "bank_generation_attempts": 20000,
+    "generated_transitions": 3072,
+    "generated_rhs_evaluations": 3072,
+    "candidate_evaluations": 91000,
+    "coefficient_factorizations": 91000,
+    "candidate_fit_rows": 2880000,
+    "candidate_selection_rows": 1450000,
+    "query_prediction_blocks": 96,
+    "query_prediction_rows": 6144,
+    "score_blocks": 96,
+    "compression_subtrees": 200000,
+    "guide_fits": 1,
+    "wall_seconds": 300,
+    "peak_RSS_bytes": 1073741824,
+    "artifact_bytes": 67108864
+  },
+  "qualification": "Engineered, controlled 4D Euler residual-program diagnostic. A pass supports wake/compress/guide accumulation inside a supplied finite computational language; it does not establish unrestricted equation discovery, passive trajectories, arbitrary physics, or high-dimensional scaling."
+}

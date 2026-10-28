@@ -1,0 +1,75 @@
+{
+  "protocol": "common_panel_labelblind_callable_recurrence_v1_confirmation",
+  "status": "PROSPECTIVE_BEFORE_CONFIRMATION_SCIENCE",
+  "frozen_development_result_sha256": "9a62365f7c398d5cc88d9abc4ebfc9fe462aab4522c327ea20a1d2853d61d3e5",
+  "frozen_driver_sha256": "11f395a38e8c1ead854a59015364ca1469adb8296927043f4749c686aee92eba",
+  "only_change": "WORLD_SEED 2026104300 to 2026104400 through a sealed wrapper; method, architecture, training seeds, banks, gates and counts unchanged",
+  "scientific_question": "Does the frozen label-blind aligned-panel acquisition procedure replicate in a new generator world with a different hidden callable and new systems?",
+  "scope": {
+    "state_dimension": 4,
+    "transition": "known Euler y=x+0.05*f(x)",
+    "generator": "system-specific linear 4x4 term plus either a shared hidden smooth callable or an independently drawn smooth callable",
+    "learner_inputs": "controlled one-step (x,y) pairs only",
+    "supplied_structure": [
+      "state layout and dt=0.05",
+      "Euler differencing",
+      "additive linear-plus-one-callable decomposition",
+      "exactly eight of sixteen acquisition systems selected by label-blind centrality",
+      "one scalar outer coefficient for the callable"
+    ],
+    "hidden_from_scientific_decisions": [
+      "reuse labels",
+      "generator callable weights",
+      "system linear matrices",
+      "outer coefficients",
+      "confirmation group labels until predictions persist"
+    ],
+    "qualification": "Fresh confirmation of an engineered controlled-probe recurrence-acquisition procedure. It is not passive inference, transfer of one module across unrelated callables, arbitrary graph discovery, or general physics discovery."
+  },
+  "data": {
+    "acquisition_systems": 16,
+    "acquisition_banks_per_system": {"baseline": 32, "cluster": 16, "module_train": 32, "admission": 16},
+    "development_systems_if_admitted": 16,
+    "development_banks_per_system": {"context": 32, "query": 64},
+    "development_generation": "only after both aligned-seed admission decisions are frozen"
+  },
+  "arms": {
+    "aligned": "SVD/centrality and callable learning preserve common-state row alignment",
+    "shuffled": "same method and capacity with independent deterministic row permutations per system",
+    "random": "same callable architecture with frozen random weights",
+    "no_module": "system-specific linear fit only"
+  },
+  "model": {
+    "callable": "4-32-32-4 tanh MLP, 1,348 retained parameters",
+    "per_system_aligned_quantities": 17,
+    "per_system_no_module_quantities": 16,
+    "optimizer": "Adam lr=0.003, 400 full-batch updates, frozen seeds 2026104301 and 2026104302",
+    "ridge": 1e-6
+  },
+  "admission": {
+    "data": "confirmation-acquisition-only held admission bank",
+    "aligned_over_no_module": "<=0.80 in each seed",
+    "aligned_wins": ">=6/8 selected systems in each seed",
+    "confirmation_opening": "only if both aligned seeds pass"
+  },
+  "development_gates": {
+    "aligned_over_no_module_on_hidden_reuse": "<=0.80 and >=6/8 wins in each seed",
+    "aligned_over_shuffled_on_hidden_reuse": "<=0.85 and >=6/8 wins in each seed",
+    "aligned_over_random_on_hidden_reuse": "<=0.85 and >=6/8 wins in each seed",
+    "unrelated_harm": "aligned/no_module <=1.10 aggregate in each seed"
+  },
+  "ceilings": {
+    "generated_transitions": 3072,
+    "generated_rhs_evaluations": 3072,
+    "shared_fits": 4,
+    "gradient_updates": 1600,
+    "module_training_rows": 409600,
+    "coefficient_factorizations": 144,
+    "svds": 2,
+    "prediction_blocks": 74,
+    "score_blocks": 192,
+    "wall_seconds": 300,
+    "peak_RSS_bytes": 1073741824,
+    "artifact_bytes": 33554432
+  }
+}
