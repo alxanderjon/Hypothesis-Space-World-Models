@@ -18,7 +18,7 @@ Read this document first, then the [cumulative state](handover-2026-10-28/eviden
 
 Build a learner whose accumulated experience makes unfamiliar dynamics easier to infer. On encountering a new system, it should be able to discover what it needs from observations, improve its predictions, and retain useful knowledge for later encounters. Per-system observation and computation cost should become more scalable, with diminishing dependence on a bespoke teacher.
 
-The initial route was a deterministic N1/N2/N3 teacher supervising an observations-to-dynamics student. The goal has broadened: that teacher is one possible bootstrap, not a required solution. New-system learning, gradients and adaptation are allowed. Immediate prediction without adaptation is not the sole objective.
+This has been the objective from the start. The deterministic N1/N2/N3 teacher was built as a means to it: a way to produce supervision for an observations-to-dynamics student. It is one possible bootstrap, not a required solution. The research drifted when making the teacher recover individual systems became the working objective in its own right (see [How the teacher became the objective](#how-the-teacher-became-the-objective)). New-system learning, gradients and adaptation are allowed. Immediate prediction without adaptation is not the sole objective.
 
 The owner's strongest objections to earlier work are substantive:
 
@@ -47,13 +47,41 @@ These are different experimental contracts. Comparing their errors as though the
 
 ### 1. Deterministic teacher: what exists and what it does not prove
 
-N1 searches globally in normalized parameter coordinates. N2 uses bounded Powell optimization. N3 computes the objective's full Hessian, tries a safeguarded box-constrained quadratic step, adds damping when needed, and backtracks. Adapters specify how candidate parameters generate observations for SHO, reflection/event-driven motion and Kepler-like dynamics.
+The teacher was a three-stage pipeline. Each stage handed off to the next only once it passed:
+
+1. **N1: gradient-free global search.** The working belief was that gradient methods were holding the work back by getting stuck in local minima. N1 therefore searched the normalized parameter box DIRECT-style. It partitioned the box into Voronoi cells around evaluated sites, approximated the cells with scrambled Sobol space-filling points, scored sites by reconstruction loss, and refined the potentially optimal cells. The two-parameter version compares standard DIRECT with eDIRECT (Liu et al. 2015): [source](handover-2026-10-28/evidence/experiments/sho/run_stage1b_edirect_vs_direct.py).
+2. **N2: gradient-free local search.** Bounded Powell line search (`maxfev=1500`) from N1's handoff.
+3. **N3: derivative-based polishing.** Only after N1 and N2 passed did the pipeline use derivatives, on the belief that it would no longer get stuck in a poor local minimum. N3 is Newton-type rather than plain gradient descent: it computes the objective's full Hessian, tries a safeguarded box-constrained quadratic step, adds damping when needed, and backtracks.
+
+The archive confirms these mechanics. It does not record the local-minima rationale, which comes from the owner. The later [assessment](handover-2026-10-28/evidence/coordination/NEURAL_GUIDED_DYNAMICS_DISCOVERY_ASSESSMENT.md) (section 6) notes that in high-dimensional neural problems, saddles and flat directions may matter more than poor local minima. The premise is therefore weakest exactly where scale matters.
+
+Adapters specify how candidate parameters generate observations for SHO, reflection/event-driven motion and Kepler-like dynamics.
 
 The SHO sequence expanded from two parameters to stiffness matrices, affine dynamics and finally a generic 22-parameter `2 -> 4 -> 2` SiLU update network with no skip connection. Some long polishing runs reached extremely small objective values. They did not establish exact unrestricted function recovery. Earlier numerical stop rules were replaced; do not treat old accepted-step limits as current.
 
-The saved 822-case collection contains 320 SHO, 246 reflection and 256 Kepler cases, but this is not 822 unrelated mechanisms. Some successful “hybrid student” work replayed successful solver branches rather than learning an observations-to-rule mapping. Preserve that distinction.
+### Hard-coded versus removed dynamics
 
-Full dense Hessians scale quadratically in storage: one million parameters would require about 8 TB just for a float64 Hessian. This limits that teacher implementation, not all neural learning. See [teacher source](handover-2026-10-28/evidence/experiments/sho/generic_update_network_adapter.py) and the cumulative ledgers for the recovery and stop-rule history.
+With the dynamics built into the hypothesis, parameter recovery went well. Examples are the Stage 0 exact-solution decoder on `main`, two-parameter search, and an affine update `Kz+b` validated on all 320 SHO cases.
+
+Once the dynamics were removed, by replacing the structured hypothesis with the generic 22-parameter network, the difficulty became the geometry of the search. The network can represent the SHO update: an in-box fixture reaches transition MSE `3.67e-29`. Finding it from data was the hard part:
+
+- Eight bounded companion_29 sites gave 0 handoffs, five resource caps, and final losses spanning about seven orders of magnitude depending on the start.
+- Case (4,3) remained unresolved, and an extended (5,4) run stalled at `7.9e-11`.
+- One case (companion_6) succeeded only after the solver was redesigned to solve the ten output weights exactly at every hidden-layer candidate (variable projection). That gave a 53,921x lower loss than the saved stabilized run.
+
+Part of the geometry problem was therefore output/hidden coupling that added structure could fix. Even the 22-parameter version still supplied the state `(q,v)`, the time step, the one-step update form and the parameter bounds. Sources: [cumulative state](handover-2026-10-28/evidence/coordination/RESEARCH_STATE.md), especially the frozen-baseline and generic-recovery entries dated 13 October.
+
+### Dimensionality: Yubei's concern
+
+Yubei, the owner's co-advisor, pointed out that the geometry of a relatively low-dimensional parameter space is very different from that of a large one. This approach may not work for, say, a million-parameter system. The evidence already shows strain between 2 and 22 parameters. Partition-based global search needs coverage that grows exponentially with dimension. Full dense Hessians scale quadratically in storage: one million parameters would require about 8 TB just for a float64 Hessian. This limits that teacher implementation, not all neural learning. See [teacher source](handover-2026-10-28/evidence/experiments/sho/generic_update_network_adapter.py) and the cumulative ledgers for the recovery and stop-rule history.
+
+Large networks also have many weight settings with identical behavior, through symmetries and flat directions. Parameter recovery therefore stops being a meaningful target at scale, and success has to be judged on predictions. The concern applies to later work whenever the number of quantities adjusted per new system is large. In particular, the PDEBench adaptation below updates all of its roughly one million weights for every new system.
+
+### How the teacher became the objective
+
+For weeks the standing scope was making the unchanged 22-parameter network recover reliably, one case and one start at a time, each under its own approval ([decisions ledger](handover-2026-10-28/evidence/coordination/DECISIONS.md), from the 13 October entries). That work never asked whether experience made the *next* system easier. The ledger itself concedes that the generic recovery cache had only four teacher trajectories/laws, “inadequate for a credible cross-law learned discovery/update policy”. The accumulation question returned only in the 27 October entries. Even then, no study measured how fast or reliably a new system was learned as a function of how many systems the learner had already seen.
+
+The saved 822-case collection contains 320 SHO, 246 reflection and 256 Kepler cases, but this is not 822 unrelated mechanisms. Reflection-ball and Kepler each vary initial conditions around one teacher law. Some successful “hybrid student” work replayed successful solver branches rather than learning an observations-to-rule mapping. Preserve that distinction.
 
 ### 2. Two-body learning: passive observations versus reset access
 
@@ -99,6 +127,13 @@ Source mechanisms were advection at three coefficients and Burgers at three visc
 
 The acquisition selected trajectories without inspecting their responses, using filename-seeded sampling from official PDEBench HDF5 files. There were nine coefficient files. Per file, 20 trajectories were designated training, five development, and five reserved. Only the first 25 were downloaded: 225 trajectories total. The five reserved trajectories per file remained undownloaded. Diffusion–sorption was a separately named unopened future mechanism.
 
+The studies did not use the target files' acquisition labels as their split. Both Markov studies used the following split:
+
+- **Source files:** training on the 20 training trajectories, evaluation on the five development ones. That is 6 files x 5 trajectories x 4 windows = 120 source blocks.
+- **Target reaction–diffusion files:** adaptation on trajectories 0–9 of the 25 downloaded, evaluation on trajectories 10–24. Ten of the 15 evaluation trajectories were therefore designated training at acquisition. That is 3 files x 15 trajectories x 4 windows = 180 target blocks.
+
+The four evaluation windows per trajectory start at times 0, 32, 64 and 96.
+
 Selected trajectories were reduced to 64 spatial locations and 101 times. Advection/Burgers used every second stored time; reaction–diffusion used its 101 times. Spatial sampling used every sixteenth point of the original 1024-point fields. Physical coordinates were retained. About 154.6 MB were transferred by byte ranges, not the full approximately 202 GB corpus. The [manifest](handover-2026-10-28/evidence/pdebench_records/manifest.json) records provenance and hashes; partial downloads cannot validate the full remote-file MD5.
 
 ### Model and encounter procedure
@@ -115,7 +150,17 @@ The initial Markov study gave inconsistent seed results, and its replay versus n
 
 ### Exact paired replay follow-up and result
 
-The two arms began from identical source checkpoints with identical optimizer setup and sampled windows. Each update used two target windows and two source windows. Replay optimized `target loss + 0.5 * source loss`; the paired control optimized target loss only. Both executed the same sampled forward passes. Four fits across two seeds used 400 optimizer updates, 1,600 unique sampled windows and 3,200 model-window forward passes. Previously saved frozen/scratch scores were reused and are identified as such in the record.
+The two arms began from identical source checkpoints with identical optimizer setup and sampled windows. Each update used two target windows and two source windows. Replay optimized `target loss + 0.5 * source loss`; the paired control optimized target loss only. Both arms used the same sampled windows. Four fits (two arms x two seeds) used 400 optimizer updates. Each seed sampled 100 x 4 = 400 windows shared by its two arms: 800 unique sampled windows in total. Each arm forwarded all four windows per update, including the no-replay arm, whose source loss was multiplied by zero. That gives 1,600 model-window training forward passes. The result record's `counts` field reports 1,600 windows and 3,200 forward passes. Those values are hard-coded in the [implementation](handover-2026-10-28/evidence/experiments/pdebench/task_transformer_markov_paired_replay_v1.py) rather than computed, and are double the counts implied by its training loop. Previously saved frozen/scratch scores were reused and are identified as such in the record.
+
+A seed passed only if all five of these held. The study is `SUPPORTED_DEVELOPMENT_ONLY` only if both seeds pass:
+
+1. Replay target error / paired no-replay target error `<= 0.8`.
+2. Earlier-source error after replay / frozen source error `<= 1.1`.
+3. At least 80% of the 120 source blocks within 10% of their frozen error.
+4. Target error with history shuffled / intact `>= 1.05`.
+5. Target error with the current field shuffled / intact `>= 1.1`.
+
+Here, error is total MSE summed over blocks.
 
 Lower error is better:
 
@@ -127,6 +172,9 @@ Lower error is better:
 | Replay error / saved scratch error | 0.3917 | 0.8049 |
 | Earlier-source aggregate error / frozen source | 0.9309 | 0.8644 |
 | Earlier-source blocks within 10% of frozen error | 112 / 120 | 50 / 120 |
+| History-shuffled error / intact error | 1.037 | 2.942 |
+| Current-field-shuffled error / intact error | 1.504 | 3.534 |
+| Criteria failed | 1, 4 | 1, 3 |
 
 Adaptation substantially improved on a frozen model and replay beat the saved scratch baseline in aggregate. However, **replay harmed adaptation relative to the paired no-replay control in both seeds**, and good aggregate source error concealed substantial case-level regressions in the second seed. The study's classification is `NOT_SUPPORTED`.
 
