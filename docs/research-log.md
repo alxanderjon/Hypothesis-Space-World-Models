@@ -875,3 +875,42 @@ Controls under this contract at K = 8 / 16 / 32:
 3. Evaluate the frozen seq-replay-400 checkpoints (both seeds, all t), joint library+fb and wide, with the same controls and episode seeding scheme (seeds 7000 + 97i + K).
 4. **Pass = CF1 and CF2 in both seeds.** CF3 and the per-system results are reported.
 5. One shot; recorded whatever it shows.
+
+## Owner guidance (29 October, after the Trial 9 synthesis)
+
+The owner asked whether testing on reserve set A would just mean creating more test systems later (yes: it would spend the last untouched 3-D set), and noted my uncertainty about the network. Their direction: *"the goal is to create a network that can learn from its history without being supplied the answer; whatever we have to adjust or try to achieve that has my approval."*
+
+**Decisions:**
+- Reserve set A stays untouched until a network passes development criteria designed to predict success on it.
+- Two gaps between the confirmed network and the goal come first:
+  1. It was meta-trained with true derivatives as targets, i.e. supplied the answer. Trial 9's observable-only learner removes this.
+  2. It is frozen at test time, so it does not learn from the new systems it meets.
+- **Prequential evaluation design.** Every new system is scored at encounter, *before* the network learns from it, so every encounter is an unseen test. The goal quantity — does a growing history make the next system easier? — is then measured directly. A reserved set would be used once, as a final stream, rather than as a frozen-network benchmark.
+
+## Trial 10: does the observable-only learner keep learning from new systems at test time? (pre-registered 29 October, before running)
+
+- **Hypothesis.** If the Trial 9 observable-only library keeps learning after each new system it encounters (with replay), the systems it meets later in a stream are learned better than by an equal-compute learner that never learns from new systems. This includes non-polynomial systems, and earlier knowledge is not lost.
+- **Start point.** Trial 9's seqobs400 checkpoints at t = 51, both seeds. Trained only on observable quantities; no ground-truth derivatives anywhere in this trial.
+- **Stream.** The 13 development systems in 6 random orders per seed; order r of seed s is `default_rng(1000·s + r).permutation(development)`.
+- **At each encounter:**
+  1. Score library+fb at K = 16 and K = 32 on that system's Trial 9 evaluation episodes (identical seeds), using np.median over the 20 episodes.
+  2. Then learn: 400 steps × 64 tasks, half from the new system's observable data (all 4 instances), half from memory. Memory holds instances 0–1 of all 51 meta-train systems plus each earlier stream system.
+  3. Learning rate: per-stage cosine from 1e-3 to 1e-4, with a fresh Adam per order.
+- **Arms:**
+  - **continual:** as described.
+  - **replay-only:** the same number of steps, but every batch comes from the meta-train memory. It never learns from the stream systems, so it controls for extra compute.
+  - **frozen:** no updates. Its scores equal Trial 9's.
+- **Primary quantity:** L = log(continual error / replay-only error) at encounter, at K = 32 (K = 16 reported). At position 1, L = 0 by construction.
+- **Criteria (both seeds):**
+  - **P1 (history helps):** Spearman ρ(position, L) ≤ −0.3 over all 78 (order × system) pairs, *and* the median L over positions ≥ 7 is < 0.
+  - **P2 (beyond polynomial):** the median L over non-polynomial systems at positions ≥ 7 is < 0.
+  - **P3 (no forgetting):** after the stream, on the first 8 meta-train systems (observable contract, K = 32), the median of NMSE after / NMSE before is ≤ 1.5, averaged over orders.
+
+**What happens next, decided now:**
+- **P1–P3 pass:** a candidate for the final reserve-set-A stream, with the same protocol and the 11 systems in 6 orders. Ask before touching it.
+- **P1 fails:** 13 more systems on top of 51 may give too small a marginal gain to detect. Next, test the encounter curve at a smaller history (start from earlier checkpoints), and consider a library that grows bases for systems no basis fits.
+- **P3 fails:** test-time learning causes forgetting. Adjust replay before anything else.
+
+**Resources:**
+- 2 seeds × 6 orders × 2 trained arms = 24 short streams (13 × 400 steps each), run in parallel;
+- outputs under `outputs/accumulating_learner/trial10/`.
