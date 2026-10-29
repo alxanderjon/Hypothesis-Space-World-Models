@@ -121,8 +121,8 @@ def eligible_split():
 class System:
     """Vector field f(x; params) for one dysts system. Refuses confirmation systems."""
 
-    def __init__(self, name, params=None):
-        if split_of(name) == "confirmation":
+    def __init__(self, name, params=None, allow_confirmation=False):
+        if split_of(name) == "confirmation" and not allow_confirmation:
             raise RuntimeError(f"{name} is a reserved confirmation system")
         if eligibility(name) is not None:
             raise RuntimeError(f"{name} is not eligible: {eligibility(name)}")

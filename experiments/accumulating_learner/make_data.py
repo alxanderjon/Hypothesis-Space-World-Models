@@ -60,7 +60,7 @@ def integrate(sys_, period, seconds=60):
 
 
 def make_system(args):
-    name, n_inst, seed = args
+    name, n_inst, seed, allow_confirmation = args
     np.seterr(all="ignore")
     meta = S.METADATA[name]
     period = float(meta["period"])
@@ -72,7 +72,7 @@ def make_system(args):
             if i:
                 p = {k: (np.asarray(v) * np.exp(rng.uniform(-PERTURB, PERTURB))).tolist() for k, v in p.items()}
             t0 = time.time()
-            out, msg = integrate(S.System(name, p), period)
+            out, msg = integrate(S.System(name, p, allow_confirmation), period)
             log.append({"instance": i, "draw": draw, "status": msg, "seconds": round(time.time() - t0, 2)})
             if out is not None:
                 xs.append(out[0]); dxs.append(out[1]); params.append(p)
@@ -89,11 +89,16 @@ def main():
     ap.add_argument("--dev-instances", type=int, default=4)
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--seed", type=int, default=20261028)
+    ap.add_argument("--confirmation", action="store_true",
+                    help="generate ONLY the reserved confirmation systems (owner-approved one-shot run)")
     a = ap.parse_args()
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
     split = S.eligible_split()
-    jobs = [(n, a.meta_instances, a.seed) for n in split["meta_train"]]
-    jobs += [(n, a.dev_instances, a.seed) for n in split["development"]]
+    if a.confirmation:
+        jobs = [(n, a.dev_instances, a.seed, True) for n in split["confirmation"]]
+    else:
+        jobs = [(n, a.meta_instances, a.seed, False) for n in split["meta_train"]]
+        jobs += [(n, a.dev_instances, a.seed, False) for n in split["development"]]
     report = {}
     with Pool(a.workers) as pool:
         for name, xs, dxs, params, log in pool.imap_unordered(make_system, jobs):

@@ -549,3 +549,13 @@ The confirmation systems' names have never been printed, their vector fields nev
   - **CF3:** at K = 8, t = 51 beats the best K = 8 control on ≥ 70% of systems, and its aggregate is ≤ 0.75× that control's.
   - C3 and the polynomial/non-polynomial strata (classified symbolically at confirmation time) are reported but not required.
 - **Pass = CF1–CF3 in both seeds.** One shot: no reruns, no changes after looking, and the result is recorded whatever it is.
+
+## Confirmation run: approved by the owner (29 October)
+
+The owner replied "approve" to the proposal above. Before any confirmation data was generated, the following were committed:
+
+- **Guard change:** `systems.System` takes `allow_confirmation=False` and only lifts its refusal when that is passed.
+- **Data flag:** `make_data.py --confirmation` generates *only* the confirmation systems, with 4 instances each (published plus 3 perturbed), using the same seed and integration settings as the development set.
+- **Evaluation and scoring:** `confirm.py` implements the protocol as written. Episodes use seeds 6000 + 97i + K, where i is the index in the sorted confirmation list. The models are the frozen seq-replay-400, joint library+fb and wide checkpoints. Criteria CF1–CF3 are scored in code.
+- **Classifier for the strata:** symbolic, the same method used for the development strata.
+- **Smoke test:** run only on two already-opened development systems, writing to the scratchpad.
