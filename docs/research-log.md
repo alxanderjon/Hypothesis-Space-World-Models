@@ -1054,3 +1054,56 @@ Non-polynomial systems at K = 64 (fine-tune / library+fb / kernel ridge, seed 1)
 - **I1 fails:** on-attractor pools are too redundant for choice to matter. Report it and reconsider observation design (controlled probes).
 
 **Resources:** evaluation only; outputs under `outputs/accumulating_learner/trial13/`.
+
+## Trial 13: result (29 October)
+
+**Classification: FAILED.** I1 passes in both seeds; I2 fails in both.
+
+| Aggregate NMSE (median over 13 development systems) | K = 8 | K = 16 | K = 32 |
+|---|---|---|---|
+| learner, random, seed 1 / 2 | .152 / .170 | .0086 / .0061 | .0022 / .0026 |
+| learner, coverage, seed 1 / 2 | .148 / .052 | **.0016 / .0013** | **.00037 / .00034** |
+| learner, experience, seed 1 / 2 | **.079 / .038** | .0027 / .0021 | .00049 / .00039 |
+| kernel ridge, random | .370 | .0124 | .0050 |
+| kernel ridge, coverage | .142 | .0024 | .00060 |
+
+- **I1:** experience vs random at K = 16 is 0.32 and 0.35, with wins on 13/13 and 12/13 systems. ✓
+- **I2:** experience vs coverage at K = 16 is 1.72 and 1.71. ✗
+
+**Non-polynomial stratum, kernel ridge:** K = 16 goes from .26 (random) to .12 (coverage); K = 32 from .10 to .022. The learner with coverage gets .14 / .14 at K = 16 and .025 / .021 at K = 32.
+
+### Reading
+
+- **Observation design is a large lever, for every method and every kind of system,** including the unfamiliar non-polynomial ones that no learner beat before. Spreading K observations over the state space is worth 3–5× at K = 16–32 compared with random on-attractor samples, which cluster.
+- **Experience-guided leverage beats coverage only at K = 8 (exploratory).** At K = 16–32 a generic design wins.
+- **With good designs, the learner's advantage over kernel ridge stays about 1.5–2×** at K = 16–32: under coverage, .0016 / .0013 against .0024 at K = 16.
+- **So far investigation has been driven by hand-written rules** (coverage, leverage). The owner's aspiration is to *learn* from history how to investigate. That is the next test.
+
+## Trial 14: a learned investigation policy (pre-registered 29 October, before running)
+
+- **Hypothesis.** A choice rule trained on past systems — learning which candidate observation most reduces prediction error — chooses better than the generic coverage rule, because it can combine coverage with what the stored features say is informative.
+- **Contract.** Trial 13's pool-based active observation (observable-only, 400 free noisy candidate states, a budget of K central-difference estimates, scored on clean segment-B central differences). The frozen Trial 9 seqobs400 t = 51 library, both seeds.
+- **Policy.**
+  - A small MLP (6 → 32 → 32 → 1) scores each candidate c from six descriptors:
+    1. log leverage of c in the currently selected basis;
+    2. log distance from c to the nearest chosen point, in pool-standardized space;
+    3. log mean distance to its 10 nearest pool neighbours (local density);
+    4. log norm of the current model's prediction at c;
+    5. log k (current number of observations);
+    6. log of the current leave-one-out MSE.
+  - Greedy selection: start from 2 random pool points; at each step add the highest-scoring unchosen candidate. The basis is re-selected by exact leave-one-out whenever k ∈ {2, 4, 8, 16}.
+- **Training (history only, meta-train systems).**
+  - Per meta-train system: 40 random episodes, each with a random target K ∈ {8, 16, 32}, a random current set of size k ∈ [2, K − 1], and 64 random candidates.
+  - Label for each candidate: log(query MSE before / query MSE after adding it). The ridge head of the leave-one-out-selected basis is refitted, with observable central-difference targets on that system's segment-B queries.
+  - Adam, 3,000 steps, MSE on standardized labels.
+- **Evaluation:** Trial 13's development episodes and seeds, with the learned policy added as a strategy. Final prediction by library+fb, as in Trial 13.
+- **Criteria (both seeds):**
+  - **L1:** at K = 16, learned ≤ 0.83× coverage (the same bar as I2);
+  - **L2:** at K = 8 and K = 32, learned ≤ 1.0× coverage.
+- **Reported:** strata, learned vs experience-leverage, and a descriptor ablation using coverage distance only.
+
+**What happens next, decided now:**
+- **L1 and L2 pass:** history-learned investigation beats generic design. That would be the strongest goal-aligned result so far, and a candidate for reserve set A under the active contract. Ask before using it.
+- **Fail:** generic coverage is near-optimal for this observation model. Experience then pays off through the model, not the investigation. Write the final synthesis, with remaining directions for the owner.
+
+**Resources:** evaluation plus policy training (minutes); outputs under `outputs/accumulating_learner/trial14/`.
