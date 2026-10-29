@@ -559,3 +559,63 @@ The owner replied "approve" to the proposal above. Before any confirmation data 
 - **Evaluation and scoring:** `confirm.py` implements the protocol as written. Episodes use seeds 6000 + 97i + K, where i is the index in the sorted confirmation list. The models are the frozen seq-replay-400, joint library+fb and wide checkpoints. Criteria CF1–CF3 are scored in code.
 - **Classifier for the strata:** symbolic, the same method used for the development strata.
 - **Smoke test:** run only on two already-opened development systems, writing to the scratchpad.
+
+## Confirmation run: result (29 October)
+
+**Classification: NOT CONFIRMED.** CF1 and CF2 pass in both seeds; CF3 fails in both. The protocol required all three, so the confirmation fails. The result is recorded as specified, with no reruns and no changes after looking.
+
+### Data
+
+- 13 of 14 confirmation systems generated. **Torus** was dropped because its published-parameter trajectory collapsed a coordinate; as the protocol specifies, it was reported, not replaced.
+- The remaining 13 kept all 4 instances.
+- The symbolic classifier labels 11 of the 13 polynomial; GlycolyticOscillation and ItikBanksTumor are not.
+
+### Primary arm: seq-replay-400, frozen
+
+| | Seed 1 | Seed 2 |
+|---|---|---|
+| Aggregate NMSE at K = 32, t = 0 → 1 → 2 → 4 → 8 → 16 → 32 → 51 | .0150 .0080 .0105 .0107 .0056 .00067 .00053 .00023 | .0120 .0086 .0144 .0115 .0093 .0026 .00053 .00021 |
+| CF1: ρ; 95% CI | ✓ −0.90; [−4.30, −1.34] | ✓ −0.81; [−4.58, −0.81] |
+| CF2: t = 51 beats the best experience-free control at K = 32 | ✓ 12/13 (control: untrained library+fb, .0150) | ✓ 12/13 (control: untrained library+fb, .0120) |
+| CF3: K = 8 wins (need ≥ 70%); aggregate ratio (need ≤ 0.75) | ✗ 8/13 (62%); 0.91 | ✗ 8/13 (62%); 0.95 |
+| C3 (reported) | ✗ 16 vs 16 | ✗ 16 vs 16 |
+
+### Aggregate NMSE (seed 1)
+
+| | K = 8 | K = 16 | K = 32 | K = 64 |
+|---|---|---|---|---|
+| seq-replay-400, t = 51 | .446 | .00158 | .00023 | .00005 |
+| Kernel ridge | .501 | .0647 | .0159 | .0032 |
+| Random Fourier features | .712 | .0781 | .0150 | .0025 |
+| From-scratch MLP | .536 | .0839 | .0154 | .0030 |
+| poly2 (known-prior reference) | .915 | .0024 | .00010 | .00003 |
+
+### Strata at K = 32
+
+- **Polynomial (11 systems):** learner .00023 / .00013 against kernel ridge .013, beating it on 10 of 11. That is close to the poly2 reference (.00009).
+- **Non-polynomial (2 systems):** learner .32 / .28 against kernel ridge .31.
+  - ItikBanksTumor: .004–.005 against .016, but random Fourier features get .006.
+  - GlycolyticOscillation: about kernel ridge level.
+- HindmarshRose, which is polynomial but whose time scales differ widely, stays at kernel ridge level (.22–.33 against .30).
+
+### Secondary arms
+
+- Joint library+fb N = 51: .00019 / .00018, beating kernel ridge on 11 of 13.
+- Wide (shared basis): .0004 / .00036, also 11 of 13. It again shows small-N negative transfer: .024–.113 at N = 1–4 against .008–.013 at N = 0. The library arms do not.
+
+### What is now supported, and what is not
+
+- **Supported on untouched mechanisms.** A library of four feature bases, accumulated *sequentially* over 51 catalog systems with a 6% replay memory, makes held-out systems from the same catalog much easier to learn once there are at least 16 observations. At K = 32 its error is about 65× below the best experience-free method; at K = 16 about 40× below. The gain grows with the number of systems seen (ρ = −0.81 to −0.90). Negative transfer from a few systems is absent.
+- **Not supported.** A small-budget (K = 8) advantage. The development set suggested one (S1 passed), and it did not hold on new mechanisms. Even the known quadratic basis fails at K = 8 (.915). In 3 dimensions, 8 noisy derivative observations under-determine a quadratic field (10 terms per component). Beating that requires knowledge about *which* terms are present (sparsity), not just a better basis.
+- **Scope.** The held-out mechanisms are mostly polynomial, like the training catalog. This is accumulation of the structure shared by a catalog of published chaotic flows, not evidence about arbitrary mechanisms. Non-polynomial held-out systems were few (2), with mixed results.
+
+### Reserved data from now on
+
+The 14 confirmation systems are now opened. Two untouched sets remain, declared reserved here, before any use:
+
+- **Reserve set A (3-D, never loaded or evaluated):** AnishchenkoAstakhov, BeerRNN, BelousovZhabotinsky, CaTwoPlus, CaTwoPlusQuasiperiodic, CellularNeuralNetwork, Colpitts, ExcitableCell, IsothermalChemical, MultiChua, VallisElNino.
+  - These are the systems excluded by code structure (custom `rhs`, a builtin `max`, or decorators). They are mostly non-polynomial: neural-network, chemical and circuit models.
+  - Using them needs hand-porting of their right-hand sides, with review, at confirmation time.
+- **Reserve set B:** the 31 systems of dimension 4, 5, 6 and 10. Only relevant to a learner that works for any state dimension.
+
+The PDEBench reserved trajectories and the diffusion–sorption mechanism stay untouched, as before.
