@@ -470,3 +470,82 @@ Selection noise is left for later. Tuning selection rules against the opened dev
 **Resources:**
 - 6 runs (about 15 minutes each for S = 400 and about 70 minutes for S = 2,000);
 - outputs under `outputs/accumulating_learner/trial5/`.
+
+## Trial 5: result (29 October)
+
+**Classification: PASSED (development only).** All pre-registered primary criteria (F1–F4) pass in both seeds for the compute-matched sequential arm, seq-replay-400. Per the pre-registered rule and the owner's working rule, **work stops here before any confirmation run.**
+
+### seq-replay-400: library trained one system at a time, 400 steps per stage, replay of 2 of 32 instances per earlier system
+
+| | Seed 1 | Seed 2 |
+|---|---|---|
+| Aggregate NMSE at K = 32 over checkpoints t = 0 → 1 → 2 → 4 → 8 → 16 → 32 → 51 | .0030 .0042 .0031 .0031 .0017 .0010 .00031 .00017 | .0036 .0034 .0034 .0031 .0031 .00098 .00023 .00009 |
+| F1: C1 (ρ; CI) | ✓ (−0.85; [−3.44, −0.81]) | ✓ (−0.97; [−3.45, −0.61]) |
+| F1: C2 | ✓ 11/13 | ✓ 12/13 |
+| F2: t = 51 vs joint Trial 4 N = 51 (need ≤ 2) | ✓ 1.47 | ✓ 1.02 |
+| F3: retention drift, t = 51 over t = 8 (need ≤ 2) | ✓ 1.56 | ✓ 1.41 |
+| F4: median encounter log(lib/kernel ridge), first 17 → last 17 | ✓ −0.22 → −1.05 | ✓ −0.28 → −3.01 |
+| C3 (reported, not required) | ✗ 16 vs 16 | ✗ 16 vs 16 |
+| S1 (reported) | ✓ 10/13, 0.39 | ✓ 12/13, 0.35 |
+
+**Aggregate NMSE at t = 51, K = 8 / 16 / 32:**
+
+| | K = 8 | K = 16 | K = 32 |
+|---|---|---|---|
+| seq-replay-400, seed 1 | .139 | .00080 | .00017 |
+| seq-replay-400, seed 2 | .127 | .00046 | .00009 |
+| Kernel ridge | .358 | .0249 | .0031 |
+
+### Other arms
+
+- **seq-noreplay-400:** C2 passes. F2 fails badly: the t = 51 learner is 7× and 17× worse than joint training. F4 fails in seed 1. Without the replay memory the library does not keep its earlier gains.
+- **seq-replay-2000:** F1–F4 pass in both seeds, and C3 also passes in seed 2 (threshold K 8 vs 16). It is not clearly better than the 400-step arm. Five times the compute is not needed.
+
+### Exploratory within-system check of F4 (not pre-registered)
+
+The first-17 versus last-17 comparison is confounded by which systems happen to arrive late. Each seed streams the same 51 systems in a different order, so every system is encountered at two positions. I compared each system's encounter log NMSE at its later position with its earlier one.
+
+- **seq-replay-400:** the later encounter is better for 36 of 51 systems (Wilcoxon p = 2e-4). Spearman correlation between the position difference and the log-ratio difference is −0.54 (p = 4e-5).
+- **seq-replay-2000:** 30 of 51 (p = 0.13).
+- **seq-noreplay-400:** 23 of 51 (p = 0.72).
+
+With replay, the same mechanism is learned better the more systems came before it. This is the owner's target quantity, measured on systems that were genuinely unseen at encounter time.
+
+### Caveats (these limit what the result means)
+
+1. **Development reuse.** The 13 development systems have now steered five trials of method choices, so these numbers are optimistic. The 14 confirmation systems are untouched and are the real test.
+2. **Catalog composition.** Most gains are on the polynomial majority.
+   - Non-polynomial systems at K = 32 (seed 1 / seed 2 against kernel ridge): YuWang .037/.012 vs .24 and SaltonSea .0007/.0010 vs .0017 improve strongly. WindmiReduced .25/.27 vs .29 improves slightly. Thomas .076/.037 vs .033 is at or below kernel ridge level. KawczynskiStrizhak (cubic) .46/.36 vs .43 is mixed.
+   - This is accumulation over a catalog, not evidence for arbitrary mechanisms.
+3. **The fallback** makes "about as good as kernel ridge at worst" partly true by construction. The gains *beyond* kernel ridge come from the stored bases.
+4. **Retention is not perfect.** LiuChen drifts from .22 at t = 8 to .42 at t = 51, and SanUmSrisuchinwong and Laser fluctuate between 1e-4 and 8e-3. ThomasLabyrinth is never fit by any basis; the fallback handles it throughout.
+5. **The replay memory** (6% of earlier systems' data, never any development or confirmation data) is necessary. The no-replay arm fails.
+6. **The observation contract** is still simplified: derivatives are observed directly with 1% noise, d = 3, and states are on-attractor.
+
+### Resources used
+
+- 6 streams: about 20 minutes each at 400 steps per stage and about 80 minutes each at 2,000;
+- GPUs 0–3, 5 and 6;
+- outputs about 15 MB.
+
+## Proposed confirmation run (awaiting owner approval; nothing below has been run)
+
+The confirmation systems' names have never been printed, their vector fields never compiled, and their data never generated. The proposal is fixed here before any of that happens.
+
+- **Data.** Generate the 14 confirmation systems with `make_data.py`'s procedure:
+  - published parameters plus 3 perturbed instances, same seed and integration settings;
+  - this requires an explicit `--confirmation` flag that lifts `System`'s refusal, shown in the diff before use;
+  - a system whose published instance fails integration is dropped and reported, not replaced.
+- **Models, frozen.**
+  - Primary: the seq-replay-400 checkpoints, both seeds, t ∈ {0, 1, 2, 4, 8, 16, 32, 51}, exactly as trained.
+  - Secondary: Trial 4's joint library+fb and Trial 3's wide arm.
+  - No retraining and no hyperparameter changes.
+- **Episodes.**
+  - Per system and K ∈ {8, 16, 32, 64, 128}: 4 instances × 5 episodes, same episode function, generator seeds 6000 + 97i + K.
+  - Controls as before: random Fourier features, kernel ridge, poly2/3, from-scratch MLP.
+- **Criteria** (seq-replay-400, both seeds, on all confirmation systems that generated):
+  - **CF1:** C1 (Spearman ρ ≤ −0.8 over the t grid at K = 32, and the bootstrap 95% CI of the median log(NMSE_t51/NMSE_t0) below 0).
+  - **CF2:** t = 51 beats the best experience-free control at K = 32 on ≥ 70% of systems.
+  - **CF3:** at K = 8, t = 51 beats the best K = 8 control on ≥ 70% of systems, and its aggregate is ≤ 0.75× that control's.
+  - C3 and the polynomial/non-polynomial strata (classified symbolically at confirmation time) are reported but not required.
+- **Pass = CF1–CF3 in both seeds.** One shot: no reruns, no changes after looking, and the result is recorded whatever it is.
