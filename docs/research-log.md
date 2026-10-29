@@ -764,3 +764,53 @@ So sparsity is worth about 6× at K = 8 *in the right basis*, but the learned ba
 **Resources:**
 - 2 training streams of about 25 minutes each, plus evaluation of 32 checkpoints;
 - outputs under `outputs/accumulating_learner/trial8/`.
+
+## Trial 8: result (29 October)
+
+**Classification: FAILED.** For seqtraj400, T1 fails in both seeds, and C1 and C2 fail in seed 2.
+
+| t = 51, development, K = 32 aggregate | Seed 1 | Seed 2 |
+|---|---|---|
+| seqtraj400 (retrained under the trajectory contract) | .0027; C1 ✓ C2 ✓ (11/13); T1 ✗ (0.60) | .0022; C1 ✗ (ρ −0.57) C2 ✗ (8/13); T1 ✗ (0.44) |
+| frozen5 (Trial 5 library, not retrained) | .0025; C1 ✗ C2 ✓; T1 ✗ (0.57) | .0021; C1 ✓ C2 ✓; T1 ✗ (0.41) |
+
+Under the trajectory contract, kernel ridge scores .0050, random Fourier features .0090 and poly2 .0017. Under the derivative contract, the same library scored .00017 / .00009, 15–25× better than here.
+
+### Pre-registered diagnostic: noise or bias?
+
+Same episodes, state noise set to 0, so the remaining error is central-difference bias only.
+
+| Aggregate NMSE, no noise | K = 8 | K = 16 | K = 32 | K = 64 | K = 128 |
+|---|---|---|---|---|---|
+| Kernel ridge | .308 | .0228 | .0046 | .0026 | .0017 |
+| poly2 | .366 | .0024 | **.0015** | **.0015** | **.0018** |
+| frozen5 N = 51, seed 1 / 2 | .0094 / .063 | .0025 / .0019 | .0020 / .0014 | .0014 / .0013 | .0014 / .0012 |
+| seqtraj400 N = 51, seed 1 / 2 | .063 / .077 | .0029 / .0018 | .0024 / .0028 | .0015 / .0024 | .0015 / .0016 |
+
+**Reading.**
+
+- **The trajectory contract is limited by bias, not noise.** With noise removed, every method still floors at roughly 1–3e-3, and the error stops falling with K: even the exact quadratic basis stays at .0015.
+- Sampled at 1/40 of a characteristic period, the central differences are systematically biased estimates of the vector field (about .025 NMSE for fast systems such as Thomas). Scoring against the *true* field therefore measures a floor set by the data, not learning. The advantage over kernel ridge is compressed to about 2×.
+- Side observation, not a criterion: without noise, the frozen library is extremely strong at K = 8 (.009 / .063 against .31 for kernel ridge).
+- Trial 8 also still used ground-truth derivatives as *training* query targets, a dependence the deployed learner could not have.
+
+## Trial 9: learn and score only observable quantities (pre-registered 29 October, before training)
+
+- **Hypothesis.** When a learner is trained and judged on what it can actually observe — predicting the trajectory's central-difference increment (x(t+h) − x(t−h)) / 2h at a state — the bias floor disappears from the task. Accumulation should then again give a large advantage over experience-free methods, with **no ground-truth derivatives used anywhere**: not in meta-training, not at encounter.
+- **Contract.**
+  - Context: as in Trial 8, K noisy snippets with central-difference estimates.
+  - Training query targets: noisy central-difference estimates at the query states, which are observable. Query input states are noisy too.
+  - Evaluation query targets: *clean* central differences at clean query states, i.e. the expected observation, so the scored quantity is noise-free but contains no information beyond the trajectory itself.
+  - Query states come from segment B with both neighbours inside the trajectory.
+- **Arms:**
+  - **seqobs400:** seq-replay-400, retrained (same stream, orders, seeds, steps and memory) with this contract throughout.
+  - **frozen5-obs:** Trial 5 checkpoints scored under this contract.
+- **Controls under the same contract:** kernel ridge, random Fourier features, untrained library+fb. Reference: poly2.
+- **Criteria** (seqobs400, both seeds, development episodes, seeds 5000 + 97i + K as before): C1; C2; T1 (t = 51, K = 32 aggregate ≤ 1/3 of the best experience-free control's).
+
+**What happens next, decided now:**
+- **All pass:** the accumulation result holds with observable-only supervision. That is the confirmation candidate (reserve set A, trajectory contract). Stop and ask.
+- **Fail, while frozen5-obs passes:** retraining under noisy targets is the problem. Investigate the training signal.
+- **Both fail:** report it. Accumulation under realistic trajectory observations is not established, and the confirmed result stays specific to the derivative contract.
+
+**Resources:** 2 streams of about 25 minutes, then evaluation; outputs under `outputs/accumulating_learner/trial9/`.

@@ -1,0 +1,46 @@
+{
+ "seqtraj400_N51_s1": {
+  "K8": 0.35504110157489777,
+  "K16": 0.0034000773448497057,
+  "K32": 0.0026576481759548187,
+  "best_control_K32": "seqtraj400_N00_s1",
+  "best_control_value_K32": 0.004432677989825606,
+  "T1_ratio": 0.5995581411631883,
+  "T1": false,
+  "ratio_vs_derivative_contract_K32": 15.980827087784947,
+  "ratio_vs_derivative_contract_K16": 4.258871326499279
+ },
+ "seqtraj400_N51_s2": {
+  "K8": 0.17696909606456757,
+  "K16": 0.0039498929399997,
+  "K32": 0.002189020859077573,
+  "best_control_K32": "krr",
+  "best_control_value_K32": 0.005006312392652035,
+  "T1_ratio": 0.4372521503633066,
+  "T1": false,
+  "ratio_vs_derivative_contract_K32": 24.609800935421436,
+  "ratio_vs_derivative_contract_K16": 8.581234591943772
+ },
+ "frozen5_N51_s1": {
+  "K8": 0.15436703711748123,
+  "K16": 0.0034662436228245497,
+  "K32": 0.002522691967897117,
+  "best_control_K32": "frozen5_N00_s1",
+  "best_control_value_K32": 0.004432677989825606,
+  "T1_ratio": 0.5691123906783869,
+  "T1": false,
+  "ratio_vs_derivative_contract_K32": 15.169315675211154,
+  "ratio_vs_derivative_contract_K16": 4.3417499305625356
+ },
+ "frozen5_N51_s2": {
+  "K8": 0.3363729566335678,
+  "K16": 0.00480045287986286,
+  "K32": 0.002054970362223685,
+  "best_control_K32": "krr",
+  "best_control_value_K32": 0.005006312392652035,
+  "T1_ratio": 0.4104758554899305,
+  "T1": false,
+  "ratio_vs_derivative_contract_K32": 23.102754518212482,
+  "ratio_vs_derivative_contract_K16": 10.42909591105991
+ }
+}
