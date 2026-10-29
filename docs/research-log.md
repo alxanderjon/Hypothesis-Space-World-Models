@@ -312,3 +312,85 @@ The rule said that if both the primary criteria and S1 fail, "objective weightin
 **Resources:**
 - 28 runs × 20,000 steps, four per GPU on GPUs 0–3 and 5–7;
 - outputs under `outputs/accumulating_learner/trial3/`.
+
+## Trial 3: result (29 October)
+
+**Classification: FAILED.** The hypothesis that context-conditioned features would serve minority mechanisms is not supported.
+
+### Context arm, primary criteria
+
+| | Seed 1 | Seed 2 |
+|---|---|---|
+| C1 | ✓ (ρ = −0.83; CI [−2.48, −0.32]) | ✗ (ρ = −0.41) |
+| C2 | ✓ 10/13 | ✓ 11/13 |
+| C3 | ✗ 16 vs 16 | ✗ 16 vs 16 |
+| S1 | ✗ (9/13, ratio 0.46) | ✓ (10/13, ratio 0.34) |
+
+### Mechanism criteria (context against wide, N = 51, K = 32)
+
+| | Seed 1 | Seed 2 |
+|---|---|---|
+| D1: non-polynomial stratum ratio (need ≤ 0.8) and wins against kernel ridge (need ≥ 3/4) | 1.49, 2/4 ✗ | 1.59, 2/4 ✗ |
+| D2: polynomial stratum ratio (need ≤ 2) | 2.47 ✗ | 2.42 ✗ |
+| D3: wrong-context / intact (need ≥ 1.5) | 2.63 ✓ | 1.05 ✗ |
+| D4: retention drift N51/N8, context vs wide (need ≤ 2 and ≤ wide) | 8.8 vs 2.1 ✗ | 3.7 vs 1.6 ✗ |
+
+### Aggregate NMSE at N = 51 (median over 13 development systems)
+
+| Arm | K = 8 | K = 16 | K = 32 |
+|---|---|---|---|
+| Context, seeds 1 / 2 | .165 / .123 | .0039 / .0051 | .0008 / .0011 |
+| Wide, seeds 1 / 2 | .279 / .277 | .0019 / .0021 | .0002 / .0002 |
+| Kernel ridge | .358 | .0249 | .0031 |
+
+### Reading
+
+- **The wide shared arm is the strongest learner so far.** At K = 32 it is 15× better than kernel ridge and at the poly2 level on the polynomial stratum (.0001). It is roughly the same as Trial 2's width-128 learner, so capacity was not the bottleneck.
+  - Its C1 fails for the same reason as Trial 2's: negative transfer at N = 1–4. Aggregates at K = 32 for N = 1, 2 and 4 are .0096, .028 and .019 in seed 1, against .009 at N = 0.
+  - Wide arm primary criteria: C2 ✓ in both seeds; C1 ✗ (ρ −0.79 and −0.67); C3 ✗.
+- **The context arm trades small-K gains for instability.** Its K = 8 aggregate is the best seen so far, but individual episodes blow up: Thomas reaches NMSE 5.6 and 2.9 at K = 8, and WindmiReduced 4.2 and 58. Its meta-training mean NMSE is .64–.68, against .27 for the wide arm.
+  - At K = 32 it is worse than the wide arm on both strata, and its earlier meta-train systems degrade more.
+  - The pooled encoder does not separate mechanisms. It adds a second, fragile inference channel.
+- **Failures that persist across Trials 1–3:**
+  1. negative transfer from a few systems;
+  2. minority mechanisms (Thomas, KawczynskiStrizhak, WindmiReduced, YuWang) no better than generic kernel ridge;
+  3. retention drift on minority meta-train systems as N grows.
+
+### Deviations from the protocol
+
+- GPUs 0 and 1 were in use by another user (`weyl`) at launch, so runs went on GPUs 2, 3, 5, 6 and 7 (five or six per GPU) instead of 0–3 and 5–7. This affects wall time only (about 65–70 minutes per run).
+- The wrong-context diagnostic pairs each development system with the next one in alphabetical order.
+
+## Trial 4: a modular library with leave-one-out selection and a generic fallback (pre-registered 29 October, before training)
+
+- **Hypothesis.** The persistent failures come from forcing every mechanism through one basis. Store experience as a library of M = 4 bases that specialise during meta-training. On a new system, choose among them, plus a generic kernel ridge fallback, using only the leave-one-out error on its K observations. This should:
+  - remove negative transfer: when no stored basis fits, the selection falls back to an experience-free method;
+  - let minority mechanisms get their own basis;
+  - stop retention drift: a basis that serves minority systems is not overwritten by the majority.
+- **Training** (`experiments/accumulating_learner/trial4.py`):
+  - four bases, each Trial 1's 3→128→128→31 network plus a constant, with its own learned λ;
+  - 84,096 parameters in total, versus 74,784 for the Trial 3 wide arm;
+  - relaxed winner-take-all: per task, loss = min over bases of log(NMSE + 1e-4), plus 0.05 × the mean over bases (so no basis goes untrained);
+  - everything else as Trial 3: data, split, seeds, N grid, 20,000 steps × 64 tasks, optimizer, K distribution and the vectorized sampler.
+- **Encounter procedure.** For each basis: ridge with λ chosen by closed-form leave-one-out. Kernel ridge: length scale and λ by leave-one-out. The option with the lowest leave-one-out MSE on the K standardized observations is used to predict. No query information is used. Per-system cost: k = 96 coefficients plus one discrete choice among 5 options, with 5 analytic leave-one-out sweeps.
+- **Evaluated arms**, on the same development episodes as Trials 1–3, with controls copied from Trial 1:
+  - **library+fb:** the main hypothesis;
+  - **library:** leave-one-out among the 4 bases only, with no fallback;
+  - **wide+fb:** the Trial 3 wide checkpoints with the same kernel ridge fallback, which isolates the fallback's effect;
+  - **library-oracle:** the basis with the lowest *query* error. Diagnostic only, not a valid method; it measures how much the leave-one-out selection loses.
+- **Primary criteria:** C1–C3 for library+fb, exactly as before, in both seeds. They are also reported for wide+fb.
+- **Mechanism criteria** (both seeds):
+  - **E1 (no negative transfer):** for library+fb at K = 32, aggregate(N) ≤ 1.1 × kernel ridge's aggregate (.0031) for every N in the grid.
+  - **E2 (minority mechanisms):** library+fb at N = 51 beats kernel ridge on ≥ 3 of 4 non-polynomial development systems at K = 32, *and* its non-polynomial median ≤ 0.8× wide+fb's.
+  - **E3 (majority kept):** library+fb at N = 51 has a polynomial-stratum median ≤ 2× the Trial 3 wide arm's.
+  - **E4 (retention):** on each seed's first 8 meta-train systems at K = 32, the median NMSE(N = 51)/NMSE(N = 8) for library+fb is ≤ 2 and ≤ wide+fb's.
+- **Also reported:** which option is selected, per system and N; the oracle-to-leave-one-out gap; and the S1 secondary.
+
+**What happens next, decided now:**
+- **C1–C3 pass:** stop before confirmation and ask the owner.
+- **E1 passes but E2 fails:** the fallback fixes negative transfer, but stored specialists do not transfer to minority mechanisms. The next trial moves to the sequential (continual) setting with library+fallback, since it already has a never-worse-than-generic property, and measures accumulation over encounter order.
+- **E1 fails:** leave-one-out selection is too noisy at these K. Investigate selection, e.g. with a held-out split of the context.
+
+**Resources:**
+- 14 runs × 20,000 steps on whichever of GPUs 0–3 and 5–7 are free at launch, checked by owner;
+- outputs under `outputs/accumulating_learner/trial4/`.
