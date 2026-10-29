@@ -17,7 +17,9 @@ CONTROLS = ["rff", "krr"]
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(DEFAULT_OUT))
-    OUT = Path(ap.parse_args().out)
+    ap.add_argument("--prefix", default="learned", help="learned-arm method prefix, e.g. context or wide")
+    args = ap.parse_args()
+    OUT, prefix = Path(args.out), args.prefix
     rows = json.loads((OUT / "eval_development.json").read_text())["rows"]
     systems = S.eligible_split()["development"]
     score = {(r["system"], r["K"], r["method"]): float(np.median(r["episodes"])) for r in rows}
@@ -25,7 +27,7 @@ def main():
     thr = lambda m, s: next((K for K in K_GRID if score[(s, K, m)] <= 0.1), np.inf)
     out = {"per_seed": {}, "tables": {}}
     for seed in SEEDS:
-        L = lambda n: f"learned_N{n:02d}_s{seed}"
+        L = lambda n: f"{prefix}_N{n:02d}_s{seed}"
         ctrls = CONTROLS + [L(0)]
         best = min(ctrls, key=lambda m: agg(m, 32))
         curve = [agg(L(n), 32) for n in N_GRID]
@@ -52,7 +54,7 @@ def main():
                 "curve_K32": {n: agg(L(n), 32, names) for n in N_GRID},
                 "best_control_K32": agg(best, 32, names),
                 "poly2_K32": agg("poly2", 32, names),
-                "learnedlam_N51_K32": agg(f"learnedlam_N51_s{seed}", 32, names),
+                "learnedlam_N51_K32": agg(f"learnedlam_N51_s{seed}", 32, names) if prefix == "learned" else None,
                 "wins_vs_best": sum(score[(s, 32, L(51))] < score[(s, 32, best)] for s in names),
                 "n": len(names),
             }
@@ -65,7 +67,7 @@ def main():
     out["tables"]["aggregate"] = {m: {K: agg(m, K) for K in K_GRID} for m in methods}
     out["tables"]["per_system_K32"] = {s: {m: score[(s, 32, m)] for m in methods} for s in systems}
     out["tables"]["per_system_threshold"] = {s: {m: thr(m, s) for m in methods} for s in systems}
-    (OUT / "summary.json").write_text(json.dumps(out, indent=1, default=float))
+    (OUT / ("summary.json" if prefix == "learned" else f"summary_{prefix}.json")).write_text(json.dumps(out, indent=1, default=float))
     for seed, r in out["per_seed"].items():
         print(f"seed {seed}: best control {r['best_control']}, rho {r['spearman']:.3f}, CI {r['bootstrap_ci_log_ratio_51_vs_0']}, "
               f"wins {r['wins_vs_best']}/13, thrK learner {r['median_threshold_K_learner']} vs {r['median_threshold_K_best_control']}, "
