@@ -1,0 +1,11618 @@
+{
+ "GuckenheimerHolmes": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.25
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.6
+   },
+   {
+    "instance": 2,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.42
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.38
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.42
+   },
+   {
+    "instance": 4,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.25
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.28
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.85
+   },
+   {
+    "instance": 6,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.3
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.44
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.41
+   },
+   {
+    "instance": 8,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.1
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.26
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.3
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.62
+   },
+   {
+    "instance": 11,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.3
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.39
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.54
+   },
+   {
+    "instance": 13,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 0.89
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.28
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.14
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.24
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.3
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.21
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.36
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.18
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.19
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.24
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.26
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.17
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.4
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.36
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.23
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.39
+   }
+  ]
+ },
+ "Arneodo": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.79
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.82
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.65
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.65
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.66
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.6
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.65
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.6
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.53
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.61
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.79
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.67
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.65
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.66
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.7
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.6
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.66
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.74
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.68
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.63
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.68
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.72
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.78
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.75
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.74
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.65
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.71
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.72
+   }
+  ]
+ },
+ "Chua": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.88
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.8
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.78
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.03
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.67
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.81
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.63
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.69
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.74
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.78
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.81
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.75
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.79
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.52
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.77
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.86
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.74
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.98
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.91
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.87
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.81
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.57
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.9
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.69
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.52
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.77
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.85
+   }
+  ]
+ },
+ "Aizawa": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.85
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.81
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.23
+   },
+   {
+    "instance": 2,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.71
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.6
+   },
+   {
+    "instance": 3,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.72
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.88
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.72
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.64
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.71
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.12
+   },
+   {
+    "instance": 8,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.64
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.76
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.72
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.8
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.7
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.75
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.92
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.81
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.78
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.68
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.71
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.85
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.87
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.79
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.83
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.7
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.77
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.86
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.77
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.9
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.92
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.78
+   }
+  ]
+ },
+ "Bouali": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.15
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.22
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.77
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.91
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.93
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.01
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.1
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.95
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.82
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.79
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.81
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.8
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.8
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.71
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.95
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.05
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.0
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.86
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.78
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.79
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.92
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.86
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.11
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.25
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.21
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.85
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.83
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.77
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.97
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.0
+   }
+  ]
+ },
+ "Coullet": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.56
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.45
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.51
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.77
+   },
+   {
+    "instance": 3,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.93
+   },
+   {
+    "instance": 3,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 1.53
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.43
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.45
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.45
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.42
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.51
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.53
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.96
+   },
+   {
+    "instance": 10,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.47
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.59
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 2.37
+   },
+   {
+    "instance": 12,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.4
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.58
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 2.22
+   },
+   {
+    "instance": 14,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.53
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.49
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.51
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.49
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.45
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.42
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.51
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.49
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.4
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.54
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.46
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.55
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.43
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.46
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.88
+   },
+   {
+    "instance": 28,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.43
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.85
+   },
+   {
+    "instance": 29,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.46
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.83
+   },
+   {
+    "instance": 30,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.53
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.4
+   }
+  ]
+ },
+ "Chen": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.72
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.13
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.09
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.77
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.13
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.47
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.91
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.59
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.36
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.19
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.71
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.06
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.6
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.9
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.31
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.72
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.07
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.24
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.06
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.09
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.2
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.61
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.67
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.68
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.54
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.06
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.12
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.31
+   }
+  ]
+ },
+ "Laser": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.89
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.06
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.37
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.98
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.16
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.45
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.92
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.32
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.11
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.05
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.27
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.43
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.27
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.25
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.38
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.38
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.12
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.93
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.04
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.09
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.39
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.3
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.19
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.93
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.09
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.52
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.51
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.49
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.47
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.57
+   }
+  ]
+ },
+ "Blasius": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.09
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.62
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.43
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 3.03
+   },
+   {
+    "instance": 3,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.57
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.13
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.31
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 3.19
+   },
+   {
+    "instance": 6,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.65
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.32
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.85
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.43
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.59
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.46
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 3.08
+   },
+   {
+    "instance": 13,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.53
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.71
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.55
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.13
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.71
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.03
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.61
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.27
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.3
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.47
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.15
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.33
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.66
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 2.94
+   },
+   {
+    "instance": 27,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.75
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.9
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.84
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.31
+   }
+  ]
+ },
+ "Finance": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.39
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.89
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.89
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.86
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.88
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.99
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.97
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.01
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.95
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.97
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.89
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.99
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.89
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.98
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.97
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.89
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.98
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.93
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.9
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.05
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.9
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.88
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.97
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.93
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.91
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.89
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.9
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.93
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.89
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.96
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.9
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.9
+   }
+  ]
+ },
+ "Bouali2": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.38
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.71
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.48
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.42
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.61
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.48
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.51
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.58
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.75
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.27
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.79
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.95
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.11
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.77
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.69
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.59
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.25
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.98
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.54
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.51
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.17
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.37
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.6
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.69
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.67
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.25
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.52
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.89
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.7
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.47
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.49
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.47
+   }
+  ]
+ },
+ "DequanLi": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.91
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.45
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.37
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.58
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.52
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.38
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.56
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.24
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.5
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.54
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.11
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.4
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.4
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.33
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 15,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.37
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.42
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.49
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.42
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.3
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 14.29
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.44
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.47
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.36
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.45
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.33
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.66
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.38
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.05
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.43
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.61
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.31
+   }
+  ]
+ },
+ "LuChenCheng": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.12
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.2
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.06
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.13
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.12
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.21
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.05
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.2
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.21
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.28
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.09
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.25
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.16
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.03
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.28
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.16
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.18
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.0
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.29
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.29
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.17
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.17
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.15
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.16
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.11
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.06
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.22
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.19
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.32
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.12
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.18
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.12
+   }
+  ]
+ },
+ "Lorenz": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.79
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.93
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.83
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.89
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.77
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.7
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.99
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.94
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.74
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.79
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.79
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.87
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.83
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.74
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.89
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.87
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.77
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.85
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.77
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.0
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.83
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.74
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.97
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.85
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.97
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.9
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.21
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.72
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.94
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.79
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.75
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.04
+   }
+  ]
+ },
+ "NewtonLiepnik": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.58
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.65
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.33
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.45
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.49
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.29
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.56
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.55
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.33
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.33
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.72
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.73
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.58
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.28
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.62
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.38
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.49
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.57
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.6
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.51
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.62
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.63
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.64
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.59
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.43
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.46
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.52
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.36
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.54
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.54
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.32
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.5
+   }
+  ]
+ },
+ "NoseHoover": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.26
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.18
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.29
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.22
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.26
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.39
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.19
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.29
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.18
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.2
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.35
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.19
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.22
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.01
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.21
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.26
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.35
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.28
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.19
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.2
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.25
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.39
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.32
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.27
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.33
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.16
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.27
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.24
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.13
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.14
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.13
+   }
+  ]
+ },
+ "CoevolvingPredatorPrey": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 8.04
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.3
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.79
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.71
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.39
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.37
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.16
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 7.01
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.84
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.2
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.16
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.78
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.2
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.48
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.15
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.26
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.82
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.0
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.42
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.72
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.76
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.38
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.93
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.95
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.13
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.6
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.91
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.09
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.02
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.38
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.85
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.37
+   }
+  ]
+ },
+ "HastingsPowell": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.58
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.91
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.72
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.18
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.59
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.73
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.98
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 8.28
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.07
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.21
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.76
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 7.77
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.86
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.95
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.78
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.05
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.22
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.74
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.45
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.01
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.95
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.84
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.44
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.44
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.03
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.33
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.88
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.65
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.59
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.88
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.77
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.54
+   }
+  ]
+ },
+ "PanXuZhou": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.52
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.58
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.91
+   },
+   {
+    "instance": 2,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 0.99
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.03
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.99
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.81
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.81
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.08
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.44
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.39
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.75
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.5
+   },
+   {
+    "instance": 11,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 3.14
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.45
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 1.7
+   },
+   {
+    "instance": 13,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 6.06
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.18
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.08
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.21
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.01
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.93
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 0.91
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.06
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.82
+   },
+   {
+    "instance": 21,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 0.98
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.65
+   },
+   {
+    "instance": 22,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 3.15
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.92
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.55
+   },
+   {
+    "instance": 24,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 3.22
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.87
+   },
+   {
+    "instance": 25,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 3.06
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.46
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.84
+   },
+   {
+    "instance": 27,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 0.92
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.01
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.14
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.61
+   },
+   {
+    "instance": 30,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 0.98
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.06
+   }
+  ]
+ },
+ "PehlivanWei": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.23
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.23
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.23
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.22
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.22
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.26
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.22
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.24
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.24
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.24
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.24
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.31
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.24
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.24
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.32
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.32
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.31
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.35
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.3
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.33
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.3
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.3
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.31
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.32
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.31
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.31
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.29
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.3
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.3
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.31
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.27
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.29
+   }
+  ]
+ },
+ "MooreSpiegel": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.9
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.1
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.12
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.96
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.91
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.01
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.72
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.79
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.21
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.01
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.92
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.77
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.82
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.04
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.89
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.79
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.27
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.19
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.0
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.81
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.78
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.05
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.95
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.85
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.85
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.93
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.9
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.78
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.78
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.96
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.3
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.75
+   }
+  ]
+ },
+ "QiChen": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.69
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.58
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.61
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.65
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.77
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.52
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.58
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.83
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.61
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.65
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.72
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.63
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.59
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.54
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.67
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.77
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.65
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.83
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.43
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.48
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.7
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.6
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.57
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.71
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.57
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.75
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.8
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.65
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.6
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.47
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.62
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   }
+  ]
+ },
+ "LorenzBounded": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.72
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.33
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.7
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.32
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.4
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.38
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.58
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.83
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.85
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.73
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.42
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.8
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.89
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.28
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.75
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.5
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.8
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.0
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.43
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.7
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.72
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.29
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.85
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.6
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.48
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.21
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.32
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.85
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.59
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.87
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.81
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.46
+   }
+  ]
+ },
+ "RayleighBenard": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.52
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.72
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.43
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.99
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.95
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.54
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.42
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.18
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.59
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.32
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.39
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.24
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.37
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.2
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.27
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.73
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.75
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.81
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.57
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.63
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.42
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.63
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.83
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.67
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.32
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.46
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.99
+   }
+  ]
+ },
+ "SprottD": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.21
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.22
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.21
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.21
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.22
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.21
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.21
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.22
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.21
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.21
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.21
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.23
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.21
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.2
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.22
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.22
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.25
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.19
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.19
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.19
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.18
+   }
+  ]
+ },
+ "LiuChen": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.16
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.81
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.66
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.45
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.46
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.39
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.66
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.08
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.06
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.15
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.62
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.55
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.62
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.14
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.51
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.61
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.04
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.52
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.38
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.41
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.29
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.17
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.03
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.8
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.35
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.44
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.38
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.12
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.64
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.79
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.4
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.47
+   }
+  ]
+ },
+ "Rossler": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.48
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.58
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.52
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.51
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.56
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.49
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.51
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.6
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.46
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.42
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.56
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.51
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.53
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.52
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.56
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.81
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.74
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.54
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.53
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.54
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.39
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.47
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.45
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.56
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.46
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.51
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.56
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.57
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.5
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.56
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.48
+   }
+  ]
+ },
+ "Rucklidge": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.59
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.61
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.42
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.49
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.51
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.46
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.45
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.54
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.45
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.51
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.47
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.36
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.58
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.36
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.55
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.61
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.82
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.79
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.76
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.88
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.55
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.57
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.5
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.49
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.56
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.35
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.47
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.49
+   }
+  ]
+ },
+ "SanUmSrisuchinwong": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.31
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.16
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.14
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.27
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.51
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.17
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.21
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.42
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.3
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.42
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.45
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.18
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.59
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.55
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.42
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.42
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.64
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.34
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.1
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.18
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.34
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.43
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.08
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.25
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.25
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.57
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.46
+   }
+  ]
+ },
+ "SprottA": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.96
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.97
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.0
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.97
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.96
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.96
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.0
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.0
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.98
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.97
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.98
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.98
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.02
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.02
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.97
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.97
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.0
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.0
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.02
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.02
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.06
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.04
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.04
+   }
+  ]
+ },
+ "SprottG": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.81
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.91
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.84
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.85
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.85
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.85
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.87
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.87
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.88
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.88
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.86
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.85
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.83
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.96
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.86
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.88
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.83
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.83
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.89
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.84
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.82
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.88
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.78
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.87
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.87
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.82
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.84
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.91
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.82
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.81
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.78
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.87
+   }
+  ]
+ },
+ "LuChen": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.64
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.51
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.5
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.33
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.58
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.2
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.38
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.56
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.13
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.3
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.1
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.82
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.42
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 7.01
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.76
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.5
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.89
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.8
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.03
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.69
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.46
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.94
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.02
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.83
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.94
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.49
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.12
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.91
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.65
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.87
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.67
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.78
+   }
+  ]
+ },
+ "SprottB": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.43
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.42
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.43
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.43
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.42
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.39
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.46
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.42
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.38
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.38
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.39
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.42
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   }
+  ]
+ },
+ "SprottK": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.64
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.67
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.69
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.57
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.65
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.54
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.9
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.65
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.65
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.66
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.64
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.68
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.77
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.86
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.78
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.79
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.89
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.85
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.71
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.89
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.7
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.77
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.77
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.81
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.82
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.82
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.88
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.7
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.72
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.81
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.82
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.85
+   }
+  ]
+ },
+ "SprottM": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.37
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.37
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.39
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.38
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.41
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.41
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.7
+   },
+   {
+    "instance": 6,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.34
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.68
+   },
+   {
+    "instance": 7,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.44
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.68
+   },
+   {
+    "instance": 8,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.36
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.39
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.41
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 11,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.68
+   },
+   {
+    "instance": 12,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.33
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.68
+   },
+   {
+    "instance": 13,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 13,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 1.39
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.36
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.36
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.39
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.68
+   },
+   {
+    "instance": 17,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.38
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.4
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.28
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.7
+   },
+   {
+    "instance": 21,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.33
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.39
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.38
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.36
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.34
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.38
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.39
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.39
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.28
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.38
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 31,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.39
+   }
+  ]
+ },
+ "SprottS": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.36
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.37
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.38
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.36
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.36
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.39
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.34
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.34
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.4
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.36
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.34
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.34
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.44
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.41
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.34
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.34
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.34
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.35
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.37
+   }
+  ]
+ },
+ "SprottN": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.92
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.91
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.92
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.9
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.91
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.0
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.98
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.01
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.93
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.95
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.93
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.93
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.96
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.95
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.97
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.95
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.96
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.95
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.95
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.93
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.93
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.92
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.91
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.92
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.92
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.91
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.95
+   }
+  ]
+ },
+ "BurkeShaw": {
+  "split": "development",
+  "kept_instances": 4,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.54
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.55
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.47
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.4
+   }
+  ]
+ },
+ "Halvorsen": {
+  "split": "development",
+  "kept_instances": 4,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.85
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.78
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.78
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.67
+   }
+  ]
+ },
+ "KawczynskiStrizhak": {
+  "split": "development",
+  "kept_instances": 4,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.83
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.7
+   }
+  ]
+ },
+ "SprottJerk": {
+  "split": "meta_train",
+  "kept_instances": 17,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.24
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 1,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.26
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 2,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.95
+   },
+   {
+    "instance": 2,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 2.21
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.74
+   },
+   {
+    "instance": 3,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.73
+   },
+   {
+    "instance": 3,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 3,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.97
+   },
+   {
+    "instance": 4,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.74
+   },
+   {
+    "instance": 4,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.8
+   },
+   {
+    "instance": 4,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 5,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.2
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.75
+   },
+   {
+    "instance": 6,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 6,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 2.2
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 7,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.21
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.78
+   },
+   {
+    "instance": 8,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 8,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.94
+   },
+   {
+    "instance": 8,
+    "draw": 3,
+    "status": "ok",
+    "seconds": 2.25
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 9,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.72
+   },
+   {
+    "instance": 9,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.72
+   },
+   {
+    "instance": 9,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.7
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.94
+   },
+   {
+    "instance": 10,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.27
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.96
+   },
+   {
+    "instance": 11,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.7
+   },
+   {
+    "instance": 11,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.72
+   },
+   {
+    "instance": 11,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.3
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 13,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.83
+   },
+   {
+    "instance": 13,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.72
+   },
+   {
+    "instance": 13,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.72
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 14,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.93
+   },
+   {
+    "instance": 14,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 2.22
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.72
+   },
+   {
+    "instance": 15,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.2
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 16,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.27
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 17,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.05
+   },
+   {
+    "instance": 17,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 17,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.72
+   },
+   {
+    "instance": 18,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.94
+   },
+   {
+    "instance": 18,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.1
+   },
+   {
+    "instance": 18,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.94
+   },
+   {
+    "instance": 19,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.93
+   },
+   {
+    "instance": 19,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 19,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.72
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 20,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.9
+   },
+   {
+    "instance": 20,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.02
+   },
+   {
+    "instance": 20,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.95
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.72
+   },
+   {
+    "instance": 21,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.23
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.77
+   },
+   {
+    "instance": 22,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.22
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.56
+   },
+   {
+    "instance": 23,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.7
+   },
+   {
+    "instance": 23,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 23,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.56
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.93
+   },
+   {
+    "instance": 24,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.93
+   },
+   {
+    "instance": 24,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 24,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.05
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.01
+   },
+   {
+    "instance": 25,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.87
+   },
+   {
+    "instance": 25,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.93
+   },
+   {
+    "instance": 25,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.56
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.8
+   },
+   {
+    "instance": 26,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.25
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.57
+   },
+   {
+    "instance": 27,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 27,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.7
+   },
+   {
+    "instance": 27,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.97
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 28,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.22
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.74
+   },
+   {
+    "instance": 29,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.15
+   },
+   {
+    "instance": 29,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.95
+   },
+   {
+    "instance": 29,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 30,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.21
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.72
+   },
+   {
+    "instance": 31,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.94
+   },
+   {
+    "instance": 31,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.74
+   },
+   {
+    "instance": 31,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.93
+   }
+  ]
+ },
+ "RikitakeDynamo": {
+  "split": "development",
+  "kept_instances": 4,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.05
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.91
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.96
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.07
+   }
+  ]
+ },
+ "SaltonSea": {
+  "split": "development",
+  "kept_instances": 4,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.29
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.06
+   },
+   {
+    "instance": 1,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.14
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.06
+   },
+   {
+    "instance": 2,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.19
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.75
+   }
+  ]
+ },
+ "SprottR": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.81
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.58
+   },
+   {
+    "instance": 1,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.52
+   },
+   {
+    "instance": 1,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 1.72
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.76
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.51
+   },
+   {
+    "instance": 3,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.48
+   },
+   {
+    "instance": 3,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 1.7
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.7
+   },
+   {
+    "instance": 4,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.67
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.72
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.7
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.79
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.64
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.47
+   },
+   {
+    "instance": 9,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.57
+   },
+   {
+    "instance": 9,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 1.72
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.78
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.68
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.68
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.83
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.54
+   },
+   {
+    "instance": 14,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.48
+   },
+   {
+    "instance": 14,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.69
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.68
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.59
+   },
+   {
+    "instance": 17,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.71
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.68
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.7
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.57
+   },
+   {
+    "instance": 20,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.53
+   },
+   {
+    "instance": 20,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.7
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.59
+   },
+   {
+    "instance": 23,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.67
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.58
+   },
+   {
+    "instance": 24,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.53
+   },
+   {
+    "instance": 24,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 1.67
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.56
+   },
+   {
+    "instance": 26,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.56
+   },
+   {
+    "instance": 26,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.65
+   },
+   {
+    "instance": 26,
+    "draw": 3,
+    "status": "ok",
+    "seconds": 1.67
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.54
+   },
+   {
+    "instance": 27,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.67
+   },
+   {
+    "instance": 27,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 1.63
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.56
+   },
+   {
+    "instance": 28,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.56
+   },
+   {
+    "instance": 28,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 1.69
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.65
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.64
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.74
+   }
+  ]
+ },
+ "ShimizuMorioka": {
+  "split": "development",
+  "kept_instances": 4,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.86
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.99
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.83
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.97
+   }
+  ]
+ },
+ "SprottP": {
+  "split": "development",
+  "kept_instances": 4,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.37
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.22
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.59
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.55
+   }
+  ]
+ },
+ "SprottI": {
+  "split": "development",
+  "kept_instances": 4,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.7
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.66
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.68
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.66
+   }
+  ]
+ },
+ "SprottJ": {
+  "split": "development",
+  "kept_instances": 4,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.92
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.94
+   }
+  ]
+ },
+ "YuWang2": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.69
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.65
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.62
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.66
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.75
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.69
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.52
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.67
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.8
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.62
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.64
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.66
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.53
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.69
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.69
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.6
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.74
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.65
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.66
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.65
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.72
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.8
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.74
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.56
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.71
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.64
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.79
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.66
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.6
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.77
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.76
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.72
+   }
+  ]
+ },
+ "SprottQ": {
+  "split": "development",
+  "kept_instances": 3,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.58
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.51
+   },
+   {
+    "instance": 1,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.52
+   },
+   {
+    "instance": 1,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.53
+   },
+   {
+    "instance": 1,
+    "draw": 3,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.71
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.64
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.71
+   }
+  ]
+ },
+ "ZhouChen": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.69
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.15
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.6
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.6
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.8
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.02
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.73
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.02
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.18
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.86
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.6
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.52
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.56
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.37
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "collapsed coordinate",
+    "seconds": 0.41
+   },
+   {
+    "instance": 14,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 1.69
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.71
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 0.76
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.62
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.77
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.63
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 0.52
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.74
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.63
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 0.61
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.75
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.49
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.59
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.29
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.03
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.75
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 0.87
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.71
+   }
+  ]
+ },
+ "SprottL": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.92
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.79
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.75
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.85
+   },
+   {
+    "instance": 3,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.66
+   },
+   {
+    "instance": 3,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.73
+   },
+   {
+    "instance": 3,
+    "draw": 3,
+    "status": "ok",
+    "seconds": 2.77
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.77
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.72
+   },
+   {
+    "instance": 5,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.73
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.81
+   },
+   {
+    "instance": 6,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.91
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.75
+   },
+   {
+    "instance": 7,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.99
+   },
+   {
+    "instance": 7,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 2.93
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.81
+   },
+   {
+    "instance": 8,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.87
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.79
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.69
+   },
+   {
+    "instance": 10,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.86
+   },
+   {
+    "instance": 10,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 2.82
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.9
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.84
+   },
+   {
+    "instance": 12,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.7
+   },
+   {
+    "instance": 12,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 2.84
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.96
+   },
+   {
+    "instance": 13,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.88
+   },
+   {
+    "instance": 13,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 2.87
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.87
+   },
+   {
+    "instance": 14,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.79
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.83
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.86
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.92
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.74
+   },
+   {
+    "instance": 18,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.92
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.84
+   },
+   {
+    "instance": 19,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.88
+   },
+   {
+    "instance": 19,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 2.8
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.89
+   },
+   {
+    "instance": 20,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.88
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.81
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.82
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.79
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.98
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.88
+   },
+   {
+    "instance": 25,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.91
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.78
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.85
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.81
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.78
+   },
+   {
+    "instance": 29,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.77
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.9
+   },
+   {
+    "instance": 30,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.95
+   },
+   {
+    "instance": 30,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 2.85
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 0.83
+   },
+   {
+    "instance": 31,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.8
+   }
+  ]
+ },
+ "WindmiReduced": {
+  "split": "development",
+  "kept_instances": 4,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.68
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.48
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.88
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.22
+   }
+  ]
+ },
+ "JerkCircuit": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.87
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.19
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.12
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.18
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.37
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.38
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.37
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.0
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.26
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.29
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.18
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.39
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.41
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.49
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.42
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.74
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.44
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.21
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.4
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.22
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.56
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.41
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.47
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.55
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.4
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.45
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.2
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.5
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.35
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.29
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.37
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.6
+   }
+  ]
+ },
+ "SprottMore": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.41
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.38
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.37
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.44
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.45
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.39
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.43
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.38
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.47
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.46
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.45
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.45
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.44
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.47
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.49
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.44
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.44
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.46
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.47
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.5
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.46
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.46
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.5
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.45
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.47
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.47
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.46
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.56
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.5
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.5
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.5
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.52
+   }
+  ]
+ },
+ "YuWang": {
+  "split": "development",
+  "kept_instances": 4,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.06
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.33
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.45
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 5.37
+   }
+  ]
+ },
+ "Thomas": {
+  "split": "development",
+  "kept_instances": 4,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.45
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.08
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.2
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 6.69
+   }
+  ]
+ },
+ "SprottO": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.32
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.31
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.77
+   },
+   {
+    "instance": 3,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.3
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.39
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.28
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.69
+   },
+   {
+    "instance": 6,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.94
+   },
+   {
+    "instance": 6,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.52
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.28
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.71
+   },
+   {
+    "instance": 9,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.31
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.69
+   },
+   {
+    "instance": 10,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.37
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.34
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.32
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.69
+   },
+   {
+    "instance": 13,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.31
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.51
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.39
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.74
+   },
+   {
+    "instance": 17,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.47
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.23
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 2.14
+   },
+   {
+    "instance": 19,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.68
+   },
+   {
+    "instance": 19,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 1.93
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 2.55
+   },
+   {
+    "instance": 20,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.5
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 1.92
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.73
+   },
+   {
+    "instance": 22,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.25
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.42
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.63
+   },
+   {
+    "instance": 24,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.68
+   },
+   {
+    "instance": 24,
+    "draw": 2,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.67
+   },
+   {
+    "instance": 24,
+    "draw": 3,
+    "status": "ok",
+    "seconds": 2.21
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.7
+   },
+   {
+    "instance": 25,
+    "draw": 1,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 2.43
+   },
+   {
+    "instance": 25,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 2.38
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.2
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.68
+   },
+   {
+    "instance": 27,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.41
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.48
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.44
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.12
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "solver: Unexpected istate in LSODA.",
+    "seconds": 1.63
+   },
+   {
+    "instance": 31,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 2.26
+   }
+  ]
+ },
+ "WangSun": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.22
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.22
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.26
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.14
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.25
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.39
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.93
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.33
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.11
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.19
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.75
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.12
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.3
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.34
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.4
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.25
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.91
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.24
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.99
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.25
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.13
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.18
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.04
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.23
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.48
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.73
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.11
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.11
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.2
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.21
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 2.85
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.33
+   }
+  ]
+ },
+ "SprottTorus": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.49
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.55
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.51
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.53
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.54
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.52
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.53
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.56
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.51
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.5
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.52
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.51
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.52
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.52
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.52
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.54
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.5
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.51
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.5
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.51
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.5
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.48
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.48
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.57
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.47
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.49
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.48
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.51
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.49
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.48
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.47
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 3.56
+   }
+  ]
+ },
+ "Lorenz84": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 11.89
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 14.06
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.89
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.54
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.31
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 11.31
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.87
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.4
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.7
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.9
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.66
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 14.35
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 11.83
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 12.69
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.99
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 12.63
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.5
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.49
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.5
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.71
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.38
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.16
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.37
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 12.46
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.51
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.03
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.92
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.24
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.4
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.79
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 13.15
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 10.69
+   }
+  ]
+ },
+ "ThomasLabyrinth": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.26
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.98
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.51
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 8.79
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.95
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.35
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 8.6
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.38
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 8.94
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.63
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.51
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 8.55
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 8.33
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.35
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.26
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.23
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 8.88
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.02
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.68
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.13
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.62
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.36
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 8.86
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.07
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 8.61
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.39
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.47
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.78
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 8.32
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.01
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 9.66
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 8.51
+   }
+  ]
+ },
+ "AtmosphericRegime": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 24.24
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 22.49
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 19.55
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 25.31
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 25.58
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 18.52
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 28.33
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 20.86
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 25.04
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 23.46
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 28.25
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 19.37
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 24.46
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 17.4
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 20.26
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 22.0
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 23.12
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 23.84
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 28.58
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 24.61
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 27.14
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 22.17
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 25.18
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 28.33
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 30.78
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 31.3
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 27.13
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 18.68
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 23.91
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 22.85
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 26.51
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 22.23
+   }
+  ]
+ },
+ "SprottH": {
+  "split": "meta_train",
+  "kept_instances": 32,
+  "log": [
+   {
+    "instance": 0,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.35
+   },
+   {
+    "instance": 1,
+    "draw": 0,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 1,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 4.71
+   },
+   {
+    "instance": 2,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.49
+   },
+   {
+    "instance": 3,
+    "draw": 0,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 3,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 4.46
+   },
+   {
+    "instance": 4,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.54
+   },
+   {
+    "instance": 5,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.65
+   },
+   {
+    "instance": 6,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.71
+   },
+   {
+    "instance": 7,
+    "draw": 0,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 7,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 4.59
+   },
+   {
+    "instance": 8,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.4
+   },
+   {
+    "instance": 9,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.4
+   },
+   {
+    "instance": 10,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.56
+   },
+   {
+    "instance": 11,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.47
+   },
+   {
+    "instance": 12,
+    "draw": 0,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 12,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 4.22
+   },
+   {
+    "instance": 13,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.46
+   },
+   {
+    "instance": 14,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.47
+   },
+   {
+    "instance": 15,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.4
+   },
+   {
+    "instance": 16,
+    "draw": 0,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 16,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 4.39
+   },
+   {
+    "instance": 17,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.31
+   },
+   {
+    "instance": 18,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.1
+   },
+   {
+    "instance": 19,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.24
+   },
+   {
+    "instance": 20,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.52
+   },
+   {
+    "instance": 21,
+    "draw": 0,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 21,
+    "draw": 1,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 21,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 4.21
+   },
+   {
+    "instance": 22,
+    "draw": 0,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 22,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 4.2
+   },
+   {
+    "instance": 23,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.67
+   },
+   {
+    "instance": 24,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.47
+   },
+   {
+    "instance": 25,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.35
+   },
+   {
+    "instance": 26,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.65
+   },
+   {
+    "instance": 27,
+    "draw": 0,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 27,
+    "draw": 1,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 27,
+    "draw": 2,
+    "status": "ok",
+    "seconds": 4.55
+   },
+   {
+    "instance": 28,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.73
+   },
+   {
+    "instance": 29,
+    "draw": 0,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 29,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 4.58
+   },
+   {
+    "instance": 30,
+    "draw": 0,
+    "status": "integration error Timeout",
+    "seconds": 60.0
+   },
+   {
+    "instance": 30,
+    "draw": 1,
+    "status": "ok",
+    "seconds": 4.15
+   },
+   {
+    "instance": 31,
+    "draw": 0,
+    "status": "ok",
+    "seconds": 4.31
+   }
+  ]
+ }
+}
