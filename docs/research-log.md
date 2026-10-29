@@ -914,3 +914,40 @@ The owner asked whether testing on reserve set A would just mean creating more t
 **Resources:**
 - 2 seeds × 6 orders × 2 trained arms = 24 short streams (13 × 400 steps each), run in parallel;
 - outputs under `outputs/accumulating_learner/trial10/`.
+
+## Trial 10: result (29 October)
+
+**Classification: FAILED.** P1 and P2 fail in both seeds; P3 passes in both.
+
+| | Seed 1 | Seed 2 |
+|---|---|---|
+| P1: Spearman ρ(position, L) at K = 32 (need ≤ −0.3) | +0.08 ✗ | −0.23 ✗ |
+| P1: median L, positions ≥ 7, K = 32 | −0.005 | −0.027 |
+| Same at K = 16 (ρ; median L) | −0.03; −0.060 | −0.08; −0.085 |
+| P2: non-polynomial median L, positions ≥ 7 | +0.028 ✗ | +0.002 ✗ |
+| Continual vs frozen, median L at positions ≥ 7, K = 32 | −0.023 | −0.004 |
+| P3: retention ratio after the stream (need ≤ 1.5) | 1.15 ✓ | 1.02 ✓ |
+
+### Reading
+
+- **No forgetting, but no detectable benefit.** Learning from each development system after its encounter costs nothing (P3), but it does not make later development systems easier than equal extra compute on replay does. The improvement is at most about 3% at K = 32 and 6–8% at K = 16.
+- Per-system effects are noisy and of both signs; for example SprottI improves by −0.50 in seed 2 while Halvorsen worsens by +0.92 in seed 1.
+- **Two candidate explanations, decided now as the next test:**
+  1. Diminishing returns: on top of 51 systems, 13 more add little.
+  2. Unrelatedness: the development systems, especially the non-polynomial ones, are mostly unique mechanisms, so one cannot inform another.
+- Trial 11 tests explanation 1 directly, as pre-registered.
+
+## Trial 11: test-time accumulation from a short history (pre-registered 29 October, before running)
+
+- **Hypothesis.** Test-time accumulation works when the history is short. Starting from the observable-only library after only **8** meta-train systems, learning from each encountered development system makes later development systems easier than equal-compute replay.
+- **Identical to Trial 10 except:**
+  - starting checkpoint: Trial 9's seqobs400 at t = 8, both seeds;
+  - memory: instances 0–1 of the 8 meta-train systems that checkpoint has seen (the first 8 in that seed's order), plus stream systems for the continual arm. The replay-only arm replays only those 8.
+- **Criteria:** P1, P2 and P3, exactly as in Trial 10 (P3's 8 retention systems are exactly the 8 seen).
+- **Also reported:** the gap between continual and frozen at positions ≥ 7.
+
+**What happens next, decided now:**
+- **P1 passes:** test-time accumulation works when experience is scarce, and Trial 10's null is diminishing returns. Then decide whether a reserve-set-A stream from t = 51 can show anything. The likely answer is that the final test should measure the encounter curve from a short history.
+- **P1 fails here too:** the explanation is unrelatedness among the development systems, not saturation. Next, try a learner that adapts more at encounter time (per-system fine-tuning of the selected basis) or that grows new bases, and source related-mechanism families for training.
+
+**Resources:** 12 short streams, as in Trial 10; outputs under `outputs/accumulating_learner/trial11/`.

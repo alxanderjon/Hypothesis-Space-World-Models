@@ -12,6 +12,7 @@ import copy
 import json
 import math
 import time
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -86,13 +87,15 @@ def run(args):
     order = list(np.random.default_rng(1000 * s + r).permutation(devnames))
     xs, dxs = load(devnames, dev)
     meta = S.eligible_split()["meta_train"]
+    if args.start_t != 51:  # Trial 11: memory holds only the systems the start checkpoint has seen
+        meta = list(np.random.default_rng(s).permutation(meta))[: args.start_t]
     mx, mdx = load(meta, dev)
     base_x, base_dx, base_h = [x[:MEM_INST] for x in mx], [d[:MEM_INST] for d in mdx], [T8.spacing(n) for n in meta]
     start = Library().to(dev)
-    start.load_state_dict(torch.load(TRIAL9 / "learners" / f"seqobs400_N51_s{s}.pt", map_location=dev, weights_only=True))
+    start.load_state_dict(torch.load(TRIAL9 / "learners" / f"seqobs400_N{args.start_t:02d}_s{s}.pt", map_location=dev, weights_only=True))
     frozen = {n: score(start, xs[devnames.index(n)], dxs[devnames.index(n)], devnames.index(n), T8.spacing(n), dev)
               for n in devnames}
-    result = {"seed": s, "order_index": r, "order": order, "frozen": frozen,
+    result = {"seed": s, "order_index": r, "order": order, "start_t": args.start_t, "memory_systems": meta, "frozen": frozen,
               "retention_before": retention(start, s, dev), "arms": {}}
     for mode in ("continual", "replayonly"):
         lib = copy.deepcopy(start)
@@ -155,5 +158,8 @@ if __name__ == "__main__":
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--order", type=int, default=0)
     ap.add_argument("--device", default="cuda:0")
+    ap.add_argument("--start-t", type=int, default=51)
+    ap.add_argument("--out", default=str(OUT))
     a = ap.parse_args()
+    OUT = Path(a.out)
     {"run": run, "analyze": analyze}[a.cmd](a)

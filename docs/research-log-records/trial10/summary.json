@@ -1,0 +1,60 @@
+{
+ "1": {
+  "spearman_K32": 0.08464507881406473,
+  "spearman_K16": -0.03474664625613403,
+  "median_L32_late": -0.005304549398210013,
+  "median_L16_late": -0.060320325616130044,
+  "median_L32_nonpoly_late": 0.028163782696846513,
+  "median_Lfrozen32_late": -0.022731609007927103,
+  "retention_ratio_mean_over_orders": 1.1528680900524122,
+  "per_system_median_L32_late": {
+   "BurkeShaw": -0.16297887351334772,
+   "Halvorsen": 0.9165671549441978,
+   "KawczynskiStrizhak": 0.049508278785461664,
+   "RikitakeDynamo": 0.23043042916047443,
+   "SaltonSea": -0.24731369878129025,
+   "ShimizuMorioka": 0.4664624042242478,
+   "SprottI": 0.04466598651334,
+   "SprottJ": -0.15110636814372416,
+   "SprottP": -0.056657496273013225,
+   "SprottQ": -0.34780792642944386,
+   "Thomas": 0.19836454969988077,
+   "WindmiReduced": 0.06819420077560868,
+   "YuWang": -0.011354982183761898
+  },
+  "criteria": {
+   "P1": false,
+   "P2": false,
+   "P3": true
+  }
+ },
+ "2": {
+  "spearman_K32": -0.22908978457143847,
+  "spearman_K16": -0.07809878674750936,
+  "median_L32_late": -0.0265978888709252,
+  "median_L16_late": -0.08504592706749434,
+  "median_L32_nonpoly_late": 0.0017702449155995188,
+  "median_Lfrozen32_late": -0.004436266103757709,
+  "retention_ratio_mean_over_orders": 1.022329875433824,
+  "per_system_median_L32_late": {
+   "BurkeShaw": 0.0006373397296106277,
+   "Halvorsen": 0.03304745970810326,
+   "KawczynskiStrizhak": -0.007294937676010601,
+   "RikitakeDynamo": 0.16333814580488293,
+   "SaltonSea": 0.16196551421233862,
+   "ShimizuMorioka": -0.2714665231721659,
+   "SprottI": -0.5040008871243936,
+   "SprottJ": -0.24678445326581144,
+   "SprottP": -0.06033837673992044,
+   "SprottQ": 0.3308425853100372,
+   "Thomas": -0.01916300760611672,
+   "WindmiReduced": -0.06969709366964125,
+   "YuWang": 0.15412095681795304
+  },
+  "criteria": {
+   "P1": false,
+   "P2": false,
+   "P3": true
+  }
+ }
+}
