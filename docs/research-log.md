@@ -814,3 +814,64 @@ Same episodes, state noise set to 0, so the remaining error is central-differenc
 - **Both fail:** report it. Accumulation under realistic trajectory observations is not established, and the confirmed result stays specific to the derivative contract.
 
 **Resources:** 2 streams of about 25 minutes, then evaluation; outputs under `outputs/accumulating_learner/trial9/`.
+
+## Trial 9: result (29 October)
+
+**Classification: FAILED.** For seqobs400, C1 passes in both seeds, C2 in seed 1 only, and T1 fails in both. No ground-truth derivative was used anywhere: a test with NaN-filled derivative arrays confirmed the code never reads them.
+
+| t = 51, development | Seed 1 | Seed 2 |
+|---|---|---|
+| seqobs400: C1 (ρ; CI) | ✓ (−0.98; [−1.39, −0.10]) | ✓ (−0.83; [−1.60, −0.06]) |
+| seqobs400: C2 against kernel ridge | ✓ 11/13 | ✗ 8/13 |
+| seqobs400: T1 (K = 32 ratio to kernel ridge; need ≤ 1/3) | ✗ 0.53 (.0023 vs .0043) | ✗ 0.53 (.0023 vs .0043) |
+| seqobs400 K = 8 / 16 | .219 / .0077 | .162 / .0068 |
+| frozen5-obs: C1, C2, T1 | ✗, ✓, ✗ (0.47) | ✓, ✓, ✗ (0.51) |
+
+Controls under this contract at K = 8 / 16 / 32:
+
+| | K = 8 | K = 16 | K = 32 |
+|---|---|---|---|
+| Kernel ridge | .301 | .031 | .0043 |
+| Random Fourier features | .531 | .049 | .0070 |
+| poly2 | .573 | .0066 | .0035 |
+
+### Reading
+
+- **Using observable targets removes the bias floor from the task, but the noise floor remains.** Central-difference noise of about 5e-4 NMSE per dimension puts every method near its floor by K = 32. So the advantage from experience is about 4× at K = 16 but only about 1.9× at K = 32.
+- **The experience curve itself survives realistic observation:** C1 passes in both seeds with no ground-truth derivatives anywhere.
+- **The confirmed large advantage (about 65× at K = 32) is specific to the low-noise derivative contract.** With realistic trajectory noise, accumulated knowledge buys roughly a 2–4× error reduction at K = 16–32, and the pre-registered "substantial" threshold (3×) is not met at K = 32.
+- **frozen5-obs performs about as well as retraining under the new contract.** The stored knowledge transfers across observation processes; retraining adds nothing measurable here.
+
+## Synthesis after Trials 1–9 and the confirmation run (29 October)
+
+### Established
+
+1. **Confirmed on untouched mechanisms (derivative contract).** A library of four learned feature bases, accumulated *sequentially* over 51 published 3-D chaotic flows with a 6% replay memory and leave-one-out selection with a kernel ridge fallback, learns new held-out systems from the same catalog with much less data than experience-free methods.
+   - Error is about 65× lower at K = 32 and 40× lower at K = 16.
+   - The gain grows with the number of systems seen.
+   - Encounter-order analysis shows the same system is learned better when it arrives later in the stream.
+   - Replay is necessary: without it the learner fails to retain.
+2. **The experience curve survives a realistic, observable-only contract** (development set): C1 passes in both seeds in Trial 9. Its size there is modest (2–4×), limited by observation noise.
+
+### Not established
+
+- **Any advantage at K = 8 on new mechanisms.** It did not confirm, and neither learned sparsity (Trials 6–7) nor anything else so far fixes it under honest selection.
+- **Generality beyond the catalog's polynomial majority.** Non-polynomial development systems are mixed: big wins on YuWang and SaltonSea, kernel ridge level on Thomas and WindmiReduced. Only 2 non-polynomial confirmation systems existed, again mixed.
+- **A large advantage under realistic noise.**
+- **Dimension beyond 3.**
+
+### Candidate next steps
+
+1. **Generality probe on reserve set A** (11 untouched, mostly non-polynomial 3-D mechanisms, with right-hand sides ported by hand). This tests the confirmed derivative-contract result as is. It spends the last 3-D reserve set; a failure would still be the most informative single result available.
+2. **Keep reserve set A for later** and develop on the development set first. For example: train on a broader, independently motivated source of non-polynomial mechanisms, or a learner that works for any state dimension, which would also unlock reserve set B. Each of these is a multi-trial programme.
+3. **Better observation design under noise** (longer snippets, local-polynomial derivative estimates). This is generic engineering that would shrink the noise floor. It is not accumulation, so it is a low priority for the owner's goal.
+
+**My recommendation is option 1.** The confirmed result's most important open question is whether it says anything beyond polynomial flows, and reserve set A answers that directly. Option 1 uses reserve data, so per the owner's rule it needs approval. **Work pauses here for that decision.**
+
+### Protocol for option 1, fixed now
+
+1. Hand-port the 11 right-hand sides from the vendored `flows.py` into a reviewed module, with the diff shown in the log before any integration.
+2. Generate data with the confirmation procedure (published parameters plus 3 perturbed instances). Systems whose published instance fails are dropped and reported.
+3. Evaluate the frozen seq-replay-400 checkpoints (both seeds, all t), joint library+fb and wide, with the same controls and episode seeding scheme (seeds 7000 + 97i + K).
+4. **Pass = CF1 and CF2 in both seeds.** CF3 and the per-system results are reported.
+5. One shot; recorded whatever it shows.
