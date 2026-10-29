@@ -714,3 +714,53 @@ So sparsity is worth about 6× at K = 8 *in the right basis*, but the learned ba
 - **hybrid6 passes G1, G2 and H1 in both seeds:** Trial 6's bases plus honest selection are a confirmation candidate. Retraining stability (problem 2) still needs a seed-robustness check before any confirmation request.
 - **Only hybrid5 passes:** the sparse head is a free add-on to the confirmed method, but training through it is not yet useful.
 - **None pass:** the K = 8 thread is set aside, and the next trial moves to the observation-contract simplification (trajectories instead of directly observed derivatives).
+
+## Trial 7: result (29 October)
+
+**Classification: FAILED** for all three arms (G1 fails everywhere).
+
+| t = 51, development set | K = 8 (ratio to seq-replay-400; wins) | K = 32 ratio | H1: Thomas, WindmiReduced K = 8 ratios | Criteria |
+|---|---|---|---|---|
+| hybrid6, seed 1 | .130 (0.94; 9/13) | 1.61 | 1.00, 2.85 | G1 ✗ G2 ✗ H1 ✗ |
+| hybrid6, seed 2 | .235 (1.86; 2/13) | 18.6 | 1.07, 2.84 | ✗ ✗ ✗ |
+| sparse6-exact, seed 1 | .134 (0.97; 10/13) | 1.61 | 0.96, 2.86 | ✗ ✗ ✗ |
+| sparse6-exact, seed 2 | .199 (1.57; 2/13) | 18.4 | 1.07, 2.86 | ✗ ✗ ✗ |
+| hybrid5, seed 1 | .143 (1.03; 3/13) | 1.08 | 1.00, 1.03 | ✗ ✓ ✓ |
+| hybrid5, seed 2 | .116 (0.92; 4/13) | 1.00 | 1.04, 1.00 | ✗ ✓ ✓ |
+
+### Reading
+
+- **Trial 6's seed-1 gain at K = 8 was mostly an artefact of the biased selection.** Under exact leave-one-out it shrinks from .077 to .130–.134. The biased estimate acted as a hard-coded "always trust the sparse fit" prior. That suited the polynomial majority and broke the rest.
+- **Leave-one-out cannot resolve the choice at K = 8.** With 8 points, honest selection among 9 options is too noisy to beat the plain ridge library (Trial 4's oracle gap was already 2.3× at K = 8).
+- **Extrapolation, not just selection.** WindmiReduced stays 2.85× worse even with exact leave-one-out. Context leave-one-out (trajectory segment A) does not predict how sparse fits extrapolate to the query segment (B).
+- **hybrid5 shows the sparse head is harmless when added honestly** (G2 and H1 pass), but it buys nothing at K = 8.
+- **K = 8 thread set aside**, as pre-registered. The remaining idea worth revisiting later is a *learned* selection prior: experience about which option tends to be right, rather than leave-one-out alone. It was not pursued now because Trial 3's context-conditioned model, the closest relative, was unstable.
+
+## Trial 8: noisy trajectories instead of observed derivatives (pre-registered 29 October, before training)
+
+- **Why.** Every result so far assumed the learner directly observes derivatives with 1% noise. Real systems give sampled trajectories. If accumulated knowledge only works under the idealized contract, the confirmed result means much less.
+- **New observation contract.**
+  - The learner observes K short noisy snippets of the trajectory, each three consecutive samples (x(t−h), x(t), x(t+h)).
+  - h is the data bank's native spacing, 100 periods / 3999 ≈ 1/40 of a characteristic period. The time stamps are supplied.
+  - Each state gets Gaussian noise of 0.5% of that trajectory's per-dimension state standard deviation.
+  - **The learner's context** is the noisy middle states, with central-difference derivative *estimates* (x(t+h) − x(t−h)) / 2h.
+  - **Standardization** uses those K estimates only, as before.
+  - **Scoring:** query states (segment B) are clean, and the error is against the true vector field. The model is judged as a vector field; the learner never sees the truth.
+  - Snippet centres are drawn at random from segment A, excluding its ends.
+- **Arms:**
+  - **frozen5:** Trial 5's seq-replay-400 checkpoints (all t), evaluated under the new contract with no retraining. Tests whether stored knowledge survives a change of observation process.
+  - **seqtraj400:** seq-replay-400 retrained from scratch with training episodes built under the new contract (same stream, orders, seeds, steps and memory).
+- **Controls under the same contract:** kernel ridge, random Fourier features, untrained library+fb (t = 0). Reference: poly2.
+- **Criteria** (for seqtraj400, both seeds, development episodes; generator seeds 5000 + 97i + K as before, noise drawn from the same generator):
+  - C1 and C2, as defined in Trial 1;
+  - **T1 (substantial):** at t = 51, K = 32 aggregate ≤ 1/3 of the best experience-free control's.
+- **Reported:** the same criteria for frozen5; the ratio of each arm's t = 51 aggregates to its derivative-contract counterpart; strata.
+
+**What happens next, decided now:**
+- **seqtraj400 passes C1, C2 and T1 in both seeds:** the accumulation result survives realistic observations. Together with Trial 5, that is a confirmation candidate for reserve set A under the trajectory contract. Stop and ask before any use of reserve set A.
+- **Only frozen5 fails:** knowledge must be learned under the deployment contract.
+- **seqtraj400 fails:** identify whether estimation noise or bias is responsible, by re-scoring with clean-state differences, before anything else.
+
+**Resources:**
+- 2 training streams of about 25 minutes each, plus evaluation of 32 checkpoints;
+- outputs under `outputs/accumulating_learner/trial8/`.
