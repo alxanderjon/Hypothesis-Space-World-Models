@@ -1,18 +1,23 @@
 """Compute the pre-registered Trial 1 criteria (C1-C3) and stratified readouts from eval_development.json."""
 
+import argparse
 import json
+from pathlib import Path
 
 import numpy as np
 from scipy.stats import spearmanr
 
 import systems as S
-from trial1 import K_GRID, N_GRID, OUT, SEEDS
+from trial1 import K_GRID, N_GRID, OUT as DEFAULT_OUT, SEEDS
 
 NONPOLY = {"SaltonSea", "Thomas", "WindmiReduced", "YuWang"}
 CONTROLS = ["rff", "krr"]
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=str(DEFAULT_OUT))
+    OUT = Path(ap.parse_args().out)
     rows = json.loads((OUT / "eval_development.json").read_text())["rows"]
     systems = S.eligible_split()["development"]
     score = {(r["system"], r["K"], r["method"]): float(np.median(r["episodes"])) for r in rows}
@@ -32,6 +37,10 @@ def main():
         wins = [s for s in systems if score[(s, 32, L(51))] < score[(s, 32, best)]]
         t_learn = float(np.median([thr(L(51), s) for s in systems]))
         t_best = float(np.median([thr(best, s) for s in systems]))
+        best8 = min(ctrls, key=lambda m: agg(m, 8))
+        wins8 = sum(score[(s, 8, L(51))] < score[(s, 8, best8)] for s in systems)
+        secondary = {"best_control_K8": best8, "wins_K8": wins8, "agg_ratio_K8": agg(L(51), 8) / agg(best8, 8),
+                     "S1": bool(wins8 >= 10 and agg(L(51), 8) <= 0.75 * agg(best8, 8))}
         c = {
             "C1": bool(rho <= -0.8 and ci[1] < 0),
             "C2": len(wins) >= 10,
@@ -50,17 +59,17 @@ def main():
         out["per_seed"][seed] = {
             "best_control": best, "curve_K32": dict(zip(N_GRID, curve)), "spearman": rho, "bootstrap_ci_log_ratio_51_vs_0": ci,
             "wins_vs_best": len(wins), "win_systems": wins, "median_threshold_K_learner": t_learn,
-            "median_threshold_K_best_control": t_best, "criteria": c, "pass": all(c.values()), "strata": strata,
+            "median_threshold_K_best_control": t_best, "criteria": c, "pass": all(c.values()), "strata": strata, "secondary": secondary,
         }
     methods = sorted({r["method"] for r in rows})
     out["tables"]["aggregate"] = {m: {K: agg(m, K) for K in K_GRID} for m in methods}
     out["tables"]["per_system_K32"] = {s: {m: score[(s, 32, m)] for m in methods} for s in systems}
     out["tables"]["per_system_threshold"] = {s: {m: thr(m, s) for m in methods} for s in systems}
-    (OUT / "trial1_summary.json").write_text(json.dumps(out, indent=1, default=float))
+    (OUT / "summary.json").write_text(json.dumps(out, indent=1, default=float))
     for seed, r in out["per_seed"].items():
         print(f"seed {seed}: best control {r['best_control']}, rho {r['spearman']:.3f}, CI {r['bootstrap_ci_log_ratio_51_vs_0']}, "
               f"wins {r['wins_vs_best']}/13, thrK learner {r['median_threshold_K_learner']} vs {r['median_threshold_K_best_control']}, "
-              f"criteria {r['criteria']}")
+              f"criteria {r['criteria']}, secondary {r['secondary']}")
         print("  curve K=32:", {n: round(v, 4) for n, v in r["curve_K32"].items()})
         for lab, st in r["strata"].items():
             print(f"  {lab}: " + json.dumps({k: (round(v, 4) if isinstance(v, float) else v) for k, v in st.items() if k != 'curve_K32'}),

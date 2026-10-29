@@ -109,7 +109,7 @@ def train(args):
     tag = f"N{args.n:02d}_s{args.seed}"
     ckpt = OUT / "learners" / f"{tag}.pt"
     ckpt.parent.mkdir(parents=True, exist_ok=True)
-    log = {"n": args.n, "seed": args.seed, "systems": names, "steps": 0, "loss": []}
+    log = {"n": args.n, "seed": args.seed, "systems": names, "steps": 0, "loss": [], "loss_kind": args.loss}
     if args.n > 0:
         xs, dxs = load(names, dev)
         opt = torch.optim.Adam(phi.parameters(), lr=LR)
@@ -121,7 +121,8 @@ def train(args):
             idx = torch.randint(len(names), (BATCH,), generator=gen).tolist()
             uc, yc, uq, yq = batch_episodes(xs, dxs, idx, K, gen, dev)
             W = ridge(phi(uc), yc, phi.log_lam.exp())
-            loss = nmse(phi(uq) @ W, yq).clamp_max(10.0).mean()
+            err = nmse(phi(uq) @ W, yq).clamp_max(10.0)
+            loss = torch.log(err + 1e-4).mean() if args.loss == "lognmse" else err.mean()
             opt.zero_grad(); loss.backward()
             torch.nn.utils.clip_grad_norm_(phi.parameters(), 1.0)
             opt.step(); sched.step()
@@ -290,5 +291,8 @@ if __name__ == "__main__":
     ap.add_argument("--n", type=int, default=0)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--device", default="cuda:0")
+    ap.add_argument("--loss", choices=["nmse", "lognmse"], default="nmse")
+    ap.add_argument("--out", default=str(OUT))
     a = ap.parse_args()
+    OUT = Path(a.out)
     {"train": train, "eval": evaluate, "retention": evaluate_retention}[a.cmd](a)

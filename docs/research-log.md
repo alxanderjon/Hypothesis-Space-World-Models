@@ -224,3 +224,30 @@ Test cause 1 alone. Keep everything identical except the meta-training loss, whi
 - **If they still fail, with polynomial-stratum error still above kernel ridge:** cause 2 becomes the lead. The next step is a context-conditioned representation (features or a basis selected from the K observations, i.e. in-context inference) rather than a single shared basis.
 
 The K = 8 observation would be pre-registered as a secondary criterion in Trial 2, not credited to Trial 1. The development systems are now opened. Any later positive result needs the 14 untouched confirmation systems before it counts.
+
+## Working rule update (29 October, from the owner)
+
+Do not stop to wait for the owner when a trial ends or the direction changes. Send a push notification, log the reasoning and continue. Stop and wait only when blocked, when something only the owner can provide is needed, or **before touching the reserved confirmation systems**.
+
+## Trial 2: does a scale-free objective fix Trial 1? (pre-registered 29 October, before training)
+
+- **Hypothesis.** Trial 1 failed because the mean-NMSE loss let a few unfit meta-train systems dominate the shared features. With each task's log error weighted equally, meta-training will use the many near-quadratic systems, and the experience curve at K = 32 will appear.
+- **Single change from Trial 1.** The meta-training loss is the mean over tasks of log(min(NMSE, 10) + 1e-4), replacing the mean of min(NMSE, 10). The floor 1e-4 is about the 1% noise floor, so tasks already at the noise level stop pulling.
+- **Unchanged:** code (`trial1.py --loss lognmse --out outputs/accumulating_learner/trial2`), data bank, split, seeds, N grid, steps, architecture, evaluation episodes and controls. The N = 0 learners are identical by construction.
+- **Primary criteria:** C1, C2 and C3 exactly as in Trial 1, in both seeds.
+- **Secondary criterion S1** (new; motivated by Trial 1's exploratory K = 8 observation, so it is a test of that observation and not a re-scoring of Trial 1):
+  - at K = 8, the N = 51 learner beats the experience-free control with the lowest K = 8 aggregate on ≥ 10/13 development systems;
+  - and its aggregate is ≤ 0.75× that control's;
+  - in both seeds.
+
+  In Trial 1, S1 would have failed: 8/13 wins against the untrained network, aggregate ratio 0.48.
+- **Readouts:** strata, retention and per-system tables as in Trial 1.
+
+**What happens next, decided now:**
+- **C1–C3 pass:** a development-level positive result. Stop before any confirmation run and ask the owner.
+- **Primary criteria fail but S1 passes:** experience helps only at very small budgets. Trial 3 redesigns around the small-K regime, with the context-conditioned representation as the candidate.
+- **Both fail:** objective weighting is ruled out as the main cause. Trial 3 tests a context-conditioned representation (cause 2) with a fresh pre-registration.
+
+**Resources:**
+- 14 runs × 20,000 steps on GPUs 0–3 and 5–7, two per GPU;
+- outputs under `outputs/accumulating_learner/trial2/` (about 5 MB beyond the shared data bank).
