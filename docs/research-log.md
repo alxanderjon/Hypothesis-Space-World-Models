@@ -996,3 +996,61 @@ The owner asked whether testing on reserve set A would just mean creating more t
 - **A1 fails:** with K ≤ 64 noisy observations, fine-tuning cannot extract an unfamiliar mechanism beyond what kernel ridge gets. The binding constraint for unique mechanisms is then information per encounter, not the learner, and the next lever is what to observe.
 
 **Resources:** evaluation only, about 1,000 fine-tunings × 100 steps; outputs under `outputs/accumulating_learner/trial12/`.
+
+## Trial 12: result (29 October)
+
+**Classification: FAILED.** A1 fails in both seeds; A2 passes in both.
+
+| | Seed 1 | Seed 2 |
+|---|---|---|
+| A1: non-polynomial median, fine-tune vs library+fb at K = 64 (need ≤ 0.8) | 1.03 ✗ | 1.22 ✗ |
+| A1: fine-tune beats kernel ridge on non-polynomial systems at K = 64 (need ≥ 3/4) | 1/4 ✗ | 1/4 ✗ |
+| A2: overall ratio at K = 32 / 64 (need ≤ 1.1) | 0.93 / 1.01 ✓ | 0.95 / 1.08 ✓ |
+| Fine-tuned basis chosen by validation | 25% | 25% |
+
+Non-polynomial systems at K = 64 (fine-tune / library+fb / kernel ridge, seed 1):
+
+| System | Fine-tune | Library+fb | Kernel ridge |
+|---|---|---|---|
+| SaltonSea | .00051 | .00051 | .00075 |
+| Thomas | .0101 | .0101 | .0078 |
+| WindmiReduced | .089 | .093 | .086 |
+| YuWang | .069 | .067 | .055 |
+
+### Reading
+
+- **Encounter-time fine-tuning is safe, but it does not extract unfamiliar mechanisms.** With at most 64 noisy observations under the observable-only contract, neither the frozen library, the fine-tuned library (Trial 12) nor test-time accumulation over a stream (Trials 10–11) beats generic kernel ridge on mechanisms unlike the history.
+- **The consistent picture after Trials 10–12.** History makes learning faster and more data-efficient when it contains related mechanisms: confirmed on held-out systems, and seen again at test time within the Sprott family. For a genuinely unfamiliar mechanism, what limits the learner is information per encounter.
+- **As pre-registered, the next lever is what to observe.** Use experience to decide *where* to look, which is the "learns how to investigate" aspiration in the handover.
+
+## Trial 13: does experience help decide what to observe? (pre-registered 29 October, before running)
+
+- **Hypothesis.** When observations are costly and the learner can choose which to take, choosing them with its experience-derived features gives lower error at a fixed budget than random choice, and lower than a generic space-covering design. This is investigation guided by history.
+- **Contract: pool-based active observation.** It extends the observable-only contract; the extension is stated openly.
+  - For each episode, the learner sees a pool of 400 candidate states for free: noisy middle states of snippets at random centres in segment A, with 0.5% noise as before.
+  - A derivative estimate (that snippet's central difference) costs one unit of budget. The budget is K.
+  - Queries and scoring are as in Trial 9: clean central differences at clean segment-B states.
+  - No ground-truth derivatives are used. The pool's states are themselves observations, not answers.
+- **Learner.** Trial 9 seqobs400 t = 51 library+fb, both seeds, frozen.
+- **Strategies, at the same K:**
+  - **random:** K pool points at random; this is Trial 9's contract.
+  - **coverage (generic):** greedy farthest-point selection in pool-standardized state space, starting from one random point.
+  - **experience (primary):**
+    1. Take K/2 random pool points.
+    2. Select an option by exact leave-one-out as usual (4 bases plus kernel ridge).
+    3. If a basis is selected, add the remaining K/2 points greedily by maximum leverage, φ(x)ᵀ(ΦᵀΦ + λK·I)⁻¹φ(x), in that basis's features with its selected λ, updating after each point.
+    4. If kernel ridge is selected, add the remaining points by coverage.
+    5. Finally, run library+fb on all K labelled points.
+- **Controls:** kernel ridge with random and with coverage selection.
+- **Episodes:** per development system and K ∈ {8, 16, 32}: 4 instances × 5, generator seeds 13000 + 97i + K, shared by all strategies.
+- **Criteria** (both seeds, aggregate median over the 13 systems):
+  - **I1 (choosing helps):** at K = 16, experience ≤ 0.67× random for the same learner.
+  - **I2 (experience adds to generic design):** at K = 16, experience ≤ 0.83× coverage for the same learner.
+- **Reported:** K = 8 and 32, strata, kernel ridge with random and coverage selection, and the learner with coverage selection.
+
+**What happens next, decided now:**
+- **I1 and I2 pass:** history-guided investigation works. Next, test whether it helps unfamiliar mechanisms specifically, and move toward reset-style probing.
+- **I1 passes but I2 fails:** active choice helps but generic coverage is as good. Experience is not what makes investigation work here.
+- **I1 fails:** on-attractor pools are too redundant for choice to matter. Report it and reconsider observation design (controlled probes).
+
+**Resources:** evaluation only; outputs under `outputs/accumulating_learner/trial13/`.
