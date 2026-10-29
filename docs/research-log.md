@@ -951,3 +951,48 @@ The owner asked whether testing on reserve set A would just mean creating more t
 - **P1 fails here too:** the explanation is unrelatedness among the development systems, not saturation. Next, try a learner that adapts more at encounter time (per-system fine-tuning of the selected basis) or that grows new bases, and source related-mechanism families for training.
 
 **Resources:** 12 short streams, as in Trial 10; outputs under `outputs/accumulating_learner/trial11/`.
+
+## Trial 11: result (29 October)
+
+**Classification: FAILED.** P1 fails in both seeds, P2 passes in seed 1 only (barely), and P3 fails in both.
+
+| | Seed 1 | Seed 2 |
+|---|---|---|
+| P1: ρ(position, L) at K = 32 | −0.16 ✗ | −0.24 ✗ |
+| P1: median L, positions ≥ 7, K = 32 | −0.10 | −0.12 |
+| P2: non-polynomial median L, positions ≥ 7 | −0.019 ✓ | 0.000 ✗ |
+| Continual vs **frozen**, median L at positions ≥ 7 | −0.031 | −0.013 |
+| P3: retention ratio (need ≤ 1.5) | 1.77 ✗ | 1.54 ✗ |
+
+### Reading
+
+- **History helps for related mechanisms only.**
+  - The Sprott family and BurkeShaw gain a lot from earlier stream systems. Per-system median L at positions ≥ 7 in seeds 1 / 2: SprottQ −0.66 / −1.25, SprottJ −0.02 / −1.48, SprottP −0.71 / −0.64, SprottI −0.33 / −0.47, BurkeShaw −0.42 / −0.92.
+  - The one-of-a-kind mechanisms do not gain and some get worse: ShimizuMorioka +0.73 / +0.33, RikitakeDynamo +0.67 / +0.07, Thomas +0.28 / 0.00, KawczynskiStrizhak −0.09 / +0.23.
+  - Together with Trial 10 this supports explanation 2: the null result is mostly about how related the stream systems are, not about saturation.
+- **The replay-only control is weak at short history.** Over-training on 8 systems degrades it. Against the frozen learner, test-time learning helps only 1–3% in the median.
+- **Forgetting appears at short history.** With only 8 earlier systems in memory, learning 13 new ones crowds them out (ratio about 1.5–1.8). At 51 systems (Trial 10) it did not.
+- **Implication for the goal.** The learner turns related experience into faster learning, both in meta-training and at test time. For a mechanism unlike anything in its history, the only gains available are from how it adapts at encounter. Its current encounter-time adaptation is a linear head on frozen features, which falls back to kernel ridge level for such systems.
+
+## Trial 12: stronger adaptation at encounter for unfamiliar mechanisms (pre-registered 29 October, before running)
+
+- **Hypothesis.** For a mechanism its stored features do not fit, the learner does better by *adapting* its best stored basis to the K observations (transfer by fine-tuning) than by keeping it frozen or falling back to kernel ridge. History then provides a starting point even for unfamiliar mechanisms. Selection on a held-out part of the context keeps this from hurting familiar systems.
+- **Setting.** Evaluation only, at encounter: Trial 9's observable-only seqobs400 t = 51 checkpoints (both seeds), Trial 9's development episodes and contract, K ∈ {32, 64}. No ground-truth derivatives.
+- **Procedure per episode:**
+  1. Library+fb selection by exact leave-one-out (as before) gives option o*.
+  2. **If o* is a basis:**
+     - split the context at random (seeded per episode) into 75% fit and 25% validation;
+     - fine-tune a copy of that basis (all parameters) for 100 Adam steps (lr 3e-4) on the fit part, minimizing the ridge head's closed-form leave-one-out MSE, with λ fixed to the value selected before fine-tuning;
+     - choose between the fine-tuned and original basis by ridge-head validation MSE (head fitted on the fit part);
+     - refit the head on all K with the chosen basis.
+  3. **If o\* is kernel ridge:** also fine-tune the basis with the lowest leave-one-out score, and choose between it and kernel ridge on the same validation split. Kernel ridge is scored there with its leave-one-out-chosen hyperparameters, fitted on the fit part.
+- **Criteria** (both seeds; against Trial 9's library+fb on the same episodes):
+  - **A1 (unfamiliar mechanisms):** non-polynomial-stratum median NMSE at K = 64 ≤ 0.8× library+fb's, *and* fine-tuning beats kernel ridge on ≥ 3 of 4 non-polynomial systems at K = 64.
+  - **A2 (no harm):** overall aggregate at K = 32 and K = 64 ≤ 1.1× library+fb's.
+- **Reported:** the same at K = 32, and how often the fine-tuned basis is chosen.
+
+**What happens next, decided now:**
+- **A1 and A2 pass:** encounter-time adaptation is the route to unfamiliar mechanisms. Next, meta-train *for* adaptability, so the inner fine-tuning is part of meta-training (learning how to adapt from history).
+- **A1 fails:** with K ≤ 64 noisy observations, fine-tuning cannot extract an unfamiliar mechanism beyond what kernel ridge gets. The binding constraint for unique mechanisms is then information per encounter, not the learner, and the next lever is what to observe.
+
+**Resources:** evaluation only, about 1,000 fine-tunings × 100 steps; outputs under `outputs/accumulating_learner/trial12/`.
