@@ -672,3 +672,45 @@ So sparsity is worth about 6× at K = 8 *in the right basis*, but the learned ba
 **Resources:**
 - 2 streams of 20,400 steps, about 1 hour each;
 - outputs under `outputs/accumulating_learner/trial6/`.
+
+## Trial 6: result (29 October)
+
+**Classification: FAILED.** G1 passes in seed 1 only, and G2 fails in both seeds. Training was numerically clean (0 non-finite steps in both seeds).
+
+| At t = 51, development set | Seed 1 | Seed 2 |
+|---|---|---|
+| K = 8: sparse library vs ridge library (seq-replay-400) | **.077** vs .139 (ratio 0.56; 9/13 wins) ✓ | .267 vs .127 (ratio 2.11; 2/13) ✗ |
+| K = 32: sparse vs ridge (G2 needs ≤ 1.5×) | .00040 vs .00017 (2.4×) ✗ | .0024 vs .00009 (27×) ✗ |
+| C1; C2; C3 | ✗ (ρ −0.74); ✓ 11/13; ✓ (threshold K 8 vs 16) | ✗ (ρ −0.64); ✗ 7/13; ✗ |
+| Share of the log-gap to poly2-sparse (.0695) closed at K = 8 | 85% | −124% |
+| Median share of head coefficients < 1% of the largest (K = 32) | 47% | 34% |
+
+### Reading
+
+- **Seed 1 shows the idea can work.** Trained through a sparse head, the library closes 85% of the gap to the known sparse-monomial reference at K = 8.
+  - Example per-system K = 8 gains over the ridge library: BurkeShaw .010 → .003, RikitakeDynamo .092 → .014, ShimizuMorioka .77 → .24, Halvorsen .70 → .16.
+  - This is the first pass of C3 (threshold K = 8 vs 16 for the best control) by a non-reference method.
+- **Problem 1: the fallback is broken.** The approximate leave-one-out of the adaptive head treats the data-dependent reweighting as fixed, so it is optimistic. A sparse option then always beats kernel ridge's exact leave-one-out: kernel ridge is selected 0 times out of 255 at K = 32, in both seeds. Systems that no basis fits blow up instead of falling back: Thomas 2.6 / 3.8 at K = 8 against .72 with the ridge library, WindmiReduced 1.01 against .35.
+- **Problem 2: seed 2's library degraded late in the stream.** K = 32 aggregate is .0008 at t = 32 but .0025 at t = 51, and polynomial systems are uniformly worse than with the ridge library. Seed 1 does not show this. The cause is not established; candidates are instability of the unrolled reweighting gradients, or basis collapse (seed 2's last-stage wins concentrate on basis 0).
+- **What this decides.** The pre-registered branches assumed G2 would pass; it did not. Problem 1 can be tested *without retraining*, so that comes first as Trial 7.
+
+## Trial 7: honest selection for the sparse head (evaluation-only; pre-registered 29 October, before running)
+
+- **Hypothesis.** Trial 6's failures on systems with no fitting basis come from the optimistic approximate leave-one-out, not from the learned bases. With an *exact* leave-one-out for the sparse head (refit K times with each point held out, for every λ), the selection becomes honest:
+  - the fallback returns for systems no basis fits;
+  - a per-system choice between the sparse and ridge heads keeps K = 32 performance.
+- **No training.** Frozen checkpoints at t = 51 only, the same development episodes, and the same kernel ridge fallback (exact closed-form leave-one-out).
+- **Arms:**
+  - **hybrid6 (primary):** Trial 6 bases. Options per episode: each basis with the sparse head (exact leave-one-out), each basis with the ridge head (exact closed-form leave-one-out), and kernel ridge. 9 options, lowest leave-one-out wins.
+  - **sparse6-exact:** Trial 6 bases, sparse head only (exact leave-one-out), plus kernel ridge. Isolates the selection fix.
+  - **hybrid5:** Trial 5 seq-replay-400 bases with the same 9 options. Tests whether honest selection makes the sparse head a pure add-on to the confirmed method.
+- **Criteria** (each arm, both seeds, against Trial 5's official seq-replay-400 t = 51 numbers):
+  - **G1:** K = 8 aggregate ≤ 0.75× and ≥ 9/13 wins.
+  - **G2:** K = 32 aggregate ≤ 1.5×.
+  - **H1 (fallback restored):** Thomas and WindmiReduced at K = 8 are each ≤ 1.2× their seq-replay-400 values.
+- **Reported:** how often each option is selected, and the S1/C3 readouts at t = 51.
+
+**What happens next, decided now:**
+- **hybrid6 passes G1, G2 and H1 in both seeds:** Trial 6's bases plus honest selection are a confirmation candidate. Retraining stability (problem 2) still needs a seed-robustness check before any confirmation request.
+- **Only hybrid5 passes:** the sparse head is a free add-on to the confirmed method, but training through it is not yet useful.
+- **None pass:** the K = 8 thread is set aside, and the next trial moves to the observation-contract simplification (trajectories instead of directly observed derivatives).

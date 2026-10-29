@@ -45,3 +45,27 @@ def sparse_loo_with_score(Pc, yc, Pq, yq, return_w=False):
             best_loo, best_err = torch.where(m, loo, best_loo), torch.where(m, err, best_err)
             best_w = torch.where(m.view(-1, 1, 1), W, best_w)
     return (best_err, best_loo, best_w) if return_w else (best_err, best_loo)
+
+
+def sparse_exact_loo_with_score(Pc, yc, Pq, yq):
+    """Exact leave-one-out for the sparse head: for every lambda, refit on each K-1 subset and score the held-out point.
+    Lambda chosen per episode by that exact LOO MSE; returns (query NMSE of the full-context fit, exact LOO MSE)."""
+    Pc, yc, Pq, yq = (t.double() for t in (Pc, yc, Pq, yq))
+    B, K, F = Pc.shape
+    keep = torch.stack([torch.cat([torch.arange(j), torch.arange(j + 1, K)]) for j in range(K)]).to(Pc.device)  # (K,K-1)
+    P_loo = Pc[:, keep].reshape(B * K, K - 1, F)
+    y_loo = yc[:, keep].reshape(B * K, K - 1, 3)
+    best_loo = best_err = None
+    for lam in LAMBDAS.tolist():
+        W_loo, _ = sparse_fit(P_loo, y_loo, lam)                                    # (B*K,F,3)
+        pred = (Pc.reshape(B * K, 1, F) @ W_loo).reshape(B, K, 3)                    # held-out predictions
+        loo = ((yc - pred) ** 2).mean((1, 2))
+        loo = torch.where(torch.isfinite(loo), loo, torch.full_like(loo, float("inf")))
+        W, _ = sparse_fit(Pc, yc, lam)
+        err = nmse(Pq @ W, yq)
+        if best_loo is None:
+            best_loo, best_err = loo, err
+        else:
+            m = loo < best_loo
+            best_loo, best_err = torch.where(m, loo, best_loo), torch.where(m, err, best_err)
+    return best_err, best_loo
