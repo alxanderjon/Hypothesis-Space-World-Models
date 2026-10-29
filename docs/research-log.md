@@ -1107,3 +1107,42 @@ Non-polynomial systems at K = 64 (fine-tune / library+fb / kernel ridge, seed 1)
 - **Fail:** generic coverage is near-optimal for this observation model. Experience then pays off through the model, not the investigation. Write the final synthesis, with remaining directions for the owner.
 
 **Resources:** evaluation plus policy training (minutes); outputs under `outputs/accumulating_learner/trial14/`.
+
+## Trial 14: result (29 October)
+
+**Classification: FAILED.** L1 and L2 fail in both seeds.
+
+| Learned policy / coverage, aggregate ratio | K = 8 | K = 16 (L1 needs ≤ 0.83) | K = 32 |
+|---|---|---|---|
+| Seed 1 | 1.86 | 1.00 | 1.25 |
+| Seed 2 | 2.16 | 1.26 | 1.78 |
+
+- The coverage arm reproduces Trial 13's numbers exactly, so the comparison is sound. The policy was trained on 130,560 candidate evaluations from meta-train systems only.
+- A learned scorer that sees only the coverage descriptor is far worse than real farthest-point coverage (seed 1, K = 16: .014 against .0016). One-step "which point helps most now" labels do not teach the multi-step space-filling strategy that coverage embodies.
+- **As pre-registered, generic coverage is near-optimal for this observation model.** Experience pays off through the model, not through investigation. Learning an investigation strategy would need a sequential objective, i.e. a multi-step return, as in the AlphaGo-style aspiration, rather than myopic labels. This has not been tried.
+
+## Synthesis after Trials 1–14 and the confirmation run (29 October)
+
+### What a learner that "learns from its history" achieves here
+
+1. **Confirmed on untouched systems (derivative contract).** A library of four learned feature bases, accumulated one system at a time over 51 published chaotic flows with a 6% replay memory, learns new systems from the same catalog with far less data than experience-free methods: about 65× lower error at K = 32 and 40× at K = 16. The gain grows with the number of systems seen, and the same system is learned better when it arrives later in the stream.
+2. **It survives realistic observation** (development set). With noisy trajectories and *no ground-truth derivatives anywhere* (Trial 9), the experience curve persists in both seeds. Its size shrinks to 2–4× because observation noise dominates.
+3. **It keeps learning at test time without forgetting** when its history is long (Trial 10). When the stream contains related mechanisms (the Sprott family, Trial 11), learning one makes the next 1.5–4× easier.
+
+### What it does not do
+
+4. **Unfamiliar mechanisms.** For a mechanism unlike anything in its history, none of these beat generic kernel ridge with ≤ 64 noisy observations: stored features, test-time accumulation, or encounter-time fine-tuning (Trials 10–12). History only transfers to what it resembles.
+5. **Very small budgets.** K = 8 did not confirm. Learned sparsity did not survive honest selection (Trials 6–7).
+6. **Investigation.** *Where* to observe matters a great deal: a spread-out design is worth 3–5× for every method, including on unfamiliar mechanisms (Trial 13). But neither a hand-written experience-based rule nor a myopically learned policy beats generic coverage (Trial 14).
+
+### What this implies for the goal
+
+The learner turns *related* experience into faster and more reliable learning, without being supplied the structure (the term library is learned, not given). Its reach is bounded by how diverse its history is. In this catalog history is dominated by quadratic flows, so that is where the gains are. The main remaining lever for generality is **a broader history**: more, and more varied, mechanism families. Better per-encounter methods are not it. The second lever is **investigation with a multi-step objective**.
+
+### Remaining directions, and what each needs
+
+- **(a) Broaden the history.** Requires new mechanism sources.
+  - Options: (i) re-designate part of reserve set B (31 untouched systems of dimension 4–10) as training history for a learner that works for any state dimension, keeping the rest as held-out tests; (ii) source and vet other published catalogs.
+  - (i) changes the status of reserved data, so it needs the owner's decision.
+- **(b) Investigation learned with a multi-step objective** (a sequential policy trained on history to minimize error after K observations). Development data only; can proceed.
+- **(c) A final test on reserve set A.** Not recommended yet. With coverage design, the learner's advantage over kernel ridge on non-polynomial development systems is about 1×, so a reserve-set-A test would most likely confirm finding 4 and spend the set.
