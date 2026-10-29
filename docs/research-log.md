@@ -619,3 +619,56 @@ The 14 confirmation systems are now opened. Two untouched sets remain, declared 
 - **Reserve set B:** the 31 systems of dimension 4, 5, 6 and 10. Only relevant to a learner that works for any state dimension.
 
 The PDEBench reserved trajectories and the diffusion–sorption mechanism stay untouched, as before.
+
+## Next direction: the small-budget regime (29 October)
+
+The one claim that failed confirmation is the K = 8 advantage.
+
+**Why a learned Gaussian prior would not help.** A Gaussian prior over the per-system head (any covariance, zero mean) can be absorbed into the last linear layer of the learned features. Isotropic ridge on learned features therefore already *is* a learned Gaussian prior. (A non-zero mean is meaningless here, because output roles differ between systems.) What could help at K = 8 is a *non-Gaussian* prior about which terms are present, i.e. sparsity.
+
+### Pilot (development episodes, no training; recorded before designing Trial 6)
+
+Head: `sparse_head.py`, adaptive ridge. Five reweighting iterations, weights 1/(W² + ε), ε = 0.01 × the mean of the squared ridge coefficients, λ chosen by approximate leave-one-out.
+
+| Aggregate NMSE | K = 8 | K = 16 | K = 32 |
+|---|---|---|---|
+| poly2, ridge head | .446 | .00096 | .00010 |
+| poly2, sparse head (known-prior reference, SINDy-like) | **.069** | .00023 | .00006 |
+| seq-replay-400 bases, ridge head (seed 1 / 2) | .139 / .127 | .00080 / .00046 | .00017 / .00009 |
+| seq-replay-400 bases, sparse head, no retraining | .282 / .126 | .0018 / .0018 | .00057 / .00022 |
+
+At K = 8 the sparse head beats the ridge head on 11 of 13 systems in the monomial basis, but on only 1 and 4 of 13 in the learned bases. The ridge-head rows include the kernel ridge fallback and reproduce Trial 5's official values exactly.
+
+*Correction, made before committing:* a first version of this table summarised each system's 20 episodes with `torch.median`, which returns the lower of the two middle values. Every official analysis uses `np.median`, the average of the two, and the table above uses that. I traced the discrepancy by recomputing stored Trial 5 entries; they reproduce exactly when the same statistic is used. No stored result or criterion is affected.
+
+So sparsity is worth about 6× at K = 8 *in the right basis*, but the learned bases are not one. The catalog's vector fields are sparse in monomials, not in features learned under a ridge head.
+
+## Trial 6: learn a basis in which systems are sparse (pre-registered 29 October, before training)
+
+- **Hypothesis.** If the library is trained *through* the sparse head, experience will find bases in which catalog systems are sparse: a learned term library, not a supplied one. This recovers much of the monomial-sparsity advantage at K = 8 without being given monomials, and without losing the K = 32 performance.
+- **Method.**
+  - Trial 5's seq-replay-400 unchanged (stream, orders, 400 steps per stage, replay of 2 instances, per-stage cosine learning rate, 4 bases, relaxed winner-take-all, log NMSE) except for the head.
+  - In training, the head is `sparse_fit` with each basis's learned λ, differentiated through the 5 unrolled reweighting iterations.
+  - At encounter, λ is chosen by the sparse head's approximate leave-one-out, and there is the same kernel ridge fallback.
+  - Code: `trial6.py`.
+- **References:**
+  - seq-replay-400 (Trial 5 checkpoints, ridge head);
+  - poly2 with sparse head (known prior; shows how much is left to gain).
+- **Criteria** (development episodes, both seeds, t = 51):
+  - **G1 (small budget):** K = 8 aggregate ≤ 0.75× seq-replay-400's (seed 1: .139 → ≤ .104; seed 2: .127 → ≤ .095), *and* it beats seq-replay-400 on ≥ 9 of 13 systems at K = 8.
+  - **G2 (no loss at larger K):** K = 32 aggregate ≤ 1.5× seq-replay-400's.
+  - **G3:** C1 and C2 pass on the t-grid checkpoints.
+- **Reported:**
+  - S1 against the experience-free controls;
+  - fraction of the gap to poly2-sparse closed at K = 8;
+  - effective sparsity: the share of head coefficients below 1% of the largest, per system;
+  - the strata.
+
+**What happens next, decided now:**
+- **G1–G3 pass in both seeds:** a candidate for confirmation on reserve set A, which needs hand-porting and owner approval. Stop and ask.
+- **G1 fails while G2 and G3 pass:** sparsity cannot be learned through this unrolled head. Next, try a sparsity-inducing feature parameterization, or an explicit term-selection policy learned from experience.
+- **Training is numerically unstable** (NaN, or loss blow-ups in more than 1% of steps): report it, then retry once with ε increased 10×, logged as a deviation.
+
+**Resources:**
+- 2 streams of 20,400 steps, about 1 hour each;
+- outputs under `outputs/accumulating_learner/trial6/`.
