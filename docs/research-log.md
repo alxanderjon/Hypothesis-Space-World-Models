@@ -1146,3 +1146,48 @@ The learner turns *related* experience into faster and more reliable learning, w
   - (i) changes the status of reserved data, so it needs the owner's decision.
 - **(b) Investigation learned with a multi-step objective** (a sequential policy trained on history to minimize error after K observations). Development data only; can proceed.
 - **(c) A final test on reserve set A.** Not recommended yet. With coverage design, the learner's advantage over kernel ridge on non-polynomial development systems is about 1×, so a reserve-set-A test would most likely confirm finding 4 and spend the set.
+
+## Owner permission and decision on reserve set B (29 October)
+
+The owner wrote: *"if you think this will help us reach our goal and has generalization capability you have my permission"* to use part of reserve set B as training history.
+
+**Check made before deciding.** Names, dimensions and equation form only. I compiled the whitelisted right-hand sides to classify them symbolically; no data was generated and nothing was evaluated.
+
+- Of B's 31 systems, 19 are usable autonomous ODEs with a static right-hand side. The rest are 7 delay embeddings, 2 nonautonomous systems, and 4 with custom right-hand sides.
+- **17 of the 19 are polynomial**, mostly 4-D hyperchaotic extensions of the Lorenz, Chen, Lü and Rössler family that already dominates the training history: HyperBao, HyperCai, HyperJha, HyperLorenz, HyperLu, HyperPang, HyperQi, HyperRossler, HyperWang, HyperXu, HyperYan, HyperYangChen, LorenzStenflo, Qi, LorenzCoupled, HenonHeiles and NuclearQuadrupole.
+- Only DoublePendulum and SwingingAtwood are non-polynomial.
+
+**Decision: not used.** B would add more of the same structure in more dimensions. It would not broaden the *kinds* of mechanism in the history, and that is the bottleneck identified in the synthesis. It would also spend the only higher-dimensional test set. **Reserve set B stays reserved.**
+
+## Trial 15: does a procedurally broadened history help unfamiliar mechanisms? (pre-registered 29 October, before generating anything)
+
+- **Hypothesis.** The learner fails on unfamiliar mechanisms because its history contains only one family of structure. If the history also contains many procedurally generated, non-polynomial dynamical systems from a *generic* recipe that is not built around any test system, its stored features become more general. Real non-polynomial development systems then improve beyond both the catalog-only learner and kernel ridge, without losing the polynomial gains.
+- **Synthetic mechanisms** (`synthetic.py`, seeded):
+  - Form: f(x) = −Γx + Σ_{k=1..m} a_k σ_k(u_k·x + b_k), with:
+    - x in R³;
+    - Γ diagonal with entries U(0.1, 1);
+    - m ~ U{3..8} terms;
+    - u_k ~ N(0, I) / √3, b_k ~ U(−π, π), a_k ∈ R³ ~ N(0, s²·I) with s ~ U(1, 4);
+    - σ_k drawn uniformly from {sin, tanh, z/(1+z²), exp(−z²), cos}, all bounded.
+  - Bounded σ plus linear damping guarantees bounded trajectories. Products and polynomials are deliberately excluded, so this history adds *non-polynomial* structure.
+  - **Acceptance** (no reference to any test system):
+    - integrate from a random initial condition;
+    - estimate a characteristic period P = 2π·mean‖x − x̄‖ / mean‖f‖ from a pilot run;
+    - discard 50P, then sample 4,000 points over 100P;
+    - keep the system if no coordinate's segment-B std falls below 1e-3 of its scale and the speed has not decayed (segment-B RMS of f ≥ 0.1 × segment-A RMS).
+  - Generate until 200 systems are accepted, each with 8 instances (random initial conditions) and h = P/40, stored like the catalog bank.
+- **Arms** (observable-only contract, Trial 9's training code, both seeds):
+  - **catalog-only:** Trial 9's seqobs400 checkpoints (51 systems, 400 steps per stage, M = 4).
+  - **catalog-long:** catalog-only at 1,970 steps per stage, matching the compute of the broad arm.
+  - **broad:** a stream of 251 systems, the 51 catalog systems and 200 synthetic ones, interleaved by a seeded shuffle. 400 steps per stage, M = 4, replay memory of 2 instances per system.
+  - **broad8:** broad with M = 8 bases, in case four bases lack capacity for a broader history.
+- **Evaluation:** development systems, Trial 9 observable contract and episodes (random design), K ∈ {16, 32, 64}. Kernel ridge is the experience-free control.
+- **Criteria** (both seeds, K = 32; the primary arm is whichever of broad and broad8 has the lower non-polynomial median in seed 1, decided by that rule before looking at seed 2):
+  - **S-A (unfamiliar mechanisms):** non-polynomial-stratum median ≤ 0.75× catalog-only's *and* ≤ 0.75× catalog-long's, and it beats kernel ridge on ≥ 3 of 4 non-polynomial systems.
+  - **S-B (no loss on familiar):** polynomial-stratum median ≤ 1.5× catalog-only's.
+
+**What happens next, decided now:**
+- **S-A and S-B pass:** a broader history buys generality. Propose a reserve-set-A test (11 real, mostly non-polynomial systems) to the owner, with the protocol fixed in advance.
+- **S-A fails:** a generic synthetic history does not transfer to real unfamiliar mechanisms at these budgets. Report it. This would strengthen the "information per encounter" explanation.
+
+**Resources:** synthetic data about 200 systems × 8 instances (about 80 MB); 2 seeds × 3 training arms; outputs under `outputs/accumulating_learner/trial15/`.
