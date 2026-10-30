@@ -1784,3 +1784,14 @@ The full Trial 23 protocol (arms and criteria) is pre-registered after conversio
 - **B1 and B2 pass:** experience at scale generalizes to new real systems. Stop and ask the owner about a reserve-set-A test.
 - **B1 passes but B2 fails:** gains are specific to transients (new initial conditions within a domain). Report it, and then test reserve-set-A-style unfamiliar mechanisms on development only.
 - **Both fail:** even a large related real history does not beat kernel ridge at ≤ 64 noisy observations. Report this as the session's conclusion.
+
+### Trial 23 deviation: training restarted after NaN (30 October, before any evaluation)
+
+- **What happened.** In both seeds the training loss became NaN between stages 90 and 100, so the weights were corrupted. Both runs were stopped (about 2 h of compute discarded). Checkpoints are only written at the end, so none existed and nothing was evaluated.
+- **Cause, found by diagnostic** (sampling every real system's training episodes):
+  - 2 systems produce non-finite standardized values, and 6 have a variable that never changes. Division by a near-zero spread gives infinities.
+  - Separately, many transient systems give very large but finite standardized values (multi-scale relaxation, query starting states outside the context's range). That is legitimate difficulty and is shared by every method.
+- **Fix, decided before any evaluation:**
+  1. **Validity rule:** exclude models with any near-constant variable (span ≤ 1e-6 × max|x|) or non-finite samples. This removes 11 models: 7 training and 4 new held-out transients; none of Trial 18's held-out set. The list is in `validity_excluded.json`.
+  2. **Non-finite steps are skipped and counted**, so a bad batch cannot corrupt the weights again.
+- **Effect on the protocol:** 145 training and 72 held-out real models remain (53 new held-out transients). B1's win threshold stays at 60%, now ≥ 32 of 53. Everything else is unchanged. Training restarts from scratch with the same seeds and stream rule; the stream is now 196 systems. The aborted logs are kept as `train_s*_aborted_nan.log`.

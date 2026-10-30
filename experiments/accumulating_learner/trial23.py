@@ -32,6 +32,8 @@ STEPS = 400  # per stage; may be set lower in the pre-registration once the syst
 
 def info():
     split = json.loads((REAL / "split.json").read_text())
+    excluded = set(json.loads((REAL / "validity_excluded.json").read_text()))  # near-constant variable or non-finite samples
+    split = {k: v for k, v in split.items() if k not in excluded}
     conv = {r["id"]: r for r in json.loads((REAL / "conversion.json").read_text())["records"]}
     return split, conv
 
@@ -97,6 +99,7 @@ def train(args):
     opt = torch.optim.Adam(lib.parameters(), lr=LR)
     gen = torch.Generator().manual_seed(500 + 1000 * s)
     mem, log, t0 = [], {"seed": s, "order": order, "steps_per_stage": STEPS, "stages": []}, time.time()
+    nonfinite = 0
     (OUT / "learners").mkdir(parents=True, exist_ok=True)
     for t, name in enumerate(order, 1):
         x, h, kind = load_sys(name, dev, conv)
@@ -114,14 +117,18 @@ def train(args):
                 loss, e = 0.5 * (la + lb), 0.5 * (ea + eb)
             else:
                 loss, e = task_loss(lib, new.sample(BATCH, K, gen))
+            if not torch.isfinite(loss):  # a bad batch must never corrupt the weights (Trial 23 deviation)
+                nonfinite += 1
+                opt.zero_grad()
+                continue
             opt.zero_grad(); loss.backward()
             nn.utils.clip_grad_norm_(lib.parameters(), 1.0)
             opt.step()
             run += e
         mem.append(keep)
-        log["stages"].append({"t": t, "system": name, "kind": kind, "d": int(x.shape[-1]), "train_min_nmse": run / STEPS})
+        log["stages"].append({"t": t, "system": name, "kind": kind, "d": int(x.shape[-1]), "train_min_nmse": run / STEPS, "nonfinite_so_far": nonfinite})
         if t % 10 == 0 or t == len(order):
-            print(s, t, "/", len(order), name, kind, f"d={x.shape[-1]} train {run / STEPS:.4f}", f"{time.time() - t0:.0f}s", flush=True)
+            print(s, t, "/", len(order), name, kind, f"d={x.shape[-1]} train {run / STEPS:.4f} nonfinite {nonfinite}", f"{time.time() - t0:.0f}s", flush=True)
     torch.save(lib.state_dict(), OUT / "learners" / f"pwbig_final_s{s}.pt")
     (OUT / "learners" / f"pwbig_s{s}.json").write_text(json.dumps(log))
 
