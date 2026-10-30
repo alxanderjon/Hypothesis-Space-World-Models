@@ -1522,3 +1522,76 @@ The learner's experience is valuable exactly when it contains the right structur
   - **P3:** retention on each seed's first 8 meta-train systems (observable contract, K = 32), median ratio to Trial 16's catalog+bio ≤ 1.0.
 
 **What happens next, decided now:** whatever these show, write a final synthesis for the owner. If either passes, it becomes part of the recommended learner. Reserve sets stay untouched unless a candidate beats kernel ridge on unfamiliar development and held-out real systems.
+
+## Trial 19: result (30 October)
+
+**Classification: FAILED.** GF fails in both seeds; GU passes in both.
+
+| Median NMSE, K = 8 / 16 / 32 | Unfamiliar, seed 1 | Unfamiliar, seed 2 | Familiar, seed 1 | Familiar, seed 2 |
+|---|---|---|---|---|
+| coverage | .214 / .036 / .0025 | .156 / .037 / .0027 | .031 / .00075 / .00029 | .0085 / .00054 / .00025 |
+| disagreement×coverage (Trial 17) | .166 / .027 / .0043 | .134 / .023 / .0039 | .047 / .00091 / .00027 | .0090 / .00057 / .00023 |
+| **gated** | **.140** / .027 / .0028 | **.106** / .022 / .0030 | .047 / .00080 / .00027 | .0102 / .00061 / .00025 |
+| kernel ridge, coverage | .134 / .033 / .0026 | (same) | .090 / .0019 / .00048 | (same) |
+
+- **GU:** unfamiliar, gated vs coverage at K = 16 is 0.75 and 0.59 ✓.
+- **GF:** familiar, same comparison, is 1.07 and 1.13 ✗.
+- Gate open rate at K = 16: unfamiliar 56% / 67%; familiar 56% / 62%.
+
+### Reading
+
+- **Gating keeps the unfamiliar-system gain at K = 16 and removes the K = 32 penalty** (.0028–.0030 against coverage .0025–.0027, where the ungated rule got .0039–.0043). It is the best strategy on unfamiliar systems at K = 8.
+- **The gate is not selective.** With only 4 observations, kernel ridge wins leave-one-out selection on familiar systems almost as often as on unfamiliar ones, so familiar systems still pay a small cost.
+- A better unfamiliarity signal is needed, for example the gap between the best basis's leave-one-out error and its typical in-history error.
+
+## Trial 20: result (30 October)
+
+**Classification: FAILED.** P1 and P3 fail in both seeds; P2 passes in seed 1 only.
+
+| | Seed 1 | Seed 2 |
+|---|---|---|
+| P1: held-out median, prioritized vs uniform replay (need ≤ 0.8) | 1.09 ✗ | 1.26 ✗ |
+| P2: development polynomial stratum (need ≤ 1.2) | 1.08 ✓ | 1.80 ✗ |
+| P3: retention (need ≤ 1.0) | 1.05 ✗ | 1.05 ✗ |
+
+### Reading
+
+- **Prioritizing replay by remaining error concentrated rehearsal on systems the learner cannot learn.** ThomasLabyrinth and LiuChen topped the priority list in both seeds, at the expense of everything else. This is the same trap as Trial 1's mean-NMSE objective.
+- **"What remains uncertain" has to mean *still improvable*, not *still wrong*.** The natural next version prioritizes by learning progress (recent *decrease* in error) rather than by error level. Not tried.
+
+## Final synthesis of this session (30 October)
+
+### The goal
+
+A network that learns from its history, without being supplied the answer, and so learns new dynamical systems faster and more reliably.
+
+### Achieved and confirmed
+
+- **When new systems share structure with the history, the learner gets dramatically faster.** It discovers that structure itself (no term library or equations are supplied) and accumulates it one system at a time with a small replay memory.
+- **Confirmed on untouched systems:** about 65× lower error at 32 observations and 40× at 16, with the gain growing with the number of systems seen.
+- **It holds, more modestly (2–4×), when learning only from noisy trajectories** with no ground-truth targets anywhere.
+
+### Not achieved
+
+- **Generalization to genuinely unfamiliar mechanisms.** With ≤ 64 noisy observations, no learner variant beats generic kernel ridge on mechanisms unlike its history. Tried:
+  - broader synthetic history;
+  - 11 and then 37 real related models (any dimension);
+  - test-time learning;
+  - fine-tuning;
+  - sparsity;
+  - context conditioning.
+- History improves each learner relative to itself by about 10–26%, but not beyond kernel ridge.
+
+### Partly achieved: the owner's "learn from what remains uncertain"
+
+- **Choosing observations where stored hypotheses disagree** is the only learner-based approach that edged below kernel ridge on unfamiliar systems: 25–40% better than generic coverage at K = 16, and best at K = 8 when gated.
+- **Its open problem** is a reliable signal for when a system is unfamiliar.
+- **Rehearsing what is still wrong backfires.** It needs a learning-progress signal instead.
+
+### Recommended next steps
+
+1. A better unfamiliarity signal for the gate.
+2. Learning-progress-prioritized replay.
+3. Only then a reserve-set-A test (mostly non-polynomial, untouched), if a candidate beats kernel ridge on unfamiliar development and held-out real systems.
+
+Reserve sets A and B, the PDEBench reserved trajectories and the diffusion–sorption mechanism remain untouched.
