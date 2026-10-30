@@ -1,0 +1,19 @@
+{
+ "BIOMD0000000371": "train",
+ "BIOMD0000000657": "train",
+ "BIOMD0000000157": "train",
+ "BIOMD0000000937": "train",
+ "BIOMD0000000831": "train",
+ "BIOMD0000000878": "train",
+ "BIOMD0000000299": "train",
+ "BIOMD0000000900": "train",
+ "BIOMD0000000323": "train",
+ "BIOMD0000000236": "train",
+ "BIOMD0000000763": "train",
+ "BIOMD0000000938": "heldout",
+ "BIOMD0000000931": "heldout",
+ "BIOMD0000000912": "heldout",
+ "BIOMD0000000274": "heldout",
+ "BIOMD0000000319": "heldout",
+ "BIOMD0000000003": "heldout"
+}

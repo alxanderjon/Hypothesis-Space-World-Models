@@ -1,0 +1,23 @@
+{
+ "BIOMD0000000003": "kept",
+ "BIOMD0000000157": "kept",
+ "BIOMD0000000184": "excluded: Ca2+ oscillation title (rule; missed by first regex)",
+ "BIOMD0000000236": "kept",
+ "BIOMD0000000274": "kept",
+ "BIOMD0000000299": "kept",
+ "BIOMD0000000319": "kept",
+ "BIOMD0000000323": "kept",
+ "BIOMD0000000371": "kept",
+ "BIOMD0000000657": "kept",
+ "BIOMD0000000729": "excluded: duplicate of BIOMD0000000003 (Goldbeter minimal cascade model; same author, same variables C, M, X; title-based judgment)",
+ "BIOMD0000000763": "kept",
+ "BIOMD0000000831": "kept",
+ "BIOMD0000000878": "kept",
+ "BIOMD0000000900": "kept",
+ "BIOMD0000000912": "kept",
+ "BIOMD0000000931": "kept",
+ "BIOMD0000000933": "excluded: duplicate of BIOMD0000000003 (title: geometric analysis of the Goldbeter minimal model)",
+ "BIOMD0000000937": "kept",
+ "BIOMD0000000938": "kept",
+ "BIOMD0000000944": "excluded: structural duplicate of BIOMD0000000729"
+}

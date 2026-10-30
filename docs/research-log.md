@@ -1306,3 +1306,53 @@ Reserve set A stays untouched for a final test.
 **What happens next, decided now:**
 - **R1 and R3 pass:** related real history transfers. Next, the owner's uncertainty-driven additions on this learner: (a) where to look, choosing observations by uncertainty plus coverage; (b) what to study, prioritizing replay by remaining error. After that, propose a reserve-set-A test.
 - **R1 fails:** at this scale (11 related real systems) real families do not transfer either. Then the learner working in any dimension, using the 738 other BioModels, is the remaining way to get a much broader real history.
+
+## Trial 16: result (30 October)
+
+**Classification: FAILED.** R1 fails in both seeds; R2 passes in seed 1 only; R3 passes in both.
+
+| K = 32 | Seed 1 | Seed 2 |
+|---|---|---|
+| R1: held-out median, catalog+bio vs catalog-only (need ≤ 0.67) | 0.90 ✗ | 0.78 ✗ |
+| R1: catalog+bio beats kernel ridge on held-out systems (need ≥ 4/6) | 1/6 ✗ | 0/6 ✗ |
+| R2: catalog+bio vs catalog+synthetic (need ≤ 0.8) | 0.63 ✓ | 0.84 ✗ |
+| R3: development polynomial stratum vs catalog-only (need ≤ 1.5) | 1.33 ✓ | 1.14 ✓ |
+
+Held-out medians (seed 1 / seed 2; kernel ridge is shared):
+
+| | K = 16 | K = 32 | K = 64 |
+|---|---|---|---|
+| catalog-only | .240 / .253 | .093 / .110 | .014 / .011 |
+| catalog+bio | .216 / .218 | .084 / .085 | .013 / .011 |
+| catalog+synthetic | .259 / .279 | .133 / .101 | .015 / .016 |
+| kernel ridge | .336 | .080 | .011 |
+
+### Reading
+
+- **Real related history helps a little, and more than generic synthetic history.** It moves held-out real systems 10–22% closer than the catalog-only learner manages. One example of family transfer: Decroly's enzymatic oscillator improves from .14 / .21 to .11 / .12, with a glycolysis model in training.
+- **But at K = 32 it only reaches kernel ridge level and never clearly beats it.** Exploratory: at K = 16 every learner beats kernel ridge on the held-out real systems (.22–.28 against .34). Kernel ridge catches up by K = 32.
+- **Eleven related real systems are not enough history** to turn unfamiliar real mechanisms into familiar ones.
+- The pre-registered branch for an R1 failure is a learner that works in any dimension, using the other 738 BioModels. Before that larger build, the owner's uncertainty-driven idea is tested cheaply where it matters most: unfamiliar systems.
+
+## Trial 17: observe where the learner's stored hypotheses disagree (evaluation only; pre-registered 30 October, before running)
+
+- **Hypothesis.** For unfamiliar systems, the most informative next observation is where the learner's *stored hypotheses* — its 4 specialised bases, each fitted to the observations so far — disagree most, while staying spread out. This "learn from what remains uncertain" rule beats generic coverage at the same budget.
+- **Contract.** Trial 13's pool-based active observation, observable-only: 400 free noisy candidate states, a budget of K central-difference estimates, clean central-difference queries.
+- **Learner.** Trial 16's catalog+bio library (seeds 1, 2), frozen. Final prediction by library+fb, as in Trials 13–14.
+- **Test systems:**
+  - unfamiliar = the 6 held-out BioModels systems plus the 4 non-polynomial development systems (10, pooled);
+  - familiar = the 9 polynomial development systems.
+- **Strategies** (all share each episode's pool and random draws):
+  - **random:** K random pool points.
+  - **coverage:** farthest-point, from the first random point.
+  - **disagreement×coverage (primary):** start from 2 random points. Each step, fit every basis's ridge head (its leave-one-out-chosen λ) on the points so far and predict at all candidates. Score each candidate as (standard deviation across the 4 bases' standardized predictions) × (distance to the nearest chosen point), and take the maximum. Bases are refitted every step and λ is re-selected at k ∈ {2, 4, 8, 16}.
+  - **leverage×coverage (secondary):** the same, with the selected basis's leverage, √(φᵀ(ΦᵀΦ + λkI)⁻¹φ), in place of disagreement.
+- **Episodes:** per system and K ∈ {8, 16, 32}, 4 instances × 5, generator seeds 17000 + 97i + K (BioModels held-out systems are indexed after the development systems).
+- **Criteria (both seeds):**
+  - **U1 (unfamiliar):** pooled unfamiliar median at K = 16, disagreement×coverage ≤ 0.83× coverage;
+  - **U2 (no harm):** familiar median at K = 16, ≤ 1.0× coverage.
+- **Reported:** K = 8 and 32, the secondary strategy, and kernel ridge with coverage.
+
+**What happens next, decided now:**
+- **U1 and U2 pass:** uncertainty-guided investigation works for unfamiliar systems and becomes part of the learner. Next, "what to study" (replay prioritized by remaining error), and then the learner that works in any dimension.
+- **Fail:** generic coverage remains the best observation rule. Proceed to the learner that works in any dimension.
