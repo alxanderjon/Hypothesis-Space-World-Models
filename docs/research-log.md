@@ -1356,3 +1356,27 @@ Held-out medians (seed 1 / seed 2; kernel ridge is shared):
 **What happens next, decided now:**
 - **U1 and U2 pass:** uncertainty-guided investigation works for unfamiliar systems and becomes part of the learner. Next, "what to study" (replay prioritized by remaining error), and then the learner that works in any dimension.
 - **Fail:** generic coverage remains the best observation rule. Proceed to the learner that works in any dimension.
+
+## Trial 17: result (30 October)
+
+**Classification: FAILED** (U2 fails in both seeds), **with a positive signal**: U1 passes in both seeds.
+
+The first run crashed on SprottQ, which has 3 instances (recorded in Trial 1), because the code hard-coded 4. It was fixed to use the available instances, as all earlier trials do, and rerun from scratch; the run is deterministic.
+
+| Median NMSE, K = 8 / 16 / 32 | Unfamiliar (10), seed 1 | Unfamiliar, seed 2 | Familiar (9), seed 1 | Familiar, seed 2 |
+|---|---|---|---|---|
+| learner, random | .59 / .27 / .084 | .54 / .23 / .096 | .165 / .0081 / .0017 | .146 / .0051 / .0010 |
+| learner, coverage | .21 / .036 / **.0025** | .16 / .037 / **.0027** | .031 / .0007 / .0003 | .0085 / .0005 / .0003 |
+| learner, disagreement×coverage | .17 / **.027** / .0043 | .13 / **.023** / .0039 | .047 / .0009 / .0003 | .009 / .0006 / .0002 |
+| learner, leverage×coverage | .15 / .031 / .0033 | .15 / .025 / .0036 | .042 / .0006 / .0002 | .012 / .0005 / .0002 |
+| kernel ridge, coverage | .13 / .034 / .0026 | (same) | .090 / .0019 / .0005 | (same) |
+
+- **U1:** unfamiliar, disagreement×coverage vs coverage at K = 16 is 0.75 and 0.61 ✓. Per-system wins are only 6/10 and 3/10.
+- **U2:** familiar, same comparison, is 1.22 and 1.06 ✗.
+
+### Reading
+
+- **Observing where the learner's stored hypotheses disagree helps on unfamiliar systems at moderate budgets.** It is the first learner-based result to edge below kernel ridge with coverage on unfamiliar systems at K = 16 (.023–.027 against .034).
+- **It is not uniformly better.** It is slightly worse on familiar systems, worse at K = 32, and the per-system wins are mixed, so the median gain rests on a subset of systems.
+- **Refinement noted, not pursued now** to avoid further tuning on the same development systems: use disagreement-guided observation only when the system appears unfamiliar, i.e. when the fallback is selected or the leave-one-out error stays high.
+- **As pre-registered for failure, the next step is the learner that works in any dimension,** so the history can draw on the much larger pool of real BioModels.
