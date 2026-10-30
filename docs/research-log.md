@@ -1431,3 +1431,66 @@ The same BioModels sourcing rule applies, except that the number of ODE state va
 **What happens next, decided now:**
 - **X1–X3 pass:** a candidate for reserve set A (and potentially B, since the learner works in any dimension). Ask before touching either.
 - **X1 fails:** a broad real history at this scale does not overcome the information-per-encounter limit for unfamiliar real mechanisms. Write the synthesis. The remaining lever is the gated, uncertainty-guided observation from Trial 17.
+
+## Trial 18: result (30 October)
+
+**Classification: FAILED.** X1 and X2 fail in both seeds; X3 passes in both. Training was clean: about 58 minutes per all-history run and 30 minutes per catalog run, at 4 threads each.
+
+| K = 32 | Seed 1 | Seed 2 |
+|---|---|---|
+| X1: held-out median, pw-all vs pw-catalog (need ≤ 0.67) | 0.80 ✗ | 0.74 ✗ |
+| X1: pw-all beats kernel ridge on held-out systems (need ≥ 12/19) | 5/19 ✗ | 8/19 ✗ |
+| X2: Trial 16's 6 held-out systems, pw-all vs Trial 16 catalog+bio (need ≤ 0.8) | 1.38 ✗ | 1.21 ✗ |
+| X3: development polynomial stratum, pw-all vs pw-catalog (need ≤ 1.5) | 0.81 ✓ | 1.00 ✓ |
+
+Held-out medians (19 systems; kernel ridge is shared):
+
+| | K = 16 | K = 32 | K = 64 |
+|---|---|---|---|
+| pw-catalog, seed 1 / 2 | .082 / .077 | .0170 / .0192 | .0015 |
+| pw-all, seed 1 / 2 | .089 / .099 | .0136 / .0142 | .0015 |
+| kernel ridge | .082 | .0117 | .0015 |
+
+### Reading
+
+- **A broad real history (37 real models of 2–10 variables, plus the catalog) helps the learner relative to itself:** about 20–26% lower median error than catalog-only at K = 32, with gains on some high-dimensional clocks (Leloup1999 10-D .0005–.0008 against kernel ridge .0014; Locke2008 8-D).
+- **It still does not beat kernel ridge on held-out real mechanisms.** It is not better than Trial 16's 3-D learner on Trial 16's held-out systems either.
+- Many held-out systems sit at an error floor of about 1e-4 at K = 32, where every method ties. The hard ones (Plant1981 bursting neurons, Bertram2000 β-cells, Rattanakul2003 bone; NMSE .3–.8) are hard for every method.
+- **As pre-registered for X1 failing:** a broad real history at this scale does not overcome the information-per-encounter limit for unfamiliar real mechanisms.
+
+## Synthesis after Trials 1–18 and the confirmation run (30 October)
+
+### Established
+
+1. **Accumulation works when new systems share structure with the history. Confirmed on untouched systems.**
+   - A library accumulated one system at a time discovers the shared structure itself (no term library is supplied) and turns it into 40–65× lower error at 16–32 observations under low-noise observation.
+   - It gives 2–4× from noisy trajectories with no ground-truth targets anywhere.
+2. **The gains grow with experience, and history is retained with a small replay memory.** Related systems help each other even at test time; for example, later Sprott-family systems are learned 1.5–4× better.
+
+### Not achieved: generalization to unfamiliar real mechanisms
+
+Nothing beats generic kernel ridge on mechanisms unlike the history at ≤ 64 noisy observations. Tried so far:
+
+- broader generic history (Trial 15);
+- related real history, 3-D (Trial 16) and any dimension with 37 real models (Trial 18);
+- test-time accumulation (Trials 10–11);
+- encounter-time fine-tuning (Trial 12);
+- sparsity (Trials 6–7);
+- context-conditioned features (Trial 3).
+
+History helps each of these learners *relative to itself*, by 10–26%, but not beyond what kernel ridge extracts from the same observations.
+
+### What does help unfamiliar mechanisms
+
+- **Where to observe** (Trial 13): spreading observations out gives 3–5× for every method.
+- **Observing where the learner's stored hypotheses disagree** (the owner's uncertainty idea, Trial 17) helps further on unfamiliar systems at moderate budgets: 25–39% at K = 16, and the only learner-based result to edge past kernel ridge there. It is slightly worse on familiar systems.
+
+### Interpretation
+
+The learner's experience is valuable exactly when it contains the right structure. For a genuinely new mechanism, a handful of noisy observations limits everyone. The productive levers are then *better observations*, and *choosing them using the learner's uncertainty*, rather than more stored features.
+
+### Recommended next steps
+
+- **Gated uncertainty-guided observation:** disagreement-guided only when the system looks unfamiliar (fallback chosen or high leave-one-out error), coverage otherwise. This targets Trial 17's familiar-system cost.
+- **"What to study":** replay prioritized by remaining error.
+- **Reserve sets A and B stay untouched.** No candidate yet meets the bar of beating kernel ridge on unfamiliar mechanisms, which reserve set A would test.
