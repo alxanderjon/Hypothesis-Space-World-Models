@@ -13,6 +13,7 @@ import argparse
 import json
 import math
 import time
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -26,7 +27,8 @@ from trial1 import rff_eval
 from trial9 import ObsBank, episode_obs
 
 OUT = S.ROOT / "outputs/accumulating_learner/trial24pfn"
-KINDS = json.loads((OUT / "kinds.json").read_text()) if (OUT / "kinds.json").exists() else {}
+KINDS_FILE = S.ROOT / "outputs/accumulating_learner/trial24pfn/kinds.json"  # fixed held-out-by-kind split (Trial 24)
+KINDS = json.loads(KINDS_FILE.read_text()) if KINDS_FILE.exists() else {}
 VARIETIES = {1: ["polynomial"], 2: ["polynomial", "trig"], 3: ["polynomial", "trig", "piecewise"],
              4: ["polynomial", "trig", "piecewise", "tanh", "mixed"]}
 REAL_ALLOWED = {1: {"polynomial"}, 2: {"polynomial", "trig"}, 3: {"polynomial", "trig", "piecewise"},
@@ -216,9 +218,11 @@ def train(args):
     from trial9 import ObsBank as _OB  # noqa: F401  (ObsBank already yields observable noisy queries)
     real_share = len(reals) / (len(reals) + len(X))
     torch.manual_seed(1000 * s + args.variety)
-    model = PFN().to(dev)
-    opt = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.01)
-    steps, warm = args.steps, 1000
+    arch = {"d": args.d, "heads": args.heads, "layers": args.layers, "ff": args.ff}
+    log["arch"], log["lr"], log["warm"] = arch, args.lr, args.warm
+    model = PFN(**arch).to(dev)
+    opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
+    steps, warm = args.steps, args.warm
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda t: min(1, (t + 1) / warm) * 0.5 * (1 + math.cos(math.pi * min(t, steps) / steps)))
     g = torch.Generator().manual_seed(88000 + 1000 * s + args.variety)
     run, hist = 0.0, []
@@ -267,7 +271,8 @@ def evaluate(args):
     torch.set_num_threads(4)
     models = {}
     for p in sorted((OUT / "learners").glob("pfn_*.pt")):
-        m = PFN().to(dev); m.load_state_dict(torch.load(p, map_location=dev, weights_only=True)); models[p.stem] = m.eval()
+        arch = json.loads(p.with_suffix(".json").read_text()).get("arch", {})
+        m = PFN(**arch).to(dev); m.load_state_dict(torch.load(p, map_location=dev, weights_only=True)); models[p.stem] = m.eval()
     tests = [(n, "unfamiliar") for n in heldout_test_systems()]
     tests += [(n, "familiar_dev_poly") for n in S.eligible_split()["development"] if KINDS[n]["kinds"] == ["polynomial"]]
     rows = []
@@ -301,7 +306,7 @@ def analyze(args):
         main = P(4, 65536)
         s1 = {K: med(unf, K, main) / med(unf, K, ctrl[K]) for K in (16, 32)}
         wins = sum(sc[(n, 32, main)] < sc[(n, 32, "krr")] for n in unf)
-        var_adv = [adv(P(v, 8192), 32) for v in (1, 2, 3, 4)]
+        var_adv = [adv(P(v, args.vary_n), 32) for v in (1, 2, 3, 4)]
         num_adv = [adv(P(4, n), 32) for n in (512, 8192, 65536)]
         from scipy.stats import spearmanr
         rho = spearmanr([1, 2, 3, 4], var_adv).correlation
@@ -312,7 +317,7 @@ def analyze(args):
                   "variety_advantage_K32": dict(zip(("V1", "V2", "V3", "V4"), var_adv)), "variety_spearman": rho,
                   "number_advantage_K32": dict(zip(("N512", "N8192", "N65536"), num_adv)), "criteria": crit,
                   "pass": bool(all(crit.values())),
-                  "unfamiliar_medians": {m: {K: med(unf, K, m) for K in (8, 16, 32, 64)} for m in ("krr", "rff", main, P(4, 8192), P(1, 8192))},
+                  "unfamiliar_medians": {m: {K: med(unf, K, m) for K in (8, 16, 32, 64)} for m in ("krr", "rff", main, P(4, args.vary_n), P(1, args.vary_n))},
                   "familiar_dev_poly_K32": {m: med(fam, 32, m) for m in ("krr", "rff", main)}}
         print(f"seed {s}:", json.dumps(out[s], default=float))
     (OUT / "summary.json").write_text(json.dumps(out, indent=1, default=float))
@@ -339,5 +344,14 @@ if __name__ == "__main__":
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--steps", type=int, default=30000)
     ap.add_argument("--device", default="cuda:0")
+    ap.add_argument("--d", type=int, default=192)
+    ap.add_argument("--heads", type=int, default=6)
+    ap.add_argument("--layers", type=int, default=6)
+    ap.add_argument("--ff", type=int, default=512)
+    ap.add_argument("--lr", type=float, default=3e-4)
+    ap.add_argument("--warm", type=int, default=1000)
+    ap.add_argument("--vary-n", type=int, default=8192)
+    ap.add_argument("--out", default=str(OUT))
     a = ap.parse_args()
+    OUT = Path(a.out)
     {"probe": probe, "train": train, "eval": evaluate, "analyze": analyze}[a.cmd](a)
