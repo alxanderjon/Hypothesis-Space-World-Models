@@ -1731,3 +1731,22 @@ This also shows how sensitive these 10-system medians are: changing one starting
 - with ≤ 64 noisy observations, no form of experience tried here, whether in the model or in choosing observations, beats generic kernel ridge on mechanisms unlike the history.
 
 As pre-registered, this thread stops here.
+
+## Owner instruction (30 October, night)
+
+The owner asked whether I am waiting on anything or can run autonomously overnight. Answer: autonomous, under the standing rules — pre-register, log, push-notify, and stop only before reserved sets (A, B, PDEBench). Plan: scale the real history.
+
+## Trial 23 plan: a large real history from one domain (BioModels transients) — sourcing rule, fixed before conversion
+
+- **Why.** The established strength is fast learning of systems that resemble the history. Trial 18's real history was small (37 models) because only sustained oscillators were accepted. Most curated BioModels relax to a steady state; their transients carry the same kinetic structure (mass action, Michaelis–Menten, Hill).
+- **Sourcing extension.** The BioModels rule as before (curated; no events, delays or explicit time; non-polynomial; title exclusions; duplicate rule), but with:
+  - 2 ≤ d ≤ 12 state variables;
+  - *either* sustained motion (as before) *or* a non-trivial transient. A transient model is accepted if, from the published initial state, the trajectory moves (‖x(T) − x(0)‖ ≥ 1e-3 × (‖x(0)‖ + 1e-6)) and settles. The settling time t_s is the first time the distance to the final state falls below 1% of its initial value, with t_s > 0 and within a horizon of 10⁴ model time units.
+- **Transient data:** 8 instances.
+  - Instance 0 starts from the published initial state; instances 1–7 start from the published state with each variable scaled by U(0.5, 1.5) (seeded by the model identifier).
+  - Each instance is integrated over [0, 1.5 t_s] with 4,000 samples, h = 1.5 t_s / 3999.
+  - Instances that fail or blow up are redrawn up to 3 times.
+- **Transient observation contract:** like Trial 9's (central differences, 0.5% noise, observable only), except that the context comes from instances 0–3 and the queries from instances 4–7. This tests prediction for new initial conditions instead of a later time segment. Oscillatory systems keep the segment split.
+- **Split:** Trial 18's assignments preserved. New systems by rank-hash (salt `trial23-split`), two thirds training.
+
+The full Trial 23 protocol (arms and criteria) is pre-registered after conversion, before any training.
