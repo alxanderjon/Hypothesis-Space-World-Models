@@ -150,7 +150,7 @@ def find(root, name):
     return [e for e in root.iter() if tag(e) == name]
 
 
-def convert(path):
+def convert(path, dmin=3, dmax=3):
     if path.stat().st_size > MAX_BYTES:
         raise Reject("file too large")
     root = ET.parse(path).getroot()
@@ -183,9 +183,9 @@ def convert(path):
               if (sid in changed or sid in rate_rules) and s.get("boundaryCondition") != "true"
               and s.get("constant") != "true" and sid not in assign_rules]
     states += [v for v in rate_rules if v not in species]
-    if len(states) != 3:
+    if not dmin <= len(states) <= dmax:
         raise Reject(f"{len(states)} state variables")
-    X = sp.symbols("x0 x1 x2")
+    X = sp.symbols(" ".join(f"x{i}" for i in range(len(states))))
     sym = dict(zip(states, X))
     env = {}
     for cid, v in comps.items():
@@ -303,11 +303,11 @@ def convert(path):
 
 
 def numeric(exprs):
-    X = sp.symbols("x0 x1 x2")
+    X = sp.symbols(" ".join(f"x{i}" for i in range(len(exprs))))
     f = sp.lambdify(X, exprs, modules="numpy")
     def rhs(x):
         x = np.asarray(x, dtype=float)
-        out = f(x[..., 0], x[..., 1], x[..., 2])
+        out = f(*[x[..., i] for i in range(len(exprs))])
         return np.stack([np.broadcast_to(np.asarray(o, dtype=float), x.shape[:-1]) for o in out], -1)
     return rhs
 
@@ -344,13 +344,14 @@ def accept(x, dx):
 
 
 def process(args):
-    path, entry = args
+    path, entry = args[:2]
+    dmin, dmax = (args[2], args[3]) if len(args) > 2 else (3, 3)
     np.seterr(all="ignore")
     rec = {"id": entry["id"], "name": entry.get("name", "")}
     try:
         if EXCLUDE_TITLE.search(entry.get("name", "")):
             raise Reject("excluded by title rule")
-        info, exprs = convert(path)
+        info, exprs = convert(path, dmin, dmax)
         f = numeric(exprs)
         x0 = np.array(info["x0"], dtype=float)
         pilot = integrate(f, x0, np.linspace(0, 2000, 8001))
@@ -366,7 +367,7 @@ def process(args):
         rng = np.random.default_rng(int(hashlib.sha256(entry["id"].encode()).hexdigest()[:8], 16))
         xs, dxs = [], []
         for i in range(INSTANCES):
-            start = x0 if i == 0 else np.abs(xp[int(rng.integers(len(xp)))] * (1 + 0.05 * rng.normal(size=3)))
+            start = x0 if i == 0 else np.abs(xp[int(rng.integers(len(xp)))] * (1 + 0.05 * rng.normal(size=len(x0))))
             x = integrate(f, start, t_eval)
             if x is None:
                 raise Reject(f"instance {i} integration failed")
@@ -386,11 +387,13 @@ def main():
     ap.add_argument("--sbml", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--workers", type=int, default=12)
+    ap.add_argument("--dmin", type=int, default=3)
+    ap.add_argument("--dmax", type=int, default=3)
     a = ap.parse_args()
     src, out = Path(a.sbml), Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     manifest = json.loads((src / "manifest.json").read_text())["models"]
-    jobs = [(src / m["file"], m) for m in manifest if "sha256" in m]
+    jobs = [(src / m["file"], m, a.dmin, a.dmax) for m in manifest if "sha256" in m]
     records = []
     with Pool(a.workers) as pool:
         for rec, x, dx in pool.imap_unordered(process, jobs):

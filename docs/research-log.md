@@ -1380,3 +1380,54 @@ The first run crashed on SprottQ, which has 3 instances (recorded in Trial 1), b
 - **It is not uniformly better.** It is slightly worse on familiar systems, worse at K = 32, and the per-system wins are mixed, so the median gain rests on a subset of systems.
 - **Refinement noted, not pursued now** to avoid further tuning on the same development systems: use disagreement-guided observation only when the system appears unfamiliar, i.e. when the fallback is selected or the leave-one-out error stays high.
 - **As pre-registered for failure, the next step is the learner that works in any dimension,** so the history can draw on the much larger pool of real BioModels.
+
+### Sourcing extension for a learner that works in any dimension (30 October, before conversion)
+
+The same BioModels sourcing rule applies, except that the number of ODE state variables may be anything from **2 to 10**. Everything else is unchanged: no events, delays or explicit time; non-polynomial; sustained motion; the same title exclusions and duplicate handling; 8 instances.
+
+- Trial 16's 6 held-out 3-D systems stay held out, so the new learner is scored on exactly the same systems.
+- Newly accepted systems (d ≠ 3, or 3-D systems not accepted before) are split by rank-hash with salt `trial18-split`: two thirds training, one third held-out.
+- Trial 16's 11 training systems stay in training.
+- The converter takes `--dmin/--dmax`; the defaults (3/3) reproduce Trial 16 exactly.
+
+### Any-dimension sourcing outcome (30 October, before any training on these systems)
+
+- **63 accepted at 2 ≤ d ≤ 10** (the 21 three-dimensional ones as before).
+- **Exclusions:** Ca²⁺ titles (Somogyi1990, Lavrentovich2008); Trial 16's duplicate decisions; Leloup1999 *Drosophila* (298), a structural duplicate of 021; Goldbeter1991 "explicit inactive forms" (004), the same minimal model with extra variables (a judgment).
+- A first pass also excluded models that merely shared author and year (Leloup *Neurospora* vs *Drosophila*, Westermark base vs extended, Kim SimpleII vs SimpleIII). These are different models from one paper, not duplicates under the rule, so the flags were overruled, before any training.
+- **56 real systems kept.**
+- **Split:** Trial 16 assignments preserved; new systems by rank-hash (salt `trial18-split`), two thirds training.
+  - **Training: 37** (by d = 2…10: 4, 11, 5, 4, 6, 1, 2, 2, 2).
+  - **Held-out: 19** (by d = 2, 3, 4, 5, 7, 8, 9, 10: 1, 6, 1, 3, 2, 3, 1, 2), including Trial 16's 6.
+- One same-paper pair crosses the split: Leloup1999 *Neurospora* (training) and *Drosophila* (held-out). This is annotated as a related-family case.
+
+## Trial 18: a pairwise feature library that works in any dimension, with a broad real history (pre-registered 30 October, before training)
+
+- **Hypothesis.** Biochemical kinetics are built from one- and two-variable terms (mass action, Michaelis–Menten, Hill). A library of *shared* single-variable and pairwise feature functions, accumulated over 51 catalog flows and 37 real models of 2–10 variables, transfers to held-out real models of any dimension. It should beat both the same learner trained on the catalog alone and kernel ridge.
+- **Learner** (`trial18.py`): 4 bases; each basis is three small SiLU networks on context-standardized coordinates.
+  - s: R → R¹⁶ (self terms), 1 → 64 → 64 → 16;
+  - p: R² → R⁸ (pair terms), 2 → 64 → 64 → 8;
+  - o: R → R⁴ (other-variable terms), 1 → 32 → 4.
+  - Each variable i gets its own design row: [s(u_i), p(u_i, u_b) for b ≠ i, o(u_b) for b ≠ i, 1], so k = 17 + 12(d − 1). That is 41 at d = 3 and 125 at d = 10.
+  - One ridge head per variable, with a shared λ: learned in training, chosen by exact leave-one-out (mean over variables) at encounter. Kernel ridge is the fallback, as before.
+  - Training uses relaxed winner-take-all on log NMSE, as in Trials 4–16.
+- **Training.**
+  - Observable-only contract: central differences with 0.5% state noise, no ground truth anywhere.
+  - Sequential stream with a seeded shuffle, 400 steps per stage.
+  - Each step: 32 episodes of the new system plus 32 episodes of one memory system chosen uniformly. Memory holds 2 instances per past system. K is log-uniform in [8, 128]. Adam, the same schedule.
+- **Arms** (seeds 1, 2):
+  - **pw-catalog:** the 51 catalog systems only;
+  - **pw-all:** catalog plus the 37 real training systems.
+- **Evaluation.**
+  - The 19 held-out real systems and the 13 development systems; K ∈ {16, 32, 64}; 4 instances × 5 episodes; seeds 18000 + 97i + K.
+  - Additionally, Trial 16's 6 held-out systems on Trial 16's exact episodes (seeds 16000 + 97i + K).
+  - Kernel ridge is the experience-free control.
+- **Criteria (both seeds):**
+  - **X1 (broad real history transfers):** over the 19 held-out systems at K = 32, pw-all's median ≤ 0.67× pw-catalog's, *and* pw-all beats kernel ridge on ≥ 12 of 19.
+  - **X2 (more than 11 related systems):** on Trial 16's 6 held-out systems (its episodes), pw-all's median at K = 32 ≤ 0.8× Trial 16's catalog+bio.
+  - **X3 (no harm):** development polynomial-stratum median at K = 32, pw-all ≤ 1.5× pw-catalog.
+- **Resources:** threads capped (OMP 4, nice 10), 2 seeds × 2 arms; outputs under `outputs/accumulating_learner/trial18/`.
+
+**What happens next, decided now:**
+- **X1–X3 pass:** a candidate for reserve set A (and potentially B, since the learner works in any dimension). Ask before touching either.
+- **X1 fails:** a broad real history at this scale does not overcome the information-per-encounter limit for unfamiliar real mechanisms. Write the synthesis. The remaining lever is the gated, uncertainty-guided observation from Trial 17.
