@@ -1795,3 +1795,46 @@ The full Trial 23 protocol (arms and criteria) is pre-registered after conversio
   1. **Validity rule:** exclude models with any near-constant variable (span ≤ 1e-6 × max|x|) or non-finite samples. This removes 11 models: 7 training and 4 new held-out transients; none of Trial 18's held-out set. The list is in `validity_excluded.json`.
   2. **Non-finite steps are skipped and counted**, so a bad batch cannot corrupt the weights again.
 - **Effect on the protocol:** 145 training and 72 held-out real models remain (53 new held-out transients). B1's win threshold stays at 60%, now ≥ 32 of 53. Everything else is unchanged. Training restarts from scratch with the same seeds and stream rule; the stream is now 196 systems. The aborted logs are kept as `train_s*_aborted_nan.log`.
+
+## Trial 23: result (30–31 October)
+
+**Classification: FAILED.** B1 and B2 fail in both seeds; B3 passes in both. The restarted training was clean: 196 stages, 0 non-finite steps, about 2.3 h per seed.
+
+| K = 32 | Seed 1 | Seed 2 |
+|---|---|---|
+| B1: new held-out transients, pw-big vs pw-catalog (need ≤ 0.67) | 0.98 ✗ | 1.09 ✗ |
+| B1: pw-big beats kernel ridge (need ≥ 32/53) | 17/53 ✗ | 14/53 ✗ |
+| B2: Trial 18 held-out, pw-big vs Trial 18 pw-all (need ≤ 0.8) | 1.29 ✗ | 1.42 ✗ |
+| B2: pw-big beats kernel ridge (need ≥ 10/19) | 6/19 ✗ | 9/19 ✗ |
+| B3: development polynomial stratum vs pw-catalog (need ≤ 1.5) | 0.77 ✓ | 0.90 ✓ |
+
+Median NMSE on the new held-out transients at K = 32: pw-catalog 1.37 / 1.27, pw-all 1.36 / 1.32, pw-big 1.34 / 1.38, kernel ridge 1.16.
+
+### Reading, and why this is not a fair test of "a large history"
+
+- **On the new held-out transients every method, kernel ridge included, is worse than predicting the query mean** (NMSE > 1). The transient contract as posed cannot measure whether history helps.
+- **Contract-validity check** (afterwards; kernel ridge only, on 30 *training* transients, 10 episodes each at K = 32):
+  - instance-split contract: median NMSE 1.15, 30% below 1, 0% below 0.1;
+  - within-trajectory contract (context and queries from the same instances, different times): median 1.10, 37% below 1, 0% below 0.1.
+- **Diagnosis.** The transient data as constructed is effectively unlearnable from ≤ 64 noisy central differences. Uniform time sampling over [0, 1.5 t_s] is dominated by near-equilibrium points with tiny derivatives, while the short fast initial phase produces rare, huge ones. The single sample spacing is also too coarse for that phase. The 19× more "history" therefore carried almost no learnable signal.
+- **Negative transfer.** Training on these tasks made the learner worse on the oscillatory held-out systems it handled before (B2: 1.29–1.42× worse than Trial 18).
+- **Conclusion.** As pre-registered for both failing, this ends the session. The specific question "does a large *related* real history beat kernel ridge?" remains open, because Trial 23's history was mostly unlearnable data, not related structure.
+
+## Session conclusion (31 October)
+
+1. **Established and confirmed on untouched systems.** A learner that accumulates experience one system at a time, without being given equations or a term library, learns new systems that share structure with its history far faster than experience-free methods: about 65× lower error at 32 observations, with the gain growing with history.
+   - It holds, more modestly (2–4×), from noisy trajectories with no ground-truth targets anywhere.
+   - It retains earlier systems with a 6% replay memory.
+2. **Not achieved: generalization to unfamiliar real mechanisms.** With ≤ 64 noisy observations, no learner variant beats kernel ridge on mechanisms unlike its history. Tried:
+   - broader synthetic history;
+   - 11, 37, then 145 real models;
+   - test-time learning;
+   - fine-tuning;
+   - sparsity;
+   - context conditioning;
+   - uncertainty-guided observation (the apparent gain was a confounded comparison and was withdrawn).
+   History improves each learner relative to itself (10–26%), but not beyond kernel ridge.
+3. **What helps unfamiliar systems: observation design.** Spreading observations out gives 3–5× for every method. The learner can only tell that a system is unfamiliar after about 8–16 observations (relative-fit AUC about 0.8), which is too late to change strategy within these budgets.
+4. **Open question with a concrete next step.** Whether a large *related* real history helps remains untested. It needs transient data that is learnable: log-time or adaptive sampling with per-snippet spacing, checked first with kernel ridge, as above, before any learner is trained.
+
+Reserve sets A and B, the PDEBench reserved trajectories and the diffusion–sorption mechanism are untouched.
