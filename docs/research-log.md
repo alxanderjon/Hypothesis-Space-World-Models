@@ -1861,3 +1861,80 @@ Time stamps are stored. A central difference uses each sample's own neighbours: 
 **Step 3 — Trial 24 training and evaluation.** As Trial 23 (pairwise any-dimension library, the same stream rule with the 145 valid training models plus the catalog, 400 steps per stage, observable-only), but with the resampled transients under the within-trajectory contract.
 - **Criteria:** B1, B2 and B3 exactly as in Trial 23.
 - **New held-out transients:** evaluated under the same within-trajectory contract, generator seeds 24000 + 97i + K.
+
+## Owner standing rules (31 October)
+
+1. **Disk.** Before generating data, delete this project's own unneeded intermediates. Keep ≥ 5% of the disk free; if it is below that, stop writing and notify the owner.
+2. **Success.** With ≤ 64 noisy observations, the learner beats kernel ridge *and* the best no-history control on **unfamiliar kinds of systems**, in **both seeds**, and **the advantage grows with the number of systems in its history**. Every trial states how it moves toward this, and the log keeps a running count of trials evaluated on the development systems.
+3. **Reserve sets.** Before using A or B, the candidate must pass the success criteria on development in both seeds, then pass again on a fresh, independent split or fresh seeds. Only then request the reserve test, and wait for approval.
+
+### Disk status at the time of these rules
+
+- Free space was 3.72% (137 GB of 3.6 TB), **already below the 5% floor**, almost entirely from other users' data.
+- Stopped immediately:
+  - the Trial 24 transient resampling and its queued solvability check (no learner had been trained);
+  - all further data generation.
+- Deleted my own unneeded intermediates: the partial Trial 24 resampled arrays, Trial 23's transient and oscillator arrays (metadata JSON kept), Trial 15's synthetic arrays (regenerable from their seed; metadata kept), and the scratch copies of the dysts wheel (the code used is vendored).
+- **After cleanup: 3.75% free** (137 GB; 5% = 183 GB). This project now uses about 326 MB in outputs plus 124 MB of scratch, so the shortfall cannot be fixed by deleting my files. **Data generation is paused, and the owner has been notified.**
+
+**Running count of trials evaluated on the development systems: 23** (Trials 1–23), plus 5 exploratory diagnostics on development episodes (Trial 6 pilot, Trial 8 noise/bias, Trials 21 and 22 AUCs, the Trial 17 re-check). The confirmation run used the confirmation set, not development.
+
+## Audit of Trials 1–23 by underlying approach (31 October)
+
+### Approach A — learn a feature basis from history, fit a linear (ridge) head per new system (17 trials)
+
+**Trials:** 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 18, 20, 23.
+
+All of these share one idea: a network maps a state to a fixed set of features learned from past systems, and a new system is handled by fitting a linear combination of those features to its few observations. What varied:
+
+- **Training objective:** mean vs log NMSE (1 → 2).
+- **Basis structure:** single, wide, mixture library with leave-one-out selection, context-modulated (FiLM), pairwise any-dimension (2, 3, 4, 18).
+- **Head prior:** ridge vs sparse (6, 7).
+- **Training regime:** joint, sequential with replay, test-time continual, error-prioritized replay (5, 10, 11, 20).
+- **Adaptation:** fine-tuning the basis at encounter (12).
+- **History content:** catalog, synthetic non-polynomial, 11 / 37 / 145 real models, transients (15, 16, 18, 23).
+- **Observation contract:** derivatives vs noisy trajectories vs observable-only (8, 9).
+
+**What the failures suggest.** The per-system inference is *linear regression on a fixed learned basis*, so its prior is "this system lies near the span of what I have seen".
+
+- When that is true (related systems) it wins enormously; that is the confirmed result.
+- For an unfamiliar mechanism the span is wrong. The method then degrades into a generic regressor with a worse generic basis than a Gaussian kernel, and no amount of extra history changes the *form* of the inference.
+- Leave-one-out selection among stored bases is unreliable at small K.
+- Every variant does pointwise regression on noisy derivative estimates, the same information kernel ridge uses. Nothing in approach A extracts more information per encounter than kernel ridge does.
+
+### Approach B — choose which observations to take, on top of approach A's learner (6 trials)
+
+**Trials:** 13, 14, 17, 19, 21, 22.
+
+**Variations:** generic coverage, leverage in learned features, a myopically learned scorer, disagreement among stored bases, uncalibrated and calibrated gates.
+
+**What the failures suggest.**
+- For smooth regression from an on-attractor pool, space-filling is close to optimal.
+- Uncertainty measures computed from approach A's features inherit A's misspecification. They are confident exactly where A is wrong, on unfamiliar systems.
+- The learner cannot tell that a system is unfamiliar before about 8–16 observations.
+- The one apparent positive (Trial 17) was a confounded comparison.
+
+### Verdict
+
+Two approach families have been tried, and B is built on A's learner. **Twenty-three trials have mostly varied one idea.** Per the owner's instruction, the next trial switches to a genuinely different approach instead of the Trial 23 rebuild (Trial 24 is abandoned before any learner was trained).
+
+### Untried approach families that could plausibly beat kernel ridge on unfamiliar systems at ≤ 64 noisy observations
+
+1. **Amortized inference, i.e. learning the inference procedure itself** (a prior-fitted network: an in-context Transformer).
+   - A sequence model reads the K noisy observations and directly outputs the predictive distribution at query states. It is trained over a very large, diverse prior of dynamical systems, so it approximates Bayesian inference under that prior.
+   - It is not limited to a linear combination of fixed features, and it can represent structure shared *across mechanisms*: saturations, interactions, time-scale separation, positivity.
+   - On small tabular datasets this class (TabPFN) beats Gaussian processes and kernel ridge when the prior matches the data.
+   - Here, history is the prior, so "advantage grows with history" can be measured directly by training on increasing numbers of systems.
+2. **Trajectory-consistent (weak-form or ODE-constrained) estimation.** Use the fact that observations come from one dynamical system: fit through integral or weak formulations or short-horizon simulation, so noise averages along trajectories. This extracts more information per encounter than pointwise derivative regression, which every approach-A variant and kernel ridge share. It can be combined with a learned prior.
+3. **Sparse structural regression over a generic mechanistic grammar with a learned prior over structures** (Bayesian sparse regression with meta-learned term probabilities; saturating terms with unknown constants via variable projection). The Trial 6 pilot showed about 6× gains at K = 8 when the structure class matches. The caveat is that a term language is supplied once (the owner's earlier concern), which a single generic grammar plus learned priors only partly mitigates.
+4. **Meta-learned kernels** (kernel ridge with a learned kernel mixture that includes the generic Gaussian kernel). Never worse than kernel ridge by construction, but close to approach A. A large gain is unlikely.
+5. **Active experimentation with controlled resets** (choosing initial conditions). It changes the observation contract, which the handover flags as materially simplifying.
+
+### Recommendation: try 1 (amortized inference) first
+
+- **It is genuinely different.** It replaces approach A's fixed "linear in a learned basis" inference with a learned inference map, which the failure analysis identifies as A's bottleneck.
+- **It measures the success criterion directly.** Train on priors built from increasing numbers of systems and check that the advantage over kernel ridge grows.
+- **It fits the disk constraint.** Training tasks can be simulated on the fly on the GPU (batched RK4 on randomly generated mechanistic vector fields plus the stored catalog and real models), so no datasets are written; only checkpoints and logs (under 200 MB).
+- **It is feasible in hours** on 1–2 free V100s.
+
+Approach 2 (trajectory-consistent estimation) is the next candidate, and can be combined with 1 if 1 shows promise.
