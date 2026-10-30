@@ -1595,3 +1595,32 @@ A network that learns from its history, without being supplied the answer, and s
 3. Only then a reserve-set-A test (mostly non-polynomial, untouched), if a candidate beats kernel ridge on unfamiliar development and held-out real systems.
 
 Reserve sets A and B, the PDEBench reserved trajectories and the diffusion–sorption mechanism remain untouched.
+
+## Owner decision (30 October)
+
+The owner chose recommended step 1, a better unfamiliarity signal for the gate. They judged step 2 (learning-progress replay) to be avoiding the problem.
+
+## Trial 21: a calibrated unfamiliarity gate (evaluation only; pre-registered 30 October, before running)
+
+- **Problem.** Trial 19's gate (kernel ridge winning leave-one-out after 4 points) opened about 55–60% of the time on familiar *and* unfamiliar systems alike, so familiar systems paid a cost.
+- **Hypothesis.** A gate calibrated on *new but familiar* systems separates the two groups. Unfamiliar systems keep Trial 19's gain and familiar systems lose nothing compared with coverage. The calibrated question is: is the best stored basis's leave-one-out error unusually high compared with how it fits systems it has never seen but that resemble its history?
+- **Calibration set** (already opened, never trained on, not development): the 11 polynomial confirmation systems (classified symbolically in the confirmation run). For each seed's learner and each gate size k₀ ∈ {4, 8, 16}:
+  - 10 episodes per system (pool contract, generator seeds 21000 + 97i + k₀);
+  - each episode takes 2 random points plus coverage up to k₀ and records the best basis's exact leave-one-out MSE (standardized units, minimum over the 4 bases);
+  - **the threshold is the 90th percentile** of these values.
+- **Gate:**
+  1. Start from 2 random points.
+  2. Choose by coverage until k₀.
+  3. If the best basis's leave-one-out MSE is above the threshold for k₀, the system counts as unfamiliar: continue with disagreement×coverage (Trial 17). Otherwise continue with coverage.
+- **Variants:**
+  - **gated-half (primary):** k₀ = K/2, i.e. 4, 8 and 16 for K = 8, 16 and 32. More data for the decision.
+  - **gated-quarter (secondary):** k₀ = max(4, K/4), Trial 19's timing.
+- **Setting:** identical to Trials 17 and 19 (Trial 16's catalog+bio learner, pool contract, episodes with seeds 17000 + 97i + K, 10 unfamiliar and 9 familiar systems). Trial 17's coverage and disagreement numbers are reused.
+- **Criteria (both seeds, K = 16, gated-half):**
+  - **GU:** unfamiliar median ≤ 0.83× coverage;
+  - **GF:** familiar median ≤ 1.0× coverage.
+- **Reported:** gate open rates per group (the aim is high for unfamiliar, low for familiar), K = 8 and 32, the secondary variant.
+
+**What happens next, decided now:**
+- **Both pass:** the gated learner is the candidate for the reserve-set-A test. It still has to beat kernel ridge on unfamiliar systems in development, which is checked and reported here, and the owner is asked before reserve set A is touched.
+- **GF fails:** report the open rates. The signal needs more than leave-one-out error, for example disagreement among the bases relative to calibration.
