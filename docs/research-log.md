@@ -1938,3 +1938,18 @@ Two approach families have been tried, and B is built on A's learner. **Twenty-t
 - **It is feasible in hours** on 1–2 free V100s.
 
 Approach 2 (trajectory-consistent estimation) is the next candidate, and can be combined with 1 if 1 shows promise.
+
+## Owner decision (31 October)
+
+- **Disk rules replaced:**
+  - keep **≥ 50 GB free** at all times;
+  - keep this project's total outputs **< 20 GB**;
+  - if free space drops below 50 GB, stop writing and notify the owner;
+  - don't generate datasets to disk when they can be simulated on the fly.
+  - Status at this decision: 137 GB free; project outputs about 0.33 GB.
+- **The Trial 23 rebuild is skipped.** It fixes the data but keeps the method family the audit shows fails on unfamiliar systems.
+  - *Kept for later:* the learnable-transient resampling (log-time / arc-length sampling with per-sample time stamps, checked first with kernel ridge) is a possible future *test set* of real biochemical transients.
+- **Option 1 (amortized inference) starts as Trial 24.** Requirements:
+  - the training distribution deliberately includes varied kinds of dynamics;
+  - success is judged on unfamiliar kinds of systems, **held out by kind** (not just by parameters), against kernel ridge and the best no-history control;
+  - the history-growth curve is tested by training on increasing numbers *and* varieties of systems.
