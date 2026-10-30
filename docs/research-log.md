@@ -1953,3 +1953,74 @@ Approach 2 (trajectory-consistent estimation) is the next candidate, and can be 
   - the training distribution deliberately includes varied kinds of dynamics;
   - success is judged on unfamiliar kinds of systems, **held out by kind** (not just by parameters), against kernel ridge and the best no-history control;
   - the history-growth curve is tested by training on increasing numbers *and* varieties of systems.
+
+## Trial 24: amortized inference trained on varied kinds of dynamics, tested on held-out kinds (pre-registered 31 October, before training)
+
+**Approach family: new** (audit option 1). The learner does not fit coefficients on a learned basis. A Transformer reads the K noisy observations of a new system and directly outputs its predicted velocity (central difference) at query states: it learns the *inference procedure*, approximating Bayesian prediction under its training distribution of dynamical systems.
+
+**How it moves toward the success definition.** It tests the definition directly: unfamiliar *kinds* of systems held out by kind, ≤ 64 noisy observations, kernel ridge and the best no-history control, both seeds, and an advantage that should grow with the number and variety of systems in the history.
+
+**Running count of trials evaluated on the development systems: 24** (this one included).
+
+### Kinds and the held-out-by-kind split (fixed now; `kinds.py`, `trial24pfn/kinds.json`)
+
+- Each real 3-D system's nonlinearity kinds are read from its equation structure: polynomial, trig, exponential, rational/saturating, piecewise, tanh, power, log.
+- **Held-out kinds:** rational/saturating (Michaelis–Menten, Hill, Holling, ratio forms) and exponential.
+- **Test set:** every real 3-D system containing either held-out kind — **26 systems.**
+  - 16 BioModels (all of Trial 16's 3-D set);
+  - catalog systems Blasius, CoevolvingPredatorPrey, HastingsPowell, JerkCircuit, SprottMore and YuWang2 (meta-train), SaltonSea and YuWang (development), GlycolyticOscillation and ItikBanksTumor (confirmation, already opened).
+- **No system containing a held-out kind is ever used in training, and no generator produces one.**
+- Familiar-kind sanity set: the 9 polynomial development systems.
+
+### Training distribution (simulated on the fly on the GPU; nothing written to disk except checkpoints)
+
+**Generators** (3-D, random parameters, bounded by construction or by rejection):
+- **polynomial:** sparse linear + sparse quadratic + cubic confinement;
+- **trig:** −Γx + Σ a·sin(u·x + b);
+- **piecewise:** −Γx + Σ a·σ(u·x + b), with σ ∈ {clip to ±1, a triangular bump};
+- **tanh:** −Γx + W·tanh(Ux + b);
+- **mixed:** sin, cos, tanh and clip terms.
+
+Each candidate is integrated with batched RK4, with a 100 time-unit pilot. It is kept if motion is sustained and bounded and its characteristic period P = 2π·radius/speed is in (0.05, 50). It is then re-integrated at h = P/40 for 1,200 samples (segment A = context, B = queries). Probe acceptance rates: polynomial 1.4%, trig 8.9%, piecewise 4.5%, tanh 5.5%, mixed 7.7%.
+
+**Real history:** catalog meta-train systems whose kinds are all allowed — 42, 43, 44 and 45 systems for varieties V1–V4. They are sampled in proportion to their count among all systems.
+
+### Model and training
+
+- **Model:** 6 layers, width 192, 6 heads, feed-forward 512, about 2.2M parameters.
+  - Context tokens embed (u, y); query tokens embed u.
+  - Queries attend only to context tokens and themselves.
+  - It outputs the standardized velocity at each query.
+- **Loss:** log(min(NMSE, 10) + 1e-4).
+- **Optimizer:** AdamW (lr 3e-4, weight decay 0.01), 1,000 warm-up steps, cosine, 30,000 steps × 64 episodes, K log-uniform in [4, 64].
+- **Contract:** observable-only. Training targets are noisy central differences (0.5% state noise), with no ground truth anywhere.
+
+### History-growth grid (both seeds)
+
+- **Variety, at N = 8,192 generated systems:**
+  - V1 = polynomial;
+  - V2 = + trig;
+  - V3 = + piecewise;
+  - V4 = + tanh + mixed.
+- **Number, at V4:** N ∈ {512, 8,192, 65,536}.
+- That is 6 configurations × 2 seeds = 12 learners.
+
+### Evaluation
+
+- Trial 9's observable contract. Per system and K ∈ {8, 16, 32, 64}: 4 instances × 5 episodes, generator seeds 24000 + 97i + K.
+- **No-history controls:** kernel ridge and random Fourier features (leave-one-out hyperparameters). The *best no-history control* at each K is whichever has the lower median over the 26 test systems.
+
+### Criteria (both seeds; primary learner V4, N = 65,536)
+
+- **S1 (beats no-history on unfamiliar kinds):** test median ≤ 0.8× the best no-history control's at **both** K = 16 and K = 32, *and* beats kernel ridge on ≥ 60% of the 26 systems at K = 32 (≥ 16).
+- **S2-variety (grows with variety):** with adv = log(control median / learner median) at K = 32, at N = 8,192, Spearman ρ(V1…V4, adv) ≥ 0.8 *and* adv(V4) − adv(V1) ≥ log 1.25.
+- **S2-number (grows with number):** at V4, adv(65,536) − adv(512) ≥ log 1.25, *and* adv(8,192) ≥ adv(512).
+- **Pass = S1, S2-variety and S2-number in both seeds.**
+- **Reported:** K = 8 and 64; the familiar-kind sanity set; per-system results.
+
+**What happens next, decided now:**
+- **Pass:** per standing rule 3, replicate on a fresh, independent split (different held-out kinds, e.g. trig + piecewise, with the rational and exponential kinds allowed in training) and on fresh seeds before any reserve request.
+- **S1 fails but S2 passes:** the prior is learning transferable structure but is not yet good enough. Scale the variety and number of generators (the history axis) before changing the method.
+- **S2 fails:** amortized inference with this prior does not grow with history. Go to audit option 2 (trajectory-consistent estimation), possibly combined.
+
+**Resources:** each learner takes about 25 min of training plus pool building (up to about 35 min at N = 65,536), with 4 CPU threads and nice 10, on free GPUs except GPU 4. Disk: checkpoints about 9 MB each.
