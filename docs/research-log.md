@@ -1453,7 +1453,7 @@ Held-out medians (19 systems; kernel ridge is shared):
 
 ### Reading
 
-- **A broad real history (37 real models of 2–10 variables, plus the catalog) helps the learner relative to itself:** about 20–26% lower median error than catalog-only at K = 32, with gains on some high-dimensional clocks (Leloup1999 10-D .0005–.0008 against kernel ridge .0014; Locke2008 8-D).
+- **A broad real history (37 real models of 2–10 variables, plus the catalog) helps the learner relative to itself:** about 20–26% lower median error than catalog-only at K = 32, though only 11/19 and 9/19 held-out systems individually improve. There are gains on some high-dimensional clocks (Leloup1999 10-D .0005–.0008 against kernel ridge .0014; Locke2008 8-D).
 - **It still does not beat kernel ridge on held-out real mechanisms.** It is not better than Trial 16's 3-D learner on Trial 16's held-out systems either.
 - Many held-out systems sit at an error floor of about 1e-4 at K = 32, where every method ties. The hard ones (Plant1981 bursting neurons, Bertram2000 β-cells, Rattanakul2003 bone; NMSE .3–.8) are hard for every method.
 - **As pre-registered for X1 failing:** a broad real history at this scale does not overcome the information-per-encounter limit for unfamiliar real mechanisms.
@@ -1494,3 +1494,31 @@ The learner's experience is valuable exactly when it contains the right structur
 - **Gated uncertainty-guided observation:** disagreement-guided only when the system looks unfamiliar (fallback chosen or high leave-one-out error), coverage otherwise. This targets Trial 17's familiar-system cost.
 - **"What to study":** replay prioritized by remaining error.
 - **Reserve sets A and B stay untouched.** No candidate yet meets the bar of beating kernel ridge on unfamiliar mechanisms, which reserve set A would test.
+
+## Trials 19 and 20: the two halves of "learn from what remains uncertain" (pre-registered 30 October, before running)
+
+### Trial 19: gated, uncertainty-guided observation (evaluation only)
+
+- **Hypothesis.** Trial 17's disagreement-guided observation helped unfamiliar systems but slightly hurt familiar ones. Using it only when the system *looks* unfamiliar keeps the benefit and removes the cost.
+- **Rule** (fixed now):
+  1. Start from 2 random pool points.
+  2. Choose by coverage until k = max(4, K/4).
+  3. Run library+fb's leave-one-out selection on those points. If **kernel ridge is selected** (no stored basis fits), continue with disagreement×coverage. Otherwise continue with coverage.
+- **Setting:** identical to Trial 17 (same learner, Trial 16's catalog+bio; same pool contract; same episodes, seeds 17000 + 97i + K; the same 10 unfamiliar and 9 familiar systems). Trial 17's coverage and disagreement×coverage numbers are reused.
+- **Criteria (both seeds, K = 16):**
+  - **GU:** unfamiliar median, gated ≤ 0.83× coverage;
+  - **GF:** familiar median, gated ≤ 1.0× coverage.
+- **Reported:** how often the gate opens, per group.
+
+### Trial 20: replay prioritized by what the learner still gets wrong
+
+- **Hypothesis.** Replay that rehearses past systems *in proportion to their current error* uses the same compute better than uniform replay. Held-out real systems are learned better, and earlier systems are retained at least as well.
+- **Setting:** identical to Trial 16's catalog+bio arm (observable-only, same stream and seeds, 400 steps per stage, M = 4, 2 replay instances), except how the memory half of each batch is drawn.
+  - Each memory system keeps an exponential moving average (factor 0.9) of the winning-basis NMSE whenever it is replayed, initialized to its last-stage training error.
+  - Memory episodes are sampled from systems with probability ∝ EMA^1, mixed 50/50 with uniform so no system is starved.
+- **Criteria (both seeds):**
+  - **P1:** on Trial 16's 6 held-out systems (its episodes) at K = 32, prioritized median ≤ 0.8× Trial 16's catalog+bio;
+  - **P2:** development polynomial-stratum median at K = 32 ≤ 1.2× Trial 16's catalog+bio;
+  - **P3:** retention on each seed's first 8 meta-train systems (observable contract, K = 32), median ratio to Trial 16's catalog+bio ≤ 1.0.
+
+**What happens next, decided now:** whatever these show, write a final synthesis for the owner. If either passes, it becomes part of the recommended learner. Reserve sets stay untouched unless a candidate beats kernel ridge on unfamiliar development and held-out real systems.
