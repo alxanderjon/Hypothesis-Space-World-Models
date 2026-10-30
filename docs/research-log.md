@@ -2024,3 +2024,63 @@ Each candidate is integrated with batched RK4, with a 100 time-unit pilot. It is
 - **S2 fails:** amortized inference with this prior does not grow with history. Go to audit option 2 (trajectory-consistent estimation), possibly combined.
 
 **Resources:** each learner takes about 25 min of training plus pool building (up to about 35 min at N = 65,536), with 4 CPU threads and nice 10, on free GPUs except GPU 4. Disk: checkpoints about 9 MB each.
+
+## Trial 24: result (31 October)
+
+**Classification: FAILED** (S2 fails in both seeds). **S1 passes in both seeds:** this is the first approach in the project to beat kernel ridge and the best no-history control on unfamiliar kinds of systems.
+
+| | Seed 1 | Seed 2 |
+|---|---|---|
+| S1: V4/N65,536 median vs best control (kernel ridge) at K = 16 / K = 32 (need ≤ 0.8 at both) | **0.69 / 0.77** ✓ | **0.72 / 0.79** ✓ |
+| S1: wins against kernel ridge at K = 32 (need ≥ 16/26) | **17/26** ✓ | **17/26** ✓ |
+| S2-variety: advantage at K = 32 for V1 / V2 / V3 / V4 (N = 8,192); Spearman ρ | .276 / .235 / .184 / .236; ρ = −0.4 ✗ | .244 / .240 / .287 / .252; ρ = 0.6 ✗ |
+| S2-number: advantage at K = 32 for N = 512 / 8,192 / 65,536 (V4); need a gain ≥ 0.223 from 512 to 65,536 | .179 / .236 / .257 (gain 0.078) ✗ | .035 / .252 / .241 (gain 0.206) ✗ |
+
+Unfamiliar-kind medians (26 systems), K = 8 / 16 / 32 / 64:
+
+| | K = 8 | K = 16 | K = 32 | K = 64 |
+|---|---|---|---|---|
+| kernel ridge | .588 | .289 | .0997 | **.0147** |
+| random Fourier features | .646 | .379 | .133 | .032 |
+| Transformer V4/N65,536, seed 1 / 2 | **.443 / .422** | **.199 / .209** | **.077 / .078** | .026 / .029 |
+| Transformer V1/N8,192 (polynomial-only history), seed 1 / 2 | .380 / .357 | .165 / .170 | .076 / .078 | .021 / .019 |
+
+Familiar kinds (9 polynomial development systems, K = 32): kernel ridge .0050 against the Transformer .052 / .051, i.e. **10× worse**.
+
+### Reading
+
+- **Learning the inference procedure beats kernel ridge on kinds never seen in training,** at 8–32 noisy observations, in both seeds, on 17 of 26 real systems. The gains are largest where kernel ridge struggles, e.g. Blasius 0.29–0.36×, Bianca2013 0.11–0.15×, Goldbeter1991 0.53–0.58×, Caravagna2010 0.41–0.62×.
+- **It loses where kernel ridge is already very precise** (SaltonSea, kernel ridge .0017, 4.4–5.1×; BIOMD 763, 323 and 931). It is 10× worse on familiar polynomial systems and is overtaken at K = 64. Its precision bottoms out around .02–.05.
+- **Why S2 fails.** The final training NMSE is .079–.103 for *every* pool size, the same at N = 512 as at N = 65,536, and still falling at 30k steps. **The model is capacity- and optimization-limited, not history-limited.** It cannot absorb even 512 systems in detail, so extra or more varied history cannot show up as a larger advantage. The S2 test was confounded by model size and training length.
+- The polynomial-only history (V1) is about as good as V4 on held-out kinds. The advantage comes from generic inference skill (handling noisy central differences, extrapolating from segment A to segment B), not from kind-specific structure. Whether kind variety helps once the model can absorb it is untested.
+
+### Deviation from the pre-registered next step
+
+The rule said that if S2 fails, move to option 2. The diagnosis (training error flat across pool sizes) shows S2 was not a test of whether history helps, but of whether this model could absorb history. The direct test is to scale the model and training budget on the same history grid: **Trial 25**. Option 2 (trajectory-consistent estimation) stays next if scaling does not produce growth. The precision floor on familiar and easy systems is a separate issue, deferred to a later trial so that one thing changes at a time.
+
+## Trial 25: does a larger Transformer turn history into a growing advantage? (pre-registered 31 October, before training)
+
+- **How it moves toward success.** Trial 24 met the "beats kernel ridge on unfamiliar kinds" half in both seeds. Trial 25 targets the "advantage grows with history" half.
+- **Running count of trials evaluated on the development systems: 25.**
+- **Hypothesis.** With enough capacity and training to absorb its history, the advantage over kernel ridge on held-out kinds grows with the number of training systems and with their variety.
+- **Single change from Trial 24: model and budget.**
+  - Width 256, 8 layers, 8 heads, feed-forward 1,024 (about 6.4M parameters, 3× Trial 24).
+  - 100,000 steps (3.3×), 2,000 warm-up steps, peak learning rate 2e-4.
+  - Everything else identical: generators, kinds, held-out-by-kind test set (26 systems), contract, loss, evaluation episodes (seeds 24000 + 97i + K), controls.
+- **History grid** (both seeds):
+  - number, at V4: N ∈ {512, 8,192, 65,536};
+  - variety, at N = 16,384: V1, V2, V3, V4. N = 16,384 replaces 8,192 so that variety has more room to matter.
+  - That is 7 configurations × 2 seeds = 14 learners.
+- **Criteria** (both seeds; primary learner V4/N65,536):
+  - **S1:** as in Trial 24;
+  - **S2-variety:** as in Trial 24, at N = 16,384;
+  - **S2-number:** as in Trial 24.
+  - **Pass = all three in both seeds.**
+- **Also reported:** final training NMSE per pool size (now the advantage should depend on the pool, and training error should rise with pool size if the model is absorbing more); the familiar-kind set; K = 64.
+
+**What happens next, decided now:**
+- **Pass:** a fresh, independent split (different held-out kinds) and fresh seeds, per standing rule 3.
+- **S2 fails again, and training error still does not depend on the pool:** still capacity-limited. Scale once more only if the trend from Trial 24 to 25 shows movement. Otherwise move to option 2.
+- **S2 fails, and training error now depends on the pool:** absorbing history doesn't help held-out kinds. Move to option 2, combined with the Transformer.
+
+**Resources:** about 3 h per learner with 2 per GPU on GPUs 0–3 and 5–7, threads capped. Disk: checkpoints of about 26 MB each (14 × 26 MB = 0.4 GB).

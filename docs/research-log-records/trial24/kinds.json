@@ -1,0 +1,579 @@
+{
+ "Aizawa": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Arneodo": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "AtmosphericRegime": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Blasius": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "rational"
+  ]
+ },
+ "Bouali": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Bouali2": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Chen": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Chua": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "piecewise"
+  ]
+ },
+ "CoevolvingPredatorPrey": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "rational"
+  ]
+ },
+ "Coullet": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "DequanLi": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Finance": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "GuckenheimerHolmes": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "HastingsPowell": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "rational"
+  ]
+ },
+ "JerkCircuit": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "exponential"
+  ]
+ },
+ "Laser": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "LiuChen": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Lorenz": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Lorenz84": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "LorenzBounded": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "LuChen": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "LuChenCheng": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "MooreSpiegel": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "NewtonLiepnik": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "NoseHoover": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "PanXuZhou": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "PehlivanWei": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "QiChen": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "RayleighBenard": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Rossler": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Rucklidge": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SanUmSrisuchinwong": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "piecewise",
+   "tanh"
+  ]
+ },
+ "SprottA": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottB": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottD": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottG": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottH": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottJerk": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottK": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottL": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottM": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottMore": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "exponential",
+   "piecewise"
+  ]
+ },
+ "SprottN": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottO": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottR": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottS": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottTorus": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "ThomasLabyrinth": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "trig"
+  ]
+ },
+ "WangSun": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "YuWang2": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "exponential"
+  ]
+ },
+ "ZhouChen": {
+  "source": "dysts:meta_train",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "BurkeShaw": {
+  "source": "dysts:development",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Halvorsen": {
+  "source": "dysts:development",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "KawczynskiStrizhak": {
+  "source": "dysts:development",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "RikitakeDynamo": {
+  "source": "dysts:development",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SaltonSea": {
+  "source": "dysts:development",
+  "kinds": [
+   "rational"
+  ]
+ },
+ "ShimizuMorioka": {
+  "source": "dysts:development",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottI": {
+  "source": "dysts:development",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottJ": {
+  "source": "dysts:development",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottP": {
+  "source": "dysts:development",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottQ": {
+  "source": "dysts:development",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Thomas": {
+  "source": "dysts:development",
+  "kinds": [
+   "trig"
+  ]
+ },
+ "WindmiReduced": {
+  "source": "dysts:development",
+  "kinds": [
+   "power",
+   "tanh"
+  ]
+ },
+ "YuWang": {
+  "source": "dysts:development",
+  "kinds": [
+   "exponential"
+  ]
+ },
+ "ChenLee": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Dadras": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "GenesioTesi": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "GlycolyticOscillation": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "rational"
+  ]
+ },
+ "Hadley": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "HindmarshRose": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "ItikBanksTumor": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "rational"
+  ]
+ },
+ "RabinovichFabrikant": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Sakarya": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottC": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottE": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "SprottF": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "Tsucs2": {
+  "source": "dysts:confirmation(opened)",
+  "kinds": [
+   "polynomial"
+  ]
+ },
+ "BIOMD0000000371": {
+  "source": "biomodels3d:train",
+  "kinds": [
+   "exponential",
+   "rational"
+  ]
+ },
+ "BIOMD0000000657": {
+  "source": "biomodels3d:train",
+  "kinds": [
+   "power",
+   "rational"
+  ]
+ },
+ "BIOMD0000000157": {
+  "source": "biomodels3d:train",
+  "kinds": [
+   "rational"
+  ]
+ },
+ "BIOMD0000000937": {
+  "source": "biomodels3d:train",
+  "kinds": [
+   "power",
+   "rational"
+  ]
+ },
+ "BIOMD0000000831": {
+  "source": "biomodels3d:train",
+  "kinds": [
+   "piecewise"
+  ]
+ },
+ "BIOMD0000000878": {
+  "source": "biomodels3d:train",
+  "kinds": [
+   "rational"
+  ]
+ },
+ "BIOMD0000000299": {
+  "source": "biomodels3d:train",
+  "kinds": [
+   "power",
+   "rational"
+  ]
+ },
+ "BIOMD0000000900": {
+  "source": "biomodels3d:train",
+  "kinds": [
+   "rational"
+  ]
+ },
+ "BIOMD0000000323": {
+  "source": "biomodels3d:train",
+  "kinds": [
+   "power",
+   "rational"
+  ]
+ },
+ "BIOMD0000000236": {
+  "source": "biomodels3d:train",
+  "kinds": [
+   "power",
+   "rational"
+  ]
+ },
+ "BIOMD0000000763": {
+  "source": "biomodels3d:train",
+  "kinds": [
+   "power",
+   "rational"
+  ]
+ },
+ "BIOMD0000000938": {
+  "source": "biomodels3d:heldout",
+  "kinds": [
+   "rational"
+  ]
+ },
+ "BIOMD0000000931": {
+  "source": "biomodels3d:heldout",
+  "kinds": [
+   "exponential",
+   "power",
+   "rational"
+  ]
+ },
+ "BIOMD0000000912": {
+  "source": "biomodels3d:heldout",
+  "kinds": [
+   "rational"
+  ]
+ },
+ "BIOMD0000000274": {
+  "source": "biomodels3d:heldout",
+  "kinds": [
+   "power",
+   "rational"
+  ]
+ },
+ "BIOMD0000000319": {
+  "source": "biomodels3d:heldout",
+  "kinds": [
+   "rational"
+  ]
+ },
+ "BIOMD0000000003": {
+  "source": "biomodels3d:heldout",
+  "kinds": [
+   "rational"
+  ]
+ }
+}
