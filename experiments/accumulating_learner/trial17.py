@@ -82,7 +82,7 @@ def run(args):
         for K in KS:
             gen = torch.Generator().manual_seed(17000 + 97 * i + K)
             batches = {st: [] for st in STRATS}
-            for j in range(4):
+            for j in range(min(4, x.shape[0])):  # SprottQ has 3 instances (Trial 1 record)
                 for _ in range(5):
                     xm, d, xq, dq = make_episode(x[j], gen, dev, h)
                     pool_u = (xm - xm.mean(0)) / (xm.std(0) + 1e-8)
