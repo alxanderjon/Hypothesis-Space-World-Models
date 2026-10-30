@@ -1838,3 +1838,26 @@ Median NMSE on the new held-out transients at K = 32: pw-catalog 1.37 / 1.27, pw
 4. **Open question with a concrete next step.** Whether a large *related* real history helps remains untested. It needs transient data that is learnable: log-time or adaptive sampling with per-snippet spacing, checked first with kernel ridge, as above, before any learner is trained.
 
 Reserve sets A and B, the PDEBench reserved trajectories and the diffusion–sorption mechanism are untouched.
+
+## Owner instruction (31 October)
+
+*"How would we stop here? We don't have a result, what we have is another failure. We should not stop until we have a solution. You have my permission for the proposal."*
+
+**Standing rule from now on:** keep iterating toward the goal, a learner whose history makes *unfamiliar* systems learnable, and do not propose stopping or writing up while it is unmet.
+
+## Trial 24 plan: learnable transient data, then the large-history test again (pre-registered 31 October, before generating data)
+
+**Step 1 — resample the transient models** (the 187 accepted transients; same models, same validity rule, same splits). For each instance, integrate densely from t = 0 to 1.5 t_s, then keep 4,000 samples by one of two schemes:
+- **log-time:** t = 0 plus geometric spacing from 10⁻⁴ t_s to 1.5 t_s;
+- **arc-length:** samples equally spaced in trajectory arc length, in coordinates scaled by each variable's range, so observations are dense where the state changes. This is like an event-driven sensor.
+
+Time stamps are stored. A central difference uses each sample's own neighbours: (x_{i+1} − x_{i−1}) / (t_{i+1} − t_{i−1}).
+
+**Step 2 — solvability check, kernel ridge only, on training transients only.**
+- **Contract:** within-trajectory. Context and queries come from instances 0–3 at disjoint sample indices, with 0.5% state noise and central-difference estimates, as for the oscillators.
+- **Scheme choice:** the scheme with the lower kernel-ridge median NMSE at K = 32 over the training transients is chosen.
+- **Gate:** a learner is trained only if that median is ≤ 0.5. If neither scheme passes, the transient data is redesigned again before any learner is trained.
+
+**Step 3 — Trial 24 training and evaluation.** As Trial 23 (pairwise any-dimension library, the same stream rule with the 145 valid training models plus the catalog, 400 steps per stage, observable-only), but with the resampled transients under the within-trajectory contract.
+- **Criteria:** B1, B2 and B3 exactly as in Trial 23.
+- **New held-out transients:** evaluated under the same within-trajectory contract, generator seeds 24000 + 97i + K.
