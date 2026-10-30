@@ -1238,3 +1238,71 @@ Across 15 trials and one confirmation run, the picture is consistent:
 - **(iii)** A multi-step learned investigation policy. Low expected value given (3).
 
 Reserve sets A and B are untouched.
+
+## Owner decision (30 October): option (i), plus uncertainty-driven learning
+
+The owner chose option (i), real families of related non-polynomial mechanisms from outside the catalog. They also want "learning based off of what remains uncertain". That covers two things, and both are planned once option (i)'s data exists:
+
+- **Where to look:** observations chosen where the learner is most uncertain, combined with coverage and planned over several steps. This is option (iii) generalized; Trial 13's leverage rule was a first version.
+- **What to study:** replay and training prioritized toward the systems and regions with the highest remaining error.
+
+### Sourcing rule for option (i), fixed before any download
+
+To avoid hand-picking models and parameters from memory, which risks both error and selection bias, systems come from a curated external database of published models with their published parameters, **BioModels** (EBI), selected by a mechanical rule:
+
+1. Curated models only.
+2. After removing species fixed as constant or boundary, exactly 3 species are governed by ODEs (reaction kinetics or rate rules). No events, no delays, no explicit time dependence. Assignment rules are allowed if they are algebraic in the 3 species and constants.
+3. The right-hand side is non-polynomial in the species (rational, Hill, exponential, and so on). This is checked symbolically after conversion.
+4. Sustained motion: integrated from the published initial state with the published parameters, it passes the same acceptance test as the catalog and synthetic banks, i.e. a limit cycle or chaos, not a fixed point.
+5. Each accepted model's identifier, title and publication are recorded. Models are grouped into families by the database's own annotations (for example GO or KEGG process terms) where available, otherwise by title keywords, recorded per model.
+
+**Exclusions:**
+- any model whose title names a system in reserve set A (Belousov–Zhabotinsky, Ca²⁺ oscillation, excitable cell, isothermal chemical, Colpitts, Chua, Hopfield or Beer networks, El Niño) or in the development or confirmation sets;
+- duplicates of the same published model.
+
+**Splits** (by hash of the model identifier):
+- about two thirds become training history;
+- one third becomes **family-held-out** test systems: related to training families, but unseen.
+
+Reserve set A stays untouched for a final test.
+
+**Downloaded files are untrusted data.** They go into their own directory. SBML is parsed as data (XML and MathML), never executed, and converted to whitelisted right-hand sides with the same AST checks as the catalog.
+
+### Sourcing outcome (30 October, before any training or evaluation on these systems)
+
+- **Download.** 1,019 curated ODE models listed; 1,017 SBML files obtained. The first pass guessed file names and failed for 335 models; a retry using each model's file listing recovered all but 2.
+- **Conversion** (`biomodels_convert.py`):
+  - **21 of 1,017 accepted.**
+  - Main rejection reasons: number of state variables ≠ 3 (738), events (146), title exclusions (26), polynomial right-hand side (25), no sustained motion (45 across the pilot and instance-0 checks).
+- **Code aligned with the written rule, before any learning result.** The first converter was stricter than the rule. It rejected models with initial assignments (allowed now, if they evaluate to constants) and with piecewise expressions (allowed now, if their conditions involve only states and constants; explicit time is still rejected).
+- **Rule applications the first code missed:**
+  - Lavrentovich2008_Ca_Oscillations excluded (Ca²⁺ oscillation title; the first title pattern missed `Ca_`).
+  - Goldbeter-minimal-model duplicates excluded. BIOMD0000000944 is a structural duplicate of 729. 729 (Goldbeter1996) and 933 (Kosiuk2015, "geometric analysis of the Goldbeter minimal model") duplicate BIOMD0000000003 by title; this is a judgment, and both are recorded.
+- **17 real non-polynomial models remain.**
+- **Split.** The hash threshold gave 7 / 10 by chance with only 17 items. To realize the stated "about two thirds", the split was changed to **rank-based on the same hash**: the lowest 11 hashes are training. This was decided before any training or evaluation.
+  - **Training (11):** Zatorsky2006 p53, Westermark2003 glycolysis, Leloup1999 Neurospora circadian, Kim2011 synthetic oscillator, DeVries2000 β-cell, Araujo2016 Cdk1, Dritschel2018 T-cell / tumour, Smith1980 hypothalamic, Lenbury2001 insulin, Bianca2013 cancer–immune, Ferrell2011 CDK1 oscillator.
+  - **Family-held-out (6):** Goldbeter1991 mitotic oscillator, Rattanakul2003 bone, Decroly1982 enzymatic oscillator, Caravagna2010 tumour–immune, Voliotis2019 GnRH pulse generator, Gerard2013 cell cycle. Each has a related family in training.
+- **Relatedness to reserve set A, noted for later.** DeVries2000 (training) is a pancreatic β-cell bursting model, the same biological system as reserve A's ExcitableCell. Its title does not trigger the exclusion rule, so it stays.
+- **Not used:** the 738 models with more or fewer than 3 variables, a much larger real history that a learner working in any dimension could use.
+
+## Trial 16: does related real history transfer to held-out real mechanisms? (pre-registered 30 October, before training)
+
+- **Hypothesis.** A history containing *real* related families transfers to held-out members of those families, where generic synthetic history (Trial 15) did not. Concretely: the 11 training BioModels systems (cell cycle, metabolic, endocrine, tumour–immune and others) make the 6 held-out real systems learnable from fewer observations than the catalog-only learner or kernel ridge can manage.
+- **Data.** Each BioModels system has 8 instances (instance 0 from the published initial state, the rest started from perturbed points on the attractor), h = P/40, observable-only contract (Trial 9). CPU threads are capped (OMP 4, nice 10).
+- **Arms** (seeds 1, 2; M = 4; 400 steps per stage; replay of 2 instances):
+  - **catalog-only:** Trial 9 seqobs400 t = 51 (existing);
+  - **catalog+bio:** a stream of the 51 catalog systems plus the 11 BioModels training systems, seeded shuffle `default_rng(1600 + s)`;
+  - **catalog+synthetic:** Trial 15's broad arm (existing), as the comparator for real vs generic history.
+- **Evaluation.**
+  - Held-out systems: instances 0–3, 5 episodes each, K ∈ {16, 32, 64}, `episode_obs` with seeds 16000 + 97i + K.
+  - Development systems: Trial 9 episodes, for the no-harm readout.
+  - Kernel ridge is the experience-free control.
+- **Criteria (both seeds):**
+  - **R1 (related real families transfer):** on the 6 held-out systems at K = 32, catalog+bio's median NMSE ≤ 0.67× catalog-only's, *and* catalog+bio beats kernel ridge on ≥ 4 of 6.
+  - **R2 (real beats generic):** catalog+bio's held-out median at K = 32 ≤ 0.8× catalog+synthetic's.
+  - **R3 (no harm):** development polynomial-stratum median at K = 32 ≤ 1.5× catalog-only's.
+- **Reported:** K = 16 and 64, per-system results with family annotation, the development non-polynomial stratum.
+
+**What happens next, decided now:**
+- **R1 and R3 pass:** related real history transfers. Next, the owner's uncertainty-driven additions on this learner: (a) where to look, choosing observations by uncertainty plus coverage; (b) what to study, prioritizing replay by remaining error. After that, propose a reserve-set-A test.
+- **R1 fails:** at this scale (11 related real systems) real families do not transfer either. Then the learner working in any dimension, using the 738 other BioModels, is the remaining way to get a much broader real history.
