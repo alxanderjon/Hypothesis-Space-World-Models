@@ -1584,7 +1584,7 @@ A network that learns from its history, without being supplied the answer, and s
 
 ### Partly achieved: the owner's "learn from what remains uncertain"
 
-- **Choosing observations where stored hypotheses disagree** is the only learner-based approach that edged below kernel ridge on unfamiliar systems: 25–40% better than generic coverage at K = 16, and best at K = 8 when gated.
+- **Choosing observations where stored hypotheses disagree** is the only learner-based approach that edged below kernel ridge on unfamiliar systems: 25–40% better than generic coverage at K = 16, and best at K = 8 when gated. *[Withdrawn: confounded by mismatched starting points; see "Correction to Trials 17 and 19" below.]*
 - **Its open problem** is a reliable signal for when a system is unfamiliar.
 - **Rehearsing what is still wrong backfires.** It needs a learning-progress signal instead.
 
@@ -1680,3 +1680,54 @@ How well candidate gate statistics separate unfamiliar from familiar episodes (A
 **What happens next, decided now:**
 - **Both pass:** present the gated learner to the owner as the reserve-set-A candidate, with the caveat about how the statistic was selected.
 - **Fail:** the information limit also blocks practical self-assessment at these budgets. Report it and stop this thread.
+
+## Trial 22: result (30 October)
+
+**Classification: FAILED.** GU fails in both seeds; GF passes in both.
+
+**Relative-fit thresholds** (k₀ = 4 / 8 / 16): seed 1 1.45 / 1.29 / 1.19; seed 2 1.54 / 1.13 / 1.88.
+
+**AUC of the statistic r on fresh episodes:**
+
+| K (gate at k₀ = K/2) | 8 (k₀ = 4) | 16 (k₀ = 8) | 32 (k₀ = 16) |
+|---|---|---|---|
+| Seed 1 | 0.50 | 0.77 | 0.83 |
+| Seed 2 | 0.53 | 0.82 | 0.74 |
+
+| Median NMSE at K = 16, fresh episodes | Unfamiliar, seed 1 | Unfamiliar, seed 2 | Familiar, seed 1 | Familiar, seed 2 |
+|---|---|---|---|---|
+| coverage, 2-start | .0262 | .0265 | .0006 | .0006 |
+| disagreement×coverage, 2-start | .0307 | .0275 | .0009 | .0005 |
+| gated on relative fit | .0241 (GU 0.92 ✗) | .0269 (GU 1.02 ✗) | .0006 (GF 1.00 ✓) | .0006 (GF 1.00 ✓) |
+| kernel ridge, coverage, 2-start | .0238 | (same) | .0017 | (same) |
+
+Gate open rate at K = 16: unfamiliar 12% / 24%; familiar 3% / 3%.
+
+### Reading
+
+- **The gate is now selective** (3% false openings on familiar systems), and it costs familiar systems nothing. But disagreement-guided observation itself gives no benefit over coverage started from the same two points, so gating it has nothing to gain.
+
+## Correction to Trials 17 and 19 (30 October)
+
+**Trial 17's U1 "pass" is withdrawn, and Trial 19's GU is confounded the same way.** In both trials, the coverage baseline started from **one** random point, while the uncertainty-guided strategies started from **two**.
+
+**Re-check on Trial 17's own episodes** (K = 16): coverage started from the same two points.
+
+| | Coverage, 1 start | Coverage, 2 starts | Disagreement×coverage, 2 starts |
+|---|---|---|---|
+| Unfamiliar, seed 1 | .0360 | .0298 | .0269 |
+| Unfamiliar, seed 2 | .0371 | .0230 | .0227 |
+| Familiar, seed 1 | .00075 | .00069 | .00091 |
+| Familiar, seed 2 | .00054 | .00060 | .00057 |
+
+With matched starts, the disagreement benefit on unfamiliar systems is **0.90 and 0.99**, which would have failed U1's 0.83 bar. Most of the reported 25–39% gain came from the start design, not from the uncertainty rule.
+
+This also shows how sensitive these 10-system medians are: changing one starting point moved coverage by up to 38%. Effects of that size need matched designs and more systems before they are believed.
+
+**Corrected statements.** The earlier synthesis said uncertainty-guided observation "edged below kernel ridge on unfamiliar systems" and was "25–40% better than coverage at K = 16". **That is not supported.** With matched baselines, neither disagreement-guided observation (always on or gated) nor leverage-guided observation beats generic coverage. The surviving findings are:
+
+- coverage (spreading observations out) is worth 3–5× over random choice;
+- the learner can tell an unfamiliar system from its *relative* fit (best stored basis against kernel ridge) only from about 8–16 observations (AUC about 0.8); at 4 observations it is at chance;
+- with ≤ 64 noisy observations, no form of experience tried here, whether in the model or in choosing observations, beats generic kernel ridge on mechanisms unlike the history.
+
+As pre-registered, this thread stops here.
