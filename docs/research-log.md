@@ -1624,3 +1624,59 @@ The owner chose recommended step 1, a better unfamiliarity signal for the gate. 
 **What happens next, decided now:**
 - **Both pass:** the gated learner is the candidate for the reserve-set-A test. It still has to beat kernel ridge on unfamiliar systems in development, which is checked and reported here, and the owner is asked before reserve set A is touched.
 - **GF fails:** report the open rates. The signal needs more than leave-one-out error, for example disagreement among the bases relative to calibration.
+
+## Trial 21: result (30 October)
+
+**Classification: FAILED.** GF fails in seed 2. GU's pass is not credited: it is confounded, as explained below.
+
+**Thresholds** (90th percentile of the best-basis leave-one-out on the polynomial confirmation systems):
+
+| k₀ | 4 | 8 | 16 |
+|---|---|---|---|
+| Seed 1 | 1.39 | 1.17 | 0.098 |
+| Seed 2 | 1.42 | 1.25 | 0.133 |
+
+| K = 16, gated-half | Seed 1 | Seed 2 |
+|---|---|---|
+| GU: unfamiliar vs Trial 17 coverage | 0.83 | 0.62 |
+| GF: familiar vs Trial 17 coverage | 0.92 ✓ | 1.12 ✗ |
+| Gate open rate, unfamiliar / familiar | 5% / 0% | 6% / 0% |
+
+### Reading
+
+- **The calibrated gate almost never opened** at K ≤ 16 (5–9% on unfamiliar systems, 0–13% on familiar ones). So "gated" was essentially coverage started from *two* random points instead of Trial 17's one.
+- **Confound:** the GU and GF ratios mostly measure that difference in starting points, plus episode noise. They are not credited to the gate. Later comparisons must start the coverage baseline from the same points.
+- **The thresholds are huge at k₀ ≤ 8** (leave-one-out MSE above 1, i.e. worse than predicting the mean). With so few points, every system's fit error is large and heavy-tailed.
+
+### Exploratory diagnostics (not criteria)
+
+How well candidate gate statistics separate unfamiliar from familiar episodes (AUC; Trial 17 episodes at K = 32, seed-1 learner):
+
+| k₀ | Best-basis leave-one-out | Disagreement among the 4 bases | Best-basis / kernel-ridge leave-one-out ratio |
+|---|---|---|---|
+| 4 | 0.50 | 0.52 | 0.44 |
+| 8 | 0.69 | 0.47 | **0.82** |
+| 16 | 0.87 | 0.58 | 0.82 |
+
+- **Self-knowledge has the same information limit.** From its own absolute fit error, the learner cannot tell that a system is unfamiliar until it has about 16 observations.
+- **The *relative* fit carries the signal earlier.** Asking "does my best stored basis fit better than a generic method?" separates the groups from 8 observations (AUC 0.82). Disagreement among the bases does not separate them at all.
+- Trial 19's gate ("kernel ridge wins") is this same ratio thresholded at 1, but it was checked at k₀ = 4, where the ratio has no information (AUC 0.44).
+
+## Trial 22: gate on relative fit at half budget (evaluation only; pre-registered 30 October, before running)
+
+- **Disclosure.** The statistic was chosen *after* seeing the diagnostic AUCs on development episodes, a selection between three candidates. To limit optimism, Trial 22 uses **fresh episodes**, and the threshold is calibrated only on the polynomial confirmation systems, as in Trial 21. Reserve set A would be the real test.
+- **Gate:**
+  1. Start from 2 random pool points.
+  2. Choose by coverage until k₀ = K/2.
+  3. Compute r = (best basis's exact leave-one-out MSE) / (kernel ridge's exact leave-one-out MSE).
+  4. If r exceeds the 90th percentile of r on the calibration episodes at that k₀ (computed as in Trial 21, seeds 22500 + 97i + k₀), continue with disagreement×coverage. Otherwise continue with coverage.
+- **Fair baseline:** coverage started from the *same* 2 random points (the gate always closed), and disagreement×coverage from the same 2 points (the gate always open).
+- **Setting:** Trial 16's catalog+bio learner; the same 10 unfamiliar and 9 familiar systems; pool contract; **fresh episode seeds 22000 + 97i + K**; K ∈ {8, 16, 32}.
+- **Criteria (both seeds, K = 16):**
+  - **GU:** unfamiliar median, gated ≤ 0.83× coverage(2-start);
+  - **GF:** familiar median, gated ≤ 1.0× coverage(2-start).
+- **Reported:** gate open rates per group, AUC of r on these fresh episodes, and kernel ridge with coverage.
+
+**What happens next, decided now:**
+- **Both pass:** present the gated learner to the owner as the reserve-set-A candidate, with the caveat about how the statistic was selected.
+- **Fail:** the information limit also blocks practical self-assessment at these budgets. Report it and stop this thread.
