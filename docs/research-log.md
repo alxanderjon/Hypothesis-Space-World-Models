@@ -1191,3 +1191,50 @@ The owner wrote: *"if you think this will help us reach our goal and has general
 - **S-A fails:** a generic synthetic history does not transfer to real unfamiliar mechanisms at these budgets. Report it. This would strengthen the "information per encounter" explanation.
 
 **Resources:** synthetic data about 200 systems × 8 instances (about 80 MB); 2 seeds × 3 training arms; outputs under `outputs/accumulating_learner/trial15/`.
+
+## Trial 15: result (30 October)
+
+**Classification: FAILED.** S-A fails in both seeds; S-B passes in both. The primary arm, chosen by the pre-registered seed-1 rule, is **broad8**.
+
+**Synthetic set.** 200 accepted systems from 2,960 seeds (6.8% acceptance). The five nonlinearity types were used roughly equally (230–259 terms each); characteristic periods ranged from 1.2 to 49.1, median 4.9.
+
+| K = 32, development | Seed 1 | Seed 2 |
+|---|---|---|
+| S-A: broad8 non-polynomial median vs catalog-only (need ≤ 0.75) | 1.02 ✗ | 1.49 ✗ |
+| S-A: broad8 non-polynomial median vs catalog-long (need ≤ 0.75) | 1.20 ✗ | 1.12 ✗ |
+| S-A: broad8 beats kernel ridge, non-polynomial systems (need ≥ 3/4) | 2/4 ✗ | 2/4 ✗ |
+| S-B: broad8 polynomial median vs catalog-only (need ≤ 1.5) | 0.94 ✓ | 0.68 ✓ |
+
+Non-polynomial medians at K = 32:
+
+| | Seed 1 | Seed 2 |
+|---|---|---|
+| catalog-only | .103 | .099 |
+| catalog-long | .088 | .132 |
+| broad | .138 | .136 |
+| broad8 | .105 | .148 |
+| kernel ridge | .100 | .100 |
+
+At K = 64 every arm is between .033 and .048, against kernel ridge .031.
+
+### Reading
+
+- **A broad, generic, non-polynomial history does not transfer to real unfamiliar mechanisms** at these budgets. Every learner variant stays at kernel ridge level on them, as pre-registered for S-A failing. This strengthens the conclusion that, for a mechanism unlike its history, what limits the learner is information per encounter, not the breadth of its stored features.
+- Familiar (polynomial) systems are unaffected or slightly better (S-B).
+- **Resource incident.** During this trial I found my training processes were each using about 10 CPU cores through PyTorch's default threading (the samplers do CPU argsorts). Four runs pushed the shared host's load to about 95 on 48 cores, nearly all mine. I reniced the running processes to 15 at once. From now on runs are launched with `OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 nice -n 10`. The earlier 12-stream trials (10, 11) were probably oversubscribed too. GPUs were never shared with another user's job.
+
+## Conclusion of this phase (30 October)
+
+Across 15 trials and one confirmation run, the picture is consistent:
+
+1. **Learning from history works, and is confirmed on untouched systems,** whenever new systems share structure with the history. The learner discovers that structure itself (no term library is supplied) and accumulates it one system at a time. Gains reach about 40–65× at 16–32 observations under low-noise observation, and 2–4× from noisy trajectories with no ground-truth targets anywhere.
+2. **It does not generalize to genuinely unfamiliar mechanisms.** Nothing tried beats generic kernel ridge on such systems at ≤ 64 noisy observations: broader synthetic history (Trial 15), test-time accumulation (Trials 10–11), encounter-time fine-tuning (Trial 12), sparsity (Trials 6–7), or context-conditioned features (Trial 3).
+3. **What does help unfamiliar mechanisms is better observations.** A spread-out observation design gives 3–5× for every method (Trial 13). Neither hand-written nor myopically learned experience-based rules beat generic coverage (Trials 13–14).
+
+**Open directions**, each needing an owner decision on scope:
+
+- **(i)** Source *real* families of related non-polynomial mechanisms from outside the catalog. Real relatives might transfer where generic synthetic ones did not, but each system needs vetting.
+- **(ii)** A controlled-probe contract, where the learner chooses initial states to observe. Larger information per encounter, but the handover notes reset access materially simplifies problems.
+- **(iii)** A multi-step learned investigation policy. Low expected value given (3).
+
+Reserve sets A and B are untouched.
