@@ -343,9 +343,37 @@ def accept(x, dx):
     return rms(dx[b]) >= 0.1 * rms(dx[a])
 
 
+def transient_data(f, x0, rng):
+    """Trial 23 transient rule: moves and settles from the published state; 8 instances from scaled initial states."""
+    t = np.concatenate([[0.0], np.logspace(-4, 4, 4000)])
+    traj = integrate(f, x0, t)
+    if traj is None:
+        raise Reject("transient pilot integration failed")
+    dist = np.linalg.norm(traj - traj[-1], axis=1)
+    if dist[0] < 1e-3 * (np.linalg.norm(x0) + 1e-6):
+        raise Reject("transient: no motion")
+    below = np.nonzero(dist < 0.01 * dist[0])[0]
+    if len(below) == 0 or t[below[0]] <= 0:
+        raise Reject("transient: does not settle within horizon")
+    H = 1.5 * t[below[0]]
+    t_eval = np.linspace(0, H, N_POINTS)
+    xs, dxs = [], []
+    for i in range(INSTANCES):
+        for _ in range(4 if i else 1):
+            start = x0 if i == 0 else x0 * rng.uniform(0.5, 1.5, size=len(x0))
+            x = integrate(f, start, t_eval)
+            if x is not None:
+                break
+        if x is None:
+            raise Reject(f"transient instance {i} integration failed")
+        xs.append(x.astype(np.float32)); dxs.append(f(x).astype(np.float32))
+    return np.stack(xs), np.stack(dxs), float(H / (N_POINTS - 1)), float(t[below[0]])
+
+
 def process(args):
     path, entry = args[:2]
     dmin, dmax = (args[2], args[3]) if len(args) > 2 else (3, 3)
+    transient = args[4] if len(args) > 4 else False
     np.seterr(all="ignore")
     rec = {"id": entry["id"], "name": entry.get("name", "")}
     try:
@@ -354,32 +382,44 @@ def process(args):
         info, exprs = convert(path, dmin, dmax)
         f = numeric(exprs)
         x0 = np.array(info["x0"], dtype=float)
-        pilot = integrate(f, x0, np.linspace(0, 2000, 8001))
-        if pilot is None:
-            raise Reject("pilot integration failed")
-        xp = pilot[4000:]
-        speed = np.linalg.norm(f(xp), axis=1).mean()
-        radius = np.linalg.norm(xp - xp.mean(0), axis=1).mean()
-        if speed < 1e-9 or radius < 1e-9:
-            raise Reject("no motion in pilot")
-        P = 2 * np.pi * radius / speed
-        t_eval = np.linspace(BURN * P, (BURN + SPAN) * P, N_POINTS)
-        rng = np.random.default_rng(int(hashlib.sha256(entry["id"].encode()).hexdigest()[:8], 16))
-        xs, dxs = [], []
-        for i in range(INSTANCES):
-            start = x0 if i == 0 else np.abs(xp[int(rng.integers(len(xp)))] * (1 + 0.05 * rng.normal(size=len(x0))))
-            x = integrate(f, start, t_eval)
-            if x is None:
-                raise Reject(f"instance {i} integration failed")
-            dx = f(x)
-            if not accept(x, dx):
-                raise Reject(f"instance {i}: no sustained motion")
-            xs.append(x.astype(np.float32)); dxs.append(dx.astype(np.float32))
-        rec.update(info, period=float(P), h=float(SPAN * P / (N_POINTS - 1)), status="accepted")
-        return rec, np.stack(xs), np.stack(dxs)
+        if transient:
+            try:
+                return oscillator(entry, rec, info, f, x0)
+            except Reject:
+                rng = np.random.default_rng(int(hashlib.sha256(("t" + entry["id"]).encode()).hexdigest()[:8], 16))
+                x, dx, h, ts = transient_data(f, x0, rng)
+                rec.update(info, h=h, settle_time=ts, kind="transient", status="accepted")
+                return rec, x, dx
+        return oscillator(entry, rec, info, f, x0)
     except Exception as e:  # any failure on untrusted input is a recorded rejection, never a crash
         rec["status"] = f"rejected: {e}"[:200]
         return rec, None, None
+
+
+def oscillator(entry, rec, info, f, x0):
+    pilot = integrate(f, x0, np.linspace(0, 2000, 8001))
+    if pilot is None:
+        raise Reject("pilot integration failed")
+    xp = pilot[4000:]
+    speed = np.linalg.norm(f(xp), axis=1).mean()
+    radius = np.linalg.norm(xp - xp.mean(0), axis=1).mean()
+    if speed < 1e-9 or radius < 1e-9:
+        raise Reject("no motion in pilot")
+    P = 2 * np.pi * radius / speed
+    t_eval = np.linspace(BURN * P, (BURN + SPAN) * P, N_POINTS)
+    rng = np.random.default_rng(int(hashlib.sha256(entry["id"].encode()).hexdigest()[:8], 16))
+    xs, dxs = [], []
+    for i in range(INSTANCES):
+        start = x0 if i == 0 else np.abs(xp[int(rng.integers(len(xp)))] * (1 + 0.05 * rng.normal(size=len(x0))))
+        x = integrate(f, start, t_eval)
+        if x is None:
+            raise Reject(f"instance {i} integration failed")
+        dx = f(x)
+        if not accept(x, dx):
+            raise Reject(f"instance {i}: no sustained motion")
+        xs.append(x.astype(np.float32)); dxs.append(dx.astype(np.float32))
+    rec.update(info, period=float(P), h=float(SPAN * P / (N_POINTS - 1)), kind="oscillator", status="accepted")
+    return rec, np.stack(xs), np.stack(dxs)
 
 
 def main():
@@ -389,11 +429,12 @@ def main():
     ap.add_argument("--workers", type=int, default=12)
     ap.add_argument("--dmin", type=int, default=3)
     ap.add_argument("--dmax", type=int, default=3)
+    ap.add_argument("--transient", action="store_true", help="Trial 23: also accept settling transients")
     a = ap.parse_args()
     src, out = Path(a.sbml), Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     manifest = json.loads((src / "manifest.json").read_text())["models"]
-    jobs = [(src / m["file"], m, a.dmin, a.dmax) for m in manifest if "sha256" in m]
+    jobs = [(src / m["file"], m, a.dmin, a.dmax, a.transient) for m in manifest if "sha256" in m]
     records = []
     with Pool(a.workers) as pool:
         for rec, x, dx in pool.imap_unordered(process, jobs):
