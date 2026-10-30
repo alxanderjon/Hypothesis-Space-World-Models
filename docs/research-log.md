@@ -1796,7 +1796,7 @@ The full Trial 23 protocol (arms and criteria) is pre-registered after conversio
   2. **Non-finite steps are skipped and counted**, so a bad batch cannot corrupt the weights again.
 - **Effect on the protocol:** 145 training and 72 held-out real models remain (53 new held-out transients). B1's win threshold stays at 60%, now ≥ 32 of 53. Everything else is unchanged. Training restarts from scratch with the same seeds and stream rule; the stream is now 196 systems. The aborted logs are kept as `train_s*_aborted_nan.log`.
 
-## Trial 23: result (30–31 October)
+## Trial 23: result (30 October)
 
 **Classification: FAILED.** B1 and B2 fail in both seeds; B3 passes in both. The restarted training was clean: 196 stages, 0 non-finite steps, about 2.3 h per seed.
 
@@ -1820,7 +1820,7 @@ Median NMSE on the new held-out transients at K = 32: pw-catalog 1.37 / 1.27, pw
 - **Negative transfer.** Training on these tasks made the learner worse on the oscillatory held-out systems it handled before (B2: 1.29–1.42× worse than Trial 18).
 - **Conclusion.** As pre-registered for both failing, this ends the session. The specific question "does a large *related* real history beat kernel ridge?" remains open, because Trial 23's history was mostly unlearnable data, not related structure.
 
-## Session conclusion (31 October)
+## Session conclusion (30 October)
 
 1. **Established and confirmed on untouched systems.** A learner that accumulates experience one system at a time, without being given equations or a term library, learns new systems that share structure with its history far faster than experience-free methods: about 65× lower error at 32 observations, with the gain growing with history.
    - It holds, more modestly (2–4×), from noisy trajectories with no ground-truth targets anywhere.
@@ -1839,13 +1839,13 @@ Median NMSE on the new held-out transients at K = 32: pw-catalog 1.37 / 1.27, pw
 
 Reserve sets A and B, the PDEBench reserved trajectories and the diffusion–sorption mechanism are untouched.
 
-## Owner instruction (31 October)
+## Owner instruction (30 October)
 
 *"How would we stop here? We don't have a result, what we have is another failure. We should not stop until we have a solution. You have my permission for the proposal."*
 
 **Standing rule from now on:** keep iterating toward the goal, a learner whose history makes *unfamiliar* systems learnable, and do not propose stopping or writing up while it is unmet.
 
-## Trial 24 plan: learnable transient data, then the large-history test again (pre-registered 31 October, before generating data)
+## Trial 24 plan: learnable transient data, then the large-history test again (pre-registered 30 October, before generating data)
 
 **Step 1 — resample the transient models** (the 187 accepted transients; same models, same validity rule, same splits). For each instance, integrate densely from t = 0 to 1.5 t_s, then keep 4,000 samples by one of two schemes:
 - **log-time:** t = 0 plus geometric spacing from 10⁻⁴ t_s to 1.5 t_s;
@@ -1862,7 +1862,7 @@ Time stamps are stored. A central difference uses each sample's own neighbours: 
 - **Criteria:** B1, B2 and B3 exactly as in Trial 23.
 - **New held-out transients:** evaluated under the same within-trajectory contract, generator seeds 24000 + 97i + K.
 
-## Owner standing rules (31 October)
+## Owner standing rules (30 October)
 
 1. **Disk.** Before generating data, delete this project's own unneeded intermediates. Keep ≥ 5% of the disk free; if it is below that, stop writing and notify the owner.
 2. **Success.** With ≤ 64 noisy observations, the learner beats kernel ridge *and* the best no-history control on **unfamiliar kinds of systems**, in **both seeds**, and **the advantage grows with the number of systems in its history**. Every trial states how it moves toward this, and the log keeps a running count of trials evaluated on the development systems.
@@ -1879,7 +1879,7 @@ Time stamps are stored. A central difference uses each sample's own neighbours: 
 
 **Running count of trials evaluated on the development systems: 23** (Trials 1–23), plus 5 exploratory diagnostics on development episodes (Trial 6 pilot, Trial 8 noise/bias, Trials 21 and 22 AUCs, the Trial 17 re-check). The confirmation run used the confirmation set, not development.
 
-## Audit of Trials 1–23 by underlying approach (31 October)
+## Audit of Trials 1–23 by underlying approach (30 October)
 
 ### Approach A — learn a feature basis from history, fit a linear (ridge) head per new system (17 trials)
 
@@ -1939,7 +1939,7 @@ Two approach families have been tried, and B is built on A's learner. **Twenty-t
 
 Approach 2 (trajectory-consistent estimation) is the next candidate, and can be combined with 1 if 1 shows promise.
 
-## Owner decision (31 October)
+## Owner decision (30 October)
 
 - **Disk rules replaced:**
   - keep **≥ 50 GB free** at all times;
@@ -1954,7 +1954,7 @@ Approach 2 (trajectory-consistent estimation) is the next candidate, and can be 
   - success is judged on unfamiliar kinds of systems, **held out by kind** (not just by parameters), against kernel ridge and the best no-history control;
   - the history-growth curve is tested by training on increasing numbers *and* varieties of systems.
 
-## Trial 24: amortized inference trained on varied kinds of dynamics, tested on held-out kinds (pre-registered 31 October, before training)
+## Trial 24: amortized inference trained on varied kinds of dynamics, tested on held-out kinds (pre-registered 30 October, before training)
 
 **Approach family: new** (audit option 1). The learner does not fit coefficients on a learned basis. A Transformer reads the K noisy observations of a new system and directly outputs its predicted velocity (central difference) at query states: it learns the *inference procedure*, approximating Bayesian prediction under its training distribution of dynamical systems.
 
@@ -2025,7 +2025,7 @@ Each candidate is integrated with batched RK4, with a 100 time-unit pilot. It is
 
 **Resources:** each learner takes about 25 min of training plus pool building (up to about 35 min at N = 65,536), with 4 CPU threads and nice 10, on free GPUs except GPU 4. Disk: checkpoints about 9 MB each.
 
-## Trial 24: result (31 October)
+## Trial 24: result (30 October)
 
 **Classification: FAILED** (S2 fails in both seeds). **S1 passes in both seeds:** this is the first approach in the project to beat kernel ridge and the best no-history control on unfamiliar kinds of systems.
 
@@ -2058,7 +2058,7 @@ Familiar kinds (9 polynomial development systems, K = 32): kernel ridge .0050 ag
 
 The rule said that if S2 fails, move to option 2. The diagnosis (training error flat across pool sizes) shows S2 was not a test of whether history helps, but of whether this model could absorb history. The direct test is to scale the model and training budget on the same history grid: **Trial 25**. Option 2 (trajectory-consistent estimation) stays next if scaling does not produce growth. The precision floor on familiar and easy systems is a separate issue, deferred to a later trial so that one thing changes at a time.
 
-## Trial 25: does a larger Transformer turn history into a growing advantage? (pre-registered 31 October, before training)
+## Trial 25: does a larger Transformer turn history into a growing advantage? (pre-registered 30 October, before training)
 
 - **How it moves toward success.** Trial 24 met the "beats kernel ridge on unfamiliar kinds" half in both seeds. Trial 25 targets the "advantage grows with history" half.
 - **Running count of trials evaluated on the development systems: 25.**
@@ -2084,3 +2084,6 @@ The rule said that if S2 fails, move to option 2. The diagnosis (training error 
 - **S2 fails, and training error now depends on the pool:** absorbing history doesn't help held-out kinds. Move to option 2, combined with the Transformer.
 
 **Resources:** about 3 h per learner with 2 per GPU on GPUs 0–3 and 5–7, threads capped. Disk: checkpoints of about 26 MB each (14 × 26 MB = 0.4 GB).
+
+
+*Date correction (30 October): ten headings above, from the Trial 23 result to the Trial 25 pre-registration, were mistakenly labelled 31 October. They were all written on 30 October (UTC, per the machine clock) and have been relabelled. No content changed.*
