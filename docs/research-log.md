@@ -1750,3 +1750,37 @@ The owner asked whether I am waiting on anything or can run autonomously overnig
 - **Split:** Trial 18's assignments preserved. New systems by rank-hash (salt `trial23-split`), two thirds training.
 
 The full Trial 23 protocol (arms and criteria) is pre-registered after conversion, before any training.
+
+### Trial 23 sourcing outcome (30 October, before any training)
+
+- **Accepted at 2 ≤ d ≤ 12:** 249 models (187 transients, 62 oscillators).
+  - By d = 2…12: 28, 55, 38, 26, 22, 17, 19, 14, 15, 11, 4.
+- **Exclusions:** 22 in total — Trial 18's decisions, Ca²⁺ titles, structural duplicates. Structural duplicates were judged by a permutation-invariant fingerprint; Trial 18's kept systems are protected.
+- **Import:** Rozi2003 (BIOMD0000000100), a Trial 18 training system, failed integration in this pass (probably a 60 s timeout under load). Its Trial 18 data and record were imported instead, so Trial 18's training set stays intact.
+- **Final real set: 228.**
+  - **Training: 152** (37 oscillators from Trial 18, 115 new transients).
+  - **Held-out: 76** (Trial 18's 19 oscillators, 57 new transients).
+
+## Trial 23: does a large real history make held-out real systems learnable? (pre-registered 30 October, before training)
+
+- **Hypothesis.** With an order of magnitude more related real history (152 real biochemical models plus the 51 catalog flows), the any-dimension pairwise library (Trial 18 architecture, unchanged) beats kernel ridge on held-out real models from the same domain. This is the first test of whether accumulated experience generalizes to new real systems at scale.
+- **Training.**
+  - `trial23.py`, seeds 1 and 2.
+  - A stream of 203 systems (51 catalog + 152 real) in a seeded shuffle, `default_rng(2300 + s)`, at 400 steps per stage, about 81k steps.
+  - Observable-only. Oscillators use the segment contract. Transients use the instance contract: context from starting conditions 0–3, queries from 4–7; replay keeps instances 0–1 (context) and 4–5 (queries).
+  - Everything else as in Trial 18. Threads are capped (OMP 4, nice 10), and runs are detached.
+- **Comparators:**
+  - Trial 18's pw-catalog and pw-all checkpoints;
+  - kernel ridge (experience-free).
+- **Evaluation:**
+  - 57 new held-out transient models (transient contract, 20 episodes per K, seeds 23000 + 97i + K);
+  - Trial 18's 19 held-out models and 13 development systems on Trial 18's exact K = 32 episodes.
+- **Criteria (both seeds, K = 32):**
+  - **B1 (new held-out real models):** pw-big's median ≤ 0.67× pw-catalog's, *and* pw-big beats kernel ridge on ≥ 60% (≥ 35 of 57).
+  - **B2 (Trial 18's held-out):** pw-big ≤ 0.8× Trial 18 pw-all, *and* beats kernel ridge on ≥ 10 of 19.
+  - **B3 (no harm):** development polynomial-stratum median ≤ 1.5× pw-catalog's.
+
+**What happens next, decided now:**
+- **B1 and B2 pass:** experience at scale generalizes to new real systems. Stop and ask the owner about a reserve-set-A test.
+- **B1 passes but B2 fails:** gains are specific to transients (new initial conditions within a domain). Report it, and then test reserve-set-A-style unfamiliar mechanisms on development only.
+- **Both fail:** even a large related real history does not beat kernel ridge at ≤ 64 noisy observations. Report this as the session's conclusion.
