@@ -2858,6 +2858,20 @@ Work within the trial is autonomous from here. Trial 26's code stays frozen; Tri
 - Degenerate pieces are simplified before the final refit.
 - 685 is exact again (1.1e-14).
 
+### Owner decision (31 Oct, ~22:50): option (b), with conditions
+
+Owner's reply, verbatim: "Approved: go with (b). Two conditions: 1. Before comparing, improve the from-scratch learner's overfitting with little data (e.g., a stronger preference for the simplest model that is exact on held-back data), and apply the same improvement to every arm. Patterns must beat a strong scratch learner, not a handicapped one. 2. For every pattern-based success, log which earlier system the pattern came from and how different the two systems are beyond that pattern. Keep the decoy patterns, copy-the-closest and removal checks. Test on practice data only, and check in with me before any evaluation on the held-out half."
+
+**Plan, in order (practice/development half only).**
+1. **Strong scratch.** Reduce small-data overfitting in the base learner, which every arm uses, and measure it against the previous scratch numbers. The baseline is from the accumulation probe at 20:30 (development half): exact at M = 8: 2/27; M = 16: 3/9 and M = 32: 4/11 (partial).
+2. **Pattern library.** Each accepted system's component equations, relabelled to "self"/"others", are tried on later systems under every variable assignment. The comparison uses the strong scratch learner, decoy patterns, copy-the-closest and the removal check.
+3. **Provenance.** For every pattern-based success, log the source system and how different the two systems are beyond the pattern.
+4. **Check in** with the owner before any held-out evaluation.
+
+The two probes that compared against the old scratch learner were stopped (superseded). The pattern prototype in the learner stays off by default.
+
+**Trial 26 record-keeping runs (phase 2)** finished for both seeds (27/27). Their results are added to the Trial 26 supplementary table when that table is next updated; the verdict is unaffected.
+
 ### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
 
 **G-familiar** (10 systems that resemble the history; reported, not counted). Exact-recovery rate by data amount:
