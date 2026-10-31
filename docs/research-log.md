@@ -2541,3 +2541,17 @@ The criteria themselves are unchanged. *Known when this rule was written:* the h
   - Catalog ratio systems that the grammar can express in principle were approximated with many terms instead of the compact form. Blasius reached 9e-7 with 11–12 terms per component.
 - **Consequence (pre-registered).** The accumulation part is uninformative, and **Trial 26 fails at the capability gate**. Per the C0 compute rule, G-novel runs at M < 64 are not made. The remaining G-novel M = 64 arms (including reruns of the crashed guide arms) and all G-familiar runs are completed for the report.
 - **Orchestration slip, no effect on results.** The 07:40 rule script stopped the phase-1 driver by process group. That group also contained the coordinating script and the other seed's driver, so phases 2–3 did not start automatically. They were relaunched at 07:42, each driver in its own session.
+
+### Cost of the learned artifacts (history systems the learner recovered; compiled C artifact vs the original simulation)
+
+| System | Compiled artifact exact? | 1 trajectory × 1,000 steps | 100 trajectories | RHS evaluations per step (artifact / simulator) |
+|---|---|---|---|---|
+| Lorenz | yes (2.5e-15) | 5.9 ms vs 3,119 ms (528×) | 472× | 96 / 23.6 |
+| Rossler | yes (6.6e-14) | 6.0 ms vs 2,941 ms (492×) | 242× | 96 / 25.6 |
+| ThomasLabyrinth | yes (1.9e-15) | 17 ms vs 3,584 ms (207×) | 213× | 192 / 63.8 |
+
+- **Caveat.** The wall-time advantage comes from compiled code. The original simulation is scipy DOP853 with a Python right-hand side, as pre-registered. Counted in right-hand-side evaluations, the artifact does 3–4× *more* work per step: it uses a fixed step, a 2× substep safety margin and no step-size control. Reducing that is an open item.
+
+### Plain-language summary sent to the owner (Trial 26)
+
+Sent in chat after C0 was decided. G-familiar and remaining M = 64 numbers will be appended when phases 2–3 finish.
