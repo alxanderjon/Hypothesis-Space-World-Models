@@ -11,6 +11,7 @@ Hand-supplied pieces are exactly Trial 26's toolkit. New generic machinery (code
 The learner receives only noise-free bursts; it never sees the true equations and never calls the simulator.
 """
 
+import itertools
 import math
 import time
 from dataclasses import dataclass, field
@@ -33,7 +34,8 @@ GRIDS = {"sin": [(w, p) for w in (0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0) for p in (0
          "abs": [(b,) for b in (-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5)],
          "pow": [(p,) for p in (0.5, 1.5, 2.5, -1.0, -2.0)]}
 VAL_TOL = 3e-13   # Trial 27 internal acceptance (scaled); external exactness is 1e-12 of the attractor scale
-CENTER_RATIO = 3.0   # centre a variable only if |mean| > 3 std (keeps polynomial structure sparse)
+CENTER_RATIO = 10.0  # centre a variable only if |mean| > 10 std (centring splits a product x*y into several terms; with
+                     # few bursts a variable's spread is narrow and the old ratio 3 centred it, breaking sparsity)
 NSUB_MARGIN = 4      # artifact substeps = 4 x self-converged count (Trial 27; 2x left 1.2e-12 on a dev system)
 
 
@@ -495,7 +497,7 @@ def frozen_positions(terms):
             o = 1 if isinstance(f.var, tuple) else 0
             if f.family in ("crecip", "cpow", "cabs", "cexp"):
                 out.append(k + o + (1 if f.family == "cexp" else 0))
-            if f.meta and ((f.meta[0] == "lib" and not FREE_LIB_EXP[0]) or "snap" in f.meta) and f.family in ("cpow", "chill", "chillr"):
+            if f.meta and ((f.meta[0] in ("lib", "motif") and not FREE_LIB_EXP[0]) or "snap" in f.meta) and f.family in ("cpow", "chill", "chillr"):
                 out.append(k + o + 2)
             if f.meta and "zsnap" in f.meta and (k + o + 1) not in out:      # zero point held at the variable's zero
                 out.append(k + o + 1)
@@ -564,6 +566,35 @@ def term_cost(t, prior):
     return prior(t.key()) + COMPLEXITY[0] * (1 + t.nparams())
 
 
+def minimal_supports(y, V, kmax, per_k=2, chunk=4096):
+    """Exhaustive search among the columns of V (N x C): for every support size 1..kmax, the best `per_k` supports
+    (batched QR least squares). Returns [(column indices, relative residual)]. With few data the greedy beam commits to
+    wrong early terms and ends over-sized; ranking every small support by fit and size finds the simplest exact model."""
+    N, C = V.shape
+    ny = float(y.norm()) + 1e-300
+    out = []
+    for k in range(1, min(kmax, C) + 1):
+        best_k = []
+        combos = itertools.combinations(range(C), k)
+        while True:
+            block = list(itertools.islice(combos, chunk))
+            if not block:
+                break
+            idx = torch.tensor(block, dtype=torch.long)
+            A = V[:, idx].permute(1, 0, 2)
+            Q = torch.linalg.qr(A)[0]
+            r = y.unsqueeze(0) - (Q @ (Q.transpose(1, 2) @ y.unsqueeze(0).unsqueeze(2))).squeeze(2)
+            rel = torch.where(torch.isfinite(r).all(1), r.norm(dim=1) / ny, torch.full((len(block),), float("inf")))
+            for j in torch.argsort(rel)[:per_k].tolist():
+                best_k.append((block[j], float(rel[j])))
+            best_k = sorted(best_k, key=lambda e: e[1])[:per_k]
+        out += best_k
+    return out
+
+
+SMALL_SUPPORT_C = 40     # exhaustive minimal-support search when at most this many candidate columns
+
+
 def screen_component(y, Z, X, cands, prior, tol, beam=6, max_terms=12, budget=None, rng=None, seeds=()):
     """Beam search over supports on derivative data. Score = log(relative residual) + complexity + memory penalty.
     Stops when a support reaches `tol` (the estimated derivative-error level). Returns ranked supports."""
@@ -571,6 +602,35 @@ def screen_component(y, Z, X, cands, prior, tol, beam=6, max_terms=12, budget=No
     vecs = design_fast(cands, Z, X)
     ok = torch.isfinite(vecs).all(0) & (vecs.norm(dim=0) > 1e-12)
     idx_ok = torch.nonzero(ok).squeeze(1).tolist()
+    small = []
+    sel = list(idx_ok)
+    if len(sel) > SMALL_SUPPORT_C:
+        # many candidates (toolkit pieces): the plain monomials plus the 15 pieces that best explain what the best small
+        # monomial support leaves over, searched exhaustively below (a missing reciprocal is otherwise imitated by junk)
+        mono_i = [i for i in sel if not cands[i].factors][:SMALL_SUPPORT_C]
+        fac_i = [i for i in sel if cands[i].factors]
+        if mono_i and fac_i:
+            Vm = vecs[:, mono_i] / vecs[:, mono_i].norm(dim=0, keepdim=True)
+            best_m = minimal_supports(y, Vm, 3 if len(mono_i) > 20 else 4, per_k=1)
+            pen = lambda e: math.log(max(e[1], tol) + 1e-40) + COMPLEXITY[0] * len(e[0])
+            cols0 = min(best_m, key=pen)[0] if best_m else []
+            r0 = lstsq_resid(Vm[:, list(cols0)], y)[0] if cols0 else y
+            Vf = vecs[:, fac_i]
+            score = (Vf.T @ r0).abs() / Vf.norm(dim=0).clamp(min=1e-300)
+            top_f = [fac_i[k] for k in torch.argsort(-score)[:15].tolist()]
+            sel = mono_i + top_f
+        else:
+            sel = []
+    if 0 < len(sel) <= SMALL_SUPPORT_C + 15:        # few candidates: every small support, ranked by fit and size (below)
+        Vs = vecs[:, sel] / vecs[:, sel].norm(dim=0, keepdim=True)
+        kmax = len(sel) if len(sel) <= 12 else (5 if len(sel) <= 20 else (4 if len(sel) <= 40 else 3))
+        for cols, rel in minimal_supports(y, Vs, kmax):
+            terms = [cands[sel[c]] for c in cols]
+            if any(t.factors for t in terms):            # pieces in the support: refine their constants (VarPro)
+                terms, res, _ = refine_support(terms, Z, X, y)
+                rel = res / ny if math.isfinite(res) else float("inf")
+            if math.isfinite(rel) and not any(degenerate(t, Z, X) for t in terms):
+                small.append((terms, rel))
     if budget is not None and len(idx_ok) > budget:
         order = sorted(idx_ok, key=lambda i: prior(cands[i].key()) + (rng.random() * 1e-6 if rng is not None else 0))
         idx_ok = order[:budget]
@@ -639,6 +699,17 @@ def screen_component(y, Z, X, cands, prior, tol, beam=6, max_terms=12, budget=No
         # nothing reached the estimated noise level (it can be optimistic): the best fit-versus-size trade-off seen at
         # any step, not the last (largest) supports, which only add junk terms toward an unreachable target
         finished.insert(0, (best_pen[1], best_pen[2]))
+    if small:
+        # every small support and the beam's results, ranked by fit and size together: a hard tolerance cut lets an
+        # over-sized support that squeezes just below an optimistic noise estimate beat the true, smaller one just above
+        pool, seen = [], set()
+        for terms, rel in small + finished:
+            key = tuple(sorted(str(t.sig()) for t in terms))
+            if key not in seen:
+                seen.add(key)
+                pool.append((math.log(max(rel, tol) + 1e-40) + sum(term_cost(t, prior) for t in terms), terms, rel))
+        pool.sort(key=lambda e: e[0])
+        return [(t, r) for _, t, r in pool[:beam]]
     return finished[:beam]
 
 
@@ -1045,6 +1116,7 @@ class LibEntry:
     vrange: tuple = (0.0, 1.0)   # compact: range of v = b u + c on the source data
     source: str = ""
     decoy: bool = False
+    motif: dict = None       # prototype (off by default): an equation pattern, kind "motif"
 
     def to_json(self):
         return dict(self.__dict__)
@@ -1067,7 +1139,7 @@ class Library:
 
     @staticmethod
     def from_json(rows):
-        return Library([LibEntry(**{**r, "shape": tuple(r["shape"]), "vrange": tuple(r["vrange"])}) for r in rows])
+        return Library([LibEntry(**{**r, "shape": tuple(r.get("shape", ())), "vrange": tuple(r.get("vrange", (0.0, 1.0)))}) for r in rows])
 
 
 def library_candidates(lib, d, Zc):
@@ -1077,6 +1149,8 @@ def library_candidates(lib, d, Zc):
     zero = tuple([0] * d)
     lin = [tuple(int(i == k) for i in range(d)) for k in range(d)]
     for e in lib.entries:
+        if e.kind == "motif":
+            continue
         monos = lin if e.multiplier else [zero]
         args = list(range(d)) if e.nargs == 1 else [(j, k) for j in range(d) for k in range(d) if k != j]
         for a in args:
@@ -1105,6 +1179,20 @@ def decoy_library(lib, seed):
     rng = np.random.default_rng([2727, seed, len(lib.entries)])
     out = Library()
     for e in lib.entries:
+        if e.kind == "motif":          # decoy pattern: same size, random monomials and random compact shapes
+            terms = []
+            for t in e.motif["terms"]:
+                mono = [[int(rng.integers(0, e.motif["k"])), 1] for _ in range(sum(x[1] for x in t["mono"]))]
+                facs = [{"family": str(rng.choice(MOTIF_FAMILIES)), "var": int(rng.integers(0, e.motif["k"])), "w": None,
+                         "n": float(rng.uniform(0.5, 3.0)), "vrange": [float(rng.uniform(0.1, 2.0)), float(rng.uniform(2.1, 5.0))]}
+                        for _ in t["factors"]]
+                for f in facs:
+                    if f["family"] not in ("cpow", "chill", "chillr"):
+                        f["n"] = None
+                terms.append({"mono": mono, "factors": facs})
+            out.entries.append(LibEntry(id=len(out.entries), kind="motif", family="motif", nargs=0, multiplier=False, shape=(),
+                                        source="decoy", decoy=True, motif={"k": e.motif["k"], "terms": terms}))
+            continue
         if e.kind == "curve":
             n = len(e.shape)
             mags = np.abs(np.asarray(e.shape)) + 1e-12
@@ -1694,6 +1782,17 @@ def discover_scan(model0, z0, z1, zv0, zv1, Zc, Xc, G, noise, mu, sig, prior, de
         y = G[:, i]
         tol = max(3.0 * float(noise[i]) / (float(y.norm()) / math.sqrt(len(y)) + 1e-300), 1e-12)
         base = base_terms(model0, i, d, minimal=True)
+        n_mono = sum(1 for t in base if not t.factors)
+        if len(y) < 8 * n_mono:
+            # few data for the full low-degree base (it nearly saturates the rate points and hides a missing piece):
+            # the best small monomial support (exhaustive, ranked by fit and size) plus earlier pieces instead
+            monos = [Term(m, (), 1) for m in monomials(d)]
+            Vm = design(monos, Zc, Xc)
+            Vm = Vm / Vm.norm(dim=0, keepdim=True).clamp(min=1e-300)
+            sm = minimal_supports(y, Vm, 3 if len(monos) > 20 else 4, per_k=1)
+            if sm:
+                cols, _ = min(sm, key=lambda e: math.log(max(e[1], tol) + 1e-40) + COMPLEXITY[0] * len(e[0]))
+                base = [monos[c] for c in cols] + [t for t in base if t.factors]
         pieces, full, rel = scan_component(i, G, Zc, Xc, Zall, base, tol, deadline, verbose=verbose, specs=specs)
         if not pieces:
             continue
@@ -2118,7 +2217,7 @@ def discovered_pieces(model, Zc):
                 o = 1 if isinstance(f.var, tuple) else 0
                 rec = {"component": i, "multiplier": bool(sum(t.mono)), "nargs": 2 if o else 1, "w0": float(f.theta[0]) if o else 0.0,
                        "var": list(f.var) if o else f.var}
-                if f.meta and f.meta[0] == "lib":
+                if f.meta and f.meta[0] in ("lib", "motif"):
                     rec.update(origin="reused", library_id=int(f.meta[1]), family=f.family)
                 elif f.family == "cheb":
                     coefs = np.asarray(f.theta[o:], dtype=float)
@@ -2142,6 +2241,108 @@ def as_library_piece(rec):
 # ======================================================================================================================
 # the Trial 27 learner
 # ======================================================================================================================
+
+# ======================================================================================================================
+# PROTOTYPE (off by default; not part of the approved Trial 27 design): equation patterns ("motifs") in the library
+# ======================================================================================================================
+
+MOTIFS = [False]
+MOTIF_FAMILIES = ("crecip", "cexp", "ctanh", "cpow", "chill", "chillr")
+
+
+def motifs_from_model(model, Zc):
+    """Each component's support as a pattern: variables relabelled (self -> 0, others -> 1, 2, ... by first appearance);
+    compact pieces keep family, exponent and their v-range on the source data (their placement is refitted on reuse).
+    Components with other factors (hand-toolkit nonpolynomial factors, curves) give no pattern (prototype)."""
+    out = []
+    for i, terms in enumerate(model.supports):
+        if not terms:
+            continue
+        order = [i]
+        for t in terms:
+            for k in sorted(t.variables()):
+                if k not in order:
+                    order.append(k)
+        remap = {v: r for r, v in enumerate(order)}
+        pat, ok = [], True
+        for t in terms:
+            facs = []
+            for f in t.factors:
+                if f.family not in MOTIF_FAMILIES:
+                    ok = False
+                    break
+                th = torch.tensor(f.theta)
+                u, o = _argument(f, Zc, th)
+                v = th[o] * u + th[o + 1]
+                facs.append({"family": f.family, "var": [remap[x] for x in f.var] if isinstance(f.var, tuple) else remap[f.var],
+                             "w": float(f.theta[0]) if o else None,
+                             "n": float(f.theta[o + 2]) if len(f.theta) > o + 2 else None,
+                             "vrange": [float(v.min()), float(v.max())]})
+            if not ok:
+                break
+            pat.append({"mono": [[remap[k], int(e)] for k, e in enumerate(t.mono) if e], "factors": facs})
+        if ok:
+            out.append({"k": len(order), "terms": pat})
+    return out
+
+
+def _motif_terms(motif, assign, d, Zall, mid):
+    terms = []
+    for t in motif["terms"]:
+        mono = [0] * d
+        for r, e in t["mono"]:
+            mono[assign[r]] += e
+        facs = []
+        for f in t["factors"]:
+            if isinstance(f["var"], list):
+                var, w = (assign[f["var"][0]], assign[f["var"][1]]), f["w"]
+                u = Zall[:, var[0]] + w * Zall[:, var[1]]
+            else:
+                var, w = assign[f["var"]], None
+                u = Zall[:, var]
+            lo, hi = float(u.min()), float(u.max())
+            if not hi - lo > 1e-12:
+                return None
+            vlo, vhi = f["vrange"]
+            b = (vhi - vlo) / (hi - lo)
+            th = (() if w is None else (w,)) + (b, vlo - b * lo) + ((f["n"],) if f["n"] is not None else ())
+            facs.append(Factor(f["family"], var, th, ("motif", mid)))
+        terms.append(Term(tuple(mono), tuple(facs), 1))
+    return terms
+
+
+def motif_fits(i, y, Zc, Xc, Zall, motifs, tol, deadline, top=12):
+    """Every pattern under every assignment of its roles (role 0 -> component i), ranked by a linear fit with starting
+    constants; the best few refined (VarPro). Returns [(relative residual, fitted numbers, terms)], best first."""
+    d = Zc.shape[1]
+    ny = float(y.norm()) + 1e-300
+    others = [k for k in range(d) if k != i]
+    ranked = []
+    for m in motifs:
+        if m["k"] - 1 > len(others):
+            continue
+        for perm in itertools.permutations(others, m["k"] - 1):
+            if time.time() > deadline:
+                break
+            terms = _motif_terms(m, (i,) + perm, d, Zall, m["id"])
+            if terms is None:
+                continue
+            P = design(terms, Zc, Xc)
+            if not torch.isfinite(P).all():
+                continue
+            r, _ = lstsq_resid(P, y)
+            ranked.append((float(r.norm()) / ny, terms, m["id"]))
+    ranked.sort(key=lambda e: e[0])
+    out = []
+    for _, terms, mid in ranked[:top]:
+        if time.time() > deadline:
+            break
+        nt, res, _ = refine_support(terms, Zc, Xc, y, iters=20)
+        if math.isfinite(res) and not any(degenerate(t, Zc, Xc, strict=False) for t in nt):
+            out.append((res / ny, len(nt) + sum(len(f.theta) for t in nt for f in t.factors), nt, mid))
+    out.sort(key=lambda e: (e[0] > tol, e[1] if e[0] <= tol else 0, e[0]))
+    return out
+
 
 NEAR_EXACT = 1e-8    # held-back error below which the completion and simplification stages run
 DENSE_POLY = False   # dense-polynomial fallback: tried during the build, disabled (no success; on a 4-D system it used the
@@ -2278,6 +2479,39 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
       return best
 
     best = standard_search(levels_plan, [], best)
+    # ---- PROTOTYPE (off by default): equation patterns from the library, tried under every variable assignment ----
+    if MOTIFS[0] and (best is None or best["val_err_scaled"] > VAL_TOL) and any(e.kind == "motif" for e in lib.entries):
+        motifs = [dict(e.motif, id=e.id) for e in lib.entries if e.kind == "motif"]
+        Zall_m = torch.cat([z0, zv0])
+        m_dead = min(time.time() + 0.15 * time_limit, hard)
+        sups_m, n_used, pat_used = [], 0, []
+        for i in range(d):
+            y = G[:, i]
+            tol_i = max(3.0 * float(noise[i]) / (float(y.norm()) / math.sqrt(len(y)) + 1e-300), 1e-12)
+            fits = motif_fits(i, y, Zc, Xc, Zall_m, motifs, tol_i, m_dead)
+            if verbose and fits:
+                print(f"   pattern comp {i}: best rel {fits[0][0]:.2e} (tol {tol_i:.1e}), {fits[0][1]} numbers", flush=True)
+            if fits and fits[0][0] <= 10 * tol_i:
+                sups_m.append(fits[0][2]); n_used += 1
+                pat_used.append((i, fits[0][3]))
+            else:
+                sups_m.append(list(best["model"].supports[i]) if best is not None else [Term(m, (), 1) for m in monomials(d, 2)])
+        if n_used:
+            try:
+                DEADLINE[0] = m_dead
+                cfs = [lstsq_resid(design(sups_m[i], Zc, Xc), G[:, i])[1] for i in range(d)]
+                m_m, n_m, err_m, J_m = polish(Model(sups_m, cfs, mu, sig), z0, z1, iters=30)
+                if math.isfinite(err_m):
+                    m_m, n_m, err_m, J_m = prune(m_m, z0, z1, n_m, err_m, J_m)
+                    v_m, _, _ = converged_val(m_m, z0, zv0, zv1)
+                    if verbose:
+                        print(f"   pattern model: {n_used} component(s) from patterns, terms {m_m.n_terms()} val {v_m:.2e}", flush=True)
+                    if math.isfinite(v_m) and (best is None or v_m < best["val_err_scaled"]):
+                        best = {"model": m_m, "nsub": None, "val_err_scaled": v_m, "train_err_scaled": err_m, "levels": "pattern",
+                                "patterns_used": [(int(c), int(e)) for c, e in pat_used]}
+            except (RuntimeError, ValueError):
+                pass
+            DEADLINE[0] = min(t_start + time_limit, hard)
     # ---- dense polynomial (hand toolkit only): every monomial of degree <= 3 in every component, then pruning. Sparse
     # supports are capped at max_terms; a polynomial system with ~18 monomials per equation needs the dense form.
     if DENSE_POLY and d >= 3 and (best is None or best["val_err_scaled"] > VAL_TOL):   # d <= 2: sparse search covers all
