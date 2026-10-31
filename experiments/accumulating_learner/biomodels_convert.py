@@ -430,6 +430,7 @@ def main():
     ap.add_argument("--dmin", type=int, default=3)
     ap.add_argument("--dmax", type=int, default=3)
     ap.add_argument("--transient", action="store_true", help="Trial 23: also accept settling transients")
+    ap.add_argument("--no-data", action="store_true", help="Trial 27: record conversions only (data is simulated on the fly)")
     a = ap.parse_args()
     src, out = Path(a.sbml), Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -439,7 +440,7 @@ def main():
     with Pool(a.workers) as pool:
         for rec, x, dx in pool.imap_unordered(process, jobs):
             records.append(rec)
-            if x is not None:
+            if x is not None and not a.no_data:
                 np.savez(out / f"{rec['id']}.npz", x=x, dx=dx)
     acc = [r for r in records if r["status"] == "accepted"]
     reasons = {}

@@ -2667,3 +2667,15 @@ Work within the trial is autonomous from here. Trial 26's code stays frozen; Tri
   - Only development-half models are inspected or run during the build.
   - For the evaluation half, only counts are looked at until the final run.
   - When printing, scripts filter to development IDs (lesson from the Trial 26 exposures).
+
+### Trial 27 build: sampling rule for the pool (fixed during development, applies to both halves)
+
+- **Finding (development systems).** The pool's timescales come from the converter's crude estimates: period ≈ 2π · radius / speed, or settle time. For many BioModels, one interval at T/100 contains so much motion that:
+  - the reference needs 16–64 substeps per interval;
+  - 9-point rate estimates are off by 10–30%;
+  - the learner's screening is blind and its exact polish starts too far away. Example: BIOMD0000000114, rejected with validation error 6.5.
+- **Rule.** The recording interval is halved, up to 6 times, until the *true* system needs ≤ 8 substeps per interval. That is the regime of the catalog systems in Trial 26.
+  - Recordings keep their time spans: oscillators 30 periods; transients 1.5 settle times.
+  - The multi-step horizon cap stays 2,000 steps.
+- **Status of the rule.** It is a choice of how the data are recorded, the same for every system in both halves. It carries no information about which pieces the equations contain.
+- **Also fixed.** A polish on a model whose terms were all pruned away crashed on an empty parameter vector.
