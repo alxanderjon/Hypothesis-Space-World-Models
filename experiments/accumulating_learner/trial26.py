@@ -166,7 +166,7 @@ def knowledge_for(arm, N, seed, bursts, recs, subset=None, tag=None):
 # ---------------- test ----------------
 
 ARMS = [("scratch", 0), ("stats", 0)] + [("memory", n) for n in NS] + [("full", n) for n in NS] + \
-       [("scrambled", 45), ("guide_only", 45), ("copy_closest", 45)]
+       [("scrambled", 45), ("copy_closest", 45)]
 
 
 def copy_closest(bursts, recs, names, seed, tl):
@@ -326,6 +326,7 @@ def main():
     ap.add_argument("--systems", default="")
     ap.add_argument("--ms", default="")
     ap.add_argument("--hist-time", type=float, default=1200)
+    ap.add_argument("--arms", default="", help="subset of arms, e.g. scratch0,stats0 (default: all)")
     a = ap.parse_args()
     if a.stage == "lists":
         print("history", len(HISTORY), HISTORY)
@@ -355,7 +356,8 @@ def main():
     elif a.stage == "test":
         names = a.systems.split(",") if a.systems else G_NOVEL + G_FAMILIAR
         ms = [int(m) for m in a.ms.split(",")] if a.ms else list(MS)
-        jobs = [(n, a.seed, M, ARMS, {}) for M in sorted(ms, reverse=True) for n in names]
+        arms = [x for x in ARMS if not a.arms or f"{x[0]}{x[1]}" in a.arms.split(",")]
+        jobs = [(n, a.seed, M, arms, {}) for M in sorted(ms, reverse=True) for n in names]
         run_pool(test_job, jobs, a.workers)
 
 

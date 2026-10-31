@@ -106,6 +106,14 @@ def criteria(seed):
                               "familiar": [success_rate(recs, G_FAMILIAR, arm, N, M)[0] for M in MS],
                               "novel_median_min_obs": median_min_obs(recs, nov, arm, N)}
     out["rates_by_M"] = {"M": list(MS), **rates}
+    # per-system minimal observations (13 x smallest M with exact recovery; FAIL_OBS if never) for the report
+    arms = [("scratch", 0), ("stats", 0), ("memory", 45), ("full", 8), ("full", 24), ("full", 45), ("scrambled", 45),
+            ("guide_only", 45), ("copy_closest", 45)]
+    out["per_system_min_obs"] = {n: {f"{a}{N}": min_obs(recs, n, a, N) for a, N in arms} for n in nov + list(G_FAMILIAR)}
+    # sensitivity: the disclosed system (BIOMD0000000003, equations seen after the learner was frozen) excluded
+    nov_x = [n for n in nov if n != "BIOMD0000000003"]
+    out["A1_excluding_BIOMD0000000003"] = {"full_vs_scratch": gains(recs, nov_x, full, scratch),
+                                           "full_vs_memory": gains(recs, nov_x, full, memory)}
     out["pass"] = bool(out["C0_pass"] and out["A1_pass"] and out["A2_pass"] and out.get("A3_pass", False))
     return out
 
