@@ -2372,3 +2372,40 @@ Checking the kinds file (`trial24pfn/kinds.json`) against the design:
 - **Budgets.** Per-system search and polish budgets are fixed on *history* systems during tool development and recorded here before any test system is run.
 
 **Running count of trials evaluated on the development systems (any goal): 25.** Trial 26 will be the 26th.
+
+## Trial 26 approved (31 October)
+
+The owner approved Trial 26 as described in the plain-language check-in (revised design plus the refinements above). Work within the trial is autonomous from here. No test system has been run.
+
+### Tool correction before any test system (substep rule)
+
+- **Problem.** The pre-registered rule ("doubling the substeps changes Φ by ≤ 1e-15·s") cannot be met when a system's states are large relative to their spread. For Lorenz, |x|/s ≈ 5, so floating-point rounding alone moves Φ by about 1e-15·s. The search then ran to the 1,024–4,096-substep cap, which is why the Lorenz and BioModels harness checks and the first learner smoke test stalled.
+- **Corrected rule, for both the reference and the learner's own self-convergence.** Choose the smallest power-of-two substep count whose doubling changes the map by ≤ 1e-14·s. Alternatively, once the change is already below 1e-13·s and doubling no longer reduces it by 8×, the rounding floor has been reached; stop there.
+- **Margin.** Both stopping points remain ≥ 10× below the 1e-12 exactness threshold.
+
+### Tool development on history systems (31 October; no test system touched)
+
+- **Derivatives are too inaccurate to certify supports.** The first learner design screened supports on 9-point derivative estimates, assuming they were accurate to about 1e-12. Measured on history systems at Δt = P/100, their relative error is:
+
+  | System | Relative error of 9-point derivatives |
+  |---|---|
+  | Lorenz | 2e-5 |
+  | Rossler | 1e-4 |
+  | Aizawa | 2e-8 |
+  | ThomasLabyrinth | 1e-2 |
+
+  The catalog's dominant period understates the fastest timescales. A 13-point integral formulation is no better. Derivative screening can therefore only *propose* supports. Only the exact flow map can decide them, which was already the pre-registered principle for the polish.
+- **Redesign (`exact_learner.py`).**
+  1. The screening tolerance is set from a data-based estimate of the derivative error (Richardson comparison of 5-, 7- and 9-point estimates). The screening yields a generous support.
+  2. Levenberg–Marquardt polish on the one-step flow map.
+  3. Stepwise refinement *on the flow map*:
+     - prune any term whose linearized removal cost (others re-optimized) keeps the residual at the 1e-14 floor;
+     - add missing terms by their exact flow-map sensitivity (forward-mode derivatives through the model's own RK8);
+     - repeat.
+  4. Acceptance is unchanged: held-back bursts reproduced to ≤ 1e-13.
+- **Speed.** All Jacobians are forward-mode. The first version used about 300,000 reverse-mode passes per system.
+- **Grammar.** The sine grid was widened to frequencies {0.5, 1, 1.5, 2, 3, 4, 6} × 4 phases (previously 4 × 2). No other grammar change.
+- **New tools.**
+  - `guide.py`: the influence guide, a permutation-equivariant set network, and the no-history kernel-ridge leave-one-out influence screen.
+  - `trial26.py`: the driver.
+  - `compile_artifact.py`: the learned model plus its own RK8, generated as C and compiled, for the cost measurement.
