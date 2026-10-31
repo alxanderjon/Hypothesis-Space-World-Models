@@ -233,16 +233,53 @@ def run_trial(names, seeds, orders, workers, include_scratch=True, include_decoy
         (d / "library_final.json").write_text(json.dumps(st["lib"].to_json(), default=float))
 
 
+def removal_jobs(tag, seeds):
+    """Removal check: every stream run where the library learner was exact, scratch was not (same system, same M), and
+    library pieces were reused, is rerun with those pieces removed from that position's library."""
+    import discovery_learner as DL
+    jobs = []
+    for s in seeds:
+        base = OUT / tag / f"seed{s}"
+        for p in sorted(base.glob("order*/pos*_library.json")):
+            r = json.loads(p.read_text())
+            if not r.get("exact"):
+                continue
+            sp = base / "scratch" / f"{r['name']}_M{r['M']}.json"
+            if sp.exists() and json.loads(sp.read_text()).get("exact"):
+                continue
+            used = sorted({pc["library_id"] for pc in r.get("pieces") or [] if pc.get("origin") == "reused"})
+            if not used:
+                continue
+            lib = DL.Library.from_json(json.loads((p.parent / f"library_pos{r['pos']:02d}.json").read_text()))
+            jobs.append({"name": r["name"], "seed": s, "M": r["M"], "mode": "removal", "order": r["order"], "pos": r["pos"],
+                         "library": lib.without(used).to_json(), "removed": used,
+                         "out": str(base / "removal" / f"o{r['order']}_p{r['pos']:02d}_{r['name']}_M{r['M']}.json")})
+    return jobs
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["eval", "dev", "lists"])
+    ap.add_argument("stage", choices=["eval", "dev", "lists", "removal"])
+    ap.add_argument("--tag", default="eval")
     ap.add_argument("--workers", type=int, default=24)
     ap.add_argument("--seeds", default="1,2")
     ap.add_argument("--orders", default="0,1,2")
     ap.add_argument("--systems", default="")
+    ap.add_argument("--ms", default="", help="observation budgets (default: all); rehearsal only")
     a = ap.parse_args()
+    if a.ms:
+        global MS
+        MS = tuple(int(x) for x in a.ms.split(","))
     if a.stage == "lists":
         print("dev", len(systems("dev")), "eval", len(systems("eval")))
+        return
+    if a.stage == "removal":
+        jobs = removal_jobs(a.tag, [int(x) for x in a.seeds.split(",")])
+        print(len(jobs), "removal jobs", flush=True)
+        ctx = get_context("spawn")
+        with ProcessPoolExecutor(max_workers=a.workers, mp_context=ctx, max_tasks_per_child=1) as ex:
+            for job, rec in ex.map(run_one, jobs):
+                print(job["name"], job["M"], "removed", job["removed"], "->", rec.get("status"), rec.get("exact"), flush=True)
         return
     names = a.systems.split(",") if a.systems else systems(a.stage)
     if a.stage == "eval":

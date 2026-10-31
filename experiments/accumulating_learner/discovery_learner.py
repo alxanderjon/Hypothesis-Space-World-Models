@@ -1148,9 +1148,11 @@ def _try_candidate(model, i, base, ct, z0, z1, zv0, zv1, Zc, Xc, G, deadline, ve
     """Polish model with component i := base + [ct] (ct: curve or compact term); for curves raise the degree while the
     held-back error keeps improving. Returns (model, component-i validation error, overall validation error, per-comp)."""
     trial = model.copy()
-    _, cb = lstsq_resid(design(base, Zc, Xc), G[:, i] - design([ct], Zc, Xc)[:, 0])
-    trial.supports[i] = list(base) + [ct]
-    trial.coefs[i] = torch.cat([cb, torch.ones(1)])
+    cts = list(ct) if isinstance(ct, (list, tuple)) else [ct]
+    Pn = design(cts, Zc, Xc)
+    _, call = lstsq_resid(torch.cat([design(base, Zc, Xc), Pn], 1), G[:, i])
+    trial.supports[i] = list(base) + cts
+    trial.coefs[i] = call
     best = None
     worse = 0
     for D in (degrees or (None,)):
@@ -1224,7 +1226,7 @@ def discover(model0, z0, z1, zv0, zv1, Zc, Xc, G, mu, sig, deadline, verbose=Fal
 
 COMPACT_STARTS = (("chill", (1.0, 2.0, 4.0)), ("chillr", (1.0, 2.0, 4.0)), ("crecip", (None,)), ("cexp", (None,)),
                   ("ctanh", (None,)), ("cpow", (0.5, -0.5, 1.5)))
-V_RANGES = ((0.1, 1.0), (0.3, 3.0), (1.0, 0.1), (3.0, 0.3), (-1.0, 1.0), (-2.0, 0.5))
+V_RANGES = ((0.1, 1.0), (0.3, 3.0), (1.0, 0.1), (3.0, 0.3), (-1.0, 1.0), (-2.0, 0.5), (10.0, 11.0), (100.0, 101.0), (-11.0, -10.0))
 
 
 def screen_compact(i, G, Zc, Xc, base, Zall, keep=8):
@@ -1236,9 +1238,11 @@ def screen_compact(i, G, Zc, Xc, base, Zall, keep=8):
     ny = float(y.norm()) + 1e-300
     Pb = design(base, Zc, Xc)
     scored = []
-    for m in [None] + list(range(d)):
-        mv = torch.ones(len(Zc)) if m is None else Zc[:, m]
-        mono = tuple([0] * d) if m is None else tuple(int(k == m) for k in range(d))
+    mults = [(m,) for m in [None] + list(range(d))] + [(m1, m2) for i1, m1 in enumerate([None] + list(range(d)))
+                                                     for m2 in ([None] + list(range(d)))[i1 + 1:]]
+    for ms in mults:                     # one multiplier, or the same shape times two different multipliers
+        monos = [tuple([0] * d) if m is None else tuple(int(k == m) for k in range(d)) for m in ms]
+        mono = monos[0]
         for a in range(d):
             ua = Zall[:, a]
             lo, hi = float(ua.min()), float(ua.max())
@@ -1251,44 +1255,44 @@ def screen_compact(i, G, Zc, Xc, base, Zall, keep=8):
                     for n in exps:
                         th = (b, c) if n is None else (b, c, n)
                         fac = Factor(fam, a, th, ("new",))
-                        t = Term(mono, (fac,), 1)
-                        if degenerate(t, Zc, Xc, strict=False):
+                        ts = [Term(mo, (fac,), 1) for mo in monos]
+                        if degenerate(ts[0], Zc, Xc, strict=False):
                             continue
-                        col = term_value(t, Zc, Xc)
-                        if not torch.isfinite(col).all():
+                        cols = torch.stack([term_value(t, Zc, Xc) for t in ts], 1)
+                        if not torch.isfinite(cols).all():
                             continue
-                        r, _ = lstsq_resid(torch.cat([Pb, col[:, None]], 1), y)
+                        r, _ = lstsq_resid(torch.cat([Pb, cols], 1), y)
                         rel = float(r.norm()) / ny
                         if math.isfinite(rel):
-                            scored.append((rel, t))
+                            scored.append((rel, ts))
     scored.sort(key=lambda e: e[0])
     out, seen = [], set()
-    for rel, t in scored:
-        key = (t.mono, t.factors[0].family, t.factors[0].var)
+    for rel, ts in scored:
+        key = (tuple(t.mono for t in ts), ts[0].factors[0].family, ts[0].factors[0].var)
         if key in seen:
             continue
         seen.add(key)
-        terms, res, _ = refine_support(list(base) + [t], Zc, Xc, y, iters=15)
-        nt = terms[-1]
-        if math.isfinite(res) and not degenerate(nt, Zc, Xc, strict=False):
-            out.append((res / ny, nt))
+        terms, res, _ = refine_support(list(base) + list(ts), Zc, Xc, y, iters=15)
+        nts = terms[len(base):]
+        if math.isfinite(res) and not any(degenerate(t, Zc, Xc, strict=False) for t in nts):
+            out.append((res / ny, nts))
         if len(out) >= keep:
             break
     out.sort(key=lambda e: e[0])
-    return [t for _, t in out]
+    return [ts for _, ts in out]
 
 
 def _discover_component(model, i, base, cands, z0, z1, zv0, zv1, Zc, Xc, G, deadline, verbose):
     d = Zc.shape[1]
     best_i = None
     # (0) direct compact-shape screening on single arguments, exact polish of the best few
-    for ct in screen_compact(i, G, Zc, Xc, base, torch.cat([z0, zv0]))[:4]:
+    for cts in screen_compact(i, G, Zc, Xc, base, torch.cat([z0, zv0]))[:4]:
         if time.time() > deadline:
             break
-        f = ct.factors[0]
+        f = cts[0].factors[0]
         try:
-            r = _try_candidate(model, i, base, ct, z0, z1, zv0, zv1, Zc, Xc, G, deadline, verbose,
-                               f"{f.family} m={[k for k, e in enumerate(ct.mono) if e]} arg={f.var} (direct)")
+            r = _try_candidate(model, i, base, cts, z0, z1, zv0, zv1, Zc, Xc, G, deadline, verbose,
+                               f"{f.family} m={[[k for k, e in enumerate(t.mono) if e] for t in cts]} arg={f.var} (direct)")
         except (RuntimeError, ValueError, StopIteration):
             r = None
         if r is not None and (best_i is None or r[1] < best_i[1]):
@@ -1541,7 +1545,7 @@ def as_library_piece(rec):
 
 def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose=False, max_terms=8,
           stepwise_rounds=8, levels_plan=((0,), (1,)), composite_budget=4000, library=None, discover_pieces=True,
-          standard_frac=0.4):
+          standard_frac=0.3):
     """bursts: (M, L, d) noise-free states at unit sampling interval. Returns a result dict.
     library: Library of previously discovered pieces (empty = learning from scratch). discover_pieces: allow discovery."""
     t_start = time.time()
@@ -1572,8 +1576,10 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
     DEADLINE[0] = std_deadline
     lib_cands = library_candidates(lib, d, Zc) if lib.entries else []
 
+    nonlocal_deadline = [std_deadline]
+
     def out_of_time():
-        return time.time() > std_deadline
+        return time.time() > nonlocal_deadline[0]
 
     def cands_for(levels):
         if levels not in cand_cache:
@@ -1583,11 +1589,12 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
             cand_cache[levels] = c
         return cand_cache[levels]
 
-    seeds = [[] for _ in range(d)]
-    for levels in levels_plan:
+    def standard_search(levels_plan, extra_cands, best):
+      seeds = [[] for _ in range(d)]
+      for levels in levels_plan:
         if out_of_time():
             break
-        per_comp = [cands_for(levels)] * d
+        per_comp = [(cands_for(levels) + extra_cands) if 1 in levels else cands_for(levels)] * d
         ranked = []
         for i in range(d):
             y = G[:, i]
@@ -1657,16 +1664,39 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
         report["phases"].append(levels)
         if best is not None and best["val_err_scaled"] <= VAL_TOL:
             break
+      return best
+
+    best = standard_search(levels_plan, [], best)
     # ---- discovery of missing pieces ----
     DEADLINE[0] = t_start + time_limit
     if discover_pieces and (best is None or best["val_err_scaled"] > VAL_TOL) and time.time() < t_start + time_limit:
         report["discovery_used"] = True
         try:
+            disc_deadline = t_start + 0.7 * time_limit         # the last 30% is kept for the re-solve
+            DEADLINE[0] = disc_deadline
             m = discover(best["model"] if best is not None else None, z0, z1, zv0, zv1, Zc, Xc, G, mu, sig,
-                         deadline=t_start + time_limit, verbose=verbose)
+                         deadline=disc_deadline, verbose=verbose)
+            DEADLINE[0] = t_start + time_limit
             v, _, _ = converged_val(m, z0, zv0, zv1)
             if math.isfinite(v) and (best is None or v < best["val_err_scaled"]):
                 best = {"model": m, "nsub": None, "val_err_scaled": v, "train_err_scaled": float("nan"), "levels": "discovery"}
+            # discover, then re-solve: the pieces discovery proposed are offered to the sparse search as candidates
+            if best["val_err_scaled"] > VAL_TOL and time.time() < t_start + time_limit:
+                proposed = Library()
+                for pc in discovered_pieces(m, Zc):
+                    if pc.get("origin") == "new":
+                        proposed.add(as_library_piece(pc), source="this system")
+                if proposed.entries:
+                    std_deadline_resolve = t_start + time_limit
+                    nonlocal_deadline[0] = std_deadline_resolve
+                    DEADLINE[0] = std_deadline_resolve
+                    extra = library_candidates(proposed, d, Zc)
+                    if verbose:
+                        print(f"   re-solve with {len(proposed.entries)} proposed piece(s), {len(extra)} candidates", flush=True)
+                    best = standard_search(((1,),), extra, best)
+                    DEADLINE[0] = t_start + time_limit
+                    if best is not None and best["val_err_scaled"] <= VAL_TOL:
+                        report["resolved_with_discovered_pieces"] = True
         except (RuntimeError, ValueError) as e:
             if verbose:
                 print("   discovery failed:", str(e)[:120], flush=True)
