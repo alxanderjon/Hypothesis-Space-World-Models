@@ -2872,6 +2872,33 @@ The two probes that compared against the old scratch learner were stopped (super
 
 **Trial 26 record-keeping runs (phase 2)** finished for both seeds (27/27). Their results are added to the Trial 26 supplementary table when that table is next updated; the verdict is unaffected.
 
+### Option (b), step 1: a stronger from-scratch learner (31 Oct, 22:50–23:40; practice half only)
+
+**Diagnosis of small-data overfitting** (practice systems).
+- **Greedy selection.** With few bursts (M = 8: 30 rate points) the greedy beam over supports commits to wrong early terms. It then ends with over-sized equations that fit the training bursts to ~1e-14 and miss the held-back ones. Example: 1012, a polynomial-plus-reciprocal system exact at M = 64, ended with 8-term equations at 7.7e-8.
+- **Hard tolerance cut.** The rate-data noise estimate is slightly optimistic at small data, so "first support to reach tolerance" picks an over-sized support that squeezes just below it over the true, smaller one just above.
+- **Centring.** Centring a variable (when |mean| > 3 std) splits a product x·y into several terms. With few bursts a variable's spread is narrow, so it gets centred and the true equation is no longer sparse.
+- **Far poles at small data.** At M = 8 a reciprocal's pole can sit 100 observed ranges away (the bursts cover a sliver of the variable). Only the discovery scan can place it, and a full low-degree base (15 terms for d = 4) nearly saturates the 30 rate points and hides it.
+
+**Changes, used by every arm** (the shared learner).
+- **Exhaustive small supports.** For every support size up to 4 (all sizes when ≤ 12 candidates), the best supports among the plain monomials are found exhaustively (batched least squares). Large candidate sets add the 15 toolkit pieces that best explain what the best small monomial support leaves over.
+- **Ranking by fit and size together.** These supports and the beam's results are ranked by log(max(residual, tolerance)) plus the same complexity penalty per fitted number. The validation step on the step-to-step data then chooses among the top few. This is the "simplest model exact on held-back data" preference.
+- **Sparse scan base at small data.** When there are fewer than 8 rate points per base monomial, discovery starts from the best small monomial support (plus earlier pieces) instead of every monomial of degree ≤ 2.
+- **Centring ratio 3 → 10.** A variable is centred only if |mean| > 10 std.
+
+**Strong-scratch baseline** (the 15 practice systems the learner recovers at M = 64; external exactness).
+
+| M | exact | accepted internally | earlier scratch (probe at 20:30) |
+|---|---|---|---|
+| 8 | 4/15 | 8 | 2/27 over all 29 systems (≈ 2/15 on these) |
+| 16 | 7/15 | 10 | 3/9 (partial) |
+| 32 | 10/15 | 13 | 4/11 (partial) |
+| 64 | 14/15 | 14 | — |
+
+- **False acceptances at small data.** Most are numeric near misses (1e-11–1e-12; imprecise constants). 973 is at 4e-10 at every M ≤ 32: its true 6.6e-9·x1 term is invisible in small data but matters at extreme held-out states. 507 at M = 8 and 32 is a wrong structure accepted.
+- With only 2–4 held-back bursts (drawn from the same recordings), no internal check can see extrapolation failures. External exactness remains the measure.
+- **Pattern provenance.** The pattern prototype now records which stored pattern (hence which earlier system) each component used.
+
 ### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
 
 **G-familiar** (10 systems that resemble the history; reported, not counted). Exact-recovery rate by data amount:
