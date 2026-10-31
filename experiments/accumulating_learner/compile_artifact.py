@@ -108,6 +108,51 @@ def c_source(desc, mu, sig, dt):
     lines.append(f"static const double A[{S}][{S}] = {{" + ",".join("{" + ",".join(f"{v:.17g}" for v in row) + "}" for row in Am) + "};")
     lines.append(f"static const double Bw[{S}] = {{" + ",".join(f"{v:.17g}" for v in D.B) + "};")
     lines.append(f"""
+static void step8(const double* x, double* y, long nsub) {{
+  const int d = {d}; const double h = {_num(dt)} / (double)nsub;
+  double xi[{d}], K[{S}][{d}];
+  memcpy(y, x, sizeof(double) * d);
+  for (long q = 0; q < nsub; q++) {{
+    for (int i = 0; i < {S}; i++) {{
+      for (int k = 0; k < d; k++) {{
+        double acc = y[k];
+        for (int j = 0; j < i; j++) if (A[i][j] != 0.0) acc += h * A[i][j] * K[j][k];
+        xi[k] = acc;
+      }}
+      g(xi, K[i]);
+    }}
+    for (int k = 0; k < d; k++) {{
+      double acc = 0.0;
+      for (int i = 0; i < {S}; i++) if (Bw[i] != 0.0) acc += Bw[i] * K[i][k];
+      y[k] += h * acc;
+    }}
+  }}
+}}
+/* the artifact's adaptive integrator: per output step, double the substeps until two successive results agree to tol
+   (relative to the model's own scale); never more than nmax substeps. Uses only the learned equations. */
+void rollout_adaptive(const double* x0, long n, long steps, long nsub0, double tol, const double* scale, long nmax, double* out) {{
+  const int d = {d};
+  double x[{d}], ya[{d}], yb[{d}];
+  for (long t = 0; t < n; t++) {{
+    memcpy(x, x0 + t * d, sizeof(double) * d);
+    double* o = out + t * (steps + 1) * d;
+    memcpy(o, x, sizeof(double) * d);
+    for (long s = 0; s < steps; s++) {{
+      long ns = nsub0;
+      step8(x, ya, ns);
+      while (1) {{
+        step8(x, yb, 2 * ns);
+        double diff = 0.0;
+        for (int k = 0; k < d; k++) {{ double e = fabs(yb[k] - ya[k]) / scale[k]; if (!(e <= diff)) diff = e; }}
+        if (diff <= tol || 2 * ns >= nmax) break;
+        ns *= 2;
+        memcpy(ya, yb, sizeof(double) * d);
+      }}
+      memcpy(x, yb, sizeof(double) * d);
+      memcpy(o + (s + 1) * d, x, sizeof(double) * d);
+    }}
+  }}
+}}
 void rollout(const double* x0, long n, long steps, long nsub, double* out) {{
   const int d = {d}; const double h = {_num(dt)} / (double)nsub;
   double x[{d}], xi[{d}], K[{S}][{d}];
@@ -151,7 +196,16 @@ def build(desc, mu, sig, dt):
         subprocess.run(["gcc", "-O2", "-ffp-contract=off", "-shared", "-fPIC", "-o", str(so), str(c), "-lm"], check=True)
     lib = ctypes.CDLL(str(so))
     lib.rollout.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_long, ctypes.c_long, ctypes.c_long, ctypes.POINTER(ctypes.c_double)]
+    P = ctypes.POINTER(ctypes.c_double)
+    lib.rollout_adaptive.argtypes = [P, ctypes.c_long, ctypes.c_long, ctypes.c_long, ctypes.c_double, P, ctypes.c_long, P]
     d = len(desc)
+    sc = np.ascontiguousarray(np.asarray(sig, dtype=np.float64))
+
+    def adaptive(x0, steps, nsub0=1, tol=1e-14, nmax=16384):
+        x0 = np.ascontiguousarray(np.asarray(x0, dtype=np.float64).reshape(-1, d))
+        out = np.empty((x0.shape[0], steps + 1, d))
+        lib.rollout_adaptive(x0.ctypes.data_as(P), x0.shape[0], steps, nsub0, tol, sc.ctypes.data_as(P), nmax, out.ctypes.data_as(P))
+        return out
 
     def rollout(x0, steps, nsub):
         x0 = np.ascontiguousarray(np.asarray(x0, dtype=np.float64).reshape(-1, d))
@@ -159,6 +213,7 @@ def build(desc, mu, sig, dt):
         lib.rollout(x0.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), x0.shape[0], steps, nsub,
                     out.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
         return out
+    rollout.adaptive = adaptive
     return rollout
 
 

@@ -2702,3 +2702,16 @@ Work within the trial is autonomous from here. Trial 26's code stays frozen; Tri
   - A logarithm of a weighted sum (x0·log(a(x0 + x1))). This is outside the hand toolkit, so it can only be learned exactly by discovering a genuinely new shape.
   - Nested rational Hill terms (BIOMD0000000058, 4-D).
 - **Validity filter.** Converted equations with infinite or undefined constants are excluded. It excludes nothing so far: an apparent "infinity" in BIOMD0000000776 was a display artefact of a logarithm.
+- **Development rounds 4–6** (dev half, M = 64, 900 s per system).
+  - **Time enforcement.** Deadlines are enforced inside polishing and pruning. Before this, the first search overran its 40% share on 3 of 9 systems (12–15 minutes), so discovery never ran.
+  - **First search levels.** The first search now runs only levels 0–1; discovery's compact shapes cover level-2 forms.
+  - **Internal acceptance 3e-13 (scaled).** On BIOMD0000000573 a model at 1.5e-13 was externally exact (3.3e-13).
+  - **Relaxed degeneracy, for discovery hypotheses only.** Nearly linear ratios (poles far from the data) are allowed, because x·y/(y + 1000) is the truth on BIOMD0000000767. The toolkit search keeps the strict Trial 26 rule.
+  - **The artifact integrates adaptively.** Per output step, it doubles its own substeps until two results agree to 1e-14 of its own scale, using only the learned equations. Fixed counts chosen on observed states had failed at the steep starts of held-out transient recordings (three systems).
+  - **Direct compact screening.** Every (multiplier, single argument, compact shape, starting range) is scored by a linear fit on the rate data, refined, and the best are polished exactly. This replaces ranking through a noisy screened curve.
+- **Development status after round 5** (largest data amount).
+  - **Discovery's first exact recovery: BIOMD0000000573.** Internal 1.5e-13, external one-step 3.3e-13.
+    - The piece is a *new shape*: a curve of z0 + 3·z1, times z0.
+    - It is not exact out of range (2.2e-11). The true term is x0/(x0 + 380); the transient data make an equivalent two-variable curve indistinguishable inside the observed region.
+  - Toolkit-only systems (728, 753, 866) are exact, including out of range.
+  - The other 7 systems are not recovered: Hill saturations (114, 115), competitive ratios (458), 767, 507, Blasius and the logarithm system (776).
