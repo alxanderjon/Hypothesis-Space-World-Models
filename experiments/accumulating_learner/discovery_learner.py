@@ -1492,6 +1492,20 @@ def scan_pieces(y, Zc, Xc, base, Zall, keep=8, args=None, mult_sets=None, fams=S
     d = Zc.shape[1]
     N = len(y)
     P = design(base, Zc, Xc)
+    # pieces already in the base may re-adjust their constants: their first-order directions join the projection, so a
+    # candidate is scored as if the earlier pieces were refitted with it (fixed, they absorb part of a missing piece and
+    # hide it: on a development system the true second piece's gain was nil, jointly refitted it reached the noise level)
+    flat = [float(v) for t in base for f in t.factors for v in f.theta]
+    if flat and P.shape[1]:
+        q0, full, _ = _free_map(torch.tensor(flat), frozen_positions(base))
+        if q0.numel():
+            _, c0 = lstsq_resid(P, y)
+            try:
+                Jn = torch.func.jacfwd(lambda q: design(base, Zc, Xc, _split_thetas(base, full(q))) @ c0)(q0)
+                if torch.isfinite(Jn).all():
+                    P = torch.cat([P, Jn], 1)
+            except RuntimeError:
+                pass
     Q = torch.linalg.qr(P)[0] if P.shape[1] else torch.zeros(N, 0)
     r = y - Q @ (Q.T @ y)
     mv = {None: torch.ones(N)}
@@ -2113,6 +2127,7 @@ def as_library_piece(rec):
 # the Trial 27 learner
 # ======================================================================================================================
 
+NEAR_EXACT = 1e-8    # held-back error below which the completion and simplification stages run
 DENSE_POLY = False   # dense-polynomial fallback: tried during the build, disabled (no success; on a 4-D system it used the
                      # whole budget so discovery never ran)
 
@@ -2357,7 +2372,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
     # ---- completion: a near-exact model gets compact pieces chosen by exact gains on the step-to-step map ----
     FREE_LIB_EXP[0] = True                 # final exact-fitting stages: reused exponents may move slightly (stored ones can be
                                            # a little off; held fixed they would block an otherwise exact fit)
-    if best is not None and VAL_TOL < best["val_err_scaled"] <= 1e-9 and any(
+    if best is not None and VAL_TOL < best["val_err_scaled"] <= NEAR_EXACT and any(
             f.meta and f.meta[0] == "lib" for terms in best["model"].supports for t in terms for f in t.factors):
         try:
             DEADLINE[0] = min(time.time() + 0.05 * time_limit, hard)
@@ -2367,7 +2382,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
                 best = {"model": m_f, "nsub": None, "val_err_scaled": v_f, "train_err_scaled": err_f, "levels": "lib-free"}
         except (RuntimeError, ValueError):
             pass
-    if discover_pieces and best is not None and VAL_TOL < best["val_err_scaled"] <= 1e-9 and time.time() < hard:
+    if discover_pieces and best is not None and VAL_TOL < best["val_err_scaled"] <= NEAR_EXACT and time.time() < hard:
         DEADLINE[0] = min(time.time() + 0.15 * time_limit, hard)
         try:
             model = best["model"]
@@ -2408,7 +2423,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
             f.family == "cheb" for terms in best["model"].supports for t in terms for f in t.factors):
         best["model"] = compact_rewrite(best["model"], z0, z1, zv0, zv1, Zc, Xc, verbose=verbose)
         best["val_err_scaled"], _, _ = converged_val(best["model"], z0, zv0, zv1)
-    if best is not None and best["val_err_scaled"] <= 1e-9:     # simple exponents (whole / half numbers) if the data agree
+    if best is not None and best["val_err_scaled"] <= NEAR_EXACT:   # simple exponents (whole / half numbers) if data agree
         sm, sv = snap_exponents(best["model"], z0, z1, zv0, zv1, tol=1e-6 if best["val_err_scaled"] <= VAL_TOL else 1e-3)
         if sv is not None and (sv <= VAL_TOL or sv < best["val_err_scaled"]) and sv <= max(2 * best["val_err_scaled"], VAL_TOL):
             if verbose:
