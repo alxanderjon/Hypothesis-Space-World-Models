@@ -2456,3 +2456,9 @@ The owner approved Trial 26 as described in the plain-language check-in (revised
 - **Guided arms** (guide or statistics) run the same levels restricted to the predicted influences (and the predicted level and term count for the guide) first, then the full search, within the same time limit.
 - **History stage:** M = 64, 1,200 s per system. Labels come only from internally accepted models. Each history system is learned from scratch (not sequentially), so snapshot N uses exactly the first N systems' own solutions, in the seed's order.
 - **Guides:** 3,000 steps of 8 systems each, on random burst subsets (2–64) of the 64 observed bursts, with random variable relabelings. The scrambled-lesson guide gets identical training with label sets deranged across systems.
+
+### Disclosure: one test system's equations were seen (31 October, during the history stage)
+
+- **What happened.** While checking that the BioModels reference metadata loads, I printed the first three records of `trial16/realfam/conversion.json`. The third is **BIOMD0000000003** (Goldbeter 1991 mitotic oscillator), a G-novel test system. Its converted equations were displayed: Michaelis–Menten-type ratio terms.
+- **Why the design is unaffected.** By that point the learner, the grammar, the degeneracy rule, the search order and the test budgets had been fixed and logged (previous sections and commit 30fd6b6). The history stage was already running on that frozen code. **No learner, grammar or budget change is made after this point.** Analysis-only code (cost reporting, aggregation) may still be written.
+- **Reporting.** BIOMD0000000003 stays in the test set as pre-registered. Results are also reported with it excluded, so a reader can discount it.
