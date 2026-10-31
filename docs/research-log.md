@@ -2570,3 +2570,22 @@ Sent in chat after C0 was decided. G-familiar and remaining M = 64 numbers will 
   - **K2 (reported):** success rate and minimal-observation curve over M ∈ {2, 4, 8, 16, 32, 64}.
   - **K3 (reported):** the artifact is faster than the original simulation, plus RHS-evaluation counts.
 - **No claim about learning from history in this trial.** If K1 passes, Trial 28 re-runs the Trial 26 accumulation design (strict never-seen building-block holdout, scrambled lessons, statistics-only screen, least-similar histories, growth with N) on systems inside the learner's demonstrated capability.
+
+## Owner decision on Trial 27 (31 October)
+
+> "Don't run Trial 27 as proposed. Adding ratio pieces to the toolkit by hand means we supply the answer; the learner learns nothing from history that way. Revise it so that when a system needs a piece the toolkit doesn't have, the learner discovers that piece from data, fits it to exactness, and adds it to its toolkit for future systems. Hand-supplied pieces should stay limited to what's already there. The accumulation question then becomes: do pieces discovered on earlier systems make later systems learnable exactly, with fewer observations, compared with learning from scratch? Also explain in plain language: in Trial 26, what exactly is 'the network,' and what does it learn versus what is fixed search code? Send me the revised proposal before running anything."
+
+The capability-only Trial 27 above is **withdrawn**. Nothing has run for it.
+
+### What "the network" was in Trial 26 (for the record)
+
+- **Fixed, hand-written code (never changes with experience).**
+  - The toolkit: monomials of degree ≤ 3; single-variable factors sin, exp, tanh, |·|, 1/(K + z), x^p; saturations x^n/(K + x^n) and K/(K + x^n); a factor times a variable; products of two factors.
+  - The search: screening, beam search, polynomial-first order, degeneracy rule.
+  - Exact polishing on the step-to-step map, internal validation, budgets.
+- **Learned per system.** Which pieces appear in each component and every constant inside them. The result is a small formula, the "expression network", which together with its own fixed-step RK8 is the artifact.
+- **Learned across systems (the only parts that changed with history).**
+  - The guide: a small neural network of about 36,000 parameters, trained on the learner's own past solutions. It predicts influences, term counts and levels, and only steers where the search looks first.
+  - The memory: a tally of piece shapes in past solutions, used as a mild prior.
+  - Promotion of deeper composite pieces. *Never triggered*: all 37–38 accepted history solutions per seed used only level-1 pieces (polynomial terms plus 3 sines).
+- **Consequence.** In Trial 26 the toolkit never grew. History could only steer the search; it could not add pieces.
