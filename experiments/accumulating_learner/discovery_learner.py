@@ -384,6 +384,8 @@ def degenerate(term, Z, X, strict=True):
                 if vmin <= 0:
                     return True
                 pw = float(th[o + 2])
+                if abs(pw) > 8:          # extreme exponents are not toolkit shapes (a fitted v^-65.7 blew up off the data)
+                    return True
                 if f.family == "cpow" and min(abs(pw - k) for k in (0, 1, 2, 3)) < 0.02:
                     return True
                 if f.family != "cpow":
@@ -2438,6 +2440,20 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
             f.family == "cheb" for terms in best["model"].supports for t in terms for f in t.factors):
         best["model"] = compact_rewrite(best["model"], z0, z1, zv0, zv1, Zc, Xc, verbose=verbose)
         best["val_err_scaled"], _, _ = converged_val(best["model"], z0, zv0, zv1)
+    # degenerate pieces that slipped in through later polishing (e.g. an extreme exponent): replaced by the monomials they
+    # imitate, kept if the held-back check still passes
+    if best is not None and any(degenerate(t, Zc, Xc, strict=False) for terms in best["model"].supports for t in terms):
+        try:
+            m_s, changed = simplify_degenerate(best["model"].copy(), Zc, Xc)
+            if changed:
+                DEADLINE[0] = min(time.time() + 0.05 * time_limit, hard + 0.1 * time_limit)
+                m_s, _, err_s, _ = polish(m_s, z0, z1, iters=30)
+                v_s, _, _ = converged_val(m_s, z0, zv0, zv1)
+                if math.isfinite(v_s) and v_s <= max(best["val_err_scaled"], VAL_TOL):
+                    best["model"], best["val_err_scaled"] = m_s, v_s
+        except (RuntimeError, ValueError):
+            pass
+        DEADLINE[0] = final_deadline
     # variables with no spread in the data (e.g. a species that is zero in every recording): their rate is zero and terms
     # involving them are dropped (they vanish on all observed data; their coefficients are arbitrary, and a stray ~1e-15
     # rate on such a variable, amplified by them, gave 1e-11 errors on a development system)
