@@ -279,7 +279,7 @@ def evaluate(args):
     for i, (name, group) in enumerate(tests):
         x, dx, h = load_real(name, dev)
         for K in (8, 16, 32, 64):
-            gen = torch.Generator().manual_seed(24000 + 97 * i + K)
+            gen = torch.Generator().manual_seed(args.episode_base + 97 * i + K)
             eps = [episode_obs(x[j:j + 1], dx[j:j + 1], K, gen, dev, h) for j in range(min(4, x.shape[0])) for _ in range(5)]
             uc, yc, uq, yq = (torch.stack(v) for v in zip(*eps))
             with torch.no_grad():
@@ -298,26 +298,29 @@ def analyze(args):
     unf = sorted({r["system"] for r in rows if r["group"] == "unfamiliar"})
     fam = sorted({r["system"] for r in rows if r["group"] == "familiar_dev_poly"})
     med = lambda ns, K, m: float(np.median([sc[(n, K, m)] for n in ns]))
-    out = {"n_unfamiliar": len(unf)}
-    for s in (1, 2):
+    out = {"n_unfamiliar": len(unf), "primary": args.primary}
+    seeds = [int(x) for x in args.seeds.split(",")]
+    numbers = [int(x) for x in args.numbers.split(",")]
+    levels = [int(x) for x in args.varieties.split(",")]
+    for s in seeds:
         P = lambda v, n: f"pfn_V{v}_N{n}_s{s}"
         ctrl = {K: min(("krr", "rff"), key=lambda c: med(unf, K, c)) for K in (8, 16, 32, 64)}
         adv = lambda m, K: math.log(med(unf, K, ctrl[K]) / med(unf, K, m))
-        main = P(4, 65536)
+        main = P(4, numbers[-1])
         s1 = {K: med(unf, K, main) / med(unf, K, ctrl[K]) for K in (16, 32)}
         wins = sum(sc[(n, 32, main)] < sc[(n, 32, "krr")] for n in unf)
-        var_adv = [adv(P(v, args.vary_n), 32) for v in (1, 2, 3, 4)]
-        num_adv = [adv(P(4, n), 32) for n in (512, 8192, 65536)]
+        var_adv = [adv(P(v, args.vary_n), 32) for v in levels]
+        num_adv = [adv(P(4, n), 32) for n in numbers]
         from scipy.stats import spearmanr
-        rho = spearmanr([1, 2, 3, 4], var_adv).correlation
+        rho = spearmanr(levels, var_adv).correlation if len(levels) > 2 else float("nan")
         crit = {"S1": bool(all(v <= 0.8 for v in s1.values()) and wins >= math.ceil(0.6 * len(unf))),
-                "S2_variety": bool(rho >= 0.8 and var_adv[3] - var_adv[0] >= math.log(1.25)),
-                "S2_number": bool(num_adv[2] - num_adv[0] >= math.log(1.25) and num_adv[1] >= num_adv[0])}
+                "S2_variety": bool((len(levels) < 3 or rho >= 0.8) and var_adv[-1] - var_adv[0] >= math.log(1.25)),
+                "S2_number": bool(num_adv[-1] - num_adv[0] >= math.log(1.25) and all(b >= a for a, b in zip(num_adv, num_adv[1:])))}
         out[s] = {"best_control": ctrl, "S1_ratio_vs_best_control": s1, "S1_wins_vs_krr_K32": wins,
-                  "variety_advantage_K32": dict(zip(("V1", "V2", "V3", "V4"), var_adv)), "variety_spearman": rho,
-                  "number_advantage_K32": dict(zip(("N512", "N8192", "N65536"), num_adv)), "criteria": crit,
-                  "pass": bool(all(crit.values())),
-                  "unfamiliar_medians": {m: {K: med(unf, K, m) for K in (8, 16, 32, 64)} for m in ("krr", "rff", main, P(4, args.vary_n), P(1, args.vary_n))},
+                  "variety_advantage_K32": dict(zip([f"V{v}" for v in levels], var_adv)), "variety_spearman": rho,
+                  "number_advantage_K32": dict(zip([f"N{n}" for n in numbers], num_adv)), "criteria": crit,
+                  "pass": bool(all(crit.values())) if args.primary == "prereg" else bool(crit["S1"] and crit["S2_number"]),
+                  "unfamiliar_medians": {m: {K: med(unf, K, m) for K in (8, 16, 32, 64)} for m in ("krr", "rff", main, P(levels[-1], args.vary_n), P(levels[0], args.vary_n))},
                   "familiar_dev_poly_K32": {m: med(fam, 32, m) for m in ("krr", "rff", main)}}
         print(f"seed {s}:", json.dumps(out[s], default=float))
     (OUT / "summary.json").write_text(json.dumps(out, indent=1, default=float))
@@ -351,6 +354,11 @@ if __name__ == "__main__":
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--warm", type=int, default=1000)
     ap.add_argument("--vary-n", type=int, default=8192)
+    ap.add_argument("--episode-base", type=int, default=24000)
+    ap.add_argument("--seeds", default="1,2")
+    ap.add_argument("--numbers", default="512,8192,65536")
+    ap.add_argument("--varieties", default="1,2,3,4")
+    ap.add_argument("--primary", choices=["prereg", "owner"], default="prereg")
     ap.add_argument("--out", default=str(OUT))
     a = ap.parse_args()
     OUT = Path(a.out)

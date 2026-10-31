@@ -2128,3 +2128,38 @@ Familiar kinds (9 polynomial development systems, K = 32): kernel ridge .0050 ag
 **Next, per standing rule 3:** the success criteria are met on development in both seeds, so the candidate must pass again on fresh seeds (or a fresh, independent split) before a reserve test is requested from the owner. Trial 26 is that replication. Its primary criteria are the owner's success definition; variety growth is reported as a secondary outcome, and its Trial 25 failure stands.
 
 **Running count of trials evaluated on the development systems: 25.**
+
+## Trial 26: fresh-seed replication of Trial 25 (standing rule 3; pre-registered 31 October, before training)
+
+- **Purpose.** Standing rule 3 requires a candidate that meets the success criteria on development in both seeds to pass again on fresh seeds (or a fresh, independent split) before a reserve test is requested. A meaningful *new* held-out-kind split is not available in 3-D: the trig and piecewise kinds have only about 4–5 real systems. So this is a **fresh-seed replication with fresh evaluation episodes.**
+- **How it moves toward success.** If it passes, the candidate has met the owner's success definition twice independently, and the reserve-set test can be requested.
+- **Running count of trials evaluated on the development systems: 26.**
+
+### Identical to Trial 25
+
+Architecture (width 256, 8 layers, about 6.5M parameters), training budget (100k steps, lr 2e-4, 2k warm-up), generators, kinds and the held-out-by-kind split, real training systems, observable contract, loss, test systems (the same 26 unfamiliar-kind real systems and the 9 familiar polynomial development systems), controls.
+
+### Fresh
+
+- **Seeds 3 and 4.** New network initializations and new simulated pools; the pool generator seed depends on the run seed.
+- **Evaluation episodes** with generator seeds 26000 + 97i + K, never used before.
+
+### Grid
+
+- number, at V4: N ∈ {512, 8,192, 65,536} (primary);
+- variety, at N = 16,384: V1 and V4 only (secondary readout).
+- That is 5 configurations × 2 seeds = 10 learners.
+
+### Primary criteria: the owner's success definition, operationalized exactly as in Trial 25 (both seeds)
+
+- **S1:** V4/N65,536 median over the 26 unfamiliar-kind systems ≤ 0.8× the best no-history control at K = 16 and K = 32, *and* beats kernel ridge on ≥ 16/26 at K = 32.
+- **S2-number:** advantage at K = 32 grows with history size: adv(65,536) − adv(512) ≥ log 1.25 and adv(8,192) ≥ adv(512).
+- **Pass = S1 and S2-number in both seeds.**
+
+**Secondary (reported, not part of pass/fail):** variety, adv(V4) − adv(V1) at N = 16,384. Trial 25 failed its pre-registered variety criterion, and that failure stands whatever this trial shows. Also reported: K = 8 and 64, familiar-kind precision, per-system results.
+
+**What happens next, decided now:**
+- **Pass:** stop and request the reserve-set test from the owner, with a fixed protocol, and wait for approval (standing rule 3).
+- **Fail:** report it. The Trial 25 result is then not robust to seeds, and the next step is diagnosing the seed sensitivity.
+
+**Resources:** 10 learners, at most 2 per GPU on GPUs 0–3 and 5–7, 2 CPU threads each, nice 10. Checkpoints about 26 MB each.
