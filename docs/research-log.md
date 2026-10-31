@@ -2816,6 +2816,17 @@ Work within the trial is autonomous from here. Trial 26's code stays frozen; Tri
 - At M = 16, 114 from scratch was accepted but not externally exact; with the library it stalled (see above).
 - An accumulation probe over the whole development half (static libraries from the M = 64 discoveries, library vs scratch vs decoy at M = 8, 16, 32) is next.
 
+### Trial 27 build notes, continued (31 Oct, 20:05–20:45; development systems only)
+
+- **Candidate scoring lets earlier pieces re-adjust.** When pieces are added in turn, the constants of the pieces already chosen absorb part of a still-missing piece. Scored with those constants frozen, the true next piece can look useless. On 458 the near-pole reciprocal explained nothing when frozen (4.51e-6 vs 4.54e-6), yet a joint refit reached 6.8e-9, the noise level. The first-order directions of the existing constants now join the linear projection, so each candidate is scored as if the earlier pieces were refitted with it. On 458's first equation the scan then reaches 3.8e-9 (tolerance 2e-8).
+- **Near-exact threshold raised from 1e-9 to 1e-8.** At this threshold the completion and simplification stages start. 458 ended at 4.9e-9, just outside the old one.
+- **Regression round 3** (latest code, M = 64): 114, 115, 507, 573, 685, 767, 1047 and Blasius are all still exact or accepted (no losses). 458 is at 4.9e-9, rejected. 275 and 855 are rejected; 855 is outside the template.
+- **Development-half status, latest code** (29 pool systems after the reference rule):
+  - Exact via discovery: 114, 115, 507, 573, 685, 767, 1047.
+  - Exact with the toolkit alone: 728, 753, 866, 919, 973, 1012.
+  - Near-exact and varying between rounds: 458 and 909 (each exact in an earlier round).
+  - **Estimated D on the development half: 7/23 ≈ 30% (9/23 ≈ 39% if 458 and 909 hold).** The evaluation half has more 4-D systems (21 of 35, versus 17 of 31), where the learner is weaker.
+
 ### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
 
 **G-familiar** (10 systems that resemble the history; reported, not counted). Exact-recovery rate by data amount:
