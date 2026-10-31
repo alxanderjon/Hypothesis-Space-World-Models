@@ -2648,3 +2648,14 @@ Discovery budgets (curve degree, number of tries, time per learn call), the tran
 - Discovered curves may not stay exact outside the observed range; compact rewrites mitigate this.
 - Discovered pieces may not recur across real systems in the pool, in which case no accumulation is possible. The removal and similarity reports would show it.
 - Discovery is expensive.
+
+## Trial 27 approved (31 October), with owner additions
+
+The owner approved the revised Trial 27 with four additions:
+
+1. The weighted-sum argument (x + 2y) is fine: *"it's a generic capability, not supplying the answer."*
+2. **For every discovered piece, log whether it is a combination of existing toolkit pieces (a compact rewrite was found) or a genuinely new shape (the curve is kept).** Both count.
+3. **Test the exactness of discovered pieces on starting states outside the range they were learned on, and report how often they stay exact there.**
+4. During the build, send a plain-language progress update at least every few hours, and notify immediately if something changes the plan.
+
+Work within the trial is autonomous from here. Trial 26's code stays frozen; Trial 27 uses a new learner module.
