@@ -2512,3 +2512,13 @@ The criteria themselves are unchanged. *Known when this rule was written:* the h
   - This changes behaviour only in runs that would otherwise have crashed. Every completed run follows an identical code path.
   - It is the only learner change after the freeze, and it is unrelated to the disclosed exposures.
 - **Rerun.** Workers spawned after the fix use it. Every record with status `error` (all of them crashes, none of them learning failures) will be deleted and rerun in a clean-up pass, with the same budgets.
+
+### Test-stage reordering (06:40; no result changes)
+
+- **Why.** Every worker was occupied by an M = 64 G-novel job running 10 arms of 7–30 minutes each, so the remaining systems' scratch results (which decide C0) were up to 2 hours away.
+- **What was done.**
+  - The drivers were stopped. Finished arm records are kept; each in-progress arm was lost.
+  - The 73 crash records (`error`) were deleted for rerun, as stated above.
+  - The remaining work was relaunched in this order: (1) scratch at M = 64 on the G-novel systems still missing it, which settles C0; (2) all remaining G-novel arms at M = 64, including the crashed guide arms; (3) G-familiar at all M.
+- **C0 gate.** As fixed earlier, G-novel M < 64 runs only if C0 passes.
+- **Logged before C0 is known.** Status at this point: seed 1 has 19/27 and seed 2 15/27 scratch results at M = 64, with 0 exact recoveries.
