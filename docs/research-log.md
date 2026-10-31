@@ -2467,3 +2467,27 @@ The owner approved Trial 26 as described in the plain-language check-in (revised
 ### History-stage wall-time rule (fixed at 03:16, before the stragglers finish)
 
 The 1,200 s budget covers learning only. Data generation is not bounded. For the piecewise systems (Chua, SanUmSrisuchinwong), the fixed-step reference needs very many substeps at the kinks. **Rule:** a history system whose job (reference plus learning) has not finished 60 minutes after the stage started (that is, by 03:53) is treated as *not learned*. It contributes no labels and no memory. The rule is the same for both seeds and is applied before its outcome is known.
+
+### History stage outcome and test-stage launch (03:55)
+
+- **Wall-time rule applied at 03:53.**
+  - Seed 1: not learned: Aizawa, AtmosphericRegime, Chua, LiuChen, LorenzBounded, SanUmSrisuchinwong.
+  - Seed 2: not learned: Chua, SanUmSrisuchinwong, WangSun.
+- **Guides trained on the systems each snapshot actually solved:**
+
+  | Seed | N = 8 | N = 24 | N = 45 | Scrambled (N = 45) |
+  |---|---|---|---|---|
+  | 1 | 6 | 19 | 37 | 37 |
+  | 2 | 5 | 18 | 38 | 38 |
+
+- **Full test stage launched for both seeds** (12 workers each, M = 64 first). The guide-only arm was dropped: it was never pre-registered.
+
+### C0 gate used for compute (fixed now)
+
+The pre-registration says that if scratch recovers < 25% of G-novel at M = 64, the accumulation part is uninformative.
+
+**Rule.** When every G-novel M = 64 job has finished in both seeds:
+- **If C0 fails in both seeds,** the remaining smaller-M jobs for G-novel are stopped. G-familiar jobs continue; they are fast, and they are reported as resemblance-eligible.
+- **Otherwise** the full grid runs.
+
+The criteria themselves are unchanged. *Known when this rule was written:* the history-free runs had finished scratch at M = 64 on 3 G-novel systems, all BioModels, with 0 of 3 recovered.
