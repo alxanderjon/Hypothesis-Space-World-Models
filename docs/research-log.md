@@ -2435,3 +2435,24 @@ The owner approved Trial 26 as described in the plain-language check-in (revised
   | Chen | 8 | 7 s | 7e-16 | — |
   | SprottB | 8 | 4 s | 7e-16 | one-step 2.1e-12 (before the final-refit change) |
   | Rossler | 16 | 122 s | 4e-16 | one-step 8e-15, multi-step pass over 2,000 steps: **exact** |
+
+### Tool development, final changes before the trial runs (history systems only)
+
+- **Polynomial-first search order.** The grammar levels gain a level 0, products and whole-number powers only. If those terms alone clearly cannot reach the derivative-error level, the search moves on. The level-1 search (adding sines, exponentials, ratios and so on) starts from the best polynomial support (warm start). Reason: a fitted flexible term can absorb several true monomials at step one and lead greedy search astray. A weaker simplicity penalty fixed ThomasLabyrinth but broke Chen, where 12 flexible terms replaced 4 monomials.
+- **Degenerate terms are simplified after every polish.** If a fitted factor drifts into a degenerate form, it is replaced by the constant and linear terms it imitates, and the polish is repeated. Examples: an absolute value with its kink outside the data, or a near-linear tanh. Found on ThomasLabyrinth, where such stand-ins replaced the linear −b·x terms.
+- **Centring only for badly offset variables** (|mean| > 3 std). Centring turns every product into a sum of shifted terms: Lorenz's ẏ had 5 terms instead of 3. Learned equations now have the systems' own sparsity (Lorenz 2/3/2 terms, SprottB 1/2/2). Breakpoint and tanh-centre grids moved to data quantiles accordingly.
+- **The artifact's own substep count.** Self-convergence is now checked on *all* observed states, followed by one more doubling. That doubling is the safety margin of an 8th-order method: it cuts the truncation error 256×, at 2× run time. Found on SprottB and SprottTorus. Their learned equations were exact: with the doubled count, the one-step error is 2e-15 and 5e-15. Their self-chosen counts (2 and 4) left 2.1e-12 and 2.3e-12 of integration error on faster parts of the attractor. The true vector field at the same counts shows the same 2.1e-12 and 2.3e-12.
+- **Development summary** (20 history systems, M = 8 or 16, one setting each). 19 were accepted internally, each in 1–25 seconds; Chua and SanUmSrisuchinwong (piecewise) were still running. Truth checks (reporting only): 15 confirmed exact. SprottB and SprottTorus missed by 2× before the substep fix above. ThomasLabyrinth is now recovered as a sine plus a linear term per equation. Aizawa contains a degree-4 term outside the grammar and is expected to fail.
+
+### Budgets for the test stage (fixed now, before any test system is run)
+
+- **Per learn call:** time limit 240 s for M ≤ 8, 360 s for M ≥ 16. The limit is checked between refinement steps, so a single polish may overrun. It is identical for every arm.
+- **Search settings:**
+  - levels 0 → 1 → 1+2 → 1+2+3;
+  - beam width 6, at most 12 terms per component;
+  - composite budget 4,000 candidates;
+  - up to 10 support combinations per level;
+  - 8 stepwise add/prune rounds per combination.
+- **Guided arms** (guide or statistics) run the same levels restricted to the predicted influences (and the predicted level and term count for the guide) first, then the full search, within the same time limit.
+- **History stage:** M = 64, 1,200 s per system. Labels come only from internally accepted models. Each history system is learned from scratch (not sequentially), so snapshot N uses exactly the first N systems' own solutions, in the seed's order.
+- **Guides:** 3,000 steps of 8 systems each, on random burst subsets (2–64) of the 64 observed bursts, with random variable relabelings. The scrambled-lesson guide gets identical training with label sets deranged across systems.

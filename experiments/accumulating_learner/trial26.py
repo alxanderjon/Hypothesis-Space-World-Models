@@ -55,7 +55,7 @@ def bursts_from(ref, seed, M):
 
 
 def time_limit(M):
-    return {2: 240, 4: 240, 8: 300, 16: 360, 32: 480, 64: 600}[M]
+    return 240 if M <= 8 else 360
 
 
 # ---------------- history ----------------
