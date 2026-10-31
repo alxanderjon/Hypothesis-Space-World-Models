@@ -583,6 +583,7 @@ def screen_component(y, Z, X, cands, prior, tol, beam=6, max_terms=12, budget=No
             r0, _ = lstsq_resid(design(sd[:k], Z, X), y)
             beams.append((list(sd[:k]), r0, float(r0.norm()) / ny))
     finished = []
+    best_pen = None                        # best penalized support seen at any step (used when none reaches tol)
     for _ in range(max_terms):
         expansions = []
         for support, r, _ in beams:
@@ -611,6 +612,9 @@ def screen_component(y, Z, X, cands, prior, tol, beam=6, max_terms=12, budget=No
         if not expansions:
             break
         expansions.sort(key=lambda e: math.log(e[1] + 1e-40) + sum(term_cost(t, prior) for t in e[0]))
+        pen0 = math.log(expansions[0][1] + 1e-40) + sum(term_cost(t, prior) for t in expansions[0][0])
+        if best_pen is None or pen0 < best_pen[0]:
+            best_pen = (pen0, expansions[0][0], expansions[0][1])
         seen, beams = set(), []
         for terms, rel in expansions:
             s = tuple(sorted(str(t.sig()) for t in terms))
@@ -626,8 +630,13 @@ def screen_component(y, Z, X, cands, prior, tol, beam=6, max_terms=12, budget=No
         if finished:
             break
     have_f = [f[0] for f in finished]
+    reached = bool(finished)
     finished += [(b[0], b[2]) for b in beams if all(b[0] is not f for f in have_f)]
     finished.sort(key=lambda e: (e[1] > tol, len(e[0]), e[1]))
+    if not reached and best_pen is not None:
+        # nothing reached the estimated noise level (it can be optimistic): the best fit-versus-size trade-off seen at
+        # any step, not the last (largest) supports, which only add junk terms toward an unreachable target
+        finished.insert(0, (best_pen[1], best_pen[2]))
     return finished[:beam]
 
 
@@ -735,6 +744,11 @@ def model_from_description(desc, mu, sig):
     return Model(sups, cfs, torch.as_tensor(mu), torch.as_tensor(sig))
 
 
+def spread(z, n=400):
+    """Up to n states spread over all bursts (the first rows cover only a few bursts and can miss demanding states)."""
+    return z[:: max(1, len(z) // n)]
+
+
 def self_nsub(model, z, tol=1e-14, max_nsub=64):
     """The model's own substep count (no simulator): the harness rule in scaled coordinates (scale 1).
     Returns None if the model's one-step map is not finite (an unusable candidate)."""
@@ -762,7 +776,7 @@ DEADLINE = [float("inf")]    # set by learn(); polish/prune stop iterating once 
 def polish(model, z0, z1, iters=30, nsub=None):
     """Levenberg-Marquardt on one-step residuals rk8(g, z0) - z1 over all training pairs (float64)."""
     if nsub is None:
-        nsub = self_nsub(model, z0[: min(len(z0), 200)], max_nsub=16)   # provisional; final count re-chosen below
+        nsub = self_nsub(model, spread(z0), max_nsub=16)   # provisional; final count re-chosen below
         if nsub is None:
             return model, 1, float("inf"), None
     p, full, S = _free_map(model.params(), model.frozen())
@@ -799,7 +813,7 @@ def polish(model, z0, z1, iters=30, nsub=None):
     model.set_params(full(p))
     if J is not None and S is not None:
         J = J @ S.T                                      # full-parameter Jacobian (zero columns for fixed constants)
-    nsub2 = self_nsub(model, z0[: min(len(z0), 200)])
+    nsub2 = self_nsub(model, spread(z0))
     if nsub2 is None:
         return model, nsub, float("inf"), None
     if nsub2 != nsub:
@@ -1123,7 +1137,7 @@ def cheb_basis(t, D):
 
 def converged_val(model, z0, zv0, zv1):
     """Validation error with the model's own converged substep count (doubled), as in the final artifact."""
-    n = self_nsub(model, torch.cat([z0[:200], zv0]), max_nsub=128)
+    n = self_nsub(model, torch.cat([spread(z0), zv0]), max_nsub=128)
     if n is None:
         return float("inf"), None, None
     with torch.no_grad():
@@ -1770,7 +1784,7 @@ def replace_scan(model, z0, z1, zv0, zv1, deadline, verbose=False, comps=None):
     it (on a development system it stayed at half the true distance, where the step-to-step residual had a sharp minimum)."""
     best_v, _, _ = converged_val(model, z0, zv0, zv1)
     Zall = torch.cat([z0, zv0])
-    nsub = self_nsub(model, z0[:200])
+    nsub = self_nsub(model, spread(z0))
     if nsub is None:
         return model, best_v
     for i in (comps if comps is not None else range(len(model.supports))):
@@ -2270,7 +2284,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
             sups = [[Term(m, (), 1) for m in monomials(d)] for _ in range(d)]
             cfs = [lstsq_resid(design(sups[i], Zc, Xc), G[:, i])[1] for i in range(d)]
             model = Model(sups, cfs, mu, sig)
-            nsub = self_nsub(model, z0[:200])
+            nsub = self_nsub(model, spread(z0))
             if nsub is not None:
                 # linear in its coefficients: exact Gauss-Newton with an SVD solve (damped steps crawl when the monomials
                 # of uncentred variables are nearly collinear)
@@ -2395,7 +2409,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
             if v < best["val_err_scaled"]:
                 best = {"model": model, "nsub": None, "val_err_scaled": v, "train_err_scaled": float("nan"), "levels": "eliminate"}
             for _ in range(3 if best["val_err_scaled"] > VAL_TOL else 0):
-                nsub_c = self_nsub(model, z0[:200])
+                nsub_c = self_nsub(model, spread(z0))
                 if nsub_c is None or time.time() > DEADLINE[0]:
                     break
                 new = flowmap_scan_add(model, z0, z1, nsub_c, Zall, verbose=verbose)
@@ -2452,12 +2466,18 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
     if best is not None and best["val_err_scaled"] <= VAL_TOL:
         za0 = torch.cat([z0, zv0]); za1 = torch.cat([z1, zv1])
         try:
+            n_prev = self_nsub(best["model"], spread(za0))
+            with torch.no_grad():
+                err_prev = float((rk8_torch(best["model"].g, za0, n_prev) - za1).abs().max()) if n_prev else float("inf")
             m_all, nsub_all, err_all, _ = polish(best["model"].copy(), za0, za1, iters=30)
-            if math.isfinite(err_all) and err_all <= VAL_TOL:
+            if verbose:
+                print(f"   final refit on all bursts: {err_prev:.2e} -> {err_all:.2e} (deadline in {DEADLINE[0] - time.time():.0f}s)", flush=True)
+            # kept unless worse than the model it replaces on all data (requiring <= 3e-13 discarded better refits)
+            if math.isfinite(err_all) and err_all <= max(VAL_TOL, err_prev):
                 # last digits: exact Gauss-Newton steps on the linear coefficients. Damped steps can stop a few digits
                 # short; on two development systems that alone left 1e-12 errors at extreme held-out states. Kept unless
                 # clearly worse (both residuals sit at the rounding floor).
-                n_all = self_nsub(m_all, za0[:200])
+                n_all = self_nsub(m_all, spread(za0))
                 if n_all is not None:
                     with torch.no_grad():
                         r0 = float((rk8_torch(m_all.g, za0, n_all) - za1).norm())
