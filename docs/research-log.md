@@ -2659,3 +2659,11 @@ The owner approved the revised Trial 27 with four additions:
 4. During the build, send a plain-language progress update at least every few hours, and notify immediately if something changes the plan.
 
 Work within the trial is autonomous from here. Trial 26's code stays frozen; Trial 27 uses a new learner module.
+
+### Trial 27 fresh pool: split rule fixed before conversion (31 October)
+
+- **Source.** The downloaded BioModels SBML set (1,011 files), converted with the same safe converter (`biomodels_convert.py`: a whitelist MathML walker, no eval). The pool is the models with exactly 2 or 4 state variables, under the same acceptance rules: no events, sustained oscillation or a settling transient (`--transient`), and the same title exclusion rule. That rule keeps every model whose title names a reserve-set-A, development or confirmation catalog system out of the pool.
+- **Split.** A model belongs to the **evaluation** half if the first hexadecimal digit of sha256("trial27-split-v1:" + model id) is odd, and to the **development** half otherwise.
+  - Only development-half models are inspected or run during the build.
+  - For the evaluation half, only counts are looked at until the final run.
+  - When printing, scripts filter to development IDs (lesson from the Trial 26 exposures).
