@@ -2715,3 +2715,26 @@ Work within the trial is autonomous from here. Trial 26's code stays frozen; Tri
     - It is not exact out of range (2.2e-11). The true term is x0/(x0 + 380); the transient data make an equivalent two-variable curve indistinguishable inside the observed region.
   - Toolkit-only systems (728, 753, 866) are exact, including out of range.
   - The other 7 systems are not recovered: Hill saturations (114, 115), competitive ratios (458), 767, 507, Blasius and the logarithm system (776).
+
+### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
+
+**G-familiar** (10 systems that resemble the history; reported, not counted). Exact-recovery rate by data amount:
+
+| Arm | M = 2 | M = 4 | M = 8 | M = 16 | M = 32 | M = 64 | Median minimal observations |
+|---|---|---|---|---|---|---|---|
+| Scratch (s1) | 0.6 | 0.8 | 0.9 | 1.0 | 0.9 | 0.9 | **26** |
+| Scratch (s2) | 0.6 | 0.9 | 0.8 | 1.0 | 0.9 | 1.0 | **26** |
+| Memory, N = 8/24/45 | | | | | | | ≈ scratch (26) |
+| Guide, full arm, N = 45 (s1 / s2) | 0.2 / 0.1 | 0.5 / 0.2 | 0.3 / 0.5 | 0.7 / 0.8 | 0.7 / 0.8 | 0.9 / 0.9 | 52 / 156 |
+| Guide, full arm, N = 8 and N = 24 | | | | | | | worse still (208) |
+| Scrambled guide | | | | | | | 104 / 39 |
+| Statistics screen | | | | | | | 104 |
+| Copy-the-closest | 0 | 0 | 0 | 0 | 0 | 0 | |
+
+- On history-like systems the learner from scratch is exact from just **26 observations** (2 bursts) in 60% of cases.
+- **The learned guide hurt at small M.** Its predicted influences, term counts and levels narrowed the search too much when data were scarce. The tally ("memory") neither helped nor hurt.
+
+**G-novel at M = 64, all arms.**
+- 0 exact everywhere, except **SaltonSea (seed 2)**, which was recovered exactly (one-step 4.5e-15) by memory8, memory24, full24 and full45.
+- Its scratch run had been cut by the 07:40 time rule (`reference_timeout`), so no history-versus-scratch comparison exists for it.
+- C0 is unaffected: even counting it, 1/27 < 25%.
