@@ -2087,3 +2087,44 @@ The rule said that if S2 fails, move to option 2. The diagnosis (training error 
 
 
 *Date correction (30 October): ten headings above, from the Trial 23 result to the Trial 25 pre-registration, were mistakenly labelled 31 October. They were all written on 30 October (UTC, per the machine clock) and have been relabelled. No content changed.*
+
+## Trial 25: result (31 October)
+
+**Classification by its own pre-registration: FAILED** (S2-variety fails in both seeds). **By the owner's success definition (standing rule 2): MET on the development systems in both seeds.** The learner beats kernel ridge and the best no-history control on unfamiliar kinds, and its advantage grows with the number of systems in its history.
+
+| | Seed 1 | Seed 2 |
+|---|---|---|
+| S1: V4/N65,536 median vs best control (kernel ridge) at K = 16 / K = 32 (need ≤ 0.8 at both) | **0.574 / 0.574** ✓ | **0.578 / 0.574** ✓ |
+| S1: wins against kernel ridge at K = 32 (need ≥ 16/26) | **21/26** ✓ | **22/26** ✓ |
+| S2-number: advantage at K = 32 for N = 512 / 8,192 / 65,536 (V4); need a gain ≥ 0.223 and adv(8,192) ≥ adv(512) | **−0.114 / 0.464 / 0.555** (gain 0.669) ✓ | **−0.054 / 0.476 / 0.555** (gain 0.609) ✓ |
+| S2-variety: advantage at K = 32 for V1 / V2 / V3 / V4 (N = 16,384); need ρ ≥ 0.8 and V4 − V1 ≥ 0.223 | .570 / .612 / .621 / .463; ρ = −0.2 ✗ | .595 / .481 / .649 / .657; ρ = 0.8 but gain only 0.062 ✗ |
+
+Unfamiliar-kind medians (26 systems), K = 8 / 16 / 32 / 64:
+
+| | K = 8 | K = 16 | K = 32 | K = 64 |
+|---|---|---|---|---|
+| kernel ridge | .588 | .289 | .0997 | .0147 |
+| Transformer V4/N65,536, seed 1 / 2 | **.333 / .340** | **.166 / .167** | **.057 / .057** | .0149 / .0168 |
+| Transformer V1/N16,384 (polynomial-only history), seed 1 / 2 | .297 / .301 | .169 / .153 | .056 / .055 | .014 / .012 |
+
+Familiar kinds (9 polynomial development systems, K = 32): kernel ridge .0050 against the Transformer .017 / .015, 3× worse (Trial 24 was 10× worse).
+
+**Final training NMSE, now rising with pool size, i.e. the model absorbs history:**
+
+| N (V4) | 512 | 8,192 | 16,384 | 65,536 |
+|---|---|---|---|---|
+| Final training NMSE | .040–.042 | .064–.065 | .065–.067 | .064–.067 |
+
+### Reading
+
+- **Scaling the learned inference procedure** (3× parameters, 3.3× training) turned Trial 24's 21–31% advantage into **about 43% lower error than kernel ridge** on 26 real systems of kinds never seen in training (rational/saturating and exponential). It wins on 21–22 of 26, in both seeds. That covers 8–32 observations, and it is level at 64.
+- **The advantage grows strongly with the number of systems in the history.**
+  - At 512 systems the larger model is *worse* than kernel ridge (it overfits a small history).
+  - At 8,192 it is about 37% better; at 65,536 about 43% better, in both seeds.
+  - This is the history-dependence that Trial 24 could not show.
+- **It does not grow with the variety of kinds.** A polynomial-only history is about as good as one with trig, piecewise, tanh and mixed generators. The transferable knowledge seems to be generic to dissipative dynamics on attractors (how to infer velocity fields from noisy trajectory snippets), not specific to nonlinearity kinds. Since the held-out kinds are by design unlike any training kind, this is plausible, but it was a pre-registered criterion and it failed.
+- **Precision on easy, familiar systems is still worse than kernel ridge** (3×). This is outside the owner's success definition (which concerns unfamiliar kinds), but a deployed learner would need a fallback for it.
+
+**Next, per standing rule 3:** the success criteria are met on development in both seeds, so the candidate must pass again on fresh seeds (or a fresh, independent split) before a reserve test is requested from the owner. Trial 26 is that replication. Its primary criteria are the owner's success definition; variety growth is reported as a secondary outcome, and its Trial 25 failure stands.
+
+**Running count of trials evaluated on the development systems: 25.**
