@@ -2839,6 +2839,25 @@ Work within the trial is autonomous from here. Trial 26's code stays frozen; Tri
   - At M = 8 even toolkit-only systems fail: with 30 rate points the sparse search keeps 8-term equations that fit the training bursts to 1e-14 and miss the held-back ones (1012: 7.7e-8). So at small data the limit is overfitting of the term selection, for library and scratch alike.
   - M = 16 and M = 32 are running.
 
+### Trial 27: check-in sent to the owner before the evaluation (31 Oct, 22:10)
+
+**Status sent.**
+- **Discovery.** It works on the development half: 8 of 23 toolkit-unlearnable systems are exact (estimated D ≈ 35%; at the start of the evening it was 1 of 12).
+  - Exact via discovery: 114, 115, 458 (earlier rounds), 507, 573, 685, 767, 909, 1047; the latest code holds 114, 115, 507, 573, 685, 767, 909 and 1047.
+  - Exact with the toolkit alone: 728, 753, 866, 919, 973, 1012.
+  - The evaluation half has more 4-D systems, so D could land on either side of 30%.
+- **Accumulation.** Not shown: at M = 8 the development-half probe gives scratch 2/27, library 2/18, decoy 1/15. With little data the learner's main failure is over-selecting terms, which reusing a single piece does not fix.
+- **Options offered:**
+  - (a) Run the evaluation as approved (about a day of compute; likely "discovery yes, accumulation no").
+  - (b) First strengthen reuse on the development half: also store whole equation patterns learned on earlier systems, tried under variable relabelings, so that with few observations only a few numbers are fitted. This extends the approved library and needs approval.
+  - (c) The owner's choice.
+- **Recommendation:** (b). The evaluation half is not touched until the owner replies.
+
+**Fixes since the previous entry** (development systems only).
+- Exponents beyond ±8 are degenerate. A fitted v^-65.7 piece with a tiny coefficient passed validation on 685 but blew up at held-out states.
+- Degenerate pieces are simplified before the final refit.
+- 685 is exact again (1.1e-14).
+
 ### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
 
 **G-familiar** (10 systems that resemble the history; reported, not counted). Exact-recovery rate by data amount:
