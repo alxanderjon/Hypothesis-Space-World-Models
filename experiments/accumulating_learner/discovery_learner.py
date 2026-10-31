@@ -2418,11 +2418,31 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
             if verbose:
                 print("   completion failed:", str(e)[:120], flush=True)
     # ---- compact rewrite of discovered curves (classification of every new piece) ----
-    DEADLINE[0] = min(time.time() + 0.25 * time_limit, hard + 0.1 * time_limit)   # grace for the rewrite and final refit
+    final_deadline = min(time.time() + 0.25 * time_limit, hard + 0.1 * time_limit)  # grace for the rewrite and final refit
+    DEADLINE[0] = final_deadline
     if best is not None and best["val_err_scaled"] <= VAL_TOL and any(
             f.family == "cheb" for terms in best["model"].supports for t in terms for f in t.factors):
         best["model"] = compact_rewrite(best["model"], z0, z1, zv0, zv1, Zc, Xc, verbose=verbose)
         best["val_err_scaled"], _, _ = converged_val(best["model"], z0, zv0, zv1)
+    # variables with no spread in the data (e.g. a species that is zero in every recording): their rate is zero and terms
+    # involving them are dropped (they vanish on all observed data; their coefficients are arbitrary, and a stray ~1e-15
+    # rate on such a variable, amplified by them, gave 1e-11 errors on a development system)
+    const = [j for j in range(d) if float(allx[:, j].std()) <= 1e-12 * (float(allx[:, j].abs().max()) + 1e-300)]
+    if best is not None and const:
+        m_c = best["model"].copy()
+        for i in range(d):
+            keep = [] if i in const else [a for a, t in enumerate(m_c.supports[i]) if not (t.variables() & set(const))]
+            m_c.supports[i] = [m_c.supports[i][a] for a in keep]
+            m_c.coefs[i] = m_c.coefs[i][keep] if keep else torch.zeros(0)
+        try:
+            DEADLINE[0] = min(time.time() + 0.05 * time_limit, hard + 0.1 * time_limit)
+            m_c, _, err_c, _ = polish(m_c, z0, z1, iters=20)
+            v_c, _, _ = converged_val(m_c, z0, zv0, zv1)
+            if math.isfinite(v_c) and v_c <= max(best["val_err_scaled"], VAL_TOL):
+                best["model"], best["val_err_scaled"] = m_c, v_c
+        except (RuntimeError, ValueError):
+            pass
+        DEADLINE[0] = final_deadline         # the simplification and the final refit keep their own grace period
     if best is not None and best["val_err_scaled"] <= NEAR_EXACT:   # simple exponents (whole / half numbers) if data agree
         sm, sv = snap_exponents(best["model"], z0, z1, zv0, zv1, tol=1e-6 if best["val_err_scaled"] <= VAL_TOL else 1e-3)
         if sv is not None and (sv <= VAL_TOL or sv < best["val_err_scaled"]) and sv <= max(2 * best["val_err_scaled"], VAL_TOL):
