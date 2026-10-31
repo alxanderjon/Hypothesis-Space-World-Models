@@ -2491,3 +2491,13 @@ The pre-registration says that if scratch recovers < 25% of G-novel at M = 64, t
 - **Otherwise** the full grid runs.
 
 The criteria themselves are unchanged. *Known when this rule was written:* the history-free runs had finished scratch at M = 64 on 3 G-novel systems, all BioModels, with 0 of 3 recovered.
+
+### Trial 26 history stage: results (M = 64, from scratch; truth check is reporting only)
+
+| Seed | Accepted | Rejected | No model | Not learned (wall-time rule) | Truth-exact | False accepts | False rejects | Learning time (median / max) |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 37 | 2 | 0 | 6 | 39 | 0 | 2 (Rossler, SprottG) | 6 s / 81 s |
+| 2 | 38 | 3 | 1 | 3 | 37 | 1 (LiuChen, 1.2e-12) | 0 | 6 s / 46 s |
+
+- On history-type systems, exact recovery from 64 bursts (832 states) works for 37–38 of 45 systems. The learner's own acceptance check almost always agrees with the truth check: across both seeds, 1 false accept and 2 false rejects.
+- **Known issue for the next learner version (not changed now; the learner is frozen).** False rejects happen because internal validation uses the *provisional* substep count. The substep safety doubling is applied only after acceptance. Validation should use the converged count.
