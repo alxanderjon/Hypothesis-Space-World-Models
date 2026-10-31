@@ -2528,3 +2528,16 @@ The criteria themselves are unchanged. *Known when this rule was written:* the h
 - **Situation.** Some G-novel BioModels have produced no record at all: BIOMD0000000157, 236, 299, 323 and 371 in seed 1, and 236, 299, 371, 878 and 938 in seed 2. In the first test pass their jobs ran 2.5 hours without finishing. The fixed-step reference at 1e-14 is extremely slow for them, presumably because they are stiff.
 - **Rule.** At 07:40, any G-novel system with no scratch record at M = 64 is recorded as `reference_timeout` (not exact) for every arm and every M in that seed. Phase 1 then stops, and phases 2–3 proceed.
 - **C0 reporting.** C0 is reported both counting these systems as failures and excluding them, as systems the harness cannot simulate within budget.
+
+### Trial 26: C0 decided (07:40) — capability prerequisite FAILED in both seeds
+
+- **Result.** Scratch exact recovery at M = 64 on G-novel: **0 of 27 in seed 1 and 0 of 27 in seed 2**. The bar was ≥ 25%, about 7 systems.
+- **How the 27 break down.**
+  - Seed 1: 19 completed runs, none exact. The other 8 were recorded under the 07:40 rule, with no scratch result after 60 minutes of phase 1 and up to 2.5 h in the first pass: BIOMD0000000157, 236, 299, 323 and 371, SaltonSea, SprottMore and YuWang2.
+  - Seed 2: 20 completed runs, none exact. The other 7 were recorded under the rule: BIOMD0000000236, 299, 371, 878 and 938, SprottMore and YuWang2.
+  - Excluding the timed-out systems, C0 is still 0/19 and 0/20.
+- **Failure modes among completed runs.**
+  - "No model" or "rejected", with the best internal validation errors ranging from 6e-6 to 4e-1.
+  - Catalog ratio systems that the grammar can express in principle were approximated with many terms instead of the compact form. Blasius reached 9e-7 with 11–12 terms per component.
+- **Consequence (pre-registered).** The accumulation part is uninformative, and **Trial 26 fails at the capability gate**. Per the C0 compute rule, G-novel runs at M < 64 are not made. The remaining G-novel M = 64 arms (including reruns of the crashed guide arms) and all G-familiar runs are completed for the report.
+- **Orchestration slip, no effect on results.** The 07:40 rule script stopped the phase-1 driver by process group. That group also contained the coordinating script and the other seed's driver, so phases 2–3 did not start automatically. They were relaunched at 07:42, each driver in its own session.

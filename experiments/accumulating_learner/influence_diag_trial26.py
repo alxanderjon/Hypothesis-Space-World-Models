@@ -27,15 +27,31 @@ def true_influence(ref, n=60, rel=1e-6):
     return (J > rel).astype(int)
 
 
-def main(seed=1):
+def one(args):
+    name, seed = args
+    import os
+    os.environ.setdefault("OMP_NUM_THREADS", "1")
+    p64 = OUT / f"test_s{seed}" / name / "M64_scratch0.json"
+    if p64.exists() and json.loads(p64.read_text()).get("status") in ("reference_timeout", "reference_error"):
+        return name, {"skipped": "reference not available"}
+    try:
+        ref = H.Reference(name, seed=seed, traj_steps=300, burn_periods=10)   # light reference: attractor states only
+        return name, {"T": true_influence(ref).tolist()}
+    except Exception as e:
+        return name, {"error": repr(e)[:200]}
+
+
+def main(seed=1, workers=8):
+    from multiprocessing import get_context
+    names = G_NOVEL + G_FAMILIAR
+    with get_context("spawn").Pool(workers, maxtasksperchild=1) as pool:
+        truth = dict(pool.map(one, [(n, seed) for n in names]))
     rows = {}
-    for name in G_NOVEL + G_FAMILIAR:
-        try:
-            ref = H.Reference(name, seed=seed)
-        except Exception as e:
-            rows[name] = {"error": repr(e)[:200]}
+    for name in names:
+        if "T" not in truth[name]:
+            rows[name] = truth[name]
             continue
-        T = true_influence(ref)
+        T = np.asarray(truth[name]["T"])
         out = {"group": "novel" if name in G_NOVEL else "familiar"}
         for arm in ("full45", "scrambled45", "stats0", "full8", "full24"):
             acc = {}
@@ -63,4 +79,4 @@ def main(seed=1):
 
 if __name__ == "__main__":
     import sys
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else 1)
+    main(int(sys.argv[1]) if len(sys.argv) > 1 else 1, int(sys.argv[2]) if len(sys.argv) > 2 else 8)
