@@ -2283,3 +2283,71 @@ Coordinates are internally centred and scaled.
 4. The full test.
 
 Data is generated in memory, not written to disk. CPU-bound in float64: at most 24 worker processes at nice 10.
+
+## Owner standing rules (31 October, added mid-implementation)
+
+1. **Check in before each trial.** Before running any trial, send the owner a plain-language explanation (no jargon) of:
+   - what the network learns from past systems;
+   - how that knowledge is used on a new system;
+   - how the test tells genuine learning from history apart from new systems simply resembling the old ones.
+
+   Wait for approval. After each trial, send a plain-language summary of the result and what it means for the goal. Within an approved trial, work autonomously.
+2. **Similarity is not accumulation.** The owner is not convinced the earlier approach learned from history: its gains came from new systems resembling old ones. For every trial, the test must show that the benefit comes from what was learned, not from choosing test systems close to the training ones, and the log must say how this is ruled out before anything runs.
+
+**State when these rules arrived.** No Trial 26 runs had started. Running were only (a) validation of the exactness harness and (b) a smoke test of the learner on Lorenz (tool development, not trial runs).
+
+- **Harness validation on Thomas:**
+  - Horizon 399 steps (λ ≈ 0.63; Δt ≈ 0.05).
+  - The true field as a "perfect learner" passes.
+  - A 1e-9 output error gives a one-step error of 3.1e-10 and fails. The harness discriminates as intended.
+- **Cost on Thomas:** the artifact is 0.6× (i.e. *slower*) than scipy DOP853 for a single trajectory and 9.5× faster for 20 trajectories in a batch. Single-trajectory cost is dominated by Python overhead in the fixed-step integrator. This is raised with the owner.
+
+## Trial 26 — revised before approval (31 October)
+
+**Flaw in the pre-registered Trial 26 under the new similarity rule.** Its only accumulation mechanisms were reuse of past equation pieces, a usage prior over them and parameter initialization. All three can only help a new system containing pieces seen before, which is resemblance by construction. The revised design adds kind-agnostic, transferable knowledge and a test that separates the two.
+
+### What is learned from history
+
+- **(a) Building-block memory.** The original mechanism, kept as the *resemblance-only control*.
+- **(b) An "influence guide" network.** From a new system's observations, it predicts:
+  - which variables each rate of change depends on;
+  - how many pieces each equation has;
+  - how complex the pieces are (grammar level).
+
+  It is trained on past systems, with labels taken from the learner's *own* recovered models (never the true equations). This knowledge is about *structure in general*, not about specific pieces, so it can transfer to systems built from pieces never seen.
+
+### How it is used
+
+The search for exact equations first explores only the influences and complexity the guide predicts (with fallback to the full search). Known pieces are tried first. New pieces are built from the generic grammar. The precision polish and internal validation are as before.
+
+### How resemblance is ruled out
+
+- **(1) Test held out by building block.** History contains only systems whose pieces are polynomial, trigonometric, piecewise or tanh (catalog meta-train systems of those kinds: 45). The **decisive test group, G-novel,** is the 26 real systems containing a piece *never* present in any history system (rational/saturating or exponential — the Trial 24 held-out-kind set). For G-novel the building-block memory cannot contain the needed piece, so any gain must come from transferable knowledge.
+  - G-familiar (development systems whose pieces all occur in the history) is reported separately as *resemblance-eligible*. It does not count toward accumulation.
+- **(2) Dissimilar-history check.** For each G-novel system, every history system sharing *any* nonlinear piece with it is removed, and the benefit is re-measured.
+- **(3) Controls on the same test systems with the same budgets:**
+  - **scratch:** no history;
+  - **memory-only:** the resemblance-only control;
+  - **guide trained on scrambled lessons:** the same amount of training but shuffled labels; it must lose the gain;
+  - **no-history statistical influence screen:** local sparse regression; the learned guide must beat it.
+- **(4) History-growth curve.** The guide is trained on N ∈ {0, 8, 24, 45} history systems. The G-novel benefit must grow with N.
+
+### Measurements
+
+- Exact recovery (the 1e-12 one-step and envelope tests on held-out starts) for each test system at M ∈ {2, 4, 8, 16, 32, 64} bursts.
+- Success rate at fixed M, and the minimal observation count.
+- Seeds 1 and 2.
+
+### Criteria (both seeds)
+
+- **C0, capability prerequisite (reported):** scratch exact-recovery rate at M = 64. If it is below 25% on G-novel, the accumulation part is uninformative, and capability is fixed first.
+- **A1 (learning beyond resemblance), on G-novel:**
+  - full learner at N = 45 vs scratch: success rate at M = 8 up ≥ 15 points, *or* the median minimal observation count ≤ 0.5×;
+  - the scrambled-lesson guide keeps ≤ half of that gain;
+  - the learned guide beats the statistical screen.
+- **A2 (grows with history):** the G-novel benefit at M = 8 rises with N (Spearman ρ ≥ 0.8).
+- **A3 (dissimilar history):** at least half of the A1 benefit remains with per-system dissimilar histories.
+- **Cost:** reported, with batch generation as the primary use case. Whether single-trajectory speed is required is a question for the owner.
+- **Pass = A1, A2 and A3 in both seeds, with C0 met.**
+
+**Status: awaiting owner approval.** A plain-language explanation was sent; nothing in Trial 26 runs before approval.
