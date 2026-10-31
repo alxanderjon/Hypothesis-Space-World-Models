@@ -2827,6 +2827,18 @@ Work within the trial is autonomous from here. Trial 26's code stays frozen; Tri
   - Near-exact and varying between rounds: 458 and 909 (each exact in an earlier round).
   - **Estimated D on the development half: 7/23 ≈ 30% (9/23 ≈ 39% if 458 and 909 hold).** The evaluation half has more 4-D systems (21 of 35, versus 17 of 31), where the learner is weaker.
 
+### Trial 27 build notes, continued (31 Oct, 20:45–21:40; development systems only)
+
+- **Substep counts chosen on states spread over all bursts.** Fixes a general bug. The model's own substep count (used in polishing and validation) was chosen on the first 200 recorded states, which cover only a few bursts and can miss demanding states. Models were then fitted with too few substeps there. On 909 the accepted model fitted the training transitions only to 8e-13 and missed external exactness (7.5e-12); with substeps chosen on states spread over all bursts it fits to 1e-14, and the final refit reaches 9e-15.
+- **Variables with no spread in the data.** A species that is zero in every recording now gets a zero rate, and terms involving it are dropped; they vanish on all observed data. On 909 their coefficients were arbitrary (up to 1e4), and a stray 1e-15 rate on that variable made it drift by 1e-16, amplified to 1e-11.
+- **Sparse supports when the noise target is unreachable.** The rate-data noise estimate can be optimistic. When no support reaches it, the support with the best fit-versus-size trade-off seen at any step is taken, not the largest last support (which only adds junk terms toward the target).
+- **Final refit.** Kept unless worse than the model it replaces. Previously it had to be below 3e-13 on all data, and better refits were discarded. A deadline shortened by an earlier step no longer cuts the final refit short.
+- **Accumulation probe** (development half; libraries built from each earlier system's accepted M = 64 pieces in a fixed random order; code of 20:30).
+  - M = 8: scratch 2/26, library 2/17, decoy 1/15 exact.
+  - The single library-only success (767) used no reused piece (run-to-run variation).
+  - At M = 8 even toolkit-only systems fail: with 30 rate points the sparse search keeps 8-term equations that fit the training bursts to 1e-14 and miss the held-back ones (1012: 7.7e-8). So at small data the limit is overfitting of the term selection, for library and scratch alike.
+  - M = 16 and M = 32 are running.
+
 ### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
 
 **G-familiar** (10 systems that resemble the history; reported, not counted). Exact-recovery rate by data amount:
