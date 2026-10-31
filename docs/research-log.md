@@ -2744,13 +2744,47 @@ Work within the trial is autonomous from here. Trial 26's code stays frozen; Tri
 
 **First results of v4** (M = 64, 900 s budget; truth checks are reporting only).
 - **114** (Hill n = 4 times a variable, in both equations) was discovered in 120 s. The held-back error was 3.6e-15 and the learned structure is the true one. It is exact out of range (1.7e-14).
-  - Its in-range error of 5.7e-10 was exactly the old reference's own error at those states. A re-check against the corrected reference is running.
+  - Its in-range error of 5.7e-10 was exactly the old reference's own error at those states. Against the corrected reference it is exact in range (8.7e-15; the corrected reference needed 128 substeps on this system) and out of range (2.4e-14).
+  - The same re-check turned BIOMD0000000919 (toolkit-only; earlier listed as failing at 7.5e-12) into exact: 4.4e-15 in range, 1.1e-14 out of range. Its earlier failure was also the reference's.
 - **115** (Hill n = 4 times (x1 − x0)) and **458** (competitive denominator x0/(1 + a·x0 + b·x1), plus a reciprocal) were discovered in about 6 minutes each. Both are exact in range (5.7e-15, 2.6e-15) and out of range (4.6e-15, 3.3e-15).
 - **Blasius** (Holling-type ratios times variables, 3-D) was accepted at 6.2e-15 in 5 minutes.
 - **573** (Michaelis–Menten with a far pole): exact in range (1.5e-13) once the simplest-piece tie-break was added. Without it, the first piece to reach the noise level was a more complicated near-equivalent. Out of range it is not exact (6.3e-12): the far pole is only weakly determined by the observed region.
 - **Toolkit-only systems** (728, 753, 866) are unchanged: exact in range and out of range.
 - **Not yet recovered:** 507 and 767 (near-exact, 2e-12), HastingsPowell, 881 (4-D, 8e-10), and the two systems outside the template (058, 855).
 - **Tie-break added during these rounds.** Several pieces can reach the rate-data noise level. Once one has, only simpler pieces are still tried, and the simplest wins (fewest fitted numbers). Single-multiplier shapes are always among the refined candidates. The starts for shapes with an exponent include the best grid point for every exponent.
+
+### Trial 27 build notes, continued (31 Oct, 18:30–19:10; development systems only)
+
+**Library reuse made meaningful.**
+- A reused library piece keeps its discovered exponent fixed; only its placement (b, c, and the weight of a weighted sum) is refitted. Reuse means reusing the discovered shape.
+- With a free exponent, a random decoy shape of the same family could be refitted into the right one, and the decoy control could not tell real reuse from chance.
+- Reused shapes with an exponent also join the dense scan (exponent fixed, placement scanned). With fewer fitted numbers they win ties under the simplest-piece rule.
+- Shapes without an exponent (e.g. a reciprocal) carry no shape beyond the family and are scanned as new pieces anyway.
+
+**Search fixes, each found on a development system.**
+- **Beam.** One beam slot always holds the best simple expansion (newest piece: one multiplier, one variable). When two pieces are missing, a complicated piece that absorbs part of both can beat either true piece alone (HastingsPowell).
+- **Start diversity.** Starts are spread over (exponent, orientation) before filling by score, and single-multiplier shapes get most of the refinement budget (64 refinements per step for d ≤ 2, 32 otherwise). On 507 the true shape's best-scored start was its mirror-image orientation, which refines only to a near fit.
+- **Far poles are placed on the step-to-step data.**
+  - With noisy rate data a far pole is barely determined. The joint refit then moves along the curved valley between pole and coefficient too slowly to correct it: on 767 it stayed at half the true distance.
+  - The step-to-step residual has a sharp minimum at the true pole even with every low-degree monomial present: 3.8e-13 there versus 3e-9 at ±6%.
+  - New stage: scan the pole over log-spaced distances, re-solving all coefficients by Gauss–Newton at each position (coarse, shortlist, fine), then polish.
+  - This runs on the scan's model in two routes: the sparse support, and the full low-degree support (re-placed before pruning, because a sparse support can swap a needed term for one that compensates the misplaced pole). It also runs in the completion stage, together with backward elimination by full refits.
+  - 767 went from 1.9e-11 to 8e-13 held-back; it is not yet below the 3e-13 acceptance.
+- **Dense polynomial fallback (hand toolkit only).** Every monomial of degree ≤ 3 in every component, solved exactly (Gauss–Newton with an SVD solve) on the step-to-step map, then pruned if the fit survives. Sparse supports are capped at 8–10 terms, but a polynomial development system (291) has about 18 monomials per equation. It reached 4e-12 on 291: not exact yet, limited by the conditioning of uncentred monomials.
+- **Final refit.** The final refit on all bursts now runs 30 iterations, then takes two exact Gauss–Newton steps on the linear coefficients (kept unless clearly worse; both residuals sit at the rounding floor).
+  - Two accepted development models (973, 909) had missed external exactness by small margins (1.1e-12, 2.6e-12), each at one extreme held-out state (medians ~1e-14). The damped refit had stopped a few digits short.
+  - On their saved models the fix gives 8.1e-14 and 1.1e-14.
+- **Exponent simplification.** A discovered exponent that refits to within 1e-6 of a whole or half number is tried at that value (then held fixed), and kept only if the held-back check still passes. Powers are never snapped to 0–3 (disguised polynomials); reused shapes keep their exponent.
+
+**Analysis rule fixed before the evaluation.** A system whose reference cannot be built (the true system diverges from the protocol's starting states even after interval refinement) is excluded from every criterion, in every arm, and counted. Two development systems hit this: 741 and 802.
+
+**Development-half status at M = 64** (31 pool systems; 2 excluded by the rule above; truth checks are reporting only).
+- **Exact via discovery** (all pieces are combinations of existing pieces):
+  - 114, 115, 458 and 1047: also exact out of range.
+  - 573 and 685: not exact out of range (6.3e-12, 1e-10; far poles weakly determined by the observed region).
+- **Exact with the toolkit alone:** 728, 753, 866, 919, 1012. 973 and 909 are exact with the final-refit fix (on their saved models).
+- **Near-exact:** 507, 767.
+- **Not recovered:** 275, 291, 377, 517, 714, 776, 855, 058, 881, 1060, 876 (several are outside the template: four-variable denominators, nested terms, a degree-2 multiplier on a piece, a logarithm). 402, 787 and 812 are still running.
 
 ### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
 

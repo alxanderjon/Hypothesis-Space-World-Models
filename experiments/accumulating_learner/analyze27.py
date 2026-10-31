@@ -44,10 +44,17 @@ def min_obs(get, name, ms=MS):
     return FAIL
 
 
+def reference_failed(r):
+    """Fixed before the evaluation: a system whose reference cannot be built (the true system diverges from the protocol's
+    starting states even with the interval refined) is excluded from every criterion, in every arm, and counted."""
+    return bool(r) and r.get("status") == "error" and "diverged" in (r.get("error") or "")
+
+
 def criteria(tag, seed):
     scratch, streams, removal = load(tag, seed)
-    names = sorted({k[0] for k in scratch})
-    out = {"seed": seed, "n_systems": len(names)}
+    excluded = sorted({k[0] for k, r in scratch.items() if reference_failed(r)})
+    names = sorted({k[0] for k in scratch} - set(excluded))
+    out = {"seed": seed, "n_systems": len(names), "excluded_reference_failed": excluded}
     # ---- D: discovery capability ----
     toolkit_ok, unlearnable, disc_ok = [], [], []
     for n in names:
@@ -65,14 +72,14 @@ def criteria(tag, seed):
     # ---- A1-A3 over the streams ----
     per_order = []
     for o, recs in sorted(streams.items()):
-        order = sorted({(k[0], k[1]) for k in recs})
+        order = sorted({(k[0], k[1]) for k in recs if k[1] not in excluded})
         half = len(order) // 2
         rows = []
-        for pos, name in order:
+        for rank, (pos, name) in enumerate(order):
             g = lambda mode: (lambda nm, M: recs.get((pos, nm, M, mode)))
             lib_get, dec_get, cop_get = g("library"), g("decoy"), g("copy_closest")
             scr_get = lambda nm, M: scratch.get((nm, M))
-            rows.append({"pos": pos, "name": name, "second": pos >= half,
+            rows.append({"pos": pos, "name": name, "second": rank >= half,
                          "lib8": exact(lib_get(name, 8)), "scr8": exact(scr_get(name, 8)),
                          "dec8": exact(dec_get(name, 8)) if dec_get(name, 8) else None,
                          "cop8": exact(cop_get(name, 8)) if cop_get(name, 8) else None,
