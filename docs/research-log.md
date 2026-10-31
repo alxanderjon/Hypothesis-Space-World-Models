@@ -2555,3 +2555,18 @@ The criteria themselves are unchanged. *Known when this rule was written:* the h
 ### Plain-language summary sent to the owner (Trial 26)
 
 Sent in chat after C0 was decided. G-familiar and remaining M = 64 numbers will be appended when phases 2–3 finish.
+
+## Trial 27 — proposed (31 October), awaiting owner approval: exact learning of ratio-type systems (capability), on a fresh pool
+
+- **Why capability first.** Trial 26 could not test accumulation on new kinds, because the learner recovered none of them (C0 = 0/27). A history test needs a learner that can recover such systems at all.
+- **Learner changes (generic, developed without Trial 26's test systems):**
+  1. A ratio-first search branch. It starts cold, with ratio terms allowed from step one, alongside the polynomial-first branch. It adds *swap* moves (replace a term) to add and prune.
+  2. A direct route to rational right-hand sides: multiply through by an unknown denominator (implicit linear fit, as in SINDy-PI), then the same exact flow-map polish.
+  3. A stiff-capable reference for the harness: an implicit high-order method or adaptive DOP853 at rtol 1e-14, checked against the fixed-step reference on non-stiff systems.
+  4. Internal validation with the converged, doubled substep count (the Trial 26 false rejects).
+- **Data: a fresh, untouched pool.** BioModels with 2 and 4 state variables (64 + 84 before filtering), converted with the same safe converter and filters. They are split *before any is opened* by a seeded hash into a development half and a held-out half. The held-out half is never inspected or run until the final run. Reserve sets A and B stay untouched.
+- **Criteria (both seeds; noise-free; the Trial 26 exactness definition):**
+  - **K1:** exact recovery on ≥ 50% of the held-out half at M = 64.
+  - **K2 (reported):** success rate and minimal-observation curve over M ∈ {2, 4, 8, 16, 32, 64}.
+  - **K3 (reported):** the artifact is faster than the original simulation, plus RHS-evaluation counts.
+- **No claim about learning from history in this trial.** If K1 passes, Trial 28 re-runs the Trial 26 accumulation design (strict never-seen building-block holdout, scrambled lessons, statistics-only screen, least-similar histories, growth with N) on systems inside the learner's demonstrated capability.
