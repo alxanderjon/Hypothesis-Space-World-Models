@@ -2716,6 +2716,42 @@ Work within the trial is autonomous from here. Trial 26's code stays frozen; Tri
   - Toolkit-only systems (728, 753, 866) are exact, including out of range.
   - The other 7 systems are not recovered: Hill saturations (114, 115), competitive ratios (458), 767, 507, Blasius and the logarithm system (776).
 
+### Trial 27 build notes, continued (31 Oct evening; development systems only)
+
+**Rehearsal.** A short end-to-end run of the evaluation driver (5 development systems, one order, one data draw, M = 8 and 64) wrote library, scratch, copy-the-closest and decoy records with no errors. Library entries are added only on the learner's own acceptance (never on the external check), so no test information reaches the learner. It also confirmed that discovery was too weak to justify the 14-hour evaluation, so the build continues on the development half.
+
+**Diagnosis of the failures (development half; true equations inspected).** Most of the 12 development systems that need discovery are representable within the approved template. They failed in the search, not for lack of shapes.
+- 507: a reciprocal whose pole sits 0.04 data-ranges outside the data. The starting grid only reached 0.25 ranges.
+- 114 and 115: Hill saturations with n = 4, times a variable.
+- 458: a competitive denominator, x0/(1 + a·x0 + b·x1), plus an ordinary reciprocal.
+- 573 and 767: Michaelis–Menten ratios with far poles (K = 380, 1000, 10000).
+- Blasius and HastingsPowell: Holling-type ratios times variables.
+- 881 is entirely toolkit-representable. Only 058 (nested rational Hill terms) and 855 (a four-variable denominator) are outside the template.
+
+**Discovery v4: dense scans of compact shapes.** The compact shapes are existing toolkit shapes on v = b·u + c.
+- Every combination is scored by its exact least-squares gain on the rate data, vectorized. A combination is a multiplier (none, one variable, or the same shape times two variables), an argument (one variable, then weighted sums extending the best ones), a shape, and grid constants.
+- The grids are generic. Poles, zero points and half-saturation points sit at log-spaced distances from the observed range, from 1e-3 to 1e4 ranges. Exponents are 1–4 and the halves, slopes run from 0.3 to 100 per range, and rates from 0.1 to 60 e-folds per range.
+- Several grid starts are refined for each shape. On 507 the exact start ranked 4th; the top start refined into a local fit.
+- Pieces are added by a small beam search (width 3 for d ≤ 2, 2 for d = 3, 1 for d = 4; up to 3 pieces per component; each step must halve the residual), so a wrong first piece can be outgrown. On 458 the one-at-a-time version picked a wrong first piece.
+- Then a sparse support is chosen over monomials and the found pieces, the model is polished on the step-to-step map, and the scanned pieces are offered to a re-solve of the sparse search.
+- The v3 curve discovery remains as the fallback. A near-exact model (held-back error ≤ 1e-9) gets a completion stage: compact pieces chosen by exact gains on the step-to-step map, which sees errors far below the rate-data noise.
+- **Time split.** Toolkit search to 30% of the budget, scans to 50% (polish to 60%), re-solve to 65%, curves to 85%, their re-solve to 100%. Completion and the final rewrite/refit have the same 15% / 25% grace periods as before.
+
+**Fixes found along the way.**
+- **Validity rule.** Discovered and library pieces are always judged by the relaxed limits. The strict Trial 26 limits had silently replaced far-pole pieces with polynomials inside the re-solve and during library reuse. Toolkit pieces keep the strict rule.
+- **Redundant constants held fixed.** In a·1/(b·u + c), a·exp(b·u + c), a·(b·u + c)^n and a·|b·u + c| one constant duplicates the coefficient, so it is held fixed while fitting. The family and the artifact are unchanged.
+- **Harness: reference substeps (affects both arms alike; fixed before any evaluation run).** The reference took its substep count from 100 sampled states. On 114 that was not enough: at some held-out states the 2-substep reference was off by 5.7e-10 (true answer from 8 to 1024 substeps, agreeing to 2e-14). The learned model, which was exact, was therefore marked inexact. The reference now uses the doubling rule on the sample and on up to 2000 recorded states, times a margin of 4 (RK8 error ÷ 65,536).
+
+**First results of v4** (M = 64, 900 s budget; truth checks are reporting only).
+- **114** (Hill n = 4 times a variable, in both equations) was discovered in 120 s. The held-back error was 3.6e-15 and the learned structure is the true one. It is exact out of range (1.7e-14).
+  - Its in-range error of 5.7e-10 was exactly the old reference's own error at those states. A re-check against the corrected reference is running.
+- **115** (Hill n = 4 times (x1 − x0)) and **458** (competitive denominator x0/(1 + a·x0 + b·x1), plus a reciprocal) were discovered in about 6 minutes each. Both are exact in range (5.7e-15, 2.6e-15) and out of range (4.6e-15, 3.3e-15).
+- **Blasius** (Holling-type ratios times variables, 3-D) was accepted at 6.2e-15 in 5 minutes.
+- **573** (Michaelis–Menten with a far pole): exact in range (1.5e-13) once the simplest-piece tie-break was added. Without it, the first piece to reach the noise level was a more complicated near-equivalent. Out of range it is not exact (6.3e-12): the far pole is only weakly determined by the observed region.
+- **Toolkit-only systems** (728, 753, 866) are unchanged: exact in range and out of range.
+- **Not yet recovered:** 507 and 767 (near-exact, 2e-12), HastingsPowell, 881 (4-D, 8e-10), and the two systems outside the template (058, 855).
+- **Tie-break added during these rounds.** Several pieces can reach the rate-data noise level. Once one has, only simpler pieces are still tried, and the simplest wins (fewest fitted numbers). Single-multiplier shapes are always among the refined candidates. The starts for shapes with an exponent include the best grid point for every exponent.
+
 ### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
 
 **G-familiar** (10 systems that resemble the history; reported, not counted). Exact-recovery rate by data amount:

@@ -202,7 +202,7 @@ def run_trial(names, seeds, orders, workers, include_scratch=True, include_decoy
     ctx = get_context("spawn")
     running = {}
     done = 0
-    with ProcessPoolExecutor(max_workers=workers, mp_context=ctx, max_tasks_per_child=1) as ex:
+    with ProcessPoolExecutor(max_workers=workers, mp_context=ctx) as ex:
         while queue or running:
             queue.sort(key=lambda e: e[0])
             while queue and len(running) < workers:
@@ -277,7 +277,7 @@ def main():
         jobs = removal_jobs(a.tag, [int(x) for x in a.seeds.split(",")])
         print(len(jobs), "removal jobs", flush=True)
         ctx = get_context("spawn")
-        with ProcessPoolExecutor(max_workers=a.workers, mp_context=ctx, max_tasks_per_child=1) as ex:
+        with ProcessPoolExecutor(max_workers=a.workers, mp_context=ctx) as ex:
             for job, rec in ex.map(run_one, jobs):
                 print(job["name"], job["M"], "removed", job["removed"], "->", rec.get("status"), rec.get("exact"), flush=True)
         return

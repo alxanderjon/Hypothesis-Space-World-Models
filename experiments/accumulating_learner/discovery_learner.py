@@ -356,11 +356,13 @@ def degenerate(term, Z, X, strict=True):
     linear trend or a monomial) or is singular there. Generic limits, the same for every system.
     strict=False (discovery hypotheses, judged by exactness): only singular or exactly-degenerate forms are rejected;
     a nearly linear ratio or exponential may be the truth (e.g. x*y/(y + 1000))."""
-    far, lin = (2.0, 1.0) if strict else (1e4, 1e-3)
     for f in term.factors:
         if not all(math.isfinite(v) for v in f.theta):
             return True
         if f.family in LIB_FAMILIES:
+            # discovered and library pieces are discovery hypotheses: always the relaxed limits (Trial 27 build fix; the
+            # strict limits removed far-pole pieces inside the re-solve and library reuse)
+            far, lin = 1e4, 1e-3
             if f.family in ("cheb", "libcurve"):
                 continue
             th = torch.tensor(f.theta)
@@ -388,7 +390,7 @@ def degenerate(term, Z, X, strict=True):
                     if pw <= 0.05:
                         return True
                     vp = v ** pw
-                    if float(vp.max()) < 0.05 or float(vp.min()) > 20:
+                    if float(vp.max()) < 0.05 * lin or float(vp.min()) > 20 / lin:
                         return True
             continue
         z, x = Z[:, f.var], X[:, f.var]
@@ -478,14 +480,42 @@ def simplify_degenerate(model, Zc, Xc):
     return model, changed
 
 
+def frozen_positions(terms):
+    """Positions, in the flat constant vector of `terms`, of constants made redundant by the term's linear coefficient
+    (kept fixed while fitting): crecip / cpow / cabs keep b, cexp keeps c (a*exp(b u + c) = a e^c exp(b u))."""
+    out, k = [], 0
+    for t in terms:
+        for f in t.factors:
+            if f.family in ("crecip", "cpow", "cabs", "cexp"):
+                o = 1 if isinstance(f.var, tuple) else 0
+                out.append(k + o + (1 if f.family == "cexp" else 0))
+            k += len(f.theta)
+    return out
+
+
+def _free_map(p, frozen):
+    """(free values, map q -> full vector, selection matrix S) for a constant vector p with `frozen` positions fixed."""
+    if not frozen:
+        return p, (lambda q: q), None
+    fz = set(frozen)
+    idx = torch.tensor([k for k in range(len(p)) if k not in fz], dtype=torch.long)
+    S = torch.zeros(len(p), len(idx))
+    S[idx, torch.arange(len(idx))] = 1.0
+    p0 = p.clone()
+    return p0[idx].clone(), (lambda q: p0 + S @ (q - p0[idx])), S
+
+
 def refine_support(terms, Z, X, y, iters=10):
     """Gauss-Newton on the nonlinear parameters of a support, linear coefficients projected out (VarPro)."""
     flat = [float(v) for t in terms for f in t.factors for v in f.theta]
     if not flat:
         r, c = lstsq_resid(design(terms, Z, X), y)
         return terms, float(r.norm()), c
-    resid = lambda p: lstsq_resid(design(terms, Z, X, _split_thetas(terms, p)), y)[0]
-    p = torch.tensor(flat)
+    p, full, _ = _free_map(torch.tensor(flat), frozen_positions(terms))
+    if p.numel() == 0:
+        r, c = lstsq_resid(design(terms, Z, X), y)
+        return terms, float(r.norm()), c
+    resid = lambda q: lstsq_resid(design(terms, Z, X, _split_thetas(terms, full(q))), y)[0]
     r = resid(p)
     lam = 1e-3
     for _ in range(iters):
@@ -504,7 +534,7 @@ def refine_support(terms, Z, X, y, iters=10):
             lam *= 10
             if lam > 1e8:
                 break
-    new = _with_thetas(terms, _split_thetas(terms, p))
+    new = _with_thetas(terms, _split_thetas(terms, full(p)))
     r, c = lstsq_resid(design(new, Z, X), y)
     if not torch.isfinite(r).all():
         return terms, float("inf"), c
@@ -669,6 +699,15 @@ class Model:
     def n_terms(self):
         return [len(s) for s in self.supports]
 
+    def frozen(self):
+        """Positions in params() of constants kept fixed while fitting (see frozen_positions)."""
+        k, out = 0, []
+        for terms, c in zip(self.supports, self.coefs):
+            k += len(c)
+            out += [k + q for q in frozen_positions(terms)]
+            k += sum(len(f.theta) for t in terms for f in t.factors)
+        return out
+
     def describe(self):
         return [[{"mono": list(t.mono), "factors": [[f.family, list(f.var) if isinstance(f.var, tuple) else f.var, list(f.theta),
                                                      list(f.meta)] for f in t.factors], "level": t.level,
@@ -718,8 +757,8 @@ def polish(model, z0, z1, iters=30, nsub=None):
         nsub = self_nsub(model, z0[: min(len(z0), 200)], max_nsub=16)   # provisional; final count re-chosen below
         if nsub is None:
             return model, 1, float("inf"), None
-    p = model.params()
-    f_res = lambda q: (rk8_torch(lambda zz: model.g(zz, q), z0, nsub) - z1).reshape(-1)
+    p, full, S = _free_map(model.params(), model.frozen())
+    f_res = lambda q: (rk8_torch(lambda zz: model.g(zz, full(q)), z0, nsub) - z1).reshape(-1)
     r = f_res(p)
     if not torch.isfinite(r).all():
         return model, nsub, float("inf"), None
@@ -749,7 +788,9 @@ def polish(model, z0, z1, iters=30, nsub=None):
             lam *= 10
             if lam > 1e10:
                 break
-    model.set_params(p)
+    model.set_params(full(p))
+    if J is not None and S is not None:
+        J = J @ S.T                                      # full-parameter Jacobian (zero columns for fixed constants)
     nsub2 = self_nsub(model, z0[: min(len(z0), 200)])
     if nsub2 is None:
         return model, nsub, float("inf"), None
@@ -890,6 +931,9 @@ def flowmap_add(model, z0, z1, nsub, cands_per_comp, Zc, Xc, prior, n_pre=48, n_
         return None
     S = torch.where(ok, S, torch.zeros_like(S))
     Jm = torch.func.jacfwd(lambda q: rk8_torch(lambda zz: model.g(zz, q), z0, nsub).reshape(-1))(base_p)
+    fz = set(model.frozen())
+    if fz:
+        Jm = Jm[:, [k for k in range(Jm.shape[1]) if k not in fz]]
     Q = torch.linalg.qr(Jm)[0] if Jm.shape[1] else torch.zeros(len(r), 0)
     Sp = S - Q @ (Q.T @ S)
     rp = r - Q @ (Q.T @ r)
@@ -1185,7 +1229,7 @@ def _try_candidate(model, i, base, ct, z0, z1, zv0, zv1, Zc, Xc, G, deadline, ve
     return best[0], ci, v, ce
 
 
-def discover(model0, z0, z1, zv0, zv1, Zc, Xc, G, mu, sig, deadline, verbose=False, top_k=6):
+def discover(model0, z0, z1, zv0, zv1, Zc, Xc, G, mu, sig, deadline, verbose=False, top_k=6, direct=True):
     """Add missing pieces m(z) g(u) to unsolved components until validation passes (or the budget ends).
     For each promising (multiplier, argument), compact existing-toolkit shapes on the argument are tried first (few
     constants, less over-fitting); a free curve is tried if none passes."""
@@ -1211,7 +1255,7 @@ def discover(model0, z0, z1, zv0, zv1, Zc, Xc, G, mu, sig, deadline, verbose=Fal
                 break
             base = base_terms(model, i, d, minimal=minimal)
             cands = screen_discovery(i, G, Zc, Xc, base, top_k=top_k, Zall=Zall)
-            r = _discover_component(model, i, base, cands, z0, z1, zv0, zv1, Zc, Xc, G, deadline, verbose)
+            r = _discover_component(model, i, base, cands, z0, z1, zv0, zv1, Zc, Xc, G, deadline, verbose, direct=direct)
             if r is not None and (best_i is None or r[1] < best_i[1]):
                 best_i = r
         if best_i is None or best_i[1] >= float(comp_err[i]):
@@ -1226,7 +1270,8 @@ def discover(model0, z0, z1, zv0, zv1, Zc, Xc, G, mu, sig, deadline, verbose=Fal
 
 COMPACT_STARTS = (("chill", (1.0, 2.0, 4.0)), ("chillr", (1.0, 2.0, 4.0)), ("crecip", (None,)), ("cexp", (None,)),
                   ("ctanh", (None,)), ("cpow", (0.5, -0.5, 1.5)))
-V_RANGES = ((0.1, 1.0), (0.3, 3.0), (1.0, 0.1), (3.0, 0.3), (-1.0, 1.0), (-2.0, 0.5), (10.0, 11.0), (100.0, 101.0), (-11.0, -10.0))
+V_RANGES = ((0.1, 1.0), (0.3, 3.0), (1.0, 0.1), (3.0, 0.3), (-1.0, 1.0), (-2.0, 0.5), (10.0, 11.0), (100.0, 101.0),
+            (1000.0, 1001.0), (10000.0, 10001.0), (-11.0, -10.0), (-1001.0, -1000.0))
 
 
 def screen_compact(i, G, Zc, Xc, base, Zall, keep=8):
@@ -1282,11 +1327,11 @@ def screen_compact(i, G, Zc, Xc, base, Zall, keep=8):
     return [ts for _, ts in out]
 
 
-def _discover_component(model, i, base, cands, z0, z1, zv0, zv1, Zc, Xc, G, deadline, verbose):
+def _discover_component(model, i, base, cands, z0, z1, zv0, zv1, Zc, Xc, G, deadline, verbose, direct=True):
     d = Zc.shape[1]
     best_i = None
-    # (0) direct compact-shape screening on single arguments, exact polish of the best few
-    for cts in screen_compact(i, G, Zc, Xc, base, torch.cat([z0, zv0]))[:4]:
+    # (0) direct compact-shape screening on single arguments, exact polish of the best few (v3; v4 scans run earlier)
+    for cts in (screen_compact(i, G, Zc, Xc, base, torch.cat([z0, zv0]))[:4] if direct else []):
         if time.time() > deadline:
             break
         f = cts[0].factors[0]
@@ -1350,6 +1395,315 @@ def _discover_component(model, i, base, cands, z0, z1, zv0, zv1, Zc, Xc, G, dead
             if best_i is not None and best_i[2] <= VAL_TOL:
                 break
     return best_i
+
+
+# ======================================================================================================================
+# Trial 27 discovery v4: dense, vectorized scans of compact shapes (existing toolkit shapes on v = b u + c)
+# ======================================================================================================================
+
+SCAN_FAMILIES = ("crecip", "cexp", "ctanh", "cpow", "chill")   # chillr = 1 - chill: the same column once a constant is in
+SCAN_EXPS = {"cpow": (-3.0, -2.0, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.0, 5.0), "chill": (1.0, 2.0, 3.0, 4.0, 0.5, 1.5, 2.5)}
+SCAN_WEIGHTS = tuple(sorted({sg * float(w) for w in np.geomspace(0.05, 20.0, 11) for sg in (-1.0, 1.0)}))
+
+
+def _grid(fam, u, lo, hi):
+    """Generic dense grid of constants for one compact family on an argument with observed range [lo, hi]; returns
+    (constant tuples (b, c[, n]) of v = b u + c, (N, G) shape values on u). Poles, zero points and half-saturation points
+    sit at log-spaced distances from the observed range (1e-3 to 1e4 ranges), so near and far ones are both covered."""
+    s = hi - lo
+    if fam == "crecip":                                          # 1 / (u - p), pole outside the observed range
+        dl = torch.logspace(-3, 4, 57)
+        p = torch.cat([lo - dl * s, hi + dl * s] + ([torch.zeros(1)] if (lo > 0 or hi < 0) else []))
+        return [(1.0, -float(q)) for q in p], 1.0 / (u[:, None] - p[None, :])
+    if fam == "cexp":                                            # 0.1 to 60 e-folds over the range, both signs
+        r = torch.logspace(-1, math.log10(60.0), 25)
+        b = torch.cat([r, -r]) / s
+        m = 0.5 * (lo + hi)
+        return [(float(bb), float(-bb * m)) for bb in b], torch.exp(b[None, :] * (u[:, None] - m))
+    if fam == "ctanh":                                           # centres around the range, 0.3 to 100 slopes per range
+        cen = torch.linspace(lo - 0.5 * s, hi + 0.5 * s, 17)
+        sl = torch.logspace(-0.5, 2.0, 11) / s
+        B, C = torch.meshgrid(sl, cen, indexing="ij")
+        b, cc = B.reshape(-1), C.reshape(-1)
+        return [(float(bb), float(-bb * q)) for bb, q in zip(b, cc)], torch.tanh(b[None, :] * (u[:, None] - cc[None, :]))
+    # positive-base families: zero point u0 of v left of the range (v increasing) or right of it (v decreasing)
+    dl = torch.logspace(-3, 3, 25 if fam == "cpow" else 13)
+    zeros = [(lo - dl * s, 1.0), (hi + dl * s, -1.0)]
+    if lo > 0:
+        zeros.append((torch.zeros(1), 1.0))
+    if hi < 0:
+        zeros.append((torch.zeros(1), -1.0))
+    th, cols = [], []
+    for u0, side in zeros:
+        if fam == "cpow":                                        # v = 1 at the edge nearest the zero point
+            b = side / ((lo - u0) if side > 0 else (u0 - hi))
+            c = -b * u0
+            v = b[None, :] * u[:, None] + c[None, :]
+            for n in SCAN_EXPS["cpow"]:
+                th += [(float(bb), float(q), n) for bb, q in zip(b, c)]
+                cols.append(v ** n)
+        else:                                                    # chill: half saturation kappa ranges from the zero point
+            U0, K = torch.meshgrid(u0, torch.logspace(-2, 3, 16), indexing="ij")
+            b = side / (K.reshape(-1) * s)
+            c = -b * U0.reshape(-1)
+            v = b[None, :] * u[:, None] + c[None, :]
+            for n in SCAN_EXPS["chill"]:
+                th += [(float(bb), float(q), n) for bb, q in zip(b, c)]
+                vp = v ** n
+                cols.append(vp / (1.0 + vp))
+    return th, torch.cat(cols, 1)
+
+
+def piece_cost(terms):
+    """Fitted numbers of a piece: one coefficient per term plus its free constants."""
+    return sum(1 + len(t.factors[0].theta) for t in terms) - len(frozen_positions(terms))
+
+
+def _mult_sets(d, pairs=True):
+    ms = [None] + list(range(d))
+    out = [(m,) for m in ms]
+    if pairs:                                     # the same shape times two different multipliers (e.g. (y - x) h(y))
+        out += [(m1, m2) for i1, m1 in enumerate(ms) for m2 in ms[i1 + 1:]]
+    return out
+
+
+def _scan_terms(d, ms, fam, a, th):
+    var = a if isinstance(a, int) else (a[0], a[1])
+    theta = tuple(th) if isinstance(a, int) else (float(a[2]),) + tuple(th)
+    fac = Factor(fam, var, theta, ("new",))
+    return [Term(tuple([0] * d) if m is None else tuple(int(q == m) for q in range(d)), (fac,), 1) for m in ms]
+
+
+def scan_pieces(y, Zc, Xc, base, Zall, keep=8, args=None, mult_sets=None, fams=SCAN_FAMILIES, deadline=float("inf"),
+                per_key=8):
+    """Exact least-squares gain over `base` (derivative data y) of every (multiplier set, argument, compact family, grid
+    constants) column, vectorized. Returns the best `keep` distinct (multiplier set, family, argument) keys, best first,
+    each as (best gain, multiplier set, [(gain, terms) for its best `per_key` grid points]) with grid constants (refined by
+    the caller; the best grid point does not always refine to the best fit)."""
+    d = Zc.shape[1]
+    N = len(y)
+    P = design(base, Zc, Xc)
+    Q = torch.linalg.qr(P)[0] if P.shape[1] else torch.zeros(N, 0)
+    r = y - Q @ (Q.T @ y)
+    mv = {None: torch.ones(N)}
+    mv.update({m: Zc[:, m] for m in range(d)})
+    mult_sets = mult_sets or _mult_sets(d)
+    best = {}
+    for a in (args if args is not None else list(range(d))):
+        if time.time() > deadline:
+            break
+        if isinstance(a, tuple):
+            u, ua = Zc[:, a[0]] + a[2] * Zc[:, a[1]], Zall[:, a[0]] + a[2] * Zall[:, a[1]]
+        else:
+            u, ua = Zc[:, a], Zall[:, a]
+        lo, hi = float(ua.min()), float(ua.max())
+        if not (hi - lo > 1e-9):
+            continue
+        for fam in fams:
+            ths, Gm = _grid(fam, u, lo, hi)
+            ok = torch.isfinite(Gm).all(0)
+            Gm = torch.where(ok[None, :], Gm, torch.zeros_like(Gm))
+            proj = {}
+            for ms in mult_sets:
+                for m in ms:
+                    if m not in proj:
+                        V = mv[m][:, None] * Gm
+                        Vp = V - Q @ (Q.T @ V)
+                        proj[m] = (Vp, (V * V).sum(0), (Vp * Vp).sum(0), Vp.T @ r)
+                if len(ms) == 1:
+                    _, tot, den, num = proj[ms[0]]
+                    gain = num ** 2 / den.clamp(min=1e-300)
+                    valid = ok & (den > 1e-20 * tot) & (tot > 0)
+                else:
+                    (V1, t1, A, a1), (V2, t2, B, b1) = proj[ms[0]], proj[ms[1]]
+                    C = (V1 * V2).sum(0)
+                    det = A * B - C ** 2
+                    gain = (B * a1 ** 2 - 2 * C * a1 * b1 + A * b1 ** 2) / det.clamp(min=1e-300)
+                    valid = ok & (A > 1e-20 * t1) & (B > 1e-20 * t2) & (det > 1e-10 * A * B)
+                gain = torch.where(valid & torch.isfinite(gain), gain, torch.zeros_like(gain))
+                srt = torch.argsort(-gain).tolist()
+                if fam in SCAN_EXPS:      # diverse starts: the best grid point of every exponent first, then the rest
+                    firsts, seen_n = [], set()
+                    for k in srt:
+                        if ths[k][2] not in seen_n:
+                            seen_n.add(ths[k][2]); firsts.append(k)
+                    top = (firsts + [k for k in srt if k not in set(firsts)])[:per_key]
+                else:
+                    top = srt[:per_key]
+                pts = [(float(gain[k]), ths[k], a) for k in top if float(gain[k]) > 0]
+                key = (ms, fam, a if isinstance(a, int) else (a[0], a[1]))
+                if pts:
+                    if key not in best or pts[0][0] > best[key][0][0]:      # weighted sums: keep the best weight's starts
+                        best[key] = pts
+    ranked = sorted(best.items(), key=lambda e: -e[1][0][0])
+    ranked = [e for e in ranked if len(e[0][0]) == 1][:keep] + [e for e in ranked if len(e[0][0]) == 2][:keep]
+    ranked.sort(key=lambda e: -e[1][0][0])                  # the best `keep` of each multiplier kind
+    return [(pts[0][0], key[0], [(g, _scan_terms(d, key[0], key[1], a, th)) for g, th, a in pts]) for key, pts in ranked]
+
+
+def scan_component(i, G, Zc, Xc, Zall, base0, tol, deadline, max_pieces=3, beam=None, verbose=False):
+    """Derivative-level discovery for component i: dense scans of compact shapes over single arguments, then weighted
+    sums extending the best ones; several grid starts per shape are refined (all constants, VarPro). Pieces are added by
+    a small beam search (up to `max_pieces`; a step must halve the residual), so a wrong first piece can be outgrown.
+    Returns (pieces (term lists), full support, relative residual)."""
+    d = Zc.shape[1]
+    beam = beam or (3 if d <= 2 else (2 if d == 3 else 1))
+    y = G[:, i]
+    ny = float(y.norm()) + 1e-300
+    nb = len(base0)
+    r0, _ = lstsq_resid(design(base0, Zc, Xc), y)
+    beams = [(float(r0.norm()) / ny, list(base0), [], 0)]   # (relative residual, support, term count of each piece, cost)
+    best = beams[0]
+    for _ in range(max_pieces):
+        if best[0] <= tol or time.time() > deadline:
+            break
+        expansions = []
+        for rel_b, sup_b, sizes_b, cost_b in beams:
+            if time.time() > deadline:
+                break
+            cands = scan_pieces(y, Zc, Xc, sup_b, Zall, keep=8, deadline=deadline)
+            ext, msets, fams = set(), set(), set()
+            for _, ms, pts in cands[:4]:
+                f = pts[0][1][0].factors[0]
+                if isinstance(f.var, int):
+                    ext |= {(f.var, k, w) for k in range(d) if k != f.var for w in SCAN_WEIGHTS}
+                    msets.add(ms); fams.add(f.family)
+            if ext and time.time() < deadline:
+                cands += scan_pieces(y, Zc, Xc, sup_b, Zall, keep=8, args=sorted(ext), mult_sets=sorted(msets, key=str),
+                                     fams=tuple(sorted(fams)), deadline=deadline)
+            cands.sort(key=lambda e: -e[0])
+            # a shared shape times two multipliers always gains at least as much as either alone: keep the best keys of
+            # both kinds, so single-multiplier pieces are refined too
+            ones = [c for c in cands if len(c[1]) == 1][:4]
+            cands = sorted(ones + [c for c in cands if len(c[1]) == 2][:8 - len(ones)], key=lambda e: -e[0])
+            # refine round-robin: the best grid point of every shape, then the second best of every shape, ...
+            order = [c[2][k][1] for k in range(max((len(c[2]) for c in cands), default=0)) for c in cands if k < len(c[2])]
+            # several pieces can reach the rate-data noise level (a far-pole ratio and a power, say): once one has, only
+            # simpler pieces are still tried, and the simplest one at the noise level wins (fewest fitted constants)
+            simplest = None
+            for ts in order[:40]:
+                if time.time() > deadline:
+                    break
+                cost = piece_cost(ts)
+                if simplest is not None and cost >= simplest:
+                    continue
+                terms, res, _ = refine_support(sup_b + ts, Zc, Xc, y, iters=20)
+                nts = terms[len(sup_b):]
+                if not math.isfinite(res) or any(degenerate(t, Zc, Xc, strict=False) for t in nts):
+                    continue
+                if verbose:
+                    f = nts[0].factors[0]
+                    print(f"     scan comp {i}: {f.family} arg={f.var} mult={[[k for k, e in enumerate(t.mono) if e] for t in nts]} "
+                          f"rel {res / ny:.2e} (from {rel_b:.2e}) cost {cost}", flush=True)
+                expansions.append((res / ny, terms, sizes_b + [len(nts)], cost_b + cost))
+                if res / ny <= tol:
+                    simplest = cost if simplest is None else min(simplest, cost)
+            if expansions and min(e[0] for e in expansions) <= tol:
+                break
+        if not expansions:
+            break
+        expansions.sort(key=lambda e: (e[0] > tol, e[3] if e[0] <= tol else 0, e[0]))
+        new_beams, seen = [], set()
+        for e in expansions:
+            k = tuple(sorted(str((t.mono, t.factors[0].family, t.factors[0].var)) for t in e[1][nb:]))
+            if k not in seen:
+                seen.add(k); new_beams.append(e)
+            if len(new_beams) >= beam:
+                break
+        if new_beams[0][0] > 0.5 * best[0]:
+            break
+        beams, best = new_beams, new_beams[0]
+    rel, support, sizes, _ = best
+    pieces, k = [], nb
+    for n in sizes:
+        pieces.append(support[k:k + n]); k += n
+    return pieces, support, rel
+
+
+def discover_scan(model0, z0, z1, zv0, zv1, Zc, Xc, G, noise, mu, sig, prior, deadline, max_terms=8, verbose=False):
+    """Discovery v4: for every component whose held-back error is above tolerance, derivative-level scan discovery
+    (scan_component), then a sparse support over monomials and the found pieces; the assembled model is polished on the
+    step-to-step map. Returns (model or None, validation error, proposed pieces (term lists))."""
+    d = Zc.shape[1]
+    Zall = torch.cat([z0, zv0])
+    if model0 is not None:
+        _, comp_err, _ = converged_val(model0, z0, zv0, zv1)
+        sups = [list(t) for t in model0.supports]
+    else:
+        comp_err, sups = None, [base_terms(None, i, d) for i in range(d)]
+    order = list(range(d)) if comp_err is None else [int(k) for k in torch.argsort(-comp_err).tolist()
+                                                      if float(comp_err[k]) > VAL_TOL]
+    proposals, changed = [], False
+    for i in order:
+        if time.time() > deadline:
+            break
+        y = G[:, i]
+        tol = max(3.0 * float(noise[i]) / (float(y.norm()) / math.sqrt(len(y)) + 1e-300), 1e-12)
+        base = base_terms(model0, i, d, minimal=True)
+        pieces, full, rel = scan_component(i, G, Zc, Xc, Zall, base, tol, deadline, verbose=verbose)
+        if not pieces:
+            continue
+        proposals += pieces
+        cands = [Term(m, (), 1) for m in monomials(d)] + [t for t in full if t.factors]
+        ranked = screen_component(y, Zc, Xc, cands, prior, tol, max_terms=max_terms)
+        sparse, srel = ranked[0]
+        sups[i] = list(sparse) if (sparse and srel <= max(10 * rel, tol)) else full
+        changed = True
+        if verbose:
+            print(f"   scan comp {i}: {len(pieces)} piece(s), rel {rel:.2e}, sparse support {len(sparse)} terms rel {srel:.2e}",
+                  flush=True)
+    if not changed:
+        return None, float("inf"), proposals
+    cfs = [lstsq_resid(design(sups[i], Zc, Xc), G[:, i])[1] for i in range(d)]
+    if model0 is not None:                              # unchanged components keep their fitted coefficients
+        cfs = [model0.coefs[i].clone() if sups[i] == list(model0.supports[i]) else cfs[i] for i in range(d)]
+    model = Model(sups, cfs, mu, sig)
+    try:
+        model, nsub, err, J = polish_clean(model, z0, z1, Zc, Xc)
+        if not math.isfinite(err):
+            return None, float("inf"), proposals
+        model, nsub, err, J = prune(model, z0, z1, nsub, err, J)
+        val, _, _ = converged_val(model, z0, zv0, zv1)
+    except (RuntimeError, ValueError):
+        return None, float("inf"), proposals
+    if verbose:
+        print(f"   scan discovery model: terms {model.n_terms()} train {err:.2e} val {val:.2e}", flush=True)
+    return model, val, proposals
+
+
+def flowmap_scan_add(model, z0, z1, nsub, Zall, n_pre=48, verbose=False):
+    """Completion on the step-to-step map: every compact-shape grid column (single arguments, multiplier none or one
+    variable) is scored by the exact flow-map loss gradient (stage adjoints); the best few enter flowmap_add, which adds
+    the one with the largest exact projected gain. Returns the extended model (new coefficient 0) or None."""
+    d = z0.shape[-1]
+    Zs, adj = stage_adjoints(model, z0, z1, nsub)
+    scored = []
+    for i in range(d):
+        a_i = adj[:, i]
+        for a in range(d):
+            ua = Zall[:, a]
+            lo, hi = float(ua.min()), float(ua.max())
+            if not (hi - lo > 1e-9):
+                continue
+            for fam in SCAN_FAMILIES:
+                ths, Gm = _grid(fam, Zs[:, a], lo, hi)
+                ok = torch.isfinite(Gm).all(0)
+                Gm = torch.where(ok[None, :], Gm, torch.zeros_like(Gm))
+                for m in [None] + list(range(d)):
+                    V = Gm if m is None else Zs[:, m][:, None] * Gm
+                    sc = V.pow(2).mean(0).sqrt()
+                    val = (V.T @ a_i).abs() / sc.clamp(min=1e-30)
+                    val = torch.where(ok & (sc > 1e-12) & torch.isfinite(val), val, torch.zeros_like(val))
+                    for k in torch.argsort(-val)[:2].tolist():
+                        if float(val[k]) > 0:
+                            scored.append((float(val[k]), i, _scan_terms(d, (m,), fam, a, ths[k])[0]))
+    scored.sort(key=lambda e: -e[0])
+    pools = [[] for _ in range(d)]
+    for _, i, t in scored[:n_pre]:
+        pools[i].append(t)
+    if not any(pools):
+        return None
+    return flowmap_add(model, z0, z1, nsub, pools, None, None, lambda key: 0.0, n_pre=n_pre, verbose=verbose)
 
 
 # ======================================================================================================================
@@ -1543,6 +1897,10 @@ def as_library_piece(rec):
 # the Trial 27 learner
 # ======================================================================================================================
 
+class _Solved(Exception):
+    pass
+
+
 def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose=False, max_terms=8,
           stepwise_rounds=8, levels_plan=((0,), (1,)), composite_budget=4000, library=None, discover_pieces=True,
           standard_frac=0.3):
@@ -1672,16 +2030,45 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
     if discover_pieces and (best is None or best["val_err_scaled"] > VAL_TOL) and time.time() < t_start + time_limit:
         report["discovery_used"] = True
         try:
-            disc_deadline = t_start + 0.7 * time_limit         # the last 30% is kept for the re-solve
+            # (v4) dense scans of compact shapes on the derivative data, several pieces per component
+            scan_deadline = t_start + 0.5 * time_limit
+            DEADLINE[0] = scan_deadline + 0.1 * time_limit      # the assembled model's polish may run a little longer
+            m, v, scan_props = discover_scan(best["model"] if best is not None else None, z0, z1, zv0, zv1, Zc, Xc, G,
+                                             noise, mu, sig, prior, scan_deadline, max_terms=max_terms, verbose=verbose)
+            DEADLINE[0] = t_start + time_limit
+            if m is not None and math.isfinite(v) and (best is None or v < best["val_err_scaled"]):
+                best = {"model": m, "nsub": None, "val_err_scaled": v, "train_err_scaled": float("nan"), "levels": "scan"}
+            # re-solve: the scanned pieces (with every multiplier) are offered to the sparse search as candidates
+            if best is not None and best["val_err_scaled"] > VAL_TOL and scan_props and time.time() < t_start + 0.65 * time_limit:
+                zero = tuple([0] * d)
+                monos = [zero] + [tuple(int(q == k) for q in range(d)) for k in range(d)]
+                extra, seen = [], set()
+                for ts in scan_props:
+                    for t in ts:
+                        for mo in monos:
+                            key = (mo, t.factors[0].family, t.factors[0].var, tuple(round(x, 9) for x in t.factors[0].theta))
+                            if key not in seen:
+                                seen.add(key); extra.append(Term(mo, t.factors, 1))
+                nonlocal_deadline[0] = t_start + 0.65 * time_limit
+                DEADLINE[0] = nonlocal_deadline[0]
+                if verbose:
+                    print(f"   re-solve with {len(scan_props)} scanned piece(s), {len(extra)} candidates", flush=True)
+                best = standard_search(((1,),), extra, best)
+                DEADLINE[0] = t_start + time_limit
+                if best is not None and best["val_err_scaled"] <= VAL_TOL:
+                    report["resolved_with_discovered_pieces"] = True
+            if best is not None and best["val_err_scaled"] <= VAL_TOL:
+                raise _Solved()
+            disc_deadline = t_start + 0.85 * time_limit        # curves; the last 15% is kept for their re-solve
             DEADLINE[0] = disc_deadline
             m = discover(best["model"] if best is not None else None, z0, z1, zv0, zv1, Zc, Xc, G, mu, sig,
-                         deadline=disc_deadline, verbose=verbose)
+                         deadline=disc_deadline, verbose=verbose, direct=False)
             DEADLINE[0] = t_start + time_limit
             v, _, _ = converged_val(m, z0, zv0, zv1)
             if math.isfinite(v) and (best is None or v < best["val_err_scaled"]):
                 best = {"model": m, "nsub": None, "val_err_scaled": v, "train_err_scaled": float("nan"), "levels": "discovery"}
             # discover, then re-solve: the pieces discovery proposed are offered to the sparse search as candidates
-            if best["val_err_scaled"] > VAL_TOL and time.time() < t_start + time_limit:
+            if best is not None and best["val_err_scaled"] > VAL_TOL and time.time() < t_start + time_limit:
                 proposed = Library()
                 for pc in discovered_pieces(m, Zc):
                     if pc.get("origin") == "new":
@@ -1697,9 +2084,40 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
                     DEADLINE[0] = t_start + time_limit
                     if best is not None and best["val_err_scaled"] <= VAL_TOL:
                         report["resolved_with_discovered_pieces"] = True
+        except _Solved:
+            pass
         except (RuntimeError, ValueError) as e:
             if verbose:
                 print("   discovery failed:", str(e)[:120], flush=True)
+    # ---- completion: a near-exact model gets compact pieces chosen by exact gains on the step-to-step map ----
+    if discover_pieces and best is not None and VAL_TOL < best["val_err_scaled"] <= 1e-9:
+        DEADLINE[0] = time.time() + 0.15 * time_limit
+        try:
+            model = best["model"]
+            Zall = torch.cat([z0, zv0])
+            for _ in range(3):
+                nsub_c = self_nsub(model, z0[:200])
+                if nsub_c is None or time.time() > DEADLINE[0]:
+                    break
+                new = flowmap_scan_add(model, z0, z1, nsub_c, Zall, verbose=verbose)
+                if new is None:
+                    break
+                new, nsub_n, err_n, J_n = polish(new, z0, z1, iters=30)
+                if not math.isfinite(err_n):
+                    break
+                new, nsub_n, err_n, J_n = prune(new, z0, z1, nsub_n, err_n, J_n)
+                v, _, _ = converged_val(new, z0, zv0, zv1)
+                if verbose:
+                    print(f"   completion: terms {new.n_terms()} train {err_n:.1e} val {v:.1e}", flush=True)
+                if not v < best["val_err_scaled"]:
+                    break
+                best = {"model": new, "nsub": None, "val_err_scaled": v, "train_err_scaled": err_n, "levels": "completion"}
+                model = new
+                if v <= VAL_TOL:
+                    break
+        except (RuntimeError, ValueError) as e:
+            if verbose:
+                print("   completion failed:", str(e)[:120], flush=True)
     # ---- compact rewrite of discovered curves (classification of every new piece) ----
     DEADLINE[0] = time.time() + 0.25 * time_limit           # grace period for the rewrite and the final refit
     if best is not None and best["val_err_scaled"] <= VAL_TOL and any(

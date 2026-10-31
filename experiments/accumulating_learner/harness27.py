@@ -24,6 +24,7 @@ STEPS = 100            # steps per period (oscillator) or per settle time (trans
 REC_STEPS = 150        # transient recording length in steps (before interval refinement)
 N_LEARN_REC = 64       # transient learning recordings (varied starting states)
 MAX_REF_NSUB = 2       # sampling rule: the true system needs at most this many substeps per interval
+REF_MARGIN = 4         # reference substeps = 4 x the converged count (RK8 error / 65536); Trial 27 build fix
 
 
 def split_half(mid):
@@ -115,10 +116,17 @@ class Reference27:
         else:
             self._transient(s, rng)
 
+    def _ref_nsub(self, s, sample, states):
+        """Reference substeps (Trial 27 build fix): the doubling rule on the 100 sampled states and on a deterministic
+        stride of up to 2000 recorded states, times REF_MARGIN (a 100-state sample missed demanding states: on a
+        development system the 2-substep reference was off by 6e-10 at held-out states, failing an exact model)."""
+        n = max(choose_nsub(s, sample, self.scale), choose_nsub(s, states[:: max(1, len(states) // 2000)], self.scale))
+        return REF_MARGIN * n
+
     # -- oscillators: as in Trial 26 (burn-in on the attractor) --
     def _refine_dt(self, s, states, scale):
-        """Sampling rule (Trial 27, both halves alike): halve the recording interval until the true system needs <= 8
-        substeps per interval (dynamics resolved, as for the catalog systems of Trial 26). Returns the substep count."""
+        """Sampling rule (Trial 27, both halves alike): halve the recording interval until the true system needs
+        <= MAX_REF_NSUB substeps per interval (dynamics resolved). Returns the substep count."""
         self.refine = 0
         nsub = choose_nsub(s, states, scale)
         while nsub > MAX_REF_NSUB and self.refine < 6:
@@ -138,7 +146,7 @@ class Reference27:
         if not np.all(np.isfinite(long)):
             raise RuntimeError("reference burn-in diverged")
         self.scale = long.std(0) + 1e-12 * (np.abs(long).mean(0) + 1e-12)
-        self.nsub = choose_nsub(s, long[rng.choice(len(long), 100, replace=False)], self.scale)
+        self.nsub = self._ref_nsub(s, long[rng.choice(len(long), 100, replace=False)], long)
         starts = long[rng.choice(len(long), 8, replace=False)] * (1 + 1e-3 * rng.standard_normal((8, s.d)))
         y = s.rollout(starts, self.nsub, 10 * STEPS * 2 ** self.refine)[:, -1]
         trajs = s.rollout(y, self.nsub, 3000 * 2 ** self.refine)
@@ -178,7 +186,7 @@ class Reference27:
         learn = s.rollout(f_learn, nsub, steps)
         flat = learn.reshape(-1, d)
         self.scale = flat.std(0) + 1e-12 * (np.abs(flat).mean(0) + 1e-12)
-        self.nsub = choose_nsub(s, flat[rng.choice(len(flat), 100, replace=False)], self.scale)
+        self.nsub = self._ref_nsub(s, flat[rng.choice(len(flat), 100, replace=False)], flat)
         self.learn_trajs = s.rollout(f_learn, self.nsub, steps)
         self.held_trajs = s.rollout(f_held, self.nsub, steps)
         self.oor_trajs = s.rollout(f_oor, self.nsub, steps)
