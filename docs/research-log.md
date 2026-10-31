@@ -2163,3 +2163,123 @@ Architecture (width 256, 8 layers, about 6.5M parameters), training budget (100k
 - **Fail:** report it. The Trial 25 result is then not robust to seeds, and the next step is diagnosing the seed sensitivity.
 
 **Resources:** 10 learners, at most 2 per GPU on GPUs 0–3 and 5–7, 2 CPU threads each, nice 10. Checkpoints about 26 MB each.
+
+---
+
+# GOAL CORRECTION (31 October) — exact recovery replaces prediction error
+
+The owner corrected the goal. **Prediction error compared with kernel ridge is not the target.**
+
+**Ultimate goal.** A network that learns physical systems *exactly* from data, so it can generate the physics without running a physics package, and that gets better at learning new systems the more systems it has learned.
+
+**Rules:**
+- **Exactness.** The learned network reproduces each system's trajectories to machine precision, regardless of model form. Equations cannot be assumed known; for some systems they are unknown.
+- **Cheap to use.** Running the learned network must be cheaper than running the original simulation.
+- **Teaching is unrestricted.** Heavy search, teacher pipelines (like N1/N2/N3), Newton polishing and long training are all allowed. Learning cost is not a constraint, but it is reported.
+- **It must actually learn.** The network may not be given the true equations or call the simulator when generating trajectories. The final artifact generates the physics on its own from what it learned from data.
+- **Accumulation.** Knowledge from earlier systems should make exact recovery of new systems more reliable and possible from fewer observations.
+
+**New success criterion** (replaces standing rule 2):
+- Observations are noise-free.
+- **Exact recovery:** on held-out starting states not used for fitting, the learned one-step map matches the true system to near machine precision (relative error ~1e-12 or better), and multi-step trajectories stay at that level up to a horizon justified from each system's chaos timescale.
+- **Experience** is measured by how the *success rate* of exact recovery, and the *number of observations needed*, improve as the number of past systems grows, compared with learning each system from scratch.
+
+**Housekeeping:**
+- Trials 1–25 optimized the wrong target. They remain context.
+- The prediction-error replication pre-registered above as "Trial 26" was **stopped before evaluation** on this goal change. It is renumbered **25R (aborted, not evaluated)**, so Trial 26 is the first trial under the new goal.
+- Running count of trials evaluated on the development systems under any goal: 25.
+
+## How exactness is defined and measured, per system
+
+These definitions apply to every trial from now on. Notation: true vector field f (never given to the learner), dimension d, attractor scale s_i = per-coordinate standard deviation over a long reference trajectory, characteristic period P, and largest Lyapunov exponent λ (from the catalog metadata, or estimated by tangent dynamics for BioModels).
+
+1. **One-step interval.** Δt = P/100, used both for observations and as the artifact's step.
+2. **Reference one-step map Φ** (truth, for evaluation only).
+   - The true f is integrated over Δt with a fixed-step 8th-order Runge–Kutta (scipy's DOP853 tableau) in float64.
+   - The number of substeps is the smallest power of two for which doubling it changes Φ by ≤ 1e-15·s on 100 attractor states.
+   - Sanity check: Φ agrees with scipy `solve_ivp`(DOP853, rtol 1e-13) to ≤ 1e-13·s.
+3. **Held-out starting states.**
+   - 1,000 states on 4 held-out trajectories (initial conditions and instances never used for learning), after burn-in.
+   - 100 of them start the multi-step tests.
+4. **One-step exactness:** e₁ = max over held-out states and coordinates of |Φ̂ᵢ(x) − Φᵢ(x)| / sᵢ ≤ **1e-12**. Median and error relative to the step displacement are also reported.
+5. **Multi-step exactness.**
+   - **Error curve.** e(k) = max over coordinates of |X̂ᵢ(k) − Xᵢ(k)| / sᵢ (median and 90th percentile over the 100 starts), where X is the reference rollout and X̂ the artifact's rollout.
+   - **Ideal-model envelope.** E*(k) is the median error of the *true* map with an independent random perturbation of size 1e-12·s injected every step, i.e. what a model sitting exactly at the 1e-12 threshold would achieve on this system (20 Monte-Carlo runs).
+   - **Horizon.** H = the first k at which E*(k) reaches 1e-6, capped at 2,000 steps (20 periods). For chaotic systems, H ≈ ln(10⁶)/(λΔt) steps; for non-chaotic ones, the cap applies.
+   - **Pass:** median e(k) ≤ 10·E*(k) and 90th percentile ≤ 100·E*(k) for all k ≤ H.
+   - **Justification.** E* *is* the chaos timescale applied to a 1e-12-accurate map: no model at that accuracy can do better. The horizon stops where errors leave the linear-growth regime.
+6. **Exact recovery** = one-step *and* multi-step pass.
+7. **Cost.**
+   - Wall time to generate 1 trajectory × 1,000 steps, and 100 trajectories × 1,000 steps, with the artifact, against the *original simulation*: scipy `solve_ivp`(DOP853, rtol 1e-13, atol 1e-15·s) on the true right-hand side, with the same outputs and the same machine.
+   - FLOPs per step for both are reported.
+   - "Cheap" means the artifact is faster in both settings.
+
+## Trial 26: exact recovery by expression-network discovery with machine-precision polishing; accumulation through a growing term library (pre-registered 31 October, before running)
+
+### Approach
+
+Machine precision across a whole attractor is out of reach for generic fixed-form approximators at feasible sizes. Every earlier learner here, a learned basis plus linear head or a Transformer, has an error floor between 1e-2 and 1e-6.
+
+The feasible route is to discover *what the dynamics are made of*. The learner builds an **expression network** for f: a sparse computational graph of learned terms with learned constants. It polishes every constant to machine precision with Gauss–Newton/Levenberg–Marquardt on the one-step flow map. The artifact is that network plus its own fixed-step 8th-order integrator.
+
+- **Nothing about any specific system is supplied.** What is supplied, once and for all systems, is a generic grammar of elementary building blocks. This is the approach's main assumption: dynamics are finite compositions of elementary functions. That holds for every catalog and BioModels system, and for most physics.
+- **Experience** grows the grammar, by promoting discovered composite terms, and supplies a prior over which building blocks to try first and where their constants tend to lie.
+
+### Observations (noise-free; the learner never sees f and never calls the simulator)
+
+- M bursts of L = 13 consecutive states at spacing Δt, with burst starts drawn from 4 learning trajectories on the attractor, disjoint from the held-out ones.
+- **Observation count = 13M.** Grid: M ∈ {2, 4, 8, 16, 32, 64}, i.e. 26 to 832 observations.
+
+### Grammar (generic, fixed before looking at any test system's equations)
+
+Coordinates are internally centred and scaled.
+
+- **Level 1, base terms:**
+  - the constant;
+  - monomials of total degree ≤ 3;
+  - single-variable factors with fitted constants: sin(ωx + φ), exp(ax), tanh(ax + b), |x − b|, |x|^p (real p), 1/(K + x);
+  - and each non-polynomial factor multiplied by one linear monomial.
+- **Level 2, composites** (budgeted search):
+  - products of two non-polynomial factors;
+  - saturations u/(K + u) and K/(K + u) of a base factor u (covering Michaelis–Menten and Hill forms).
+- **Level 3:** products of two level-2 saturations.
+
+### Teacher pipeline, per system (unrestricted cost; reported)
+
+1. **Derivatives.** Estimated at the 5 interior points of each burst with 9-point central differences. They are used only for screening.
+2. **Term screening, per component.** Beam search (width 5) of greedy forward selection with backtracking. Linear coefficients come from least squares; nonlinear constants from variable projection (grid plus Gauss–Newton). Level 1 first, then levels 2 and 3 within a budget of 500 composite evaluations per component. Screening stops at relative residual ≤ 1e-6 or 12 terms.
+3. **Machine-precision polish.** Levenberg–Marquardt on the one-step flow-map residuals over all consecutive pairs (12 per burst), in float64. The model is integrated with the same fixed-step 8th-order RK, with substeps chosen by the model's *own* self-convergence (no simulator).
+4. **Internal validation.** 25% of the bursts are held back inside the training data. A model is accepted when its validation one-step error is ≤ 1e-13·s; otherwise the next beam candidate is tried. Limits: ≤ 50 polished candidates and ≤ 15 CPU-minutes per system.
+
+### Accumulation
+
+- **Library.** Every *exactly recovered* history system contributes its term templates (for example x_j·x_k, x_j/(K + x_j), sin(ωx_j + φ)), their usage counts and its fitted constants.
+- **Grammar growth.** Composite templates found at levels 2 and 3 are promoted to level 1 for later systems.
+- **Prior.** Screening and beam ranking use an MDL-style penalty −log p(template) from smoothed library counts. Nonlinear constants are also initialized at library values.
+- **From scratch (N = 0):** an empty library — uniform prior, base level 1, and the same level 2/3 budget.
+- **History stream** (seeded order): the 51 catalog meta-train systems plus the 11 BioModels 3-D training systems, i.e. 62 systems, learned one at a time at M = 64. Library snapshots are taken at N ∈ {0, 8, 24, 62}.
+- **Test systems (never in the history): 32.** The 13 development, the 13 confirmation (already opened) and the 6 held-out BioModels 3-D systems. Each test system is run for every snapshot and every M.
+- **Seeds 1 and 2** set the stream order and the observation draws.
+
+### Criteria (both seeds)
+
+- **X1 (exactness is achievable):** at N = 62 and M = 64, exact recovery on ≥ 50% of the 32 test systems.
+- **X2 (experience raises success):** at M = 8, the success rate at N = 62 is ≥ N = 0's + 15 percentage points, and the rates at N = 0, 8, 24, 62 rise monotonically (Spearman ρ ≥ 0.8).
+- **X3 (experience reduces observations needed):** over test systems exactly recovered at N = 62, the median minimal observation count at N = 62 is ≤ half that at N = 0. A failure at N = 0 counts as 1,664 (twice the maximum).
+- **X4 (cheap to use):** every exactly recovered test system's artifact is faster than the original simulation (wall time, 1 and 100 trajectories).
+- **Pass = X1–X4 in both seeds.**
+- **Reported:** learning cost per system, recovery by kind, failures with their reasons (structure outside the grammar, budget, conditioning), and FLOPs.
+
+**What happens next, decided now:**
+- **Pass:** standing rule 3 — a fresh replication (new seeds, and new test systems if available, e.g. the higher-dimensional BioModels), then a reserve-set request.
+- **X1 fails:** diagnose by failure reason; extend the grammar (for example, general expression search) or add a numerical-exactness fallback (spectral or high-degree polynomial flow maps).
+- **X1 passes but X2 or X3 fail:** exactness works but experience does not help. Strengthen the accumulation mechanism, for example a learned neural proposal network that predicts the terms from the observations.
+
+### Implementation order
+
+1. The exactness harness, validated by feeding it the *true* right-hand side as a "perfect learner": it must pass. The same harness then checks that an obviously wrong model fails.
+2. The from-scratch pipeline, on a few history systems.
+3. The library and the history stream.
+4. The full test.
+
+Data is generated in memory, not written to disk. CPU-bound in float64: at most 24 worker processes at nice 10.
