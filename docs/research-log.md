@@ -2786,6 +2786,36 @@ Work within the trial is autonomous from here. Trial 26's code stays frozen; Tri
 - **Near-exact:** 507, 767.
 - **Not recovered:** 275, 291, 377, 517, 714, 776, 855, 058, 881, 1060, 876 (several are outside the template: four-variable denominators, nested terms, a degree-2 multiplier on a piece, a logarithm). 402, 787 and 812 are still running.
 
+### Trial 27 build notes, continued (31 Oct, 19:10–20:05; development systems only)
+
+**Regression round** (16 development systems with known outcomes, latest code, M = 64).
+- **Exact:** 114, 115, 507 (1.6e-13; newly), 573, 685, 767 (3.4e-14 in range, 1.2e-13 out of range; newly), 728, 753, 866, 919, 973 (2.2e-13; newly, by the exact final refit) and 1012. Blasius was accepted.
+- **Lost:** 458 (1.9e-8; overran to 1322 s), 909 (8e-10) and 1047 (no model).
+  - 1047: the dense-polynomial fallback for d = 4 used the whole budget, so discovery never ran.
+  - 458: an earlier, slower first stage left the scan too little time, and the v3 curve fallback overran its deadline.
+
+**Fixes from it.**
+- **Dense-polynomial fallback disabled.** It had no success in the build: on 291 it reached 3e-12, limited by the conditioning of uncentred monomials.
+- **The scan gets at least 20% of the budget**, whenever it starts.
+- **Hard ceiling of 1.4× the budget on every stage.** The final rewrite and refit of an accepted model get a further 0.1×.
+- **Zero points.** A discovered zero point (pole) within 1e-4 of the observed range of an uncentred variable's own zero is tried at exactly zero (then held fixed), and kept only if the held-back check passes.
+  - On 507 the accepted model gave undefined values (a non-integer power of a negative number) at 2 of 1000 held-out states below the observed range.
+  - With the exponent snapped to exactly 2.5 and 1, and the zero point to 0, it is exact (8.1e-14). The learned pieces are exactly 1/(1 + x1^2.5) and a Michaelis–Menten term.
+- **Reused exponents.** A reused exponent guides the search (held fixed in the scan) but may move in the final exact-fitting stages. A stored exponent can be slightly off (e.g. fitted 4.0000001), and held fixed it blocks an otherwise exact fit.
+  - In a reuse probe (older code) the library run on 114 at M = 16 stalled at 1.7e-8 with the reused piece, while scratch was accepted in 121 s.
+  - New entries now come from exponent-snapped models.
+
+**Evaluation efficiency (outcome-identical).**
+- The long multi-step test is skipped when the one-step test already failed; exact needs both.
+- The out-of-range test runs only for runs that are exact in range; the analysis only reads those.
+- Held-out test states use their own random stream, so the envelope is computed only for models that passed one-step.
+- Found because a wildly wrong small-data model made the adaptive integrator take 2000 s in an external check.
+
+**Reuse probes so far** (114 ↔ 115, Hill n = 4 times a variable; 300 s per run; older code).
+- No library advantage at M = 2, 4, 8 or 16; both arms fail at M ≤ 8.
+- At M = 16, 114 from scratch was accepted but not externally exact; with the library it stalled (see above).
+- An accumulation probe over the whole development half (static libraries from the M = 64 discoveries, library vs scratch vs decoy at M = 8, 16, 32) is next.
+
 ### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
 
 **G-familiar** (10 systems that resemble the history; reported, not counted). Exact-recovery rate by data amount:

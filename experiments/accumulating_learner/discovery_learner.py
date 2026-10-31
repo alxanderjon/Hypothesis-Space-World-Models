@@ -480,6 +480,9 @@ def simplify_degenerate(model, Zc, Xc):
     return model, changed
 
 
+FREE_LIB_EXP = [False]   # True in the final exact-fitting stages: a reused exponent guides the search, then may move slightly
+
+
 def frozen_positions(terms):
     """Positions, in the flat constant vector of `terms`, of constants kept fixed while fitting: constants made redundant
     by the term's linear coefficient (crecip / cpow / cabs keep b, cexp keeps c: a*exp(b u + c) = a e^c exp(b u)), and the
@@ -490,8 +493,10 @@ def frozen_positions(terms):
             o = 1 if isinstance(f.var, tuple) else 0
             if f.family in ("crecip", "cpow", "cabs", "cexp"):
                 out.append(k + o + (1 if f.family == "cexp" else 0))
-            if f.meta and (f.meta[0] == "lib" or "snap" in f.meta) and f.family in ("cpow", "chill", "chillr"):
+            if f.meta and ((f.meta[0] == "lib" and not FREE_LIB_EXP[0]) or "snap" in f.meta) and f.family in ("cpow", "chill", "chillr"):
                 out.append(k + o + 2)
+            if f.meta and "zsnap" in f.meta and (k + o + 1) not in out:      # zero point held at the variable's zero
+                out.append(k + o + 1)
             k += len(f.theta)
     return out
 
@@ -1819,18 +1824,25 @@ def snap_exponents(model, z0, z1, zv0, zv1, tol=1e-6):
     number (then held fixed) and the model re-polished. Returns (model, held-back error) or (model, None) if nothing
     snapped. Powers are not snapped to 0..3 (polynomials in disguise); reused library shapes keep their exponent."""
     trial, changed = model.copy(), False
+    Zall = torch.cat([z0, zv0])
     for i, terms in enumerate(trial.supports):
         new = []
         for t in terms:
             f = t.factors[0] if t.factors else None
-            if f is not None and f.family in ("cpow", "chill", "chillr") and not (f.meta and f.meta[0] == "lib"):
+            if f is not None and f.family in ("cpow", "chill", "chillr", "crecip") and not (f.meta and f.meta[0] == "lib"):
                 o = 1 if isinstance(f.var, tuple) else 0
-                n = f.theta[o + 2]
-                ns = round(2 * n) / 2
-                if ns != n and abs(n - ns) < tol and not (f.family == "cpow" and ns in (0.0, 1.0, 2.0, 3.0)):
-                    th = list(f.theta); th[o + 2] = ns
-                    t = Term(t.mono, (Factor(f.family, f.var, tuple(th), tuple(f.meta) + ("snap",)),), t.level)
-                    changed = True
+                th, meta = list(f.theta), tuple(f.meta)
+                if f.family != "crecip":
+                    n = th[o + 2]
+                    ns = round(2 * n) / 2
+                    if ns != n and abs(n - ns) < tol and not (f.family == "cpow" and ns in (0.0, 1.0, 2.0, 3.0)):
+                        th[o + 2] = ns; meta += ("snap",); changed = True
+                # a zero point (pole) of v = b z + c at the variable's own zero (uncentred variable): c = 0
+                if o == 0 and float(model.mu[f.var]) == 0.0 and th[0] != 0 and th[1] != 0:
+                    span = float(Zall[:, f.var].max() - Zall[:, f.var].min())
+                    if abs(th[1] / th[0]) < 1e-4 * span:
+                        th[1] = 0.0; meta += ("zsnap",); changed = True
+                t = Term(t.mono, (Factor(f.family, f.var, tuple(th), meta),), t.level)
             new.append(t)
         trial.supports[i] = new
     if not changed:
@@ -2101,6 +2113,10 @@ def as_library_piece(rec):
 # the Trial 27 learner
 # ======================================================================================================================
 
+DENSE_POLY = False   # dense-polynomial fallback: tried during the build, disabled (no success; on a 4-D system it used the
+                     # whole budget so discovery never ran)
+
+
 class _Solved(Exception):
     pass
 
@@ -2111,6 +2127,8 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
     """bursts: (M, L, d) noise-free states at unit sampling interval. Returns a result dict.
     library: Library of previously discovered pieces (empty = learning from scratch). discover_pieces: allow discovery."""
     t_start = time.time()
+    hard = t_start + 1.4 * time_limit      # hard ceiling on the whole run (every stage deadline is capped by it)
+    FREE_LIB_EXP[0] = False
     kn = knowledge or Knowledge()
     lib = library or Library()
     rng = np.random.default_rng(seed)
@@ -2135,7 +2153,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
     cand_cache = {}
     best = None
     std_deadline = t_start + standard_frac * time_limit if discover_pieces else t_start + time_limit
-    DEADLINE[0] = std_deadline
+    DEADLINE[0] = min(std_deadline, hard)
     lib_cands = library_candidates(lib, d, Zc) if lib.entries else []
 
     nonlocal_deadline = [std_deadline]
@@ -2231,8 +2249,8 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
     best = standard_search(levels_plan, [], best)
     # ---- dense polynomial (hand toolkit only): every monomial of degree <= 3 in every component, then pruning. Sparse
     # supports are capped at max_terms; a polynomial system with ~18 monomials per equation needs the dense form.
-    if best is None or best["val_err_scaled"] > VAL_TOL:
-        DEADLINE[0] = time.time() + 0.1 * time_limit
+    if DENSE_POLY and d >= 3 and (best is None or best["val_err_scaled"] > VAL_TOL):   # d <= 2: sparse search covers all
+        DEADLINE[0] = min(time.time() + 0.1 * time_limit, hard)
         try:
             sups = [[Term(m, (), 1) for m in monomials(d)] for _ in range(d)]
             cfs = [lstsq_resid(design(sups[i], Zc, Xc), G[:, i])[1] for i in range(d)]
@@ -2259,20 +2277,21 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
                                     model, val_d = pm, v2
                         except (RuntimeError, ValueError):
                             pass
-                    if math.isfinite(val_d) and (best is None or val_d < best["val_err_scaled"]):
+                    # only an exact dense model replaces the incumbent (a bloated near miss would become discovery's base)
+                    if val_d <= VAL_TOL and (best is None or val_d < best["val_err_scaled"]):
                         best = {"model": model, "nsub": nsub, "val_err_scaled": val_d, "train_err_scaled": float("nan"),
                                 "levels": "dense"}
         except (RuntimeError, ValueError):
             pass
-        DEADLINE[0] = t_start + time_limit
+        DEADLINE[0] = min(t_start + time_limit, hard)
     # ---- discovery of missing pieces ----
-    DEADLINE[0] = t_start + time_limit
+    DEADLINE[0] = min(t_start + time_limit, hard)
     if discover_pieces and (best is None or best["val_err_scaled"] > VAL_TOL) and time.time() < t_start + time_limit:
         report["discovery_used"] = True
         try:
             # (v4) dense scans of compact shapes on the derivative data, several pieces per component
-            scan_deadline = t_start + 0.5 * time_limit
-            DEADLINE[0] = scan_deadline + 0.1 * time_limit      # the assembled model's polish may run a little longer
+            scan_deadline = min(max(t_start + 0.5 * time_limit, time.time() + 0.2 * time_limit), hard)   # the scan gets >= 20%
+            DEADLINE[0] = min(scan_deadline + 0.1 * time_limit, hard)      # the assembled model's polish may run a little longer
             specs = [(f, None, ("new",)) for f in SCAN_FAMILIES]
             # reused shapes with an exponent join the scan with that exponent fixed and their placement scanned (shapes
             # without one, e.g. a reciprocal, carry no shape beyond the family and are scanned as new pieces anyway)
@@ -2281,7 +2300,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
             m, v, scan_props = discover_scan(best["model"] if best is not None else None, z0, z1, zv0, zv1, Zc, Xc, G,
                                              noise, mu, sig, prior, scan_deadline, max_terms=max_terms, verbose=verbose,
                                              specs=specs)
-            DEADLINE[0] = t_start + time_limit
+            DEADLINE[0] = min(t_start + time_limit, hard)
             if m is not None and math.isfinite(v) and (best is None or v < best["val_err_scaled"]):
                 best = {"model": m, "nsub": None, "val_err_scaled": v, "train_err_scaled": float("nan"), "levels": "scan"}
             # re-solve: the scanned pieces (with every multiplier) are offered to the sparse search as candidates
@@ -2295,21 +2314,21 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
                             key = (mo, t.factors[0].family, t.factors[0].var, tuple(round(x, 9) for x in t.factors[0].theta))
                             if key not in seen:
                                 seen.add(key); extra.append(Term(mo, t.factors, 1))
-                nonlocal_deadline[0] = t_start + 0.65 * time_limit
-                DEADLINE[0] = nonlocal_deadline[0]
+                nonlocal_deadline[0] = min(t_start + 0.65 * time_limit, hard)
+                DEADLINE[0] = min(nonlocal_deadline[0], hard)
                 if verbose:
                     print(f"   re-solve with {len(scan_props)} scanned piece(s), {len(extra)} candidates", flush=True)
                 best = standard_search(((1,),), extra, best)
-                DEADLINE[0] = t_start + time_limit
+                DEADLINE[0] = min(t_start + time_limit, hard)
                 if best is not None and best["val_err_scaled"] <= VAL_TOL:
                     report["resolved_with_discovered_pieces"] = True
             if best is not None and best["val_err_scaled"] <= VAL_TOL:
                 raise _Solved()
-            disc_deadline = t_start + 0.85 * time_limit        # curves; the last 15% is kept for their re-solve
-            DEADLINE[0] = disc_deadline
+            disc_deadline = min(t_start + 0.85 * time_limit, hard)        # curves; the last 15% is kept for their re-solve
+            DEADLINE[0] = min(disc_deadline, hard)
             m = discover(best["model"] if best is not None else None, z0, z1, zv0, zv1, Zc, Xc, G, mu, sig,
                          deadline=disc_deadline, verbose=verbose, direct=False)
-            DEADLINE[0] = t_start + time_limit
+            DEADLINE[0] = min(t_start + time_limit, hard)
             v, _, _ = converged_val(m, z0, zv0, zv1)
             if math.isfinite(v) and (best is None or v < best["val_err_scaled"]):
                 best = {"model": m, "nsub": None, "val_err_scaled": v, "train_err_scaled": float("nan"), "levels": "discovery"}
@@ -2320,14 +2339,14 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
                     if pc.get("origin") == "new":
                         proposed.add(as_library_piece(pc), source="this system")
                 if proposed.entries:
-                    std_deadline_resolve = t_start + time_limit
+                    std_deadline_resolve = min(t_start + time_limit, hard)
                     nonlocal_deadline[0] = std_deadline_resolve
-                    DEADLINE[0] = std_deadline_resolve
+                    DEADLINE[0] = min(std_deadline_resolve, hard)
                     extra = library_candidates(proposed, d, Zc)
                     if verbose:
                         print(f"   re-solve with {len(proposed.entries)} proposed piece(s), {len(extra)} candidates", flush=True)
                     best = standard_search(((1,),), extra, best)
-                    DEADLINE[0] = t_start + time_limit
+                    DEADLINE[0] = min(t_start + time_limit, hard)
                     if best is not None and best["val_err_scaled"] <= VAL_TOL:
                         report["resolved_with_discovered_pieces"] = True
         except _Solved:
@@ -2336,8 +2355,20 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
             if verbose:
                 print("   discovery failed:", str(e)[:120], flush=True)
     # ---- completion: a near-exact model gets compact pieces chosen by exact gains on the step-to-step map ----
-    if discover_pieces and best is not None and VAL_TOL < best["val_err_scaled"] <= 1e-9:
-        DEADLINE[0] = time.time() + 0.15 * time_limit
+    FREE_LIB_EXP[0] = True                 # final exact-fitting stages: reused exponents may move slightly (stored ones can be
+                                           # a little off; held fixed they would block an otherwise exact fit)
+    if best is not None and VAL_TOL < best["val_err_scaled"] <= 1e-9 and any(
+            f.meta and f.meta[0] == "lib" for terms in best["model"].supports for t in terms for f in t.factors):
+        try:
+            DEADLINE[0] = min(time.time() + 0.05 * time_limit, hard)
+            m_f, _, err_f, _ = polish(best["model"].copy(), z0, z1, iters=30)
+            v_f, _, _ = converged_val(m_f, z0, zv0, zv1)
+            if math.isfinite(v_f) and v_f < best["val_err_scaled"]:
+                best = {"model": m_f, "nsub": None, "val_err_scaled": v_f, "train_err_scaled": err_f, "levels": "lib-free"}
+        except (RuntimeError, ValueError):
+            pass
+    if discover_pieces and best is not None and VAL_TOL < best["val_err_scaled"] <= 1e-9 and time.time() < hard:
+        DEADLINE[0] = min(time.time() + 0.15 * time_limit, hard)
         try:
             model = best["model"]
             Zall = torch.cat([z0, zv0])
@@ -2372,7 +2403,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
             if verbose:
                 print("   completion failed:", str(e)[:120], flush=True)
     # ---- compact rewrite of discovered curves (classification of every new piece) ----
-    DEADLINE[0] = time.time() + 0.25 * time_limit           # grace period for the rewrite and the final refit
+    DEADLINE[0] = min(time.time() + 0.25 * time_limit, hard + 0.1 * time_limit)   # grace for the rewrite and final refit
     if best is not None and best["val_err_scaled"] <= VAL_TOL and any(
             f.family == "cheb" for terms in best["model"].supports for t in terms for f in t.factors):
         best["model"] = compact_rewrite(best["model"], z0, z1, zv0, zv1, Zc, Xc, verbose=verbose)
@@ -2406,6 +2437,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
         n_conv = self_nsub(best["model"], za, max_nsub=128)
         best["nsub"] = NSUB_MARGIN * n_conv if n_conv is not None else (best["nsub"] or 64)
     DEADLINE[0] = float("inf")
+    FREE_LIB_EXP[0] = False
     elapsed = time.time() - t_start
     if best is None:
         return {"status": "no_model", "seconds": elapsed, **report}

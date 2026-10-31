@@ -111,6 +111,7 @@ class Reference27:
     def __init__(self, name, seed=0):
         self.sys = s = TrueSystem27(name)
         self.rng = rng = np.random.default_rng([2700, seed, sum(map(ord, name))])
+        self.rng_held = np.random.default_rng([2701, seed, sum(map(ord, name))])   # held-out test states (own stream)
         if s.kind == "oscillator":
             self._oscillator(s, rng)
         else:
@@ -201,7 +202,7 @@ class Reference27:
 
     def held_states(self, n=1000):
         flat = self.held_trajs[:, :-1].reshape(-1, self.sys.d)
-        return flat[self.rng.choice(len(flat), min(n, len(flat)), replace=False)]
+        return flat[self.rng_held.choice(len(flat), min(n, len(flat)), replace=False)]
 
     def learned_box(self):
         flat = self.learn_trajs.reshape(-1, self.sys.d)
@@ -252,10 +253,15 @@ def _multi_ok(xh, ref, E, Hz, scale):
 def evaluate(ref, f_hat, nsub_hat, rollout_hat=None):
     """In-range exactness (Trial 26 definition) of an artifact: vector field f_hat (or a compiled rollout)."""
     roll = rollout_hat or (lambda x0, steps: H.rollout(f_hat, x0, ref.sys.dt, nsub_hat, steps))
-    if not hasattr(ref, "E"):
-        ref.prepare()
     xs = ref.held_states(1000)
-    one = float(np.max(np.abs(roll(xs, 1)[:, 1] - ref.one_step(xs)) / ref.scale))
+    with np.errstate(all="ignore"):
+        one = float(np.max(np.abs(roll(xs, 1)[:, 1] - ref.one_step(xs)) / ref.scale))
+    if not (one <= 1e-12):             # exact needs both tests: skip the long rollouts of a model that already failed
+        return {"one_step_max_scaled_error": one if np.isfinite(one) else float("inf"), "one_step_ok": False,
+                "horizon_steps": getattr(ref, "H", None), "multi_step_ok": False, "multi_step_worst_ratio_median": float("nan"),
+                "multi_step_skipped": True, "exact": False}
+    if not hasattr(ref, "E"):          # envelope for the multi-step test, only for models that passed one-step
+        ref.prepare()
     xh = roll(ref.env_starts, ref.H)
     ok, worst = _multi_ok(xh, ref.env_ref, ref.E, ref.H, ref.scale)
     return {"one_step_max_scaled_error": one, "one_step_ok": bool(one <= 1e-12), "horizon_steps": ref.H,
@@ -303,6 +309,10 @@ def evaluate_out_of_range(ref, roll_n, n=400):
     err = np.where(np.isfinite(err), err, np.inf)
     starts = xs[:min(len(xs), 40)]
     cap = min(ref.cap, 150)
+    if not (err.max() <= 1e-12):       # the multi-step part cannot change "exact" once one-step failed
+        return {"n_states": int(len(xs)), "n_excluded_untrusted_reference": n_excluded, "one_step_max_scaled_error": float(err.max()),
+                "fraction_states_one_step_exact": float(np.mean(err <= 1e-12)), "nsub_true": int(ns_true), "nsub_artifact": int(ns_hat),
+                "one_step_ok": False, "multi_step_ok": False, "multi_step_skipped": True, "exact": False}
     try:
         r = ref.sys.rollout(starts, ns_true, cap)
         x = np.repeat(starts, 10, axis=0); rr = np.repeat(r, 10, axis=0)

@@ -89,7 +89,7 @@ def run_one(job):
             art = lambda x0, steps: roll.adaptive(x0, steps, nsub0=max(1, res["nsub"] // 4))
             rec["exactness"] = H27.evaluate(ref, None, res["nsub"], rollout_hat=art)
             rec["exact"] = bool(rec["exactness"]["exact"])
-            if rec["pieces"]:              # owner addition: exactness outside the region the pieces were learned on
+            if rec["pieces"] and rec["exact"]:   # owner addition: exactness outside the region the pieces were learned on
                 rec["out_of_range"] = H27.evaluate_out_of_range(ref, lambda x0, steps, k: roll.adaptive(x0, steps, nsub0=1))
         else:
             rec["exact"] = False
