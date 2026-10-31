@@ -2589,3 +2589,62 @@ The capability-only Trial 27 above is **withdrawn**. Nothing has run for it.
   - The memory: a tally of piece shapes in past solutions, used as a mild prior.
   - Promotion of deeper composite pieces. *Never triggered*: all 37–38 accepted history solutions per seed used only level-1 pieces (polynomial terms plus 3 sines).
 - **Consequence.** In Trial 26 the toolkit never grew. History could only steer the search; it could not add pieces.
+
+## Trial 27 — revised proposal (31 October), awaiting owner approval: discovering missing pieces from data, and reusing them
+
+**Question.** Do pieces discovered on earlier systems make later systems learnable exactly, from fewer observations, compared with learning from scratch?
+
+### Hand-supplied vs discovered
+
+- **Hand-supplied, unchanged.** The Trial 26 toolkit and its existing ways of combining pieces (sums of terms, a piece times a variable, a product of two pieces), plus the search, polish and validation code. The guide and tally from Trial 26 are set aside, to isolate the piece question.
+- **New generic machinery (code, not pieces): discovery.** When no exact model is found with the current toolkit, the learner:
+  1. locates the component whose leftover the current pieces cannot explain;
+  2. fits that leftover as m(z)·g(u), with an optional variable multiplier m ∈ {1, z_k} and argument u = w·z + c (a weighted sum of variables, weights learned). Here g is a smooth 1-D curve, a Chebyshev series of degree ≤ 48 over the observed range of u;
+  3. polishes all constants, including the curve's coefficients, w and c, jointly on the step-to-step map, and raises the degree until internal validation reaches ≤ 1e-13;
+  4. tries a compact rewrite of g using only existing toolkit pieces under affine maps, a·φ(b·u + c) + d (or a product of two). A rewrite that passes validation replaces the curve, since compact forms extrapolate.
+- **Flagged for the owner.** The weighted-sum argument is the only new structural capability. Previously a piece took a single variable. Without it, pieces mixing several quantities cannot be discovered at all, for example a denominator containing two concentrations.
+- **Library.**
+  - Every discovered piece that the learner's own validation accepted is stored with its argument structure: how many variables enter u, and whether there is a multiplier.
+  - A stored compact form is reused with refitted constants. A stored curve's shape is reused under refitted affine input/output maps.
+  - On later systems, library pieces enter the candidate list like toolkit pieces. No truth is used anywhere.
+
+### Systems
+
+- **Development.** Trial 26's already-opened systems (history, G-familiar and G-novel), plus the development half of the fresh pool.
+- **Evaluation: a fresh, untouched pool.** BioModels with 2 and 4 state variables, converted with the same safe converter and filters.
+  - They are split by a seeded hash of model IDs into development and evaluation halves *before any is opened*. The evaluation half runs once, at the end. Reserve sets A and B stay untouched.
+  - Non-oscillating models are observed through recordings that start from varied initial states (transient protocol). Held-out recordings start elsewhere.
+  - The reference is upgraded so stiff systems can be simulated within budget.
+
+### Design
+
+- **Streams.** The evaluation systems are put in 3 random orders, fixed in advance, each with 2 independent data draws. For each system in turn:
+  1. Learn with the library from earlier systems in that order, at M ∈ {2, 4, 8, 16, 32, 64} (nested bursts).
+  2. Record exactness at each M and the minimal observation count.
+  3. Add any pieces newly discovered and accepted in the M = 64 run.
+- **Scratch.** The same learner, discovery included, with an empty library. It is order-independent, computed once per system and draw.
+- **Controls for "learned, not resemblance" (owner rule 2):**
+  - **Order fixed in advance, fresh pool.** Test systems are never chosen for similarity.
+  - **Decoy library.** The same number of pieces with the same templates and complexity, but random shapes and argument weights that come from no data.
+  - **Copy-the-closest.** The whole learned model of the earlier system most similar in data, with constants refitted.
+  - **Removal check.** For every system where the library beats scratch, rerun with the discovered piece(s) it used removed; record which earlier system each piece came from.
+  - **Similarity report (analysis only, from true equations).** The structural overlap of each evaluation system with earlier ones.
+
+### Criteria (both data draws, averaged over the 3 orders)
+
+- **D (discovery works; prerequisite).** Among evaluation systems that the original toolkit without discovery cannot learn exactly at M = 64, scratch-with-discovery learns ≥ 30% exactly. If D fails, the accumulation part is uninformative.
+- **A1 (accumulation).** In the second half of each stream, the library learner either beats scratch in success at M = 8 by ≥ 15 points, or needs ≤ 0.5× the median minimal observations.
+- **A2 (grows with history).** The library-minus-scratch advantage rises with stream position: second half > first half, and Spearman ρ ≥ 0.5 over position bins.
+- **A3 (from what was learned).** Decoys keep ≤ half of the advantage, and so does copy-the-closest.
+- **A4 (attribution).** In ≥ 80% of the systems where the library beats scratch, removing the used discovered piece(s) removes the advantage.
+- **Pass** = D and A1–A4 in both draws.
+
+### Fixed during development, recorded before the evaluation run
+
+Discovery budgets (curve degree, number of tries, time per learn call), the transient-protocol details, and the stiff-capable reference.
+
+### Risks (stated now)
+
+- Discovered curves may not stay exact outside the observed range; compact rewrites mitigate this.
+- Discovered pieces may not recur across real systems in the pool, in which case no accumulation is possible. The removal and similarity reports would show it.
+- Discovery is expensive.
