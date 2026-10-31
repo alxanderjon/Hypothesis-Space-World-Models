@@ -2679,3 +2679,13 @@ Work within the trial is autonomous from here. Trial 26's code stays frozen; Tri
   - The multi-step horizon cap stays 2,000 steps.
 - **Status of the rule.** It is a choice of how the data are recorded, the same for every system in both halves. It carries no information about which pieces the equations contain.
 - **Also fixed.** A polish on a model whose terms were all pruned away crashed on an empty parameter vector.
+
+### Trial 27 build notes (development systems only)
+
+- **Substep margin.** Artifact substeps are now 4× the self-converged count (previously 2×). On BIOMD0000000753 the learned equations were exact: 1.6e-14 even out of range. But 2× left 1.2e-12 of integration error on some held-out states.
+- **Disguised-monomial rule** (degeneracy, generic). z_j^e · x_j^p is rejected when z_j is proportional to x_j and e + p is an integer between 0 and 3, because it is a monomial in disguise.
+  - Found on BIOMD0000000728. The learner recovered the true ratio term −10x/(x+1) exactly, but wrote the constant as x · x⁻¹.
+  - That is identical in range and singular at x = 0, so 24% of the out-of-range states failed.
+  - This bears directly on the owner's out-of-range question: an in-range-equivalent but non-compact form need not extrapolate.
+- **Out-of-range test.** States where the reference itself is untrustworthy (non-finite, or changed by > 1e-13 when the substeps are doubled) are excluded and counted. The headline is the fraction of the remaining out-of-range states that stay one-step exact.
+- **Robustness.** Pruning never empties a component. The adjoint pass tolerates models that ignore their input.

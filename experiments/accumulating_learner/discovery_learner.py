@@ -34,6 +34,7 @@ GRIDS = {"sin": [(w, p) for w in (0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0) for p in (0
          "pow": [(p,) for p in (0.5, 1.5, 2.5, -1.0, -2.0)]}
 VAL_TOL = 1e-13
 CENTER_RATIO = 3.0   # centre a variable only if |mean| > 3 std (keeps polynomial structure sparse)
+NSUB_MARGIN = 4      # artifact substeps = 4 x self-converged count (Trial 27; 2x left 1.2e-12 on a dev system)
 
 
 # ---------------- terms ----------------
@@ -388,6 +389,14 @@ def degenerate(term, Z, X):
                         return True
             continue
         z, x = Z[:, f.var], X[:, f.var]
+        if f.family == "pow" and term.mono[f.var] > 0:
+            # z_j^e * x_j^p with z_j proportional to x_j (uncentred) is the monomial x_j^(e+p) in disguise
+            ratio = x / torch.where(z.abs() > 1e-12, z, torch.full_like(z, float("nan")))
+            ratio = ratio[torch.isfinite(ratio)]
+            proportional = len(ratio) > 0 and float((ratio - ratio.median()).abs().max()) <= 1e-9 * float(ratio.abs().median())
+            tot = term.mono[f.var] + f.theta[0]
+            if proportional and abs(tot - round(tot)) < 0.02 and 0 <= round(tot) <= 3:
+                return True
         zmin, zmax = float(z.min()), float(z.max())
         s = max(zmax - zmin, 1e-12)
         th = f.theta
@@ -774,7 +783,11 @@ def prune(model, z0, z1, nsub, err, J, floor=1e-14, max_rounds=12):
         if not costs:
             break
         thr = max(floor, 0.1 * err)
-        cheap = [(i, a) for c, i, a in costs if c <= thr]
+        sizes = [len(t) for t in model.supports]
+        cheap = []
+        for c, i, a in costs:                    # never empty a component
+            if c <= thr and sizes[i] > 1:
+                cheap.append((i, a)); sizes[i] -= 1
         if not cheap:
             break
         accepted = False
@@ -803,8 +816,9 @@ def stage_adjoints(model, z0, z1, nsub):
         return model.g(zz, p) + e
 
     loss = 0.5 * ((rk8_torch(f, z0, nsub) - z1) ** 2).sum()
-    adj = torch.autograd.grad(loss, leaves)
-    return torch.cat(states, 0), torch.cat([a.detach() for a in adj], 0)
+    adj = torch.autograd.grad(loss, leaves, allow_unused=True)     # unused only if the model ignores its input
+    adj = [torch.zeros_like(e) if a is None else a.detach() for a, e in zip(adj, leaves)]
+    return torch.cat(states, 0), torch.cat(adj, 0)
 
 
 def flowmap_add(model, z0, z1, nsub, cands_per_comp, Zc, Xc, prior, n_pre=48, n_add=1, verbose=False):
@@ -1040,8 +1054,8 @@ def converged_val(model, z0, zv0, zv1):
     if n is None:
         return float("inf"), None, None
     with torch.no_grad():
-        r = (rk8_torch(model.g, zv0, 2 * n) - zv1).abs()
-    return float(r.max()), r.max(0).values, 2 * n
+        r = (rk8_torch(model.g, zv0, NSUB_MARGIN * n) - zv1).abs()
+    return float(r.max()), r.max(0).values, NSUB_MARGIN * n
 
 
 def base_terms(model, i, d):
@@ -1453,7 +1467,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
             except (RuntimeError, ValueError) as e:
                 if verbose:
                     import traceback
-                    print("   candidate failed:", str(e)[:120], traceback.format_exc().splitlines()[-4:], flush=True)
+                    print("   candidate failed:", str(e)[:120], traceback.format_exc().splitlines()[-14:-4], flush=True)
                 continue
             if not math.isfinite(val_err):
                 continue
@@ -1495,7 +1509,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
     if best is not None:
         za = torch.cat([Ztr.reshape(-1, d), Zva.reshape(-1, d)])
         n_conv = self_nsub(best["model"], za, max_nsub=128)
-        best["nsub"] = 2 * n_conv if n_conv is not None else (best["nsub"] or 64)
+        best["nsub"] = NSUB_MARGIN * n_conv if n_conv is not None else (best["nsub"] or 64)
     elapsed = time.time() - t_start
     if best is None:
         return {"status": "no_model", "seconds": elapsed, **report}

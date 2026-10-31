@@ -156,12 +156,18 @@ class Reference27:
         f_held = s.ic * rng.uniform(0.5, 1.5, (16, d))
         lo = rng.uniform(0.2, 0.4, (8, d)); hi = rng.uniform(2.0, 3.0, (8, d))
         f_oor = s.ic * np.concatenate([lo, hi])
+        pre = 0                                        # stiff start: refine the interval until a provisional run is finite
         prov = s.rollout(f_learn[:4], 64, REC_STEPS)
+        while not np.all(np.isfinite(prov)) and pre < 6:
+            s.dt /= 2
+            pre += 1
+            prov = s.rollout(f_learn[:4], 64, REC_STEPS * 2 ** pre)
         if not np.all(np.isfinite(prov)):
             raise RuntimeError("provisional transient diverged")
         flat = prov.reshape(-1, d)
         scale0 = flat.std(0) + 1e-12 * (np.abs(flat).mean(0) + 1e-12)
         nsub = self._refine_dt(s, flat[::7], scale0)
+        self.refine += pre
         steps = REC_STEPS * 2 ** self.refine
         learn = s.rollout(f_learn, nsub, steps)
         flat = learn.reshape(-1, d)
@@ -270,7 +276,14 @@ def evaluate_out_of_range(ref, roll_n, n=400):
     ns_hat = 2 * _converged_nsub(lambda x, k: roll_n(x, 1, k)[:, 1], xs, ref.scale)
     with np.errstate(all="ignore"):
         pred = roll_n(xs, 1, ns_hat)[:, 1]
-    truth = ref.sys.one_step(xs, ns_true)
+        truth = ref.sys.one_step(xs, ns_true)
+        truth2 = ref.sys.one_step(xs, min(2 * ns_true, 16384))
+    # states where the reference itself is not trustworthy (non-finite or not converged) are excluded and counted
+    trust = np.all(np.isfinite(truth), 1) & (np.max(np.abs(truth2 - truth) / ref.scale, axis=1) <= 1e-13)
+    n_excluded = int((~trust).sum())
+    xs, pred, truth = xs[trust], pred[trust], truth[trust]
+    if len(xs) == 0:
+        return {"n_states": 0, "n_excluded_untrusted_reference": n_excluded}
     with np.errstate(all="ignore"):
         err = np.max(np.abs(pred - truth) / ref.scale, axis=1)
     err = np.where(np.isfinite(err), err, np.inf)
@@ -290,7 +303,7 @@ def evaluate_out_of_range(ref, roll_n, n=400):
             ok, worst = _multi_ok(roll_n(starts, Hz, ns_hat), r, E, Hz, ref.scale)
     except Exception:
         ok, worst, Hz = False, float("inf"), 0
-    return {"n_states": int(len(xs)), "one_step_max_scaled_error": float(err.max()),
+    return {"n_states": int(len(xs)), "n_excluded_untrusted_reference": n_excluded, "one_step_max_scaled_error": float(err.max()),
             "fraction_states_one_step_exact": float(np.mean(err <= 1e-12)), "nsub_true": int(ns_true), "nsub_artifact": int(ns_hat),
             "one_step_ok": bool(err.max() <= 1e-12), "multi_step_ok": ok, "horizon_steps": Hz,
             "multi_step_worst_ratio_median": worst, "exact": bool(err.max() <= 1e-12 and ok)}
