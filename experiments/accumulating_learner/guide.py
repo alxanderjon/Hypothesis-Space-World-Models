@@ -49,7 +49,7 @@ class Guide(nn.Module):
         for i in range(d):
             for j in range(d):
                 rest = (tot - feats[:, i] - (feats[:, j] if j != i else 0)) / max(d - (1 if i == j else 2), 1)
-                flag = torch.full((M, 1), float(i == j))
+                flag = torch.full((M, 1), float(i == j), dtype=feats.dtype)
                 pair_in.append(torch.cat([feats[:, i], feats[:, j], rest, flag], 1))
         P = self.pair(torch.stack(pair_in, 0)).mean(1)                          # (d*d, h) pooled over bursts
         infl = self.pair_head(P).reshape(d, d)
@@ -88,8 +88,8 @@ def train_guide(examples, steps=3000, seed=0, scramble=False, lr=2e-3, verbose=F
             perm = rng.permutation(len(data))
         data = [(data[k][0], data[perm[k]][1]) for k in range(len(data))]
     F = burst_features(data[0][0][:2]).shape[-1]
-    net = Guide(F)
     torch.manual_seed(seed)
+    net = Guide(F).float()          # always float32, whatever the process-wide default dtype is
     opt = torch.optim.AdamW(net.parameters(), lr=lr, weight_decay=1e-3)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, steps)
     bce, ce = nn.BCEWithLogitsLoss(), nn.CrossEntropyLoss()
@@ -141,8 +141,8 @@ def save_guide(net, path):
 
 
 def load_guide(path, F):
-    net = Guide(F)
-    net.load_state_dict(torch.load(path))
+    net = Guide(F).float()          # trained in float32; the learner sets float64 as the process default
+    net.load_state_dict(torch.load(path, weights_only=True))
     net.eval()
     return net
 

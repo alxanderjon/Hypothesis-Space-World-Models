@@ -268,7 +268,12 @@ def design_fast(terms, Z, X):
 def lstsq_resid(Phi, y):
     if Phi.shape[1] == 0:
         return y.clone(), torch.zeros(0)
-    c = torch.linalg.lstsq(Phi, y.unsqueeze(1), driver="gelsd").solution.squeeze(1)
+    if not bool(torch.isfinite(Phi).all()):          # unusable design: infinite residual (filtered by callers)
+        return torch.full_like(y, float("inf")), torch.zeros(Phi.shape[1], dtype=y.dtype)
+    try:
+        c = torch.linalg.lstsq(Phi, y.unsqueeze(1), driver="gelsd").solution.squeeze(1)
+    except RuntimeError:                              # LAPACK failure: same treatment
+        return torch.full_like(y, float("inf")), torch.zeros(Phi.shape[1], dtype=y.dtype)
     return y - Phi @ c, c
 
 

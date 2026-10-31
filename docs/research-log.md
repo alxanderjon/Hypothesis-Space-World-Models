@@ -2501,3 +2501,14 @@ The criteria themselves are unchanged. *Known when this rule was written:* the h
 
 - On history-type systems, exact recovery from 64 bursts (832 states) works for 37–38 of 45 systems. The learner's own acceptance check almost always agrees with the truth check: across both seeds, 1 false accept and 2 false rejects.
 - **Known issue for the next learner version (not changed now; the learner is frozen).** False rejects happen because internal validation uses the *provisional* substep count. The substep safety doubling is applied only after acceptance. Validation should use the converged count.
+
+### Bug found during the test stage (04:55): every guide-based run crashed; fixed, crashed runs to be rerun
+
+- **Symptom.** Every run of the arms that use the guide crashed with a dtype error before any learning: full8, full24, full45 and scrambled45.
+- **Cause.** The guides were trained in float32 in processes that had not imported the learner. The learner sets float64 as the process-wide default. In test workers, the reloaded guide therefore mixed float32 inputs with float64 parameters and flags.
+- **Fix (`guide.py`).** The guide is always float32, with an explicit dtype for its internal flag tensor. Verified: guide predictions in a learner process match standalone use. The trained guide weights are unaffected; their training never involved float64.
+- **A second, rarer crash.** Five statistics/memory runs at M = 64 crashed in a least-squares call on a non-finite design (LAPACK error).
+- **Fix (`exact_learner.py`, `lstsq_resid`).** A non-finite design, or a LAPACK failure, now returns an infinite residual, which all callers already filter out.
+  - This changes behaviour only in runs that would otherwise have crashed. Every completed run follows an identical code path.
+  - It is the only learner change after the freeze, and it is unrelated to the disclosed exposures.
+- **Rerun.** Workers spawned after the fix use it. Every record with status `error` (all of them crashes, none of them learning failures) will be deleted and rerun in a clean-up pass, with the same budgets.
