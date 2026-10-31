@@ -2409,3 +2409,29 @@ The owner approved Trial 26 as described in the plain-language check-in (revised
   - `guide.py`: the influence guide, a permutation-equivariant set network, and the no-history kernel-ridge leave-one-out influence screen.
   - `trial26.py`: the driver.
   - `compile_artifact.py`: the learned model plus its own RK8, generated as C and compiled, for the cost measurement.
+
+### Tool development, continued (history systems only)
+
+- **Development data must come from the trial's own generator.** Early development bursts came from scipy's adaptive DOP853 (rtol 1e-13). Those are consistent with no one-step map below about 1e-13, so every fit floored there: SprottB at 4e-13, Rossler at about 1e-11. With the harness reference (fixed-step RK8, substeps converged to 1e-14), a full degree-2 polynomial support on Lorenz polishes to **1.3e-15 in 3 Levenberg–Marquardt iterations**. All development now uses the harness reference and the trial's burst sampler (`trial26.bursts_from`), on history systems only.
+- **Degeneracy rule** (`degenerate()`, generic, the same for every system). A nonlinear factor is rejected if, over the observed range, it has collapsed into something simpler or is singular there:
+  - a sine with frequency × data span < 0.5;
+  - an exponential with rate × span < 0.2;
+  - tanh nearly linear (argument range < 0.3) or saturated (beyond ±4);
+  - an absolute-value breakpoint outside the data;
+  - a reciprocal pole inside the data, or more than 2 spans away;
+  - a power within 0.02 of 0, 1, 2 or 3;
+  - a Hill constant far outside the data.
+
+  Found on Lorenz: 1/(K + z) with K = −264 stood in for a constant term. The fit was then nearly singular (condition number 2e9), and the polish crawled instead of converging. Degenerate terms are rejected in screening; any that appear after polishing are dropped and the refinement is repeated.
+- **Simplicity penalty.** 2·log(n)/n per fitted constant (4× the BIC weight; n = derivative points). A fixed penalty of 1.15 log-units per constant made a cubic outrank the correct sine on ThomasLabyrinth (the sine alone explains 92% of the variation) and pruned the right path at step one. Beam width 6.
+- **Substeps.** The model's own substep count during polishing is capped at 16 provisionally and 64 finally. A candidate with a non-finite one-step map is discarded. Previously an unstable starting guess escalated to 256 substeps and made each polish about 64× slower.
+- **Final refit.** After internal validation has chosen a model, its constants are refit on all observed bursts (training plus held-back). This is standard practice. It matters at small M: SprottB at M = 8 had the correct structure, but extrapolation to unobserved parts of the attractor gave a 2.1e-12 one-step error.
+- **Speed.** Candidate evaluation is vectorized (`design_fast`, 10× faster). The flow-map gradient for *all* candidates comes from one reverse pass using stage adjoints, verified against direct autograd to 1e-14.
+- **Development results so far** (internal acceptance; truth check for reporting only):
+
+  | System | M | Time | Internal validation | Truth check |
+  |---|---|---|---|---|
+  | Lorenz | 64 | 6 s | 1.3e-15 | one-step 1.7e-15, multi-step pass over 869 steps: **exact** |
+  | Chen | 8 | 7 s | 7e-16 | — |
+  | SprottB | 8 | 4 s | 7e-16 | one-step 2.1e-12 (before the final-refit change) |
+  | Rossler | 16 | 122 s | 4e-16 | one-step 8e-15, multi-step pass over 2,000 steps: **exact** |

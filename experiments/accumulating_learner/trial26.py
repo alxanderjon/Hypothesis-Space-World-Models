@@ -269,6 +269,48 @@ def test_job(args):
     return name, M, "done"
 
 
+# ---------------- A3: least-similar vs random half-histories ----------------
+
+A3_MS = (2, 4, 8, 16)
+A3_SIZE = 22
+
+
+def shapes_of(desc):
+    """Role shapes (variable labels ignored) of a recovered model description, as a set."""
+    import exact_learner as EL
+    out = set()
+    for i, comp in enumerate(desc):
+        for t in comp:
+            term = EL.Term(tuple(t["mono"]), tuple(EL.Factor(f[0], f[1], tuple(f[2])) for f in t["factors"]), t["level"])
+            out.add(term.shape(i))
+    return out
+
+
+def a3_plan(seed):
+    """For each G-novel system the full learner (N = 45) recovered at some M: its 22 least-similar history systems
+    (Jaccard overlap of role shapes between recovered models), plus 3 random 22-system histories shared by all."""
+    recs = load_history(seed)
+    hist = [n for n in history_order(seed) if solved(recs.get(n))]
+    hshapes = {n: shapes_of(recs[n]["model"]) for n in hist}
+    plan = {}
+    for name in G_NOVEL:
+        model = None
+        for M in sorted(MS, reverse=True):
+            q = OUT / f"test_s{seed}" / name / f"M{M}_full45.json"
+            if q.exists():
+                r = json.loads(q.read_text())
+                if r.get("exact"):
+                    model = r["model"]; break
+        if model is None:
+            continue
+        ts = shapes_of(model)
+        sim = sorted(hist, key=lambda n: (len(ts & hshapes[n]) / max(len(ts | hshapes[n]), 1), n))
+        plan[name] = sim[:A3_SIZE]
+    rng = np.random.default_rng([2628, seed])
+    randoms = [sorted(rng.choice(history_order(seed), A3_SIZE, replace=False).tolist()) for _ in range(3)]
+    return plan, randoms
+
+
 def run_pool(fn, jobs, workers):
     ctx = get_context("spawn")
     with ctx.Pool(workers, maxtasksperchild=1) as pool:
@@ -278,7 +320,7 @@ def run_pool(fn, jobs, workers):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["history", "guides", "test", "lists"])
+    ap.add_argument("stage", choices=["history", "guides", "test", "a3", "lists"])
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--workers", type=int, default=12)
     ap.add_argument("--systems", default="")
@@ -297,6 +339,19 @@ def main():
         order = history_order(a.seed)
         jobs = [(a.seed, f"N{n}", order[:n], False) for n in NS] + [(a.seed, "N45_scrambled", order, True)]
         run_pool(train_and_save_guide, jobs, a.workers)
+    elif a.stage == "a3":
+        plan, randoms = a3_plan(a.seed)
+        (OUT / f"a3_plan_s{a.seed}.json").write_text(json.dumps({"least_similar": plan, "random": randoms}))
+        gjobs = [(a.seed, f"A3_ls_{n}", names, False) for n, names in plan.items()] + \
+                [(a.seed, f"A3_r{k}", names, False) for k, names in enumerate(randoms)]
+        run_pool(train_and_save_guide, gjobs, a.workers)
+        jobs = []
+        for M in A3_MS:
+            for n, names in plan.items():
+                jobs.append((n, a.seed, M, [("full", A3_SIZE)], {"subset": names, "tag": f"A3_ls_{n}", "tagkey": "_ls"}))
+                for k, rn in enumerate(randoms):
+                    jobs.append((n, a.seed, M, [("full", A3_SIZE)], {"subset": rn, "tag": f"A3_r{k}", "tagkey": f"_r{k}"}))
+        run_pool(test_job, jobs, a.workers)
     elif a.stage == "test":
         names = a.systems.split(",") if a.systems else G_NOVEL + G_FAMILIAR
         ms = [int(m) for m in a.ms.split(",")] if a.ms else list(MS)

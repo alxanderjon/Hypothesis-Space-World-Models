@@ -75,6 +75,9 @@ class Term:
     def sig(self):
         return (self.mono, tuple((f.family, f.var) for f in self.factors))
 
+    def nparams(self):
+        return sum(len(f.theta) for f in self.factors)
+
 
 def factor_value(fac, Z, X, theta):
     z, x = Z[..., fac.var], X[..., fac.var]
@@ -140,11 +143,43 @@ def factor_grid(fam, j, Z, X):
     return [Factor(fam, j, (float(qq) ** n, float(n))) for n in (1.0, 2.0, 4.0) for qq in q]
 
 
-def candidates(d, Z, X, levels, promoted=()):
+def frequency_scan(Z, G, n_top=4):
+    """Data-adaptive sine frequencies per variable: peaks of the energy of the derivative data (all components,
+    with the global linear part removed) captured by span{sin(w z_j), cos(w z_j)}, scanned over w in [0.2, 80]."""
+    Zn, Gn = Z.numpy(), G.numpy()
+    n, d = Zn.shape
+    base = np.concatenate([np.ones((n, 1)), Zn], 1)
+    Qb = np.linalg.qr(base)[0]
+    Y = Gn - Qb @ (Qb.T @ Gn)
+    Y = Y / (np.linalg.norm(Y, axis=0, keepdims=True) + 1e-300)
+    ws = np.geomspace(0.2, 80.0, 500)
+    out = {}
+    for j in range(d):
+        Sx, Cx = np.sin(np.outer(Zn[:, j], ws)), np.cos(np.outer(Zn[:, j], ws))
+        Sx = Sx - Qb @ (Qb.T @ Sx); Cx = Cx - Qb @ (Qb.T @ Cx)
+        ss, cc, sc = (Sx * Sx).sum(0), (Cx * Cx).sum(0), (Sx * Cx).sum(0)
+        det = np.clip(ss * cc - sc ** 2, 1e-300, None)
+        gain = np.zeros(len(ws))
+        for i in range(Y.shape[1]):
+            sy, cy = Sx.T @ Y[:, i], Cx.T @ Y[:, i]
+            gain += (cc * sy ** 2 - 2 * sc * sy * cy + ss * cy ** 2) / det
+        gain[(ss < 1e-12) | (cc < 1e-12)] = 0
+        peaks = [k for k in range(1, len(ws) - 1) if gain[k] >= gain[k - 1] and gain[k] >= gain[k + 1]]
+        peaks.sort(key=lambda k: -gain[k])
+        out[j] = [float(ws[k]) for k in peaks[:n_top]]
+    return out
+
+
+def candidates(d, Z, X, levels, promoted=(), G=None):
     """Candidate terms (with grid-initialized nonlinear parameters) for the requested levels."""
     lin = [tuple(int(i == k) for i in range(d)) for k in range(d)]
     zero = tuple([0] * d)
     base_f = [f for fam in NONPOLY + ("pow",) for j in range(d) for f in factor_grid(fam, j, Z, X)]
+    if G is not None:   # data-adaptive sine frequencies (generic, from this system's own data)
+        fs = frequency_scan(Z, G)
+        have = {(f.var, round(f.theta[0], 6)) for f in base_f if f.family == "sin"}
+        base_f += [Factor("sin", j, (w, ph)) for j, wl in fs.items() for w in wl if (j, round(w, 6)) not in have
+                   for ph in (0.0, math.pi / 4, math.pi / 2, 3 * math.pi / 4)]
     sat_f = [f for fam in ("hill", "hillr") for j in range(d) for f in factor_grid(fam, j, Z, X)]
     out = []
     if 1 in levels:
@@ -157,7 +192,7 @@ def candidates(d, Z, X, levels, promoted=()):
         out += [Term(zero, (f, g), 3) for i, f in enumerate(sat_f) for g in sat_f[i + 1:] if f.var != g.var]
     if promoted:  # memory: composite templates promoted to level 1
         keys = set(promoted)
-        extra = [t for lv in (2, 3) if lv not in levels for t in candidates(d, Z, X, (lv,)) if t.key() in keys]
+        extra = [t for lv in (2, 3) if lv not in levels for t in candidates(d, Z, X, (lv,), G=G) if t.key() in keys]
         for t in extra:
             t.level = 1
         out += extra
@@ -169,6 +204,57 @@ def candidates(d, Z, X, levels, promoted=()):
 def design(terms, Z, X, thetas=None):
     cols = [term_value(t, Z, X, None if thetas is None else thetas[i]) for i, t in enumerate(terms)]
     return torch.stack(cols, -1) if cols else torch.zeros(Z.shape[:-1] + (0,))
+
+
+def _factor_block(fam, idx_var, thetas, Z, X):
+    """Vectorized values of one factor family for many (variable, theta) pairs: (n, k)."""
+    z, x = Z[..., idx_var], X[..., idx_var]
+    th = thetas
+    if fam == "sin":
+        return torch.sin(z * th[:, 0] + th[:, 1])
+    if fam == "exp":
+        return torch.exp(z * th[:, 0])
+    if fam == "tanh":
+        return torch.tanh(z * th[:, 0] + th[:, 1])
+    if fam == "abs":
+        return torch.abs(z - th[:, 0])
+    if fam == "recip":
+        return 1.0 / (th[:, 0] + z)
+    if fam == "pow":
+        return x ** th[:, 0]
+    if fam == "hill":
+        xp = x ** th[:, 1]
+        return xp / (th[:, 0] + xp)
+    if fam == "hillr":
+        return th[:, 0] / (th[:, 0] + x ** th[:, 1])
+    raise ValueError(fam)
+
+
+def design_fast(terms, Z, X):
+    """Same columns as design(terms, Z, X) for fixed terms, computed in a few vectorized operations."""
+    n = Z.shape[:-1]
+    if not terms:
+        return torch.zeros(n + (0,))
+    monos, facs = {}, {}
+    mi, f1, f2 = [], [], []
+    for t in terms:
+        mi.append(monos.setdefault(t.mono, len(monos)))
+        fl = [facs.setdefault((f.family, f.var, tuple(f.theta)), len(facs)) for f in t.factors]
+        f1.append(fl[0] if fl else -1)
+        f2.append(fl[1] if len(fl) > 1 else -1)
+    E = torch.tensor(list(monos.keys()), dtype=Z.dtype)
+    Mc = torch.prod(Z.unsqueeze(-2) ** E, dim=-1)                          # (..., n_mono)
+    Fc = torch.ones(n + (len(facs) + 1,), dtype=Z.dtype)                    # last column = 1 (no factor)
+    by_fam = {}
+    for (fam, var, th), k in facs.items():
+        by_fam.setdefault(fam, []).append((k, var, th))
+    for fam, lst in by_fam.items():
+        cols = torch.tensor([k for k, _, _ in lst])
+        vars_ = torch.tensor([v for _, v, _ in lst])
+        width = max(len(th) for _, _, th in lst)
+        th = torch.tensor([list(t) + [0.0] * (width - len(t)) for _, _, t in lst], dtype=Z.dtype)
+        Fc[..., cols] = _factor_block(fam, vars_, th, Z, X)
+    return Mc[..., mi] * Fc[..., f1] * Fc[..., f2]
 
 
 def lstsq_resid(Phi, y):
@@ -191,6 +277,45 @@ def _split_thetas(terms, p):
 def _with_thetas(terms, thetas):
     return [Term(t.mono, tuple(Factor(f.family, f.var, tuple(float(v) for v in th)) for f, th in zip(t.factors, tt)), t.level)
             for t, tt in zip(terms, thetas)]
+
+
+def degenerate(term, Z, X):
+    """True if a nonlinear factor has collapsed, over the observed range, into something simpler (a constant, a
+    linear trend or a monomial) or is singular there. Generic limits, the same for every system."""
+    for f in term.factors:
+        z, x = Z[:, f.var], X[:, f.var]
+        zmin, zmax = float(z.min()), float(z.max())
+        s = max(zmax - zmin, 1e-12)
+        th = f.theta
+        if not all(math.isfinite(v) for v in th):
+            return True
+        if f.family == "sin" and abs(th[0]) * s < 0.5:
+            return True
+        if f.family == "exp" and (abs(th[0]) * s < 0.2 or abs(th[0]) * max(abs(zmin), abs(zmax)) > 50):
+            return True
+        if f.family == "tanh":
+            lo, hi = sorted((th[0] * zmin + th[1], th[0] * zmax + th[1]))
+            if hi - lo < 0.3 or lo > 4 or hi < -4:
+                return True
+        if f.family == "abs" and not (zmin < th[0] < zmax):
+            return True
+        if f.family == "recip":
+            lo, hi = th[0] + zmin, th[0] + zmax
+            if lo <= 0 <= hi or min(abs(lo), abs(hi)) > 2 * s:
+                return True
+        if f.family in ("pow", "hill", "hillr"):
+            if float(x.min()) <= 0:
+                return True
+            pw = th[0] if f.family == "pow" else th[1]
+            if f.family == "pow" and min(abs(pw - k) for k in (0, 1, 2, 3)) < 0.02:
+                return True
+            if f.family != "pow":
+                if pw <= 0.05:
+                    return True
+                xp = x ** pw
+                if th[0] < 0.05 * float(xp.min()) or th[0] > 20 * float(xp.max()):
+                    return True
+    return False
 
 
 def refine_support(terms, Z, X, y, iters=10):
@@ -226,11 +351,23 @@ def refine_support(terms, Z, X, y, iters=10):
     return new, float(r.norm()), c
 
 
-def screen_component(y, Z, X, cands, prior, tol, beam=4, max_terms=12, budget=None, rng=None):
-    """Beam search over supports on derivative data. Score = log(relative residual) + memory penalty.
+COMPLEXITY = [0.1]   # generic Occam penalty (log-residual units) per constant; set per system from the data size
+
+
+def set_complexity(n_points):
+    """Information-criterion scale: 2 log(n) / n per fitted constant (4x the BIC weight). Not history-derived."""
+    COMPLEXITY[0] = 2.0 * math.log(max(n_points, 2)) / max(n_points, 2)
+
+
+def term_cost(t, prior):
+    return prior(t.key()) + COMPLEXITY[0] * (1 + t.nparams())
+
+
+def screen_component(y, Z, X, cands, prior, tol, beam=6, max_terms=12, budget=None, rng=None):
+    """Beam search over supports on derivative data. Score = log(relative residual) + complexity + memory penalty.
     Stops when a support reaches `tol` (the estimated derivative-error level). Returns ranked supports."""
     ny = float(y.norm()) + 1e-300
-    vecs = design(cands, Z, X)
+    vecs = design_fast(cands, Z, X)
     ok = torch.isfinite(vecs).all(0) & (vecs.norm(dim=0) > 1e-12)
     idx_ok = torch.nonzero(ok).squeeze(1).tolist()
     if budget is not None and len(idx_ok) > budget:
@@ -240,7 +377,7 @@ def screen_component(y, Z, X, cands, prior, tol, beam=4, max_terms=12, budget=No
         return [([], 1.0)]
     V = vecs[:, idx_ok]
     V = V / V.norm(dim=0, keepdim=True)
-    pen = torch.tensor([prior(cands[i].key()) for i in idx_ok])
+    pen = torch.tensor([term_cost(cands[i], prior) for i in idx_ok])
     beams = [([], y.clone(), 1.0)]
     finished = []
     for _ in range(max_terms):
@@ -263,14 +400,14 @@ def screen_component(y, Z, X, cands, prior, tol, beam=4, max_terms=12, budget=No
                 if term.sig() in have:
                     continue
                 terms, res, _ = refine_support(support + [term], Z, X, y)
-                if math.isfinite(res):
+                if math.isfinite(res) and not any(degenerate(t, Z, X) for t in terms):
                     expansions.append((terms, res / ny))
                     n_exp += 1
                 if n_exp >= beam:
                     break
         if not expansions:
             break
-        expansions.sort(key=lambda e: math.log(e[1] + 1e-40) + sum(prior(t.key()) for t in e[0]))
+        expansions.sort(key=lambda e: math.log(e[1] + 1e-40) + sum(term_cost(t, prior) for t in e[0]))
         seen, beams = set(), []
         for terms, rel in expansions:
             s = tuple(sorted(str(t.sig()) for t in terms))
@@ -380,16 +517,19 @@ def model_from_description(desc, mu, sig):
     return Model(sups, cfs, torch.as_tensor(mu), torch.as_tensor(sig))
 
 
-def self_nsub(model, z, tol=1e-14, max_nsub=256):
-    """The model's own substep count (no simulator): the harness rule in scaled coordinates (scale 1)."""
+def self_nsub(model, z, tol=1e-14, max_nsub=64):
+    """The model's own substep count (no simulator): the harness rule in scaled coordinates (scale 1).
+    Returns None if the model's one-step map is not finite (an unusable candidate)."""
     n, last = 1, float("inf")
     with torch.no_grad():
         prev = rk8_torch(model.g, z, n)
+        if not torch.isfinite(prev).all():
+            return None
         while n < max_nsub:
             nxt = rk8_torch(model.g, z, 2 * n)
             diff = float((nxt - prev).abs().max())
             if not math.isfinite(diff):
-                return max_nsub
+                return None
             if diff <= tol or (diff <= 1e-13 and diff > last / 8):
                 return n
             n, prev, last = 2 * n, nxt, diff
@@ -401,7 +541,9 @@ def self_nsub(model, z, tol=1e-14, max_nsub=256):
 def polish(model, z0, z1, iters=30, nsub=None):
     """Levenberg-Marquardt on one-step residuals rk8(g, z0) - z1 over all training pairs (float64)."""
     if nsub is None:
-        nsub = self_nsub(model, z0[: min(len(z0), 200)])
+        nsub = self_nsub(model, z0[: min(len(z0), 200)], max_nsub=16)   # provisional; final count re-chosen below
+        if nsub is None:
+            return model, 1, float("inf"), None
     p = model.params()
     f_res = lambda q: (rk8_torch(lambda zz: model.g(zz, q), z0, nsub) - z1).reshape(-1)
     r = f_res(p)
@@ -431,74 +573,123 @@ def polish(model, z0, z1, iters=30, nsub=None):
                 break
     model.set_params(p)
     nsub2 = self_nsub(model, z0[: min(len(z0), 200)])
+    if nsub2 is None:
+        return model, nsub, float("inf"), None
     if nsub2 != nsub:
         nsub = nsub2
         r = f_res(p)
     return model, nsub, float(r.abs().max()), J
 
 
+def _removal_costs(model, J):
+    """Linearized RMS cost of removing each term (others re-optimized): sqrt(c^2 / Cov_cc / n_res)."""
+    p = model.params()
+    try:
+        Cov = torch.linalg.pinv(J.T @ J, rtol=1e-15)
+    except RuntimeError:
+        return None
+    n_res = J.shape[0]
+    out = []
+    for (i, a), k in model.coef_index().items():
+        cost = float(p[k] ** 2 / Cov[k, k]) if Cov[k, k] > 0 else 0.0
+        out.append((math.sqrt(max(cost, 0.0) / n_res), i, a))
+    return sorted(out)
+
+
+def _without(model, removals):
+    trial = model.copy()
+    for i, a in sorted(removals, reverse=True):
+        del trial.supports[i][a]
+        trial.coefs[i] = torch.cat([trial.coefs[i][:a], trial.coefs[i][a + 1:]])
+    return trial
+
+
 def prune(model, z0, z1, nsub, err, J, floor=1e-14, max_rounds=12):
-    """Remove terms whose (linearized, others re-optimized) removal cost keeps the residual at the floor."""
+    """Remove terms whose (linearized, others re-optimized) removal cost keeps the residual at the floor.
+    First all such terms at once; if that breaks the fit, one at a time (cheapest first)."""
     for _ in range(max_rounds):
         if J is None or not math.isfinite(err):
             break
-        p = model.params()
-        idx = model.coef_index()
-        n_res = J.shape[0]
-        try:
-            Cov = torch.linalg.pinv(J.T @ J, rtol=1e-15)
-        except RuntimeError:
+        costs = _removal_costs(model, J)
+        if not costs:
             break
-        best = None
-        for (i, a), k in idx.items():
-            cost = float(p[k] ** 2 / Cov[k, k]) if Cov[k, k] > 0 else 0.0
-            rms = math.sqrt(max(cost, 0.0) / n_res)
-            if best is None or rms < best[0]:
-                best = (rms, i, a)
-        if best is None or best[0] > max(floor, 0.1 * err):
+        thr = max(floor, 0.1 * err)
+        cheap = [(i, a) for c, i, a in costs if c <= thr]
+        if not cheap:
             break
-        _, i, a = best
-        trial = model.copy()
-        del trial.supports[i][a]
-        trial.coefs[i] = torch.cat([trial.coefs[i][:a], trial.coefs[i][a + 1:]])
-        trial, nsub_t, err_t, J_t = polish(trial, z0, z1, iters=15)
-        if math.isfinite(err_t) and err_t <= max(10 * err, 1e-13):
-            model, nsub, err, J = trial, nsub_t, err_t, J_t
-        else:
+        accepted = False
+        tries = [cheap] if len(cheap) > 1 else []
+        tries.append([cheap[0]])
+        for rem in tries:
+            trial, nsub_t, err_t, J_t = polish(_without(model, rem), z0, z1, iters=15)
+            if math.isfinite(err_t) and err_t <= max(10 * err, 1e-13):
+                model, nsub, err, J = trial, nsub_t, err_t, J_t
+                accepted = True
+                break
+        if not accepted:
             break
     return model, nsub, err, J
 
 
-def flowmap_add(model, z0, z1, nsub, cands_per_comp, Zc, Xc, resid_deriv, prior, n_pre=48, n_add=1):
-    """Add the candidate term(s) with the largest exact flow-map sensitivity gain to the current residual."""
-    r = (rk8_torch(model.g, z0, nsub) - z1).reshape(-1)
-    pool = []
+def stage_adjoints(model, z0, z1, nsub):
+    """One reverse pass: every RK8 stage state Z_l and the adjoint dL/dK_l of its stage derivative, for
+    L = 0.5 * ||rk8(g, z0) - z1||^2. Then dL/dc for ANY added term phi (coefficient c = 0) is sum_l adj_l . phi(Z_l)."""
+    p = model.params().detach()
+    leaves, states = [], []
+
+    def f(zz):
+        e = torch.zeros(zz.shape, dtype=zz.dtype, requires_grad=True)
+        leaves.append(e); states.append(zz.detach())
+        return model.g(zz, p) + e
+
+    loss = 0.5 * ((rk8_torch(f, z0, nsub) - z1) ** 2).sum()
+    adj = torch.autograd.grad(loss, leaves)
+    return torch.cat(states, 0), torch.cat([a.detach() for a in adj], 0)
+
+
+def flowmap_add(model, z0, z1, nsub, cands_per_comp, Zc, Xc, prior, n_pre=48, n_add=1, verbose=False):
+    """Add the candidate term with the largest exact flow-map gain on the current one-step residual.
+    Prefilter: the exact flow-map loss gradient for ALL candidates from one reverse pass (stage adjoints), normalized
+    by each candidate's scale; the top `n_pre` then get exact forward-mode sensitivities and projected gains."""
+    base_p = model.params().detach()
+    d = z0.shape[-1]
+    Zs, adj = stage_adjoints(model, z0, z1, nsub)
+    Xs = Zs * model.sig + model.mu
+    scored = []
     for i, cands in enumerate(cands_per_comp):
         if not cands:
             continue
         have = {t.sig() for t in model.supports[i]}
-        V = design(cands, Zc, Xc)
-        ok = torch.isfinite(V).all(0) & (V.norm(dim=0) > 1e-12)
-        y = resid_deriv[:, i]
-        Vs = torch.where(ok, V, torch.zeros_like(V))
-        corr = torch.where(ok, (Vs.T @ y).abs() / torch.clamp(Vs.norm(dim=0), min=1e-30), torch.zeros(V.shape[1]))
-        order = torch.argsort(-corr).tolist()
-        sel = [cands[k] for k in order if ok[k] and cands[k].sig() not in have][:n_pre]
-        pool += [(i, t) for t in sel]
+        pool_i = [t for t in cands if t.sig() not in have]
+        if not pool_i:
+            continue
+        V = design_fast(pool_i, Zs, Xs)
+        ok = torch.isfinite(V).all(0)
+        V = torch.where(ok, V, torch.zeros_like(V))
+        scale = V.pow(2).mean(0).sqrt()
+        val = (V.T @ adj[:, i]).abs() / torch.clamp(scale, min=1e-30)
+        val = torch.where(ok & (scale > 1e-12) & torch.isfinite(val), val, torch.zeros_like(val))
+        scored += [(float(val[k]), i, pool_i[k]) for k in range(len(pool_i)) if val[k] > 0]
+    scored.sort(key=lambda e: -e[0])
+    pool = [(i, t) for _, i, t in scored[:n_pre]]
     if not pool:
         return None
-    base_p = model.params()
+    pools = [[t for i2, t in pool if i2 == i] for i in range(d)]
 
     def phi(zz, cvec):
         X = zz * model.sig + model.mu
         out = model.g(zz, base_p)
-        adds = [torch.zeros(zz.shape[:-1], dtype=zz.dtype) for _ in range(zz.shape[-1])]
-        for c_idx, (i, t) in enumerate(pool):
-            adds[i] = adds[i] + cvec[c_idx] * term_value(t, zz, X)
-        return out + torch.stack(adds, -1)
+        cols, k = [], 0
+        for i in range(d):
+            if pools[i]:
+                cols.append(design_fast(pools[i], zz, X) @ cvec[k:k + len(pools[i])]); k += len(pools[i])
+            else:
+                cols.append(torch.zeros(zz.shape[:-1], dtype=zz.dtype))
+        return out + torch.stack(cols, -1)
 
-    F = lambda cvec: rk8_torch(lambda zz: phi(zz, cvec), z0, nsub).reshape(-1)
-    S = torch.func.jacfwd(F)(torch.zeros(len(pool)))
+    order = [(i, t) for i in range(d) for t in pools[i]]
+    r = (rk8_torch(lambda zz: model.g(zz, base_p), z0, nsub) - z1).reshape(-1).detach()
+    S = torch.func.jacfwd(lambda cvec: rk8_torch(lambda zz: phi(zz, cvec), z0, nsub).reshape(-1))(torch.zeros(len(order)))
     ok = torch.isfinite(S).all(0)
     if not ok.any():
         return None
@@ -508,15 +699,17 @@ def flowmap_add(model, z0, z1, nsub, cands_per_comp, Zc, Xc, resid_deriv, prior,
     Sp = S - Q @ (Q.T @ S)
     rp = r - Q @ (Q.T @ r)
     nrm = (Sp * Sp).sum(0)
-    gain = torch.where(ok & (nrm > 1e-28), (Sp.T @ rp) ** 2 / torch.clamp(nrm, min=1e-300), torch.zeros(len(pool)))
-    pen = torch.tensor([prior(t.key()) for _, t in pool])
-    score = torch.log(torch.clamp(float(rp @ rp) - gain, min=1e-300)) + 2 * pen
+    gain = torch.where(ok & (nrm > 1e-28), (Sp.T @ rp) ** 2 / torch.clamp(nrm, min=1e-300), torch.zeros(len(order)))
+    cost = torch.tensor([term_cost(t, prior) for _, t in order])
+    score = 0.5 * torch.log(torch.clamp(float(rp @ rp) - gain, min=1e-300)) + cost
     picks = torch.argsort(score)[:n_add].tolist()
     new = model.copy()
     for k in picks:
-        i, t = pool[k]
+        i, t = order[k]
         new.supports[i] = new.supports[i] + [t]
         new.coefs[i] = torch.cat([new.coefs[i], torch.zeros(1)])
+        if verbose:
+            print(f"     add comp {i}: {t.sig()} gain {float(gain[k]):.2e} of {float(rp @ rp):.2e}", flush=True)
     return new
 
 
@@ -549,16 +742,24 @@ def restrict(cands, allowed_vars, max_level):
 
 # ---------------- the learner ----------------
 
+FD13 = torch.tensor([1 / 5544, -1 / 385, 1 / 56, -5 / 63, 15 / 56, -6 / 7, 0.0, 6 / 7, -15 / 56, 5 / 63, -1 / 56, 1 / 385, -1 / 5544])
+
+
 def deriv_noise(Ztr):
-    """9-point derivatives at burst interiors, and a per-component estimate of their error from the data."""
+    """9-point derivatives at burst interiors, and a per-component estimate of their error from the data:
+    RMS difference between the 9-point and the 13-point (12th-order) estimate at each burst's centre."""
     L = Ztr.shape[1]
     cs = range(4, L - 4)
-    g = lambda W: torch.stack([sum(W[k] * Ztr[:, c - 4 + k] for k in range(9)) for c in cs], 1).reshape(-1, Ztr.shape[-1])
-    G9, G7, G5 = g(FD9), g(FD7), g(FD5)
-    e7 = ((G7 - G9) ** 2).mean(0).sqrt()
-    e5 = ((G5 - G7) ** 2).mean(0).sqrt()
-    est = torch.where(e5 > 0, e7 ** 2 / torch.clamp(e5, min=1e-300), e7)
-    return G9, torch.maximum(est, e7 * 1e-3)
+    G9 = torch.stack([sum(FD9[k] * Ztr[:, c - 4 + k] for k in range(9)) for c in cs], 1).reshape(-1, Ztr.shape[-1])
+    if L >= 13:
+        c = L // 2
+        g9 = sum(FD9[k] * Ztr[:, c - 4 + k] for k in range(9))
+        g13 = sum(FD13[k] * Ztr[:, c - 6 + k] for k in range(13))
+        est = ((g9 - g13) ** 2).mean(0).sqrt()
+    else:
+        G7 = torch.stack([sum(FD7[k] * Ztr[:, c - 4 + k] for k in range(9)) for c in cs], 1).reshape(-1, Ztr.shape[-1])
+        est = ((G7 - G9) ** 2).mean(0).sqrt()
+    return G9, est
 
 
 def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose=False, max_terms=12,
@@ -582,6 +783,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
     z0, z1 = Ztr[:, :-1].reshape(-1, d), Ztr[:, 1:].reshape(-1, d)
     zv0, zv1 = Zva[:, :-1].reshape(-1, d), Zva[:, 1:].reshape(-1, d)
     prior = kn.prior_fn()
+    set_complexity(len(Zc))
     report = {"phases": [], "polishes": 0, "knowledge": kn.label}
     cand_cache = {}
     best = None
@@ -591,7 +793,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
 
     def cands_for(levels):
         if levels not in cand_cache:
-            cand_cache[levels] = candidates(d, Zc, Xc, levels, promoted=tuple(kn.promoted))
+            cand_cache[levels] = candidates(d, Zc, Xc, levels, promoted=tuple(kn.promoted), G=G)
         return cand_cache[levels]
 
     # search passes: guided (restricted) first if guidance is available, then the full search
@@ -648,21 +850,50 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
                 sups.append(list(terms)); cfs.append(c)
             model = Model(sups, cfs, mu, sig)
             try:
+                t_c = time.time()
                 model, nsub, err, J = polish(model, z0, z1)
                 report["polishes"] += 1
+                if verbose:
+                    print(f"   polished {model.n_terms()} nsub {nsub} train {err:.2e} ({time.time() - t_c:.1f}s)", flush=True)
+                if not math.isfinite(err):
+                    continue
                 model, nsub, err, J = prune(model, z0, z1, nsub, err, J)
+                if verbose:
+                    print(f"   start {model.n_terms()} train {err:.2e} (pruned; {time.time() - t_c:.1f}s)", flush=True)
+                    for ci, terms in enumerate(model.supports):
+                        print(f"      c{ci}: " + " ".join(f"{t.mono}{[(f.family, f.var, tuple(round(v, 3) for v in f.theta)) for f in t.factors] or ''}"
+                                                       for t in terms), flush=True)
                 for _ in range(stepwise_rounds):
                     if err <= VAL_TOL or out_of_time():
                         break
-                    resid_d = G - model.g(Zc).detach()
-                    new = flowmap_add(model, z0, z1, nsub, per_comp, Zc, Xc, resid_d, prior)
+                    new = flowmap_add(model, z0, z1, nsub, per_comp, Zc, Xc, prior, verbose=verbose)
                     if new is None:
                         break
                     new, nsub_n, err_n, J_n = polish(new, z0, z1)
                     report["polishes"] += 1
+                    if verbose:
+                        print(f"     -> {new.n_terms()} train {err_n:.2e}", flush=True)
                     if not (math.isfinite(err_n) and err_n < 0.5 * err):
                         break
                     model, nsub, err, J = prune(new, z0, z1, nsub_n, err_n, J_n)
+                bad = [(ci, a) for ci, terms in enumerate(model.supports) for a, t in enumerate(terms) if degenerate(t, Zc, Xc)]
+                if bad:
+                    for ci, a in sorted(bad, reverse=True):
+                        del model.supports[ci][a]
+                        model.coefs[ci] = torch.cat([model.coefs[ci][:a], model.coefs[ci][a + 1:]])
+                    if verbose:
+                        print(f"     dropped {len(bad)} degenerate term(s)", flush=True)
+                    model, nsub, err, J = polish(model, z0, z1)
+                    for _ in range(stepwise_rounds):
+                        if err <= VAL_TOL or out_of_time():
+                            break
+                        new = flowmap_add(model, z0, z1, nsub, per_comp, Zc, Xc, prior, verbose=verbose)
+                        if new is None:
+                            break
+                        new, nsub_n, err_n, J_n = polish(new, z0, z1)
+                        if not (math.isfinite(err_n) and err_n < 0.5 * err) or any(degenerate(t, Zc, Xc) for tt in new.supports for t in tt):
+                            break
+                        model, nsub, err, J = prune(new, z0, z1, nsub_n, err_n, J_n)
                 with torch.no_grad():
                     val_err = float((rk8_torch(model.g, zv0, nsub) - zv1).abs().max())
             except (RuntimeError, ValueError) as e:  # numerical failure of a candidate
@@ -682,6 +913,15 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
         report["phases"].append(sig_pass[:2])
         if best is not None and best["val_err_scaled"] <= VAL_TOL:
             break
+    if best is not None and best["val_err_scaled"] <= VAL_TOL:
+        # model chosen by internal validation; its constants are then refit on ALL observed bursts (more coverage)
+        za0 = torch.cat([z0, zv0]); za1 = torch.cat([z1, zv1])
+        try:
+            m_all, nsub_all, err_all, _ = polish(best["model"].copy(), za0, za1, iters=10)
+            if math.isfinite(err_all) and err_all <= VAL_TOL:
+                best.update({"model": m_all, "nsub": nsub_all, "all_err_scaled": err_all})
+        except (RuntimeError, ValueError):
+            pass
     elapsed = time.time() - t_start
     if best is None:
         return {"status": "no_model", "seconds": elapsed, **report}

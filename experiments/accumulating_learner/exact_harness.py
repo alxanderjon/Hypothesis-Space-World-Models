@@ -173,3 +173,43 @@ def cost(ref, f_hat, nsub_hat, steps=1000, batch=100):
         out[label] = {"artifact_s": ta, "reference_s": tr, "speedup": tr / ta}
     out["cheap"] = bool(out["single"]["speedup"] > 1 and out["batch"]["speedup"] > 1)
     return out
+
+
+def evaluate_rollout(ref, roll, nsub_hat):
+    """Exactness test of a compiled artifact: roll(x0 (n, d), steps, nsub) -> (n, steps+1, d)."""
+    xs = ref.held_states(1000)
+    one = np.max(np.abs(roll(xs, 1, nsub_hat)[:, 1] - ref.one_step(xs)) / ref.scale)
+    if not hasattr(ref, "E"):
+        ref.envelope()
+    H = ref.H
+    xh = roll(ref.env_starts, H, nsub_hat)
+    e = np.max(np.abs(xh - ref.env_ref[:, :H + 1]) / ref.scale, axis=2)
+    med, p90 = np.median(e, 0), np.percentile(e, 90, axis=0)
+    Ek = np.maximum(ref.E[:H + 1], 1e-16)
+    multi_ok = bool(np.all(med[1:] <= 10 * Ek[1:]) and np.all(p90[1:] <= 100 * Ek[1:]))
+    return {"one_step_max_scaled_error": float(one), "one_step_ok": bool(one <= 1e-12),
+            "horizon_steps": H, "multi_step_ok": multi_ok,
+            "multi_step_worst_ratio_median": float(np.max(med[1:] / Ek[1:])),
+            "exact": bool(one <= 1e-12 and multi_ok)}
+
+
+def cost_compiled(ref, roll, nsub_hat, steps=1000, batch=100):
+    """Wall time: compiled artifact vs the original simulation (scipy DOP853, rtol 1e-13, on the true f)."""
+    x0 = ref.held_trajs[:, 0][np.arange(batch) % 4] * (1 + 1e-6 * ref.rng.standard_normal((batch, ref.sys.d)))
+    T = steps * ref.sys.dt
+    t_eval = np.linspace(0, T, steps + 1)
+    fun = lambda t, y: ref.sys.f(y[None, :])[0]
+    out = {}
+    for label, n in (("single", 1), ("batch", batch)):
+        t0 = time.perf_counter(); roll(x0[:n], steps, nsub_hat); ta = time.perf_counter() - t0
+        n_ref = min(n, 10)                     # the reference is timed on up to 10 trajectories and scaled
+        t0 = time.perf_counter()
+        nfev = 0
+        for i in range(n_ref):
+            sol = solve_ivp(fun, (0, T), x0[i], method="DOP853", t_eval=t_eval, rtol=1e-13, atol=1e-15 * ref.scale)
+            nfev += sol.nfev
+        tr = (time.perf_counter() - t0) * n / n_ref
+        out[label] = {"artifact_s": ta, "reference_s": tr, "speedup": tr / ta,
+                      "reference_rhs_evals_per_step": nfev / n_ref / steps, "artifact_rhs_evals_per_step": 12 * nsub_hat}
+    out["cheap"] = bool(out["single"]["speedup"] > 1 and out["batch"]["speedup"] > 1)
+    return out
