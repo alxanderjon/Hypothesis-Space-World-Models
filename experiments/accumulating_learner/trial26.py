@@ -236,10 +236,17 @@ def test_job(args):
     import exact_harness as H
     import exact_learner as EL
     recs = load_history(seed)
-    ref = H.Reference(name, seed=seed)
-    ref.envelope()
-    b = bursts_from(ref, seed, M)
     outdir.mkdir(parents=True, exist_ok=True)
+    try:
+        ref = H.Reference(name, seed=seed)
+        ref.envelope()
+        b = bursts_from(ref, seed, M)
+    except Exception as e:      # the reference itself could not be generated: recorded for every arm, run continues
+        for arm, N in todo:
+            (outdir / f"M{M}_{arm}{N}{tagkey}.json").write_text(json.dumps(
+                {"name": name, "seed": seed, "M": M, "arm": arm, "N": N, "tagkey": tagkey, "status": "reference_error",
+                 "exact": False, "error": repr(e)[:500]}))
+        return name, M, "reference_error"
     for arm, N in todo:
         t0 = time.time()
         rec = {"name": name, "seed": seed, "M": M, "arm": arm, "N": N, "tagkey": tagkey}
@@ -311,10 +318,19 @@ def a3_plan(seed):
     return plan, randoms
 
 
+def _safe(packed):
+    """Run a stage function in a worker; an unexpected exception is returned, never raised into the driver."""
+    name, args = packed
+    try:
+        return globals()[name](args)
+    except Exception as e:
+        return ("worker_error", repr(e)[:300])
+
+
 def run_pool(fn, jobs, workers):
     ctx = get_context("spawn")
     with ctx.Pool(workers, maxtasksperchild=1) as pool:
-        for k, r in enumerate(pool.imap_unordered(fn, jobs)):
+        for k, r in enumerate(pool.imap_unordered(_safe, [(fn.__name__, j) for j in jobs])):
             print(f"[{time.strftime('%H:%M:%S')}] {k + 1}/{len(jobs)} {r}", flush=True)
 
 
