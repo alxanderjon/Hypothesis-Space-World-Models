@@ -2522,3 +2522,9 @@ The criteria themselves are unchanged. *Known when this rule was written:* the h
   - The remaining work was relaunched in this order: (1) scratch at M = 64 on the G-novel systems still missing it, which settles C0; (2) all remaining G-novel arms at M = 64, including the crashed guide arms; (3) G-familiar at all M.
 - **C0 gate.** As fixed earlier, G-novel M < 64 runs only if C0 passes.
 - **Logged before C0 is known.** Status at this point: seed 1 has 19/27 and seed 2 15/27 scratch results at M = 64, with 0 exact recoveries.
+
+### Test-stage reference-time rule (fixed at 07:05, before these systems' outcomes are known)
+
+- **Situation.** Some G-novel BioModels have produced no record at all: BIOMD0000000157, 236, 299, 323 and 371 in seed 1, and 236, 299, 371, 878 and 938 in seed 2. In the first test pass their jobs ran 2.5 hours without finishing. The fixed-step reference at 1e-14 is extremely slow for them, presumably because they are stiff.
+- **Rule.** At 07:40, any G-novel system with no scratch record at M = 64 is recorded as `reference_timeout` (not exact) for every arm and every M in that seed. Phase 1 then stops, and phases 2–3 proceed.
+- **C0 reporting.** C0 is reported both counting these systems as failures and excluding them, as systems the harness cannot simulate within budget.
