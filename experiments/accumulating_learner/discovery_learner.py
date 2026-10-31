@@ -450,6 +450,19 @@ def simplify_degenerate(model, Zc, Xc):
                     add.add(tuple(int(k == v) for k in range(d)))
                 if sum(t.mono):
                     add.add(tuple(t.mono))
+                # a power with a (near-)integer exponent of a variable or weighted sum is a polynomial in disguise:
+                # add every monomial of its variables up to that degree, times the term's own monomial
+                for f in t.factors:
+                    if f.family in ("cpow", "pow") and f.theta:
+                        n = round(f.theta[-1]) if f.family == "cpow" else round(f.theta[0])
+                        if 0 <= n <= 3:
+                            vs = sorted(fvars(f))
+                            for mono in monomials(len(vs), n):
+                                full = list(t.mono)
+                                for vi, e in zip(vs, mono):
+                                    full[vi] += e
+                                if sum(full) <= 3:
+                                    add.add(tuple(full))
         new_terms = [terms[a] for a in keep]
         have = {u.sig() for u in new_terms}
         new_coefs = [float(coefs[a]) for a in keep]
@@ -1058,9 +1071,14 @@ def converged_val(model, z0, zv0, zv1):
     return float(r.max()), r.max(0).values, NSUB_MARGIN * n
 
 
-def base_terms(model, i, d):
+def base_terms(model, i, d, minimal=False):
     terms = [Term(tuple([0] * d), (), 1)] + [Term(tuple(int(k == j) for k in range(d)), (), 1) for j in range(d)]
     have = {t.sig() for t in terms}
+    if model is not None and minimal:     # keep earlier discovered / library pieces, drop the other higher-order terms
+        for t in model.supports[i]:
+            if t.factors and t.factors[0].family in LIB_FAMILIES and t.sig() not in have:
+                terms.append(t); have.add(t.sig())
+        return terms
     if model is not None:
         for t in model.supports[i]:
             if not t.factors and t.sig() not in have:
@@ -1068,9 +1086,11 @@ def base_terms(model, i, d):
     return terms
 
 
-def screen_discovery(i, G, Zc, Xc, base, top_k=6, D0=10):
-    """Rank (multiplier, argument[, weight]) for a missing piece in component i by a derivative-level fit."""
+def screen_discovery(i, G, Zc, Xc, base, top_k=6, D0=10, Zall=None):
+    """Rank (multiplier, argument[, weight]) for a missing piece in component i by a derivative-level fit.
+    The curve's range covers every observed state (Zall: training and validation bursts, the learner's own data)."""
     d = Zc.shape[1]
+    Zall = Zc if Zall is None else Zall
     y = G[:, i]
     ny = float(y.norm()) + 1e-300
     Pb = design(base, Zc, Xc)
@@ -1081,7 +1101,8 @@ def screen_discovery(i, G, Zc, Xc, base, top_k=6, D0=10):
         for a in args:
             for w in ([None] if isinstance(a, int) else PAIR_WEIGHTS):
                 u = Zc[:, a] if w is None else Zc[:, a[0]] + w * Zc[:, a[1]]
-                lo, hi = float(u.min()), float(u.max())
+                ua = Zall[:, a] if w is None else Zall[:, a[0]] + w * Zall[:, a[1]]
+                lo, hi = float(ua.min()), float(ua.max())
                 if hi - lo < 1e-9:
                     continue
                 pad = 0.05 * (hi - lo)
@@ -1113,8 +1134,49 @@ def _extend_degree(model, i, a_idx, D):
     return True
 
 
+def _try_candidate(model, i, base, ct, z0, z1, zv0, zv1, Zc, Xc, G, deadline, verbose, label, degrees=None):
+    """Polish model with component i := base + [ct] (ct: curve or compact term); for curves raise the degree while the
+    held-back error keeps improving. Returns (model, component-i validation error, overall validation error, per-comp)."""
+    trial = model.copy()
+    _, cb = lstsq_resid(design(base, Zc, Xc), G[:, i] - design([ct], Zc, Xc)[:, 0])
+    trial.supports[i] = list(base) + [ct]
+    trial.coefs[i] = torch.cat([cb, torch.ones(1)])
+    best = None
+    worse = 0
+    for D in (degrees or (None,)):
+        if D is not None:
+            a_idx = next(k for k, t in enumerate(trial.supports[i]) if t.factors and t.factors[0].family == "cheb")
+            _extend_degree(trial, i, a_idx, D)
+        trial, nsub, err, J = polish(trial, z0, z1, iters=30)
+        if not math.isfinite(err):
+            break
+        v, ce, _ = converged_val(trial, z0, zv0, zv1)
+        if verbose:
+            print(f"     discover comp {i} {label}{'' if D is None else f' D={D}'}: train {err:.1e} val {v:.1e}", flush=True)
+        if ce is not None and (best is None or v < best[2]):
+            best = (trial.copy(), float(ce[i]), v, ce, nsub, err, J)
+            worse = 0
+        else:
+            worse += 1
+        if v <= VAL_TOL or worse >= 2 or time.time() > deadline:
+            break
+    if best is None:
+        return None
+    trial, ci, v, ce, nsub, err, J = best
+    try:
+        trial, nsub, err, J = prune(trial, z0, z1, nsub, err, J)
+        v2, ce2, _ = converged_val(trial, z0, zv0, zv1)
+        if ce2 is not None and v2 <= v * 1.5 + 1e-15:
+            return trial, float(ce2[i]), v2, ce2
+    except (RuntimeError, ValueError):
+        pass
+    return best[0], ci, v, ce
+
+
 def discover(model0, z0, z1, zv0, zv1, Zc, Xc, G, mu, sig, deadline, verbose=False, top_k=6):
-    """Add missing pieces m(z) g(u) to unsolved components until validation passes (or the budget ends)."""
+    """Add missing pieces m(z) g(u) to unsolved components until validation passes (or the budget ends).
+    For each promising (multiplier, argument), compact existing-toolkit shapes on the argument are tried first (few
+    constants, less over-fitting); a free curve is tried if none passes."""
     d = Zc.shape[1]
     if model0 is None:
         sups = [base_terms(None, i, d) for i in range(d)]
@@ -1122,55 +1184,79 @@ def discover(model0, z0, z1, zv0, zv1, Zc, Xc, G, mu, sig, deadline, verbose=Fal
         model0 = Model(sups, cfs, mu, sig)
     model = model0.copy()
     val, comp_err, _ = converged_val(model, z0, zv0, zv1)
-    solved_by_disc = set()
-    for _round in range(d):
+    pieces_added = {}
+    Zall = torch.cat([z0, zv0])
+    for _round in range(2 * d):
         if time.time() > deadline or comp_err is None:
             break
-        order = [int(i) for i in torch.argsort(-comp_err).tolist() if float(comp_err[i]) > VAL_TOL and int(i) not in solved_by_disc]
+        order = [int(i) for i in torch.argsort(-comp_err).tolist() if float(comp_err[i]) > VAL_TOL and pieces_added.get(int(i), 0) < 2]
         if not order:
             break
         i = order[0]
-        base = base_terms(model, i, d)
-        cands = screen_discovery(i, G, Zc, Xc, base, top_k=top_k)
         best_i = None
-        for rel, m, a, w, lo, hi, coefs in cands:
-            if time.time() > deadline:
+        for minimal in (True, False):
+            if best_i is not None and best_i[2] <= VAL_TOL:
                 break
-            trial = model.copy()
-            ct = _cheb_term(d, m, a, w, lo, hi, coefs)
-            _, cb = lstsq_resid(design(base, Zc, Xc), G[:, i] - design([ct], Zc, Xc)[:, 0])
-            trial.supports[i] = list(base) + [ct]
-            trial.coefs[i] = torch.cat([cb, torch.ones(1)])
-            a_idx = len(base)
-            try:
-                for D in DISC_DEGREES:
-                    _extend_degree(trial, i, a_idx, D)
-                    trial, nsub, err, J = polish(trial, z0, z1, iters=30)
-                    if not math.isfinite(err):
-                        break
-                    v, ce, _ = converged_val(trial, z0, zv0, zv1)
-                    if verbose:
-                        print(f"     discover comp {i} m={m} arg={a} w={w} D={D}: train {err:.1e} val {v:.1e}", flush=True)
-                    if v <= VAL_TOL or time.time() > deadline:
-                        break
-                    a_idx = next(k for k, t in enumerate(trial.supports[i]) if t.factors and t.factors[0].family == "cheb")
-                if not math.isfinite(err):
-                    continue
-                trial, nsub, err, J = prune(trial, z0, z1, nsub, err, J)
-                v, ce, _ = converged_val(trial, z0, zv0, zv1)
-            except (RuntimeError, ValueError, StopIteration):
-                continue
-            if ce is not None and (best_i is None or float(ce[i]) < best_i[1]):
-                best_i = (trial, float(ce[i]), v, ce)
-            if v <= VAL_TOL:
-                break
+            base = base_terms(model, i, d, minimal=minimal)
+            cands = screen_discovery(i, G, Zc, Xc, base, top_k=top_k, Zall=Zall)
+            r = _discover_component(model, i, base, cands, z0, z1, zv0, zv1, Zc, Xc, G, deadline, verbose)
+            if r is not None and (best_i is None or r[1] < best_i[1]):
+                best_i = r
         if best_i is None or best_i[1] >= float(comp_err[i]):
-            break
+            pieces_added[i] = 2                     # no progress on this component: do not retry it
+            continue
         model, cerr_i, val, comp_err = best_i
-        solved_by_disc.add(i)
+        pieces_added[i] = pieces_added.get(i, 0) + 1
         if val <= VAL_TOL:
             break
     return model
+
+
+def _discover_component(model, i, base, cands, z0, z1, zv0, zv1, Zc, Xc, G, deadline, verbose):
+    d = Zc.shape[1]
+    best_i = None
+    if True:
+        for rel, m, a, w, lo, hi, coefs in cands:
+            if time.time() > deadline:
+                break
+            mono = tuple([0] * d) if m is None else tuple(int(k == m) for k in range(d))
+            # (a) compact shapes on this argument, initialised from the screened curve
+            u = torch.linspace(lo, hi, 300)
+            g0 = cheb_eval(2 * (u - lo) / (hi - lo) - 1, torch.tensor(coefs))
+            tried_compact = []
+            for fam in COMPACT:
+                fit = fit_compact(u, g0, fam, iters=25)
+                if fit is not None and fit[0] < 0.05:
+                    tried_compact.append((fit[0], fam, fit[1]))
+            tried_compact.sort()
+            outcome = None
+            for rel_c, fam, q in tried_compact[:3]:
+                fac = Factor(fam, a, (tuple() if w is None else (float(w),)) + tuple(float(x) for x in q), ("new",))
+                ct = Term(mono, (fac,), 1)
+                if degenerate(ct, Zc, Xc):
+                    continue
+                try:
+                    r = _try_candidate(model, i, base, ct, z0, z1, zv0, zv1, Zc, Xc, G, deadline, verbose, f"{fam} m={m} arg={a} w={w}")
+                except (RuntimeError, ValueError, StopIteration):
+                    r = None
+                if r is not None and (outcome is None or r[1] < outcome[1]):
+                    outcome = r
+                if outcome is not None and outcome[2] <= VAL_TOL:
+                    break
+            # (b) free curve if no compact shape passed
+            if outcome is None or outcome[2] > VAL_TOL:
+                try:
+                    r = _try_candidate(model, i, base, _cheb_term(d, m, a, w, lo, hi, coefs), z0, z1, zv0, zv1, Zc, Xc, G,
+                                       deadline, verbose, f"curve m={m} arg={a} w={w}", degrees=DISC_DEGREES)
+                except (RuntimeError, ValueError, StopIteration):
+                    r = None
+                if r is not None and (outcome is None or r[1] < outcome[1]):
+                    outcome = r
+            if outcome is not None and (best_i is None or outcome[1] < best_i[1]):
+                best_i = outcome
+            if best_i is not None and best_i[2] <= VAL_TOL:
+                break
+    return best_i
 
 
 # ======================================================================================================================
@@ -1364,7 +1450,7 @@ def as_library_piece(rec):
 # the Trial 27 learner
 # ======================================================================================================================
 
-def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose=False, max_terms=12,
+def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose=False, max_terms=8,
           stepwise_rounds=8, levels_plan=((0,), (1,), (1, 2)), composite_budget=4000, library=None, discover_pieces=True,
           standard_frac=0.4):
     """bursts: (M, L, d) noise-free states at unit sampling interval. Returns a result dict.

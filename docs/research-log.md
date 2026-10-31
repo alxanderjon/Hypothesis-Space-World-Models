@@ -2689,3 +2689,16 @@ Work within the trial is autonomous from here. Trial 26's code stays frozen; Tri
   - This bears directly on the owner's out-of-range question: an in-range-equivalent but non-compact form need not extrapolate.
 - **Out-of-range test.** States where the reference itself is untrustworthy (non-finite, or changed by > 1e-13 when the substeps are doubled) are excluded and counted. The headline is the fraction of the remaining out-of-range states that stay one-step exact.
 - **Robustness.** Pruning never empties a component. The adjoint pass tolerates models that ignore their input.
+- **Discovery, versions 2 and 3** (development systems).
+  - **Compact shapes first.** For each promising (multiplier, argument), existing toolkit shapes on that argument are tried before a free curve. Their constants are initialised from the screened curve. A free curve is the fallback.
+  - **Degree stops on held-back data.** A curve's degree rises only while its held-back error keeps improving.
+  - **Minimal base first.** Discovery starts from a constant plus linear terms (plus any earlier discovered or library pieces), with the fuller base from the standard search as the fallback. On BIOMD0000000507 the right saturation shape was found, but spurious polynomial terms from an over-fitted base blocked exactness.
+  - **Two pieces per component.** Up to two discovered pieces per component; some development equations need two.
+  - **Disguised polynomials expanded.** A power with an integer exponent (a polynomial in disguise) is expanded into the monomials it equals.
+  - **Smaller first search.** The standard search's support cap is 8 terms per component (12 in Trial 26). 18–22-term supports over-fitted and used up the time budget before discovery started.
+- **What development systems contain (dev half, inspected).**
+  - Hill saturations times a variable (x0·x1⁴/(81 + x1⁴)).
+  - Michaelis–Menten ratios, and competitive denominators with a weighted sum (x0/(1 + a·x0 + b·x1)).
+  - A logarithm of a weighted sum (x0·log(a(x0 + x1))). This is outside the hand toolkit, so it can only be learned exactly by discovering a genuinely new shape.
+  - Nested rational Hill terms (BIOMD0000000058, 4-D).
+- **Validity filter.** Converted equations with infinite or undefined constants are excluded. It excludes nothing so far: an apparent "infinity" in BIOMD0000000776 was a display artefact of a logarithm.

@@ -22,11 +22,17 @@ POOL_DIRS = {2: ROOT / "outputs/accumulating_learner/trial27/pool_d2", 4: ROOT /
 SBML = H.SBML
 STEPS = 100            # steps per period (oscillator) or per settle time (transient)
 REC_STEPS = 150        # transient recording length in steps (before interval refinement)
-MAX_REF_NSUB = 8       # sampling rule: the true system needs at most this many substeps per interval
+N_LEARN_REC = 64       # transient learning recordings (varied starting states)
+MAX_REF_NSUB = 2       # sampling rule: the true system needs at most this many substeps per interval
 
 
 def split_half(mid):
     return "eval" if int(hashlib.sha256(("trial27-split-v1:" + mid).encode()).hexdigest()[0], 16) % 2 else "dev"
+
+
+def ill_defined(rec):
+    """Pool validity filter (both halves alike): converted equations containing infinite or undefined constants."""
+    return any(tok in e for e in rec.get("exprs", []) for tok in ("ComplexInfinity", "zoo", "NaN", "Infinity"))
 
 
 def pool_records():
@@ -35,7 +41,7 @@ def pool_records():
         f = p / "conversion.json"
         if f.exists():
             for r in json.loads(f.read_text())["records"]:
-                if r["status"] == "accepted":
+                if r["status"] == "accepted" and not ill_defined(r):
                     out[r["id"]] = dict(r, d=d)
     return out
 
@@ -152,7 +158,7 @@ class Reference27:
     # -- settling transients: recordings from varied starting states --
     def _transient(self, s, rng):
         d = s.d
-        f_learn = s.ic * rng.uniform(0.5, 1.5, (16, d))
+        f_learn = s.ic * rng.uniform(0.5, 1.5, (N_LEARN_REC, d))
         f_held = s.ic * rng.uniform(0.5, 1.5, (16, d))
         lo = rng.uniform(0.2, 0.4, (8, d)); hi = rng.uniform(2.0, 3.0, (8, d))
         f_oor = s.ic * np.concatenate([lo, hi])
