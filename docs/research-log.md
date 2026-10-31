@@ -2351,3 +2351,24 @@ The search for exact equations first explores only the influences and complexity
 - **Pass = A1, A2 and A3 in both seeds, with C0 met.**
 
 **Status: awaiting owner approval.** A plain-language explanation was sent; nothing in Trial 26 runs before approval.
+
+### Refinements before approval (31 October, nothing run)
+
+Checking the kinds file (`trial24pfn/kinds.json`) against the design:
+
+- **History pieces.** The 45 history systems contain only polynomial (products and whole-number powers), trigonometric, piecewise and tanh pieces. None contains rational/saturating, exponential, non-integer-power or log pieces.
+- **G-novel = 27 systems.** These are the 26 rational/exponential systems plus **WindmiReduced** (development), whose non-integer power never appears in the history. The 26 are:
+  - 16 BioModels;
+  - 6 catalog systems removed from the history: Blasius, CoevolvingPredatorPrey, HastingsPowell, JerkCircuit, SprottMore and YuWang2;
+  - SaltonSea and YuWang;
+  - GlycolyticOscillation and ItikBanksTumor.
+- **G-familiar = 10 systems** (reported only): the 9 polynomial development systems and Thomas.
+- **A1 is also measured against the memory-only control.** Of the full learner's G-novel gain over scratch, at least half must remain over memory-only. Otherwise reuse of the *familiar* pieces inside G-novel systems (for example, their product terms) could carry the result.
+- **A3 is redefined so it is not degenerate.** Removing every history system that shares *any* piece would empty the history, because nearly all systems share product terms. Instead:
+  - For each G-novel system the full learner recovers at N = 45, the history systems are ranked by structural overlap with its recovered equations: shared term shapes, ignoring variable labels, taken from the learner's own recovered models.
+  - A history of the 22 *least similar* systems is compared with 22 random history systems (3 draws).
+  - **A3 passes if the least-similar history keeps ≥ half of the random-history benefit at M = 8**, or in minimal observations.
+- **Copy-the-closest-system baseline** (reported, mainly informative on G-familiar): take the structure of the past system most similar in data and refit only its constants.
+- **Budgets.** Per-system search and polish budgets are fixed on *history* systems during tool development and recorded here before any test system is run.
+
+**Running count of trials evaluated on the development systems (any goal): 25.** Trial 26 will be the 26th.
