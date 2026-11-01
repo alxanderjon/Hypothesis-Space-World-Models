@@ -47,6 +47,7 @@ def time_limit(M):
     return TIME_LIMITS["small"] if M <= 8 else TIME_LIMITS["large"]
 
 
+SLOW = set()
 TIME_LIMITS = {"small": 300, "large": 900}       # fixed during development; recorded in the log before evaluation
 
 
@@ -163,8 +164,17 @@ def copy_closest(bursts, earlier, seed):
 
 # ---------------- scheduler: streams + scratch on one shared pool ----------------
 
+def slow_excluded():
+    """Owner decision (1 Nov): held-out systems whose reference had not finished building are excluded from every
+    criterion in every arm and counted, like the diverging system. Stream orders are unchanged; the streams skip them."""
+    f = OUT / "excluded_references.json"
+    return set(json.loads(f.read_text())["excluded_slow_reference"]) if f.exists() else set()
+
+
 def run_trial(names, seeds, orders, workers, include_scratch=True, include_decoy=True, include_copy=True, tag="eval"):
     import discovery_learner as DL
+    global SLOW
+    SLOW = slow_excluded() if tag == "eval" else set()
     base = OUT / tag
     state = {}
     for s in seeds:
@@ -174,6 +184,8 @@ def run_trial(names, seeds, orders, workers, include_scratch=True, include_decoy
 
     def enqueue_position(s, o):
         st = state[(s, o)]
+        while st["pos"] < len(st["order"]) and st["order"][st["pos"]] in SLOW:   # excluded: the stream moves on
+            st["pos"] += 1
         k = st["pos"]
         if k >= len(st["order"]):
             return
@@ -199,7 +211,7 @@ def run_trial(names, seeds, orders, workers, include_scratch=True, include_decoy
         enqueue_position(*key)
     if include_scratch:
         for s in seeds:
-            for name in names:
+            for name in [n for n in names if n not in SLOW]:
                 for M in MS:
                     queue.append((3, {"name": name, "seed": s, "M": M, "mode": "scratch",
                                       "out": str(base / f"seed{s}" / "scratch" / f"{name}_M{M}.json")}))

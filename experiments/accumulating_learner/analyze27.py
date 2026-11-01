@@ -50,11 +50,21 @@ def reference_failed(r):
     return bool(r) and r.get("status") == "error" and "diverged" in (r.get("error") or "")
 
 
+def slow_excluded():
+    import json as _json
+    from pathlib import Path as _P
+    f = _P(__file__).resolve().parents[2] / "outputs/accumulating_learner/trial27/excluded_references.json"
+    return set(_json.loads(f.read_text())["excluded_slow_reference"]) if f.exists() else set()
+
+
 def criteria(tag, seed):
     scratch, streams, removal = load(tag, seed)
     excluded = sorted({k[0] for k, r in scratch.items() if reference_failed(r)})
-    names = sorted({k[0] for k in scratch} - set(excluded))
-    out = {"seed": seed, "n_systems": len(names), "excluded_reference_failed": excluded}
+    slow = sorted(slow_excluded()) if tag == "eval" else []          # owner decision, 1 Nov: counted like diverging
+    names = sorted({k[0] for k in scratch} - set(excluded) - set(slow))
+    out = {"seed": seed, "n_systems": len(names), "excluded_reference_failed": excluded,
+           "excluded_slow_reference": slow}
+    excluded = sorted(set(excluded) | set(slow))
     # ---- D: discovery capability ----
     toolkit_ok, unlearnable, disc_ok = [], [], []
     for n in names:

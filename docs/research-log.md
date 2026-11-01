@@ -3397,3 +3397,22 @@ The check uses leave-one-out networks: each is trained on variations of the othe
   - 4 remain slow and are still building.
   - That leaves 9 slow references in all: probably 4–5 systems, both draws.
 - **Proposal to the owner** (an extension of the pre-registered exclusion for references that cannot be built, decided before any result is inspected and independent of the learner): a system whose reference is still not built 12 hours after its build started is excluded from every criterion in every arm, and counted, like the diverging system.
+
+### Trial 27 held-out evaluation: slow-reference exclusion applied, restart (owner decision, 1 November, ~18:50)
+
+- **Owner:** *"Exclude now any system whose reference hasn't finished building, count it like the diverging system, and restart with finished runs kept. The exclusion depends only on simulation cost, not results, so it's fair."*
+- **Applied.**
+  - 3 held-out systems had unfinished references, in both draws. They are excluded from every criterion in every arm, and counted, alongside the 1 diverging system. **31 of 35 systems remain.**
+  - The list is in `outputs/accumulating_learner/trial27/excluded_references.json`. No result was inspected.
+  - Stream orders are unchanged. Streams skip the excluded systems, and those systems add nothing to any history. No stream had passed an excluded system yet, so every finished run replays identically.
+  - Code: `trial27.slow_excluded()` and `analyze27.slow_excluded()`; the analysis reports them under `excluded_slow_reference`.
+- **Restarted at 18:53** with the same pipeline (evaluation, removal stage, analysis). The first evaluation log is kept as `eval_part1.log`.
+
+## Owner standing rule (1 November): cheap references only
+
+*"Our goal is a network that learns from data, not building expensive simulations. For every future pool, filter systems up front by how cheaply their reference can be computed (set a cutoff, e.g. a few minutes, written into the log before looking at anything). Prefer data we can pull or systems we can simulate efficiently."*
+
+- **Applies to every future pool.**
+  - A reference-cost cutoff, for example a few minutes of build time on one core, is written into the log before anything is looked at.
+  - Systems over the cutoff are dropped and counted.
+  - Data that can be pulled, or systems that simulate efficiently, are preferred.
