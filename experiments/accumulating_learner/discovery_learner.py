@@ -2316,6 +2316,41 @@ def _motif_terms(motif, assign, d, Zall, mid):
     return terms
 
 
+def _place_pattern_pieces(terms, y, Zc, Xc, Zall):
+    """Re-place each compact piece of a pattern by the dense placement grid of its family (exponent kept), the other terms
+    of the pattern fixed as the base: placement is system-specific, and a proportional map of the source range can put a
+    switch in the wrong place."""
+    terms = list(terms)
+    for a, t in enumerate(terms):
+        if not t.factors or t.factors[0].family not in SCAN_FAMILIES + ("chillr",):
+            continue
+        f = t.factors[0]
+        o = 1 if isinstance(f.var, tuple) else 0
+        u = Zc[:, f.var] if o == 0 else Zc[:, f.var[0]] + f.theta[0] * Zc[:, f.var[1]]
+        ua = Zall[:, f.var] if o == 0 else Zall[:, f.var[0]] + f.theta[0] * Zall[:, f.var[1]]
+        lo, hi = float(ua.min()), float(ua.max())
+        if not hi - lo > 1e-12:
+            continue
+        exps = (f.theta[o + 2],) if len(f.theta) > o + 2 else None
+        ths, Gm = _grid(f.family, u, lo, hi, exps)
+        mono = term_value(Term(t.mono, (), 1), Zc, Xc)
+        others = [tt for k, tt in enumerate(terms) if k != a]
+        P = design(others, Zc, Xc) if others else torch.zeros(len(y), 0)
+        Q = torch.linalg.qr(P)[0] if P.shape[1] else torch.zeros(len(y), 0)
+        r = y - Q @ (Q.T @ y)
+        V = mono[:, None] * Gm
+        ok = torch.isfinite(V).all(0)
+        V = torch.where(ok[None, :], V, torch.zeros_like(V))
+        Vp = V - Q @ (Q.T @ V)
+        den = (Vp * Vp).sum(0)
+        gain = torch.where(ok & (den > 1e-20 * (V * V).sum(0)), (Vp.T @ r) ** 2 / den.clamp(min=1e-300), torch.zeros_like(den))
+        k = int(torch.argmax(gain))
+        if float(gain[k]) > 0:
+            th = (tuple(f.theta[:o]) + tuple(ths[k]))
+            terms[a] = Term(t.mono, (Factor(f.family, f.var, th, f.meta),), t.level)
+    return terms
+
+
 def motif_fits(i, y, Zc, Xc, Zall, motifs, tol, deadline, top=12):
     """Every pattern under every assignment of its roles (role 0 -> component i), ranked by a linear fit with starting
     constants; the best few refined (VarPro). Returns [(relative residual, fitted numbers, terms)], best first."""
@@ -2342,6 +2377,7 @@ def motif_fits(i, y, Zc, Xc, Zall, motifs, tol, deadline, top=12):
     for _, terms, mid in ranked[:top]:
         if time.time() > deadline:
             break
+        terms = _place_pattern_pieces(terms, y, Zc, Xc, Zall)
         nt, res, _ = refine_support(terms, Zc, Xc, y, iters=20)
         if math.isfinite(res) and not any(degenerate(t, Zc, Xc, strict=False) for t in nt):
             out.append((res / ny, len(nt) + sum(len(f.theta) for t in nt for f in t.factors), nt, mid))
@@ -2496,9 +2532,34 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
             fits = motif_fits(i, y, Zc, Xc, Zall_m, motifs, tol_i, m_dead)
             if verbose and fits:
                 print(f"   pattern comp {i}: best rel {fits[0][0]:.2e} (tol {tol_i:.1e}), {fits[0][1]} numbers", flush=True)
+            chosen = None
             if fits and fits[0][0] <= 10 * tol_i:
-                sups_m.append(fits[0][2]); n_used += 1
-                pat_used.append((i, fits[0][3]))
+                chosen = (fits[0][2], fits[0][3])
+            elif fits:
+                # patterns guide the search: the pieces of the best few pattern fits (fitted placement), under every
+                # multiplier, join the monomials in the smallest-support search (similar systems differ by a term or two)
+                zero = tuple([0] * d)
+                monos_g = [zero] + [tuple(int(q == k) for q in range(d)) for k in range(d)]
+                extra, seen_g, src_of = [], set(), {}
+                for rel_f, _, terms_f, mid in fits[:3]:
+                    for t in terms_f:
+                        for f in t.factors:
+                            for mo in monos_g:
+                                key = (mo, f.family, f.var, tuple(round(x, 9) for x in f.theta))
+                                if key not in seen_g:
+                                    seen_g.add(key); extra.append(Term(mo, (f,), 1)); src_of[key] = mid
+                if extra:
+                    cands_g = [Term(m, (), 1) for m in monomials(d)] + extra
+                    ranked_g = screen_component(y, Zc, Xc, cands_g, prior, tol_i, max_terms=max_terms)
+                    sup_g, rel_g = ranked_g[0]
+                    used_ids = sorted({f.meta[1] for t in sup_g for f in t.factors if f.meta and f.meta[0] == "motif"})
+                    if verbose:
+                        print(f"   pattern-guided comp {i}: rel {rel_g:.2e} with {len(sup_g)} terms (patterns {used_ids})", flush=True)
+                    if sup_g and used_ids and rel_g <= 10 * tol_i:
+                        chosen = (sup_g, used_ids[0])
+            if chosen is not None:
+                sups_m.append(chosen[0]); n_used += 1
+                pat_used.append((i, chosen[1]))
             else:
                 sups_m.append(list(best["model"].supports[i]) if best is not None else [Term(m, (), 1) for m in monomials(d, 2)])
         if n_used:
