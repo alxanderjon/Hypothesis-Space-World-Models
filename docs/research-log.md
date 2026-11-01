@@ -2976,6 +2976,31 @@ Demonstration on 115, M = 32, using 114's switch piece and 114's equations as gu
 - Second equation: worse, 6.2e-2 → 8.2e-2 (the search drifted into nested switch compositions).
 - So the accumulation test could run on top of PySR; whether reuse then helps is a separate question.
 
+### PySR benchmark result (1 Nov, ~05:15; practice half only)
+
+**Setup.**
+- The 27 usable practice systems at M = 8, 16, 32, 64, with identical data and splits for both learners.
+- Same wall-clock budget per run (300 s at M ≤ 8, 900 s otherwise).
+- Same external exactness test (1e-12 one-step on held-out starting states, plus the multi-step envelope).
+- PySR in its best configuration for this pool (+ − × ÷), followed by our high-precision finish (constants refitted on the rate data, noise-level screen, Levenberg–Marquardt on the step-to-step map, held-back check, refit on all bursts).
+- Some cells are still pending (three slow-to-simulate 4-D systems, and some of our M = 32/64 runs on systems neither learner recovers). The table counts only cells where both learners have a result.
+
+| M | our learner: exact | PySR + finish: exact | both | ours only | PySR only | median time per run, ours / PySR |
+|---|---|---|---|---|---|---|
+| 8 | 4/22 | 1/22 | 1 | 3 | 0 | 308 s / 345 s |
+| 16 | 7/17 | 2/17 | 2 | 5 | 0 | 320 s / 904 s |
+| 32 | 7/22 | 1/22 | 1 | 6 | 0 | 443 s / 903 s |
+| 64 | 14/18 | 2/18 | 2 | 12 | 0 | 266 s / 904 s |
+
+**Findings.**
+- PySR's exact recoveries are 753 (M = 8, 64), 728 (M = 16), 919 (M = 64) and one more cell: simple polynomial or low-term systems.
+- Our learner recovers every system PySR recovers, plus many more, usually in a fraction of the time. PySR uses its whole budget because it has no stopping rule at exactness.
+- PySR also had a false acceptance: 866 at M = 16 passed the held-back check and failed the external test.
+- **Why our search wins on this task.** These right-hand sides are sparse sums of a few products of states and saturating pieces. Our search exploits that structure directly (exhaustive small supports, dense placement scans, exact fitting on the step-to-step map). PySR searches general expression trees and spends its budget on approximations, especially once sine, exp and tanh are allowed. The trees it returns rarely reduce to the exact sparse form.
+- **Building blocks.** Pieces (custom operators) and patterns (starting expressions) can be fed to PySR, but PySR is the weaker base learner here.
+
+**Recommendation to the owner: do not switch the search engine to PySR.** It is the weaker from-scratch learner on the practice half at every data size, and it never recovered a system ours missed.
+
 ### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
 
 **G-familiar** (10 systems that resemble the history; reported, not counted). Exact-recovery rate by data amount:
