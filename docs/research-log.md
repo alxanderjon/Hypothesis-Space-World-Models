@@ -3023,3 +3023,24 @@ Demonstration on 115, M = 32, using 114's switch piece and 114's equations as gu
 - 0 exact everywhere, except **SaltonSea (seed 2)**, which was recovered exactly (one-step 4.5e-15) by memory8, memory24, full24 and full45.
 - Its scratch run had been cut by the 07:40 time rule (`reference_timeout`), so no history-versus-scratch comparison exists for it.
 - C0 is unaffected: even counting it, 1/27 < 25%.
+
+### Pool freshness check before the Trial 27 held-out run (1 November)
+
+The owner approved the held-out evaluation after the reference-simulation fix. First, though, they asked me to confirm that a fresh, untouched pool exists for the next accumulation trial, and to tell them before spending the held-out half if there isn't one.
+
+- **No ready-made fresh pool exists.**
+  - Every curated BioModels ODE model that passes the acceptance rules at 2–12 state variables was already accepted in Trial 23 (or in Trial 16/18).
+  - BioModels lists the same number of curated ODE models today as at our download: 1,019.
+- **Correction to the Trial 27 plan.** The plan called the pool "fresh, untouched". That is true only with respect to this learner: the held-out half has never been run or inspected during the Trial 27 build, and the learner carries nothing trained in earlier trials. In the strict sense the claim is wrong:
+  - **Held-out half:** 34 of 35 systems are in Trial 23's real set (29 training, 5 held-out).
+    - 28 are in the training order of both Trial 23 learners (`pwbig_s1`, `pwbig_s2`).
+    - 5 were Trial 23 test systems.
+    - 6 are also in Trial 18's real set.
+  - **Development half:** 28 of 31 systems are in Trial 23's real set (20 training, 8 held-out).
+- **Exposure while checking.** A structure printout showed the first 12 model IDs of Trial 23's split file. One of them is a Trial 27 held-out system. Only IDs were shown: no data, equations or results.
+- **Fresh sources that do exist:**
+  1. About 675 non-curated BioModels ODE models the project has never downloaded. BioModels lists 1,694 ODE models, of which 1,019 are curated. Their yield under the same filters is unknown until converted.
+  2. 137 curated models rejected in Trial 23 only for having polynomial right-hand sides (2–12 variables, no events). They have never been used, but they are a different and easier kind.
+  3. 270 curated models rejected for size (13 or more state variables; other filters not applied) and 20 with a single variable.
+  4. Reserve sets A and B, under the reserve gating rule.
+- **Status:** the held-out run is on hold until the owner decides. The reference-simulation fix and the (b) proposal go ahead in the meantime, since neither touches the held-out half.
