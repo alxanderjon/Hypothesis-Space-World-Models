@@ -3121,3 +3121,24 @@ More cells have finished since the result above. The table counts only cells whe
 - PySR still recovers nothing ours misses. The recommendation (do not switch) is unchanged.
 - **Not benchmarked: 377 and 402.** The data export for PySR spent about 5 hours building their reference simulations without finishing, and was stopped. It used the old per-run construction, not the new reference cache.
 - **Pending:** our M = 16 runs on 10 systems (still running). The table is updated if they change anything.
+
+### Correction: why the Trial 27 pool was called "untouched" (1 November, answering the owner)
+
+- **What went wrong.** On 31 October (04:07) I checked which BioModels had been used by reading one record only: Trial 16's conversion list (`trial16/realfam/conversion.json`).
+  - Trial 16 accepted only 3-variable models, so it listed 64 two-variable and 84 four-variable models as rejected for size. I read that as "no trial has used them".
+  - I did not check Trials 18 and 23. They re-converted the same downloaded collection at 2–10 and 2–12 variables and used most of these models.
+  - The approved plan therefore stated something I had not verified. The accurate statement is "never used to develop or test the exact learner (Trials 26–27)".
+- **What Trial 23 did with them.** Trial 23 trained a neural network that predicts motion approximately and never produces equations. Its data were simulated recordings from several starting points with 0.5% noise, observed as short noisy samples. Of the 35 Trial 27 held-out systems:
+  - 28 were in Trial 23's training stream (both seeds);
+  - 5 were Trial 23 test systems, scored by prediction error;
+  - 6 were also used in the same way by Trial 18.
+
+  Trial 23 failed: its network learned almost nothing from these recordings. Results were reported as summaries. Its logs name individual systems: per-stage training lines, and per-system error scores for the 5 test systems (Trial 23 `eval.log`; also 3 lines in Trial 18's). One held-out system is among the 11 that Trial 23's validity rule excluded for a numerical problem. No equations were worked with.
+- **Assessment: still a fair held-out test of the exact learner.**
+  - Nothing from Trials 18/23 reaches the Trial 27 learner. The methods differ, and no trained network, features, settings or stored pieces carry over.
+  - Trial 27's learner was built on its practice half and Trial 26's systems. The held-out systems' equations, data and results have not been looked at for Trial 27.
+  - The pool was selected by size and the standard filters, and split by a hash of the IDs, independently of Trial 23's findings.
+  - The residual risk is researcher exposure across sessions to these models' names and approximate-prediction scores. The record shows no exposure to their equations, and no mechanism by which such scores could help the exact learner on them.
+- **Changes.**
+  - The overlap check for the new pool covers every earlier trial's records (16, 18, 23, 26, 27).
+  - **Exposure while checking:** a structure printout showed 6 more model IDs (keys of Trial 23's `dedup.json`). None is a held-out system.
