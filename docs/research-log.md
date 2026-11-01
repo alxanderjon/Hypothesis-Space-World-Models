@@ -3142,3 +3142,43 @@ More cells have finished since the result above. The table counts only cells whe
 - **Changes.**
   - The overlap check for the new pool covers every earlier trial's records (16, 18, 23, 26, 27).
   - **Exposure while checking:** a structure printout showed 6 more model IDs (keys of Trial 23's `dedup.json`). None is a held-out system.
+
+## Fresh pool from non-curated BioModels: filtering and split rules (1 November, fixed before any model is downloaded)
+
+The owner approved downloading and converting the non-curated BioModels ODE models, counts only, with these rules written down first.
+
+- **Source.** BioModels entries with modelling approach "ordinary differential equation model" and curation status "Non-curated": 675 listed on 1 November. The project has never downloaded any of them.
+  - Each model's main SBML file is downloaded as untrusted data into a new, dedicated directory (`dl/biomodels_noncurated` in the scratchpad).
+  - Local file names are chosen by us, never by the server, and nothing downloaded is executed.
+- **Conversion.** The same safe converter as Trials 23 and 27 (`biomodels_convert.py`: a whitelist MathML walker, no eval), with transients allowed and no data stored (`--transient --no-data`). Models with 2–12 state variables are converted, for counts.
+- **Acceptance (unchanged from Trial 27):**
+  - no events, delays, explicit time or other unsupported constructs;
+  - a non-polynomial right-hand side;
+  - sustained oscillation, or a settling transient by the Trial 23 rule;
+  - the converter's title exclusion rule (reserve-set-A, development and confirmation catalog names, Ca²⁺ and the others listed in the converter);
+  - no infinite or undefined constants (Trial 27's validity filter).
+- **Pool:** accepted models with **2–4 state variables**. Counts at 5–12 are recorded for information only.
+- **Freshness (stricter than before), checked against every earlier trial:**
+  1. **Identity.** No identifier may appear in any earlier trial's records (Trials 16, 18, 23, 26 and 27).
+  2. **Structure.** A model is excluded if its right-hand side is a structural duplicate of any curated BioModels model in our collection with 2–4 variables. That collection contains every BioModels system used in Trials 16, 18, 23, 26 and 27. A structural duplicate has the same structure after every number is replaced by a placeholder, up to relabelling of the variables.
+  3. **Within the pool.** Of structural duplicates, the lowest identifier is kept.
+  Exclusion counts are recorded.
+- **Split.** A model belongs to the **evaluation** half if the first hexadecimal digit of sha256("fresh-pool-v1:" + model id) is odd, and to the **development** half otherwise. Fixed now, before download.
+- **Hygiene.**
+  - Until a trial on this pool is approved, only counts are looked at: accepted and rejected by reason, by dimension, kind and half.
+  - Scripts print counts only. No identifier, title, equation or data of any model is displayed.
+  - After approval, only development-half models may be inspected during development. The evaluation half is looked at only at the final run.
+
+## Diagnostic, not a learner result: ceiling check with the correct structure supplied (1 November, owner-approved; practice half only)
+
+- **Question.** If the learner were handed the correct structure, how often would 8 or 16 bursts give an exact model? This bounds how much of the small-data failure any use of experience could remove. It supplies the answer's structure, so it is **not** a learner result.
+- **Systems.** The 14 practice systems the learner recovers exactly from 64 bursts. Their exact M = 64 models supply the structure: they are exact at held-out states, so their structure is correct.
+- **Variants** at M = 8 and 16, with the same bursts and held-back split as the learner's runs (seed 1):
+  - **given:** structure supplied; constants start at the M = 64 values and are refitted on the small-data training bursts. An upper bound.
+  - **perturbed:** as given, but the constants are perturbed first: placements × exp(N(0, 0.3)), coefficients × (1 + N(0, 0.3)), exponents kept. Best of 5 restarts on the training bursts.
+  - **tied:** as perturbed, with ties between equations:
+    - pieces equal up to a constant factor share one placement;
+    - equal terms whose physical coefficient ratio is a simple number (±1, 2, 3, 4, 1/2, 1/3, 1/4) share one coefficient.
+- **Judged as in the trial:** a held-back error ≤ 3e-13 to accept, a refit on all bursts, then external exactness at held-out starting states with the compiled artifact.
+- **Reference point.** The learner from scratch is exact on 4 of these 14 at M = 8 and 7 of 14 at M = 16 (existing records).
+- **Script:** `ceiling_check.py` (scratchpad).
