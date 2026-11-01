@@ -3370,3 +3370,30 @@ The check uses leave-one-out networks: each is trained on variations of the othe
   - the effect of ties on scratch at M = 4, 8, 16.
 
   Both run once the practice scratch runs finish. The full set of controls matters only if the history arm shows an advantage.
+
+### Option (b) practice study: end-to-end result at the headline size (1 November, ~18:00; practice half, seed 1)
+
+27 practice systems (377 and 402 excluded), M = 8. Every arm includes the scratch learner's own result and the ties step.
+
+| | All positions | Second half |
+|---|---|---|
+| Scratch, no ties | 4 / 27 | 1 / 14 |
+| Scratch + ties | 4 / 27 | 1 / 14 |
+| History network (+ scratch + ties) | 3 / 26 (scratch + ties on the same 26: 3) | 1 / 14 |
+
+- **No wins and no losses for the history arm.** The learner's rule chose a network suggestion over the scratch result in 8 of 26 cases, but none changed whether the system came out exact.
+- **P1 fails:** 0 points against the +15 required. With no advantage to explain, the control arms (generic, scrambled, least-similar, copy-the-closest, removal) are not run. This was fixed beforehand: the full set of controls only matters if the history arm shows an advantage.
+- **Ties** fired in 3 of the 27 scratch final steps, with no change in exactness at M = 8 in these runs. Earlier, on 114, ties fixed constants on a correct structure. The scratch learner's failures at M = 8 are mostly structural, which ties cannot fix. Their effect at M = 4 and 16 is measured once those scratch runs finish.
+- **Conclusion for (b) as built:** the practice network does not make new systems learnable from less data. It recognizes systems it has practised on, but does not read the structure of new ones (offline check), so its suggestions add nothing over the scratch learner end to end.
+
+### Trial 27 held-out evaluation: stall from very slow reference simulations (1 November, 17:55)
+
+- **What.** No run has completed since 12:37 (261 completed). All 24 workers sit at full CPU in runs lasting more than 5 hours.
+  - The reference cache shows 4 references being built for 6–7.5 hours under locks: held-out systems whose true-system simulations are extremely slow, like 377 and 402 in the practice half.
+  - The other workers waited out the cache's one-hour limit and are building the same references independently.
+- **Action (operational; results cannot change).** The 30 references no worker had started were pre-built in separate processes on idle cores.
+  - 25 finished within seconds to a minute.
+  - 1 failed by divergence: the already excluded system's second draw.
+  - 4 remain slow and are still building.
+  - That leaves 9 slow references in all: probably 4–5 systems, both draws.
+- **Proposal to the owner** (an extension of the pre-registered exclusion for references that cannot be built, decided before any result is inspected and independent of the learner): a system whose reference is still not built 12 hours after its build started is excluded from every criterion in every arm, and counted, like the diverging system.
