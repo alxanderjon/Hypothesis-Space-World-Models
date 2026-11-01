@@ -3328,3 +3328,7 @@ The **removal check** retrains the history network without the provenance source
 - **Reported:** M = 4 and 16 rates, the removal check with provenance, ties' effect on scratch alone, and suggestion compute time.
 
 **Compute.** The scratch reruns (models kept at M = 4, 8, 16) and the arm runs wait for the held-out evaluation to finish, which holds 24 CPU workers. Networks train on free GPUs. Practice data are generated on one extra CPU process meanwhile.
+- **Compute note (10:35).**
+  - The held-out evaluation will take about 20 hours.
+  - The practice scratch reruns start now on 2 extra processes, plus 1 for practice data. That is 27 busy processes on the 48-core host, where I am the only active user.
+  - This is a temporary exception to my 24-process limit. It is checked periodically and reduced if other users become active.
