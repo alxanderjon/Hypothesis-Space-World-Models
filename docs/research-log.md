@@ -3250,3 +3250,36 @@ The owner approved downloading and converting the non-curated BioModels ODE mode
   4. the reference cache is then deleted.
 
   Progress is watched by counts only until the run ends.
+
+### Diagnostic result (not a learner result): ceiling check with the correct structure supplied (1 November, ~09:50; practice half)
+
+The correct structure of each system is supplied: the learner's own exact M = 64 model. This measures what the data at each size could support. It is not something any learner achieved.
+
+**Exact recoveries out of the 14 practice systems** (external test on held-out starting states; same bursts and held-back split as the learner's runs). "Started at answer" begins the constants at the exact M = 64 values (an upper bound). "Rough start" perturbs placements by ×exp(N(0, 0.3)) and coefficients by ×(1 + N(0, 0.3)), best of 5 restarts.
+
+| Bursts (observations) | Learner from scratch | Structure supplied, started at answer | + ties | Either | Rough start | Rough start + ties |
+|---|---|---|---|---|---|---|
+| 2 (26) | — | 6 (6 more accepted but not exact) | — | — | — | 1 |
+| 4 (52) | — | 10 | — | — | — | 6 |
+| 8 (104) | 4 | 12 | — | 13 | 7 | 9 |
+| 16 (208) | 7 | 11 | — | 12 | 9 | 10 |
+
+The "+ ties" variant was run only from rough starts. "Either" means exact with the answer start or with ties.
+
+**What it shows:**
+- **From 4 bursts up, the information is mostly in the data.**
+  - At 8 bursts, 12 of 14 systems (13 with ties) are exact once the structure and good starting constants are supplied; the learner alone gets 4.
+  - At 16 bursts the corresponding numbers are 11–12 against 7.
+  - Most small-data failures are therefore search failures (finding the structure and the constants), not a lack of information.
+- **At 2 bursts the data themselves are the limit.** Even with structure and constants started at the answer, only 6 of 14 are exact. Another 6 pass the internal held-back check but fail externally, because one training burst cannot pin down the constants away from the observed region.
+- **Constants are a second bottleneck.** With the correct structure but rough starting constants, success at 8 bursts falls from 12 to 7. Placements of switches and poles land in wrong basins (458, 507, 573, 866).
+- **Ties help.** Ties between equations raise rough-start success at 8 bursts from 7 to 9. They are the only way 114 becomes exact at 8 bursts: 9 → 6 free constants removes its constant imprecision.
+- **Residual precision cases:** 973 (an almost invisible 6.6e-9·x1 term), 1012 at 8 bursts (a far pole), and 573/114 at 16 bursts (4e-12, 2e-12, just above the bar). More data does not always help, because these sit at the edge of the 1e-12 bar.
+
+**Implications for the accumulation test's data sizes:**
+- Headline at **8 bursts**, where the room is largest: 4 achieved against a ceiling of 12–13.
+- **4 and 16 bursts** as secondary sizes.
+- **2 bursts** reported only: not even ideal knowledge is reliably exact there.
+- **32–64 bursts** have little or no room for these systems.
+- What experience must provide to use that room is the structure *and* good starting values for switch and pole positions, plus ties between equations. This is consistent with the (b) proposal.
+- **Caveat:** these are the 14 systems the learner solves at 64 bursts. For harder systems, the structure itself is the larger problem.
