@@ -3044,3 +3044,52 @@ The owner approved the held-out evaluation after the reference-simulation fix. F
   3. 270 curated models rejected for size (13 or more state variables; other filters not applied) and 20 with a single variable.
   4. Reserve sets A and B, under the reserve gating rule.
 - **Status:** the held-out run is on hold until the owner decides. The reference-simulation fix and the (b) proposal go ahead in the meantime, since neither touches the held-out half.
+
+### Option (b), rethought: proposal (1 November, awaiting owner approval; practice data only, nothing run)
+
+**Why reuse has not helped.** Take the 14 practice systems the strong learner recovers exactly from 64 bursts, and look at the same systems at 8 bursts (existing records):
+
+| Outcome at 8 bursts | Systems | Examples |
+|---|---|---|
+| Exact | 4 | |
+| Right kind of equation, constants slightly off | 3 | 573 (2e-11), 919 (2e-12); 973's true 6.6e-9·x1 term is invisible |
+| Wrong equation that fits the bursts | 1 | 507 |
+| No exact model found, came close (6e-9 to 8e-7) | 3 | 114, 866, 1012 |
+| No exact model found, nowhere near (~1e-2) | 3 | 115, 458, 1047 |
+
+- Pieces and patterns hand the learner earlier *answers*. But the strong learner already proposes the right kinds of terms on its own.
+- A similar system's answer is usually wrong in one term or one switch position (114 versus 115, for example). Correcting it takes about as much data as starting fresh, and every constant must still be refitted from the same scarce data.
+- So reuse targeted a part that was not the bottleneck. The bottlenecks are: faint evidence for structure (far poles, steep switches seen over a narrow range), choosing among models that fit equally well, and pinning down constants.
+
+**Observation (practice truths).** 9 of 10 failing practice systems couple their equations:
+- the same term appears in two equations, with ratio −1 (one variable's loss is another's gain), −2 (973), −4 (1012) or a fixed volume-like factor (573);
+- or the equations are symmetric copies of each other (1047; the forms of 507).
+
+Fitting equations separately ignores this, so each shared constant is fitted from one equation's data only.
+
+**Proposal: experience as practice, not as stored answers.**
+1. **Practice network.** After each system it learns exactly, the learner generates many variations of the learned model and simulates them on the fly:
+   - a term added or dropped (from toolkit families and its learned pieces);
+   - a switch moved or an exponent changed;
+   - other constants and other starting states.
+
+   For each variation it draws the protocol's small-data observations. A recognition network is trained to read the structure (which terms, which ties, rough switch positions) from a few bursts. On a new system:
+   - the network's top suggestions are fitted exactly first;
+   - the usual search still runs afterwards and is only reordered, never pruned.
+
+   It differs from Trial 26's guide, which learned from 8–45 real systems and pruned the search: this network learns from thousands of variations with known answers.
+2. **Ties between equations.** A shared-learner capability for every arm (like the weighted sums): a term may be tied across equations, so one constant is fitted to several equations' data, and simple ratios remove constants. Experience adds knowing which ties to expect.
+
+**Controls:**
+- strong scratch (with ties);
+- a generic network that practised on variations of random toolkit systems (no history);
+- the history network after N learned systems in a fixed order;
+- a scrambled-history decoy;
+- removal and provenance checks.
+
+Experience counts only if the history network beats the generic one, increasingly with N.
+
+**First step, needing approval: a ceiling check (about an hour, practice half).**
+- Fit the correct structure, taken from the true equations of practice systems, to the same 8- and 16-burst observations, with and without the true ties, and judge it with the external exactness test.
+- This bounds what any use of experience can achieve at small data.
+- If even the correct structure is rarely exact at 8 bursts, the data are too narrow for exactness there, and I report that before building anything.
