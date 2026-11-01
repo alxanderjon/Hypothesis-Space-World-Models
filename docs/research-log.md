@@ -3332,3 +3332,14 @@ The **removal check** retrains the history network without the provenance source
   - The held-out evaluation will take about 20 hours.
   - The practice scratch reruns start now on 2 extra processes, plus 1 for practice data. That is 27 busy processes on the 48-core host, where I am the only active user.
   - This is a temporary exception to my 24-process limit. It is checked periodically and reduced if other users become active.
+- **Build notes (11:15).**
+  1. **First offline check negative.** Networks trained on variations of 13 learned systems did not place a held-out system's learned structure in their top 8 at any M. Even on their own training systems' real data, true terms often ranked low. Two flaws were found in the evidence features:
+     - every term was measured against a base containing the constant, so the constant (present in most equations) always showed zero evidence;
+     - fit quality was recorded on a linear scale and stored at half precision, which erased the tiny residual differences that separate a true term from its near-copies.
+
+     Over the narrow range seen in 8 bursts, many candidates (a far reciprocal, a stretched Hill curve) are near-copies of constant-plus-linear terms. A greedy path over all candidates picked only 5% of the true terms, while a path over monomials only picked 58% of the true monomial terms.
+
+     **Fix:** evidence on a log-residual scale along two greedy forward-selection paths per equation (all candidates; monomials only), starting from no term. The practice data are regenerated with it.
+  2. **Probability calibration.** Presence probabilities are calibrated for the class weighting used in training. Before this, 2–9% of wrong terms scored above 0.5.
+  3. **Tolerant suggestion added.** Per equation, the network's most probable terms plus 2 are fitted exactly and pruned by the learner's own backward elimination on the step-to-step map. That map can tell a true term from its near-copy where rate data cannot.
+  4. **377 and 402 excluded from the practice study.** Their reference simulations did not finish building in more than 5 hours earlier today. 787 stays: its reference builds once in about 40 minutes and is then cached.

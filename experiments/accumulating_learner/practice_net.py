@@ -358,45 +358,92 @@ def _static_features(vocab):
 
 
 _STATIC = {}
+K_PATH = 6                                   # greedy forward-selection steps recorded per equation
+
+
+def _unit(C):
+    n = C.norm(dim=0, keepdim=True)
+    return torch.where(n > 0, C / (n + 1e-300), C)
+
+
+def _path(A, y, ok, owner_t, V, K, profile_steps=(), cell_t=None):
+    """Greedy forward selection over the columns of A for target y. Per step: every token's best evidence (log
+    residual reduction, -0.5 log(1 - gain), over its columns), the selected token, the residual after the step
+    (log10 relative), and optional per-cell profiles."""
+    n = A.shape[0]
+    ev = torch.zeros(V, K); sel = torch.zeros(V, K); res = torch.zeros(K)
+    prof = {}
+    yn = float(y.norm()) + 1e-300
+    Q = torch.zeros(n, 0, dtype=A.dtype)
+    r = y.clone()
+    for s in range(K):
+        C = A - Q @ (Q.T @ A) if Q.shape[1] else A
+        cn = (C * C).sum(0)
+        rr = float(r @ r) + 1e-300
+        gain = torch.where(cn > 1e-24, (C.T @ r) ** 2 / (cn * rr), torch.zeros_like(cn)).clamp(0, 1 - 1e-16) * ok
+        lg = -0.5 * torch.log1p(-gain)
+        best = torch.zeros(V, dtype=lg.dtype).scatter_reduce(0, owner_t, lg, reduce="amax")
+        ev[:, s] = best.float()
+        if s in profile_steps and cell_t is not None:
+            pr = torch.zeros(V, N_GRID, dtype=lg.dtype)
+            pr[owner_t, cell_t] = lg
+            prof[s] = pr.float()
+        c = int(torch.argmax(lg))
+        if float(lg[c]) <= 0:
+            break
+        sel[int(owner_t[c]), s] = 1.0
+        q = C[:, c] / (C[:, c].norm() + 1e-300)
+        Q = torch.cat([Q, q.unsqueeze(1)], 1)
+        r = r - q * float(q @ r)
+        res[s] = math.log10(max(float(r.norm()) / yn, 1e-16))
+    return ev, sel, res, prof
 
 
 def features(vocab, Zc, G, noise):
-    """Token features for one system (scaled states Zc, rate estimates G at burst interiors): per token its type/role
-    descriptors and its data evidence, the partial R^2 over the placement grid given {1} and given {1, best monomial}."""
+    """Token features for one system (scaled states Zc, rate estimates G at burst interiors). Per token: type/role
+    descriptors, and its evidence on a log-residual scale along two greedy forward-selection paths per equation
+    (all candidate columns at every grid placement; monomials only), starting from no term so the constant competes
+    like any column: best evidence per step, selection per step, the residual after each step, and the all-column
+    evidence profile over the placement grid at steps 0 and 3."""
     d, n = vocab.d, Zc.shape[0]
     lo, hi = Zc.min(0).values.numpy(), Zc.max(0).values.numpy()
     zabs = Zc.abs().max(0).values.numpy()
-    one = torch.ones(n, 1, dtype=Zc.dtype)
+    nm = len(vocab.monos)
     monos = torch.stack([torch.prod(Zc ** torch.as_tensor(m, dtype=Zc.dtype), 1) for m in vocab.monos], 1)
-    blocks, slots = [], []                     # piece columns of all tokens, and (token index, cells) for each block
+    blocks, owner, cellof = [monos], list(range(nm)), [0] * nm
     grids = {}
     for k, (fam, j, mult) in enumerate(vocab.pieces):
         if (fam, j) not in grids:
             grids[(fam, j)] = _grid_columns(fam, j, Zc, lo, hi, zabs)[0]
         C = grids[(fam, j)] * torch.prod(Zc ** torch.as_tensor(mult, dtype=Zc.dtype), 1, keepdim=True)
-        blocks.append(C); slots.append((len(vocab.monos) + k, C.shape[1]))
-    PC = torch.cat(blocks, 1)
-    okc = torch.isfinite(PC).all(0)
-    PC = torch.where(okc.unsqueeze(0), PC, torch.zeros_like(PC))
+        blocks.append(C)
+        owner += [nm + k] * C.shape[1]
+        cellof += list(range(C.shape[1]))
+    A = torch.cat(blocks, 1)
+    ok = torch.isfinite(A).all(0) & (A.abs().amax(0) < 1e12)
+    A = _unit(torch.where(ok.unsqueeze(0), A, torch.zeros_like(A)))
+    owner_t, cell_t = torch.tensor(owner), torch.tensor(cellof)
+    V = len(vocab)
     if vocab.d not in _STATIC:
         _STATIC[vocab.d] = _static_features(vocab)
-    F = torch.zeros(d, len(vocab), N_FEAT, dtype=torch.float32)
+    F = torch.zeros(d, V, N_FEAT, dtype=torch.float32)
     F[..., :16] = _STATIC[vocab.d]
+    K = K_PATH
     for i in range(d):
         y = G[:, i]
-        g0 = _gain(y, one, monos)
-        kb = int(torch.argmax(g0))
-        b1 = torch.cat([one, monos[:, kb:kb + 1]], 1)
-        g1 = _gain(y, b1, monos)
-        F[i, :len(vocab.monos), 16] = g0.float()
-        F[i, :len(vocab.monos), 16 + N_GRID] = g1.float()
-        p0 = (_gain(y, one, PC) * okc).float()
-        p1 = (_gain(y, b1, PC) * okc).float()
-        c = 0
-        for tk, w in slots:
-            F[i, tk, 16:16 + w] = p0[c:c + w]
-            F[i, tk, 16 + N_GRID:16 + N_GRID + w] = p1[c:c + w]
-            c += w
+        ev, sel, res, prof = _path(A, y, ok, owner_t, V, K, profile_steps=(0, 3), cell_t=cell_t)
+        evm, selm, resm, _ = _path(A[:, :nm], y, ok[:nm], owner_t[:nm], V, K)
+        o = 16
+        F[i, :, o:o + K] = ev; o += K
+        F[i, :, o:o + K] = sel; o += K
+        F[i, :, o:o + K] = evm; o += K
+        F[i, :, o:o + K] = selm; o += K
+        for s in (0, 3):
+            if s in prof:
+                F[i, :, o:o + N_GRID] = prof[s]
+            o += N_GRID
+        F[i, :, o:o + K] = res.unsqueeze(0); o += K
+        F[i, :, o:o + K] = resm.unsqueeze(0); o += K
     F[..., 15] = float(math.log(max(float(noise.mean()), 1e-16)) / 30.0)
     return F
 
@@ -542,7 +589,7 @@ def dream_samples(desc, mu, sig, starts, nsub, rng, n_struct=60, n_draw=12, Ms=(
 # the network
 # ---------------------------------------------------------------------------------------------------------------------
 
-N_FEAT = 16 + 2 * N_GRID
+N_FEAT = 16 + 4 * K_PATH + 2 * N_GRID + 2 * K_PATH   # descriptors; two paths: evidence, selections; profiles; residuals
 N_VAR_EMB = 8
 
 
@@ -565,22 +612,41 @@ class PracticeNet(nn.Module):
         return self.pres(h).squeeze(-1), self.cell(h)
 
 
-def var_features(vocab, rng_t):
-    """Random variable embeddings for one system: (d, V, 4 * N_VAR_EMB) [equation var, piece var, multiplier var,
-    monomial variables weighted by exponent]."""
-    d = vocab.d
-    E = torch.randn(d, N_VAR_EMB, generator=rng_t)
-    out = torch.zeros(d, len(vocab), 4 * N_VAR_EMB)
-    for i in range(d):
+_VARIDX = {}
+
+
+def _var_index(vocab):
+    """Per-token variable indices (cached per dimension): equation variable, switch variable, multiplier variable
+    (-1 where none), and monomial exponents."""
+    if vocab.d not in _VARIDX:
+        d, V = vocab.d, len(vocab)
+        piece = torch.full((V,), -1, dtype=torch.long)
+        mult = torch.full((V,), -1, dtype=torch.long)
+        expo = torch.zeros(V, d)
         for k, tok in enumerate(vocab.tokens):
-            out[i, k, :N_VAR_EMB] = E[i]
             if tok[0] == "mono":
-                out[i, k, 3 * N_VAR_EMB:] = sum(e * E[q] for q, e in enumerate(tok[1]) if e) if sum(tok[1]) else 0
+                expo[k] = torch.tensor(tok[1], dtype=torch.float32)
             else:
-                _, fam, j, mult = tok
-                out[i, k, N_VAR_EMB:2 * N_VAR_EMB] = E[j]
-                if sum(mult):
-                    out[i, k, 2 * N_VAR_EMB:3 * N_VAR_EMB] = E[mult.index(1)]
+                _, fam, j, m = tok
+                piece[k] = j
+                if sum(m):
+                    mult[k] = m.index(1)
+        _VARIDX[vocab.d] = (piece, mult, expo)
+    return _VARIDX[vocab.d]
+
+
+def var_features(vocab, rng_t):
+    """Random variable embeddings for one system: (d, V, 4 * N_VAR_EMB) [equation variable, switch variable,
+    multiplier variable, monomial variables weighted by exponent]."""
+    d, V = vocab.d, len(vocab)
+    E = torch.randn(d, N_VAR_EMB, generator=rng_t)
+    piece, mult, expo = _var_index(vocab)
+    Ez = torch.cat([E, torch.zeros(1, N_VAR_EMB)])           # index -1 -> zero row
+    out = torch.empty(d, V, 4 * N_VAR_EMB)
+    out[..., :N_VAR_EMB] = E.unsqueeze(1).expand(d, V, N_VAR_EMB)
+    out[..., N_VAR_EMB:2 * N_VAR_EMB] = Ez[piece].unsqueeze(0).expand(d, V, N_VAR_EMB)
+    out[..., 2 * N_VAR_EMB:3 * N_VAR_EMB] = Ez[mult].unsqueeze(0).expand(d, V, N_VAR_EMB)
+    out[..., 3 * N_VAR_EMB:] = (expo @ E).unsqueeze(0).expand(d, V, N_VAR_EMB)
     return out
 
 
@@ -634,6 +700,7 @@ def train(samples, device="cuda:0", epochs=30, batch=32, lr=3e-4, seed=0, log=No
         last = float(np.mean(losses))
         if log:
             log(f"epoch {ep + 1}/{epochs}: loss {last:.4f}")
+    net.pos_weight = float(pw)
     return net.cpu().eval(), last
 
 
@@ -648,7 +715,10 @@ def predict(net, vocab, Zc, G, noise, seed=0):
         lp, lc = net(F.reshape(1, -1, N_FEAT), Vf.reshape(1, -1, 4 * N_VAR_EMB),
                      torch.ones(1, F.shape[0] * F.shape[1], dtype=torch.bool))
     d = vocab.d
-    return torch.sigmoid(lp).reshape(d, len(vocab)), torch.softmax(lc, -1).reshape(d, len(vocab), N_GRID)
+    w = getattr(net, "pos_weight", 1.0)                 # undo the class weighting: P = p / (w - (w - 1) p)
+    p = torch.sigmoid(lp)
+    p = p / (w - (w - 1.0) * p)
+    return p.reshape(d, len(vocab)), torch.softmax(lc, -1).reshape(d, len(vocab), N_GRID)
 
 
 def _subsets(p, k_top=6, max_terms=8):
@@ -746,3 +816,21 @@ def choose(cands, n_points):
         if s < bs:
             best, bs = (m, v, tag), s
     return best
+
+
+def superset_suggestion(net, vocab, view, extra=2, max_terms=8, seconds=120.0, seed=0):
+    """A tolerant suggestion: per equation the network's most probable tokens plus `extra` more (near-copies of a true
+    term included), fitted exactly, then pruned by the learner's own backward elimination on the step-to-step map,
+    which can tell a true term from its near-copy where the rate-data evidence cannot. Returns (model, held-back error)."""
+    import time as _t
+    pres, cells = predict(net, vocab, view["Zc"], view["G"], view["noise"], seed=seed)
+    eqs = []
+    for i in range(vocab.d):
+        k = int(min(max_terms, max(2, int((pres[i] > 0.5).sum()) + extra)))
+        top = torch.argsort(-pres[i])[:k].tolist()
+        eqs.append([(vocab.tokens[t], int(torch.argmax(cells[i, t]))) for t in top])
+    model, val = fit_suggestion(eqs, vocab, view)
+    if not math.isfinite(val):
+        return model, val
+    model, val = DL.backward_eliminate(model, view["z0"], view["z1"], view["zv0"], view["zv1"], _t.time() + seconds)
+    return model, val
