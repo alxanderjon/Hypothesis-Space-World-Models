@@ -9,6 +9,7 @@ model's identifier, name, file name, byte count and SHA-256.
 import argparse
 import hashlib
 import json
+import re
 import time
 import urllib.parse
 import urllib.request
@@ -16,6 +17,10 @@ from pathlib import Path
 
 BASE = "https://www.biomodels.org"
 QUERY = '*:* AND curationstatus:"Manually curated" AND modellingapproach:"ordinary differential equation model"'
+QUERY_NONCURATED = ('*:* AND modellingapproach:"ordinary differential equation model" '
+                    'AND curationstatus:"Non-curated"')      # fresh pool (1 Nov): rules fixed in the log before download
+ID_RE = re.compile(r"^(BIOMD|MODEL)\d{10}$")
+MAX_BYTES = 5_000_000
 
 
 def get(url, timeout=60):
@@ -24,10 +29,10 @@ def get(url, timeout=60):
         return r.read()
 
 
-def list_models():
+def list_models(query=QUERY):
     out, offset = [], 0
     while True:
-        q = urllib.parse.quote(QUERY)
+        q = urllib.parse.quote(query)
         d = json.loads(get(f"{BASE}/search?query={q}&offset={offset}&numResults=100&format=json"))
         batch = d.get("models", [])
         out += [{"id": m["id"], "name": m.get("name", "")} for m in batch]
@@ -60,13 +65,52 @@ def retry_failed(out, delay):
     print("after retry:", sum("sha256" in x for x in mf["models"]), "files,", sum("error" in x for x in mf["models"]), "errors")
 
 
+def fetch_main(mid):
+    """Main SBML file of one model. The server's file name is used only in the request; the local name is ours."""
+    files = json.loads(get(f"{BASE}/{mid}?format=json")).get("files", {}).get("main", [])
+    fn = files[0]["name"]
+    data = get(f"{BASE}/model/download/{mid}?filename={urllib.parse.quote(fn)}")
+    if len(data) > MAX_BYTES:
+        raise ValueError("larger than the converter accepts")
+    if b"<sbml" not in data[:5000]:
+        raise ValueError("not SBML")
+    return data
+
+
+def main_noncurated(out, delay):
+    """Fresh pool (1 Nov): every non-curated ODE model, saved as <id>.xml (identifier checked first)."""
+    models, total = list_models(QUERY_NONCURATED)
+    print("listed", len(models), "of", total, flush=True)
+    manifest = []
+    for i, m in enumerate(models):
+        entry = dict(m)
+        try:
+            if not ID_RE.match(m["id"]):
+                raise ValueError("unexpected identifier format")
+            entry["file"] = f"{m['id']}.xml"
+            data = fetch_main(m["id"])
+            (out / entry["file"]).write_bytes(data)
+            entry.update(bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
+        except Exception as e:  # recorded, not retried silently
+            entry["error"] = f"{type(e).__name__}: {e}"[:200]
+        manifest.append(entry)
+        if (i + 1) % 100 == 0:
+            print(i + 1, "processed;", sum("error" in x for x in manifest), "errors", flush=True)
+        time.sleep(delay)
+    (out / "manifest.json").write_text(json.dumps({"query": QUERY_NONCURATED, "listed": total, "models": manifest}, indent=1))
+    print("done:", sum("sha256" in x for x in manifest), "files,", sum("error" in x for x in manifest), "errors")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--delay", type=float, default=0.3)
     ap.add_argument("--retry-failed", action="store_true")
+    ap.add_argument("--noncurated", action="store_true", help="fresh pool (1 Nov): the non-curated ODE models")
     a = ap.parse_args()
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
+    if a.noncurated:
+        return main_noncurated(out, a.delay)
     if a.retry_failed:
         return retry_failed(out, a.delay)
     models, total = list_models()

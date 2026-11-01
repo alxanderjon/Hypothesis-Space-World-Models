@@ -3182,3 +3182,13 @@ The owner approved downloading and converting the non-curated BioModels ODE mode
 - **Judged as in the trial:** a held-back error ≤ 3e-13 to accept, a refit on all bursts, then external exactness at held-out starting states with the compiled artifact.
 - **Reference point.** The learner from scratch is exact on 4 of these 14 at M = 8 and 7 of 14 at M = 16 (existing records).
 - **Script:** `ceiling_check.py` (scratchpad).
+
+### Held-out evaluation: choice of test set (owner's decision, 1 November; rule fixed before the fresh-pool counts are seen)
+
+- **Owner:** *"if the fresh pool gives enough systems, use it; if not, use the current held-out half and state its prior use in Trials 18 and 23 in the write-up."*
+- **"Enough" means at least 30 systems**, counted after all pool rules. The criteria were designed around the 35-system held-out half. As before, systems whose reference cannot be built are excluded at analysis.
+- **Rule:**
+  1. If the fresh pool's evaluation half has ≥ 30 systems, the Trial 27 evaluation runs on it. The fresh development half and the current held-out half stay unused.
+  2. Otherwise, if the whole fresh pool has ≥ 30, the evaluation runs on the whole fresh pool. Trial 27 needs no development use of it.
+  3. Otherwise, the evaluation runs on the current held-out half, and the write-up states its prior use in Trials 18 and 23.
+- **Unchanged either way:** the learner, settings, criteria and controls as approved. The fresh pool's 3-variable systems are included; the learner's development covered 3-variable systems through Trial 26. For a fresh-pool run, the harness gains the fresh pool as a data source, with the same converter, sampling rule and transient protocol, which were fixed during development for all pool systems.
