@@ -2920,6 +2920,42 @@ The two probes that compared against the old scratch learner were stopped (super
   - the number of the target's other equations that share a pattern with the source system (canonical structure, any relabelling);
   - the data-feature distance between the two systems (the copy-the-closest features, best relabelling), with its rank among all same-dimension earlier systems.
 
+### Option (b), step 2 result: equation patterns give no accumulation over a strong scratch learner (1 Nov, ~02:30; practice half)
+
+**Setup.** 15 test systems (the second half of the fixed order). The library holds 18 pieces and 28 patterns by the end. Every arm uses the same strong base learner.
+
+**Pattern stage, final version** (three iterations during this step):
+- every pattern under every variable assignment;
+- the pattern's compact pieces re-placed by the dense placement grid;
+- patterns guiding the smallest-support search: the pattern pieces under every multiplier join the monomials, because similar systems differ by a term or two;
+- the stage competes even when the toolkit search already accepted a model, and the simplest exact model wins.
+
+| M | scratch | pieces | patterns | decoy patterns | copy-the-closest |
+|---|---|---|---|---|---|
+| 8 | 1/15 | 1/15 | 2/15 | 3/15 | 0/15 |
+| 16 | 4/15 | 4/15 | 4/15 | 4/15 | 1/15 |
+| 32 | 5/15 | 5/15 | 5/15 | 5/15 | 2/15 |
+
+**Outcomes.**
+- **Paired against scratch.** Patterns win once and lose never; decoys win twice; pieces show no difference; copy-the-closest loses 7.
+- **No exact model came from the pattern stage**, so the removal check and the provenance log had nothing to examine. The single extra success at M = 8 did not use a pattern; it and the decoy "wins" are run-to-run variation from a changed search path.
+- **The closest practice pair, 114 → 115** (Hill n = 4 switches): 115 also multiplies the switch by its own variable, and its switch sits elsewhere in its data. Even guided and re-placed, the best pattern fit at M = 16 was 2.5e-4, against noise 1.6e-5. Scratch recovers 115 at M = 32.
+- **Medians of minimal observations** are identical across arms.
+
+**Conclusion.** On the practice half, neither reusing pieces nor reusing equation patterns makes the learner better on later systems once the from-scratch learner is strong.
+
+**New owner request received meanwhile** (verbatim): "Look at PySR v2 (github.com/astroautomata/PySR, docs at pysr.ai), a symbolic regression library my co-advisor Yubei flagged. On the practice half only: 1. Benchmark PySR from scratch against our homemade search: how many systems each learns exactly (1e-12 bar, held-out starting states) at each data size, and how long each takes. Add a final high-precision polish step if PySR stops short of the bar. 2. Check whether discovered pieces and equation patterns can be fed into PySR as custom building blocks, so the accumulation test could run on top of it. If PySR is the stronger from-scratch learner, propose switching the search engine to it, keeping all controls. Report back in plain language before changing anything in Trial 27."
+
+**PySR benchmark setup** (practice half only; nothing in Trial 27 changed).
+- **Version and environment:** PySR 2.7.2 in its own environment.
+- **Data:** exactly our learner's data per (system, M) — same bursts, same training/held-back split, same scaled states and rate estimates (burst interiors).
+- **Operators:** + − × ÷ ^, exp, tanh, sin, abs (the toolkit's building blocks); float64; deterministic; maxsize 40.
+- **Time:** the same wall-clock budget as our learner (300 s for M ≤ 8, 900 s otherwise), shared equally over the components.
+- **High-precision finish.** Candidates come from each component's Pareto front: the simplest within 10× and 1000× of the best fit, the most accurate, and the best elbow.
+  - Candidates are screened like ours: one missing the rate data by more than 100× their noise level cannot be exact.
+  - Survivors get Levenberg–Marquardt refitting of all constants on the step-to-step map (RK8, float64), the same held-back check (3e-13), a refit on all bursts, a compiled artifact, and the harness's external in-range test.
+- **First observation** (114, M = 64, full budget): PySR's best formulas approximate the n = 4 switches with nested sines and tanh, missing the rate data by 2e-2 relative (noise 3e-8). Our learner recovers this system exactly in 2–5 minutes.
+
 ### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
 
 **G-familiar** (10 systems that resemble the history; reported, not counted). Exact-recovery rate by data amount:
