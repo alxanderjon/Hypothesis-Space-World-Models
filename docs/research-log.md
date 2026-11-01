@@ -3029,7 +3029,7 @@ Demonstration on 115, M = 32, using 114's switch piece and 114's equations as gu
 The owner approved the held-out evaluation after the reference-simulation fix. First, though, they asked me to confirm that a fresh, untouched pool exists for the next accumulation trial, and to tell them before spending the held-out half if there isn't one.
 
 - **No ready-made fresh pool exists.**
-  - Every curated BioModels ODE model that passes the acceptance rules at 2–12 state variables was already accepted in Trial 23 (or in Trial 16/18).
+  - Every curated BioModels ODE model that passes the acceptance rules at 2–12 state variables was already accepted in Trial 23 (or in Trial 16/18). The exceptions are about 20 that failed a time-limited test integration there; some might pass with a longer limit.
   - BioModels lists the same number of curated ODE models today as at our download: 1,019.
 - **Correction to the Trial 27 plan.** The plan called the pool "fresh, untouched". That is true only with respect to this learner: the held-out half has never been run or inspected during the Trial 27 build, and the learner carries nothing trained in earlier trials. In the strict sense the claim is wrong:
   - **Held-out half:** 34 of 35 systems are in Trial 23's real set (29 training, 5 held-out).
@@ -3063,7 +3063,7 @@ The owner approved the held-out evaluation after the reference-simulation fix. F
 
 **Observation (practice truths).** 9 of 10 failing practice systems couple their equations:
 - the same term appears in two equations, with ratio −1 (one variable's loss is another's gain), −2 (973), −4 (1012) or a fixed volume-like factor (573);
-- or the equations are symmetric copies of each other (1047; the forms of 507).
+- or the equations are symmetric copies of each other (1047). Only 507 has neither.
 
 Fitting equations separately ignores this, so each shared constant is fitted from one equation's data only.
 
@@ -3093,3 +3093,16 @@ Experience counts only if the history network beats the generic one, increasingl
 - Fit the correct structure, taken from the true equations of practice systems, to the same 8- and 16-burst observations, with and without the true ties, and judge it with the external exactness test.
 - This bounds what any use of experience can achieve at small data.
 - If even the correct structure is rarely exact at 8 bursts, the data are too narrow for exactness there, and I report that before building anything.
+
+### Trial 27: reference-simulation fix (owner-approved, 1 November)
+
+- **What.** Each system's reference simulation (recordings, scale, substeps, interval, both random-generator states) is now built once per system and data draw and reused by every run (`harness27.reference`, used by `trial27.run_one`). Before, it was rebuilt for every run, which took 20–40 minutes on the slowest systems.
+  - A build that fails because the true system diverges is stored and re-raised identically, so the exclusion rule is unchanged.
+  - Concurrent requests wait for the first builder.
+  - The cache lives in `outputs/accumulating_learner/trial27/refcache` and is deleted after the evaluation.
+- **Check (practice systems only)** (`test_refcache.py` in the scratchpad; logs `refcache_test_run1.log` and `refcache_test.log`):
+  - **Five references are bit-for-bit identical to fresh builds** (every array and scalar, the interval and both generator states): 114, 1012 and 728 (oscillators; interval refined 4, 3 and 0 times), and 866 and 919 (transients; refined 5 and 1 times). Bursts and held-out draws are identical too.
+  - **Failure path:** 741 raises the same `RuntimeError('provisional transient diverged')` fresh, on first build and from the cache.
+  - **Full behaviour (866, seed 2):** bursts, in-range evaluation (exact; one-step 2.6e-15), out-of-range evaluation and the generator states afterwards are all identical.
+  - **Contention:** three processes requesting one reference at once get identical copies; it is built once.
+- Results therefore cannot change. Only the time per run drops.

@@ -10,6 +10,8 @@ Out-of-range states (owner addition, Trial 27): starting states outside the regi
 
 import hashlib
 import json
+import os
+import time
 from pathlib import Path
 
 import numpy as np
@@ -241,6 +243,75 @@ class Reference27:
             starts = self.held_trajs[:, 0]
         self.env_starts = starts
         self.env_ref, self.E, self.H = self.envelope(starts, self.cap)
+
+
+# ---------------- reference built once per (system, seed), reused across runs ----------------
+
+def _gen_state(g):
+    return json.dumps(g.bit_generator.state)
+
+
+def _gen_from(state):
+    g = np.random.default_rng()
+    g.bit_generator.state = json.loads(state)
+    return g
+
+
+def _load_reference(name, seed, path):
+    z = np.load(path)
+    ref = Reference27.__new__(Reference27)
+    ref.sys = TrueSystem27(name)
+    ref.sys.dt = float(z["dt"])
+    ref.refine, ref.nsub, ref.cap = int(z["refine"]), int(z["nsub"]), int(z["cap"])
+    ref.scale = z["scale"]
+    ref.learn_trajs, ref.held_trajs, ref.oor_trajs = z["learn_trajs"], z["held_trajs"], z["oor_trajs"]
+    ref.rng, ref.rng_held = _gen_from(str(z["rng"])), _gen_from(str(z["rng_held"]))
+    return ref
+
+
+def reference(name, seed=0, cache=None, wait=3600):
+    """Reference27(name, seed), built once and stored under `cache` (default $REF27_CACHE; unset: no cache).
+
+    The stored copy restores everything construction leaves behind (recordings, scale, substeps, interval, cap and both
+    random-generator states), so a loaded reference behaves exactly like a freshly built one. A build that fails because
+    the true system diverges (the protocol's exclusion) is stored too and re-raised identically; other failures are not
+    stored. Concurrent requests for one reference wait for the first builder (lock file) instead of building it again."""
+    cache = cache or os.environ.get("REF27_CACHE")
+    if not cache:
+        return Reference27(name, seed)
+    d = Path(cache)
+    d.mkdir(parents=True, exist_ok=True)
+    path, err, lock = d / f"{name}_s{seed}.npz", d / f"{name}_s{seed}.error", d / f"{name}_s{seed}.lock"
+    t0 = time.time()
+    while True:
+        if path.exists():
+            return _load_reference(name, seed, path)
+        if err.exists():
+            raise RuntimeError(err.read_text())
+        try:
+            os.close(os.open(lock, os.O_CREAT | os.O_EXCL))
+            break
+        except FileExistsError:
+            if time.time() - t0 > wait:            # builder died or is very slow: build independently, store nothing
+                return Reference27(name, seed)
+            time.sleep(5)
+    try:
+        try:
+            ref = Reference27(name, seed)
+        except RuntimeError as e:
+            if "diverged" in str(e):
+                tmp = d / f"{name}_s{seed}.tmp{os.getpid()}.error"
+                tmp.write_text(str(e))
+                os.replace(tmp, err)
+            raise
+        tmp = d / f"{name}_s{seed}.tmp{os.getpid()}.npz"
+        np.savez(tmp, dt=ref.sys.dt, refine=ref.refine, scale=ref.scale, nsub=ref.nsub, cap=ref.cap,
+                 learn_trajs=ref.learn_trajs, held_trajs=ref.held_trajs, oor_trajs=ref.oor_trajs,
+                 rng=_gen_state(ref.rng), rng_held=_gen_state(ref.rng_held))
+        os.replace(tmp, path)
+        return ref
+    finally:
+        lock.unlink(missing_ok=True)
 
 
 def _multi_ok(xh, ref, E, Hz, scale):

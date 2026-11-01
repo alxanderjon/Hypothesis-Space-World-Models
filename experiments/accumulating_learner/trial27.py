@@ -69,7 +69,7 @@ def run_one(job):
     rec = {k: job[k] for k in ("name", "seed", "M", "mode") if k in job}
     rec.update({k: job.get(k) for k in ("order", "pos")})
     try:
-        ref = H27.Reference27(job["name"], seed=job["seed"])
+        ref = H27.reference(job["name"], seed=job["seed"])        # built once per (system, seed); identical results
         b = H27.bursts_from(ref, job["seed"], job["M"])
         lib = DL.Library.from_json(job.get("library") or [])
         rec["library_size"] = len(lib.entries)
@@ -267,6 +267,8 @@ def main():
     ap.add_argument("--systems", default="")
     ap.add_argument("--ms", default="", help="observation budgets (default: all); rehearsal only")
     a = ap.parse_args()
+    # each system's reference simulation is built once per seed and reused by every run (workers inherit this)
+    os.environ.setdefault("REF27_CACHE", str(OUT / "refcache"))
     if a.ms:
         global MS
         MS = tuple(int(x) for x in a.ms.split(","))
