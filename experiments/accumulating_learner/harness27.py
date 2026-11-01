@@ -22,6 +22,8 @@ import exact_harness as H
 ROOT = H.ROOT
 POOL_DIRS = {2: ROOT / "outputs/accumulating_learner/trial27/pool_d2", 4: ROOT / "outputs/accumulating_learner/trial27/pool_d4"}
 SBML = H.SBML
+FRESH_DIR = ROOT / "outputs/accumulating_learner/fresh_pool_v1"    # non-curated pool (rules: research log, 1 Nov)
+FRESH_SBML = SBML.parent / "biomodels_noncurated"
 STEPS = 100            # steps per period (oscillator) or per settle time (transient)
 REC_STEPS = 150        # transient recording length in steps (before interval refinement)
 N_LEARN_REC = 64       # transient learning recordings (varied starting states)
@@ -36,6 +38,21 @@ def split_half(mid):
 def ill_defined(rec):
     """Pool validity filter (both halves alike): converted equations containing infinite or undefined constants."""
     return any(tok in e for e in rec.get("exprs", []) for tok in ("ComplexInfinity", "zoo", "NaN", "Infinity"))
+
+
+def fresh_half(mid):
+    return "eval" if int(hashlib.sha256(("fresh-pool-v1:" + mid).encode()).hexdigest()[0], 16) % 2 else "dev"
+
+
+def fresh_records():
+    """Fresh-pool systems that passed every pool rule (pool.json, written by the counts-only check), with their
+    conversion records."""
+    pf, cf = FRESH_DIR / "pool.json", FRESH_DIR / "conversion.json"
+    if not (pf.exists() and cf.exists()):
+        return {}
+    keep = {r["id"]: r for r in json.loads(pf.read_text())["pool"]}
+    return {r["id"]: dict(r, d=keep[r["id"]]["d"], half=keep[r["id"]]["half"])
+            for r in json.loads(cf.read_text())["records"] if r["id"] in keep and r["status"] == "accepted"}
 
 
 def pool_records():
@@ -55,11 +72,12 @@ class TrueSystem27:
     def __init__(self, name):
         self.name = name
         recs = pool_records()
-        if name in recs:
+        fresh = {} if name in recs else fresh_records()
+        if name in recs or name in fresh:
             import biomodels_convert as BC
-            rec = recs[name]
-            man = {m["id"]: m for m in json.loads((SBML / "manifest.json").read_text())["models"]}
-            info, exprs = BC.convert(SBML / man[name]["file"], rec["d"], rec["d"])
+            rec, sdir = (recs[name], SBML) if name in recs else (fresh[name], FRESH_SBML)
+            man = {m["id"]: m for m in json.loads((sdir / "manifest.json").read_text())["models"]}
+            info, exprs = BC.convert(sdir / man[name]["file"], rec["d"], rec["d"])
             self._f, self._roll = CA.build_true(exprs)
             self.kind = rec["kind"]
             self.T = float(rec["period"] if self.kind == "oscillator" else rec["settle_time"])

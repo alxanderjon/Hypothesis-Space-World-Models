@@ -31,6 +31,10 @@ L = 13
 
 def systems(half):
     import harness27 as H27
+    if half == "fresh":        # fresh-pool test set, chosen by the rule logged on 1 Nov before the counts were seen
+        fr = H27.fresh_records()
+        ev = sorted(i for i, r in fr.items() if r["half"] == "eval")
+        return ev if len(ev) >= 30 else (sorted(fr) if len(fr) >= 30 else [])
     recs = H27.pool_records()
     return sorted(i for i in recs if H27.split_half(i) == half)
 
@@ -259,7 +263,7 @@ def removal_jobs(tag, seeds):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["eval", "dev", "lists", "removal"])
+    ap.add_argument("stage", choices=["eval", "dev", "fresh", "lists", "removal"])
     ap.add_argument("--tag", default="eval")
     ap.add_argument("--workers", type=int, default=24)
     ap.add_argument("--seeds", default="1,2")
@@ -273,7 +277,7 @@ def main():
         global MS
         MS = tuple(int(x) for x in a.ms.split(","))
     if a.stage == "lists":
-        print("dev", len(systems("dev")), "eval", len(systems("eval")))
+        print("dev", len(systems("dev")), "eval", len(systems("eval")), "fresh test set", len(systems("fresh")))
         return
     if a.stage == "removal":
         jobs = removal_jobs(a.tag, [int(x) for x in a.seeds.split(",")])
@@ -284,8 +288,8 @@ def main():
                 print(job["name"], job["M"], "removed", job["removed"], "->", rec.get("status"), rec.get("exact"), flush=True)
         return
     names = a.systems.split(",") if a.systems else systems(a.stage)
-    if a.stage == "eval":
-        assert all(n in systems("eval") for n in names)
+    if a.stage in ("eval", "fresh"):
+        assert names and all(n in systems(a.stage) for n in names)
     run_trial(names, [int(x) for x in a.seeds.split(",")], [int(x) for x in a.orders.split(",")], a.workers, tag=a.stage)
 
 

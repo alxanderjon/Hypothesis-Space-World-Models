@@ -3192,3 +3192,21 @@ The owner approved downloading and converting the non-curated BioModels ODE mode
   2. Otherwise, if the whole fresh pool has ≥ 30, the evaluation runs on the whole fresh pool. Trial 27 needs no development use of it.
   3. Otherwise, the evaluation runs on the current held-out half, and the write-up states its prior use in Trials 18 and 23.
 - **Unchanged either way:** the learner, settings, criteria and controls as approved. The fresh pool's 3-variable systems are included; the learner's development covered 3-variable systems through Trial 26. For a fresh-pool run, the harness gains the fresh pool as a data source, with the same converter, sampling rule and transient protocol, which were fixed during development for all pool systems.
+
+### Fresh pool: counts (1 November, ~09:45; counts only, nothing inspected)
+
+- **Download:** 675 listed, 638 SBML files fetched. 27 entries had no SBML main file, and 10 were larger than the converter accepts (5 MB).
+- **Conversion** (2–12 state variables): 73 accepted.
+  - Rejections by category: size 316, events 69, time/delay/csymbol 47, polynomial 44, missing values 42, title rule 14, integration failed 12, no motion 8, unresolved rules 6, other 6, unsupported construct 1.
+  - Accepted by dimension: d = 2: 5, 3: 11, 4: 13, 5: 7, 6: 7, 7: 7, 8: 15, 9–12: 2 each.
+- **Pool rules (2–4 variables):** 29 candidates.
+  - Validity filter: 0 removed.
+  - Identity overlap with any earlier trial: 0.
+  - Structural duplicates of curated models: 2, compared against 144 distinct curated structures.
+  - Duplicates within the pool: 0.
+- **Fresh pool: 27 systems.**
+  - Development half 17: d = 2: 2 oscillators and 2 transients; d = 3: 2 transients; d = 4: 2 oscillators and 9 transients.
+  - Evaluation half 10: d = 2: 1 transient; d = 3: 1 oscillator and 6 transients; d = 4: 2 transients.
+  - For information: 44 accepted models with 5–12 variables, before duplicate checks.
+- **Decision by the rule fixed beforehand.** The evaluation half has 10 and the whole pool 27, both below 30, so rule 3 applies. The Trial 27 evaluation runs on the current held-out half (35 systems), and the write-up states its prior use in Trials 18 and 23.
+- **Consequence for the next trial.** A genuinely untouched pool exists, but it is small: 27 systems at 2–4 variables, or about 71 if 5–12 variables are allowed. The pool file is `outputs/accumulating_learner/fresh_pool_v1/pool.json`; it has not been inspected.
