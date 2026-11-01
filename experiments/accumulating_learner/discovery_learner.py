@@ -2250,6 +2250,11 @@ MOTIFS = [False]
 MOTIF_FAMILIES = ("crecip", "cexp", "ctanh", "cpow", "chill", "chillr")
 
 
+def n_fitted(model):
+    """Numbers fitted in a model: linear coefficients plus free constants."""
+    return len(model.params()) - len(model.frozen())
+
+
 def motifs_from_model(model, Zc):
     """Each component's support as a pattern: variables relabelled (self -> 0, others -> 1, 2, ... by first appearance);
     compact pieces keep family, exponent and their v-range on the source data (their placement is refitted on reuse).
@@ -2480,7 +2485,7 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
 
     best = standard_search(levels_plan, [], best)
     # ---- PROTOTYPE (off by default): equation patterns from the library, tried under every variable assignment ----
-    if MOTIFS[0] and (best is None or best["val_err_scaled"] > VAL_TOL) and any(e.kind == "motif" for e in lib.entries):
+    if MOTIFS[0] and any(e.kind == "motif" for e in lib.entries):
         motifs = [dict(e.motif, id=e.id) for e in lib.entries if e.kind == "motif"]
         Zall_m = torch.cat([z0, zv0])
         m_dead = min(time.time() + 0.15 * time_limit, hard)
@@ -2506,9 +2511,18 @@ def learn(bursts, knowledge=None, val_frac=0.25, seed=0, time_limit=600, verbose
                     v_m, _, _ = converged_val(m_m, z0, zv0, zv1)
                     if verbose:
                         print(f"   pattern model: {n_used} component(s) from patterns, terms {m_m.n_terms()} val {v_m:.2e}", flush=True)
-                    if math.isfinite(v_m) and (best is None or v_m < best["val_err_scaled"]):
-                        best = {"model": m_m, "nsub": None, "val_err_scaled": v_m, "train_err_scaled": err_m, "levels": "pattern",
-                                "patterns_used": [(int(c), int(e)) for c, e in pat_used]}
+                    # simplest model exact on held-back data: if both pass, the one with fewer fitted numbers wins;
+                    # otherwise the lower held-back error
+                    cand = {"model": m_m, "nsub": None, "val_err_scaled": v_m, "train_err_scaled": err_m, "levels": "pattern",
+                            "patterns_used": [(int(c), int(e)) for c, e in pat_used]}
+                    if math.isfinite(v_m):
+                        if best is None:
+                            best = cand
+                        elif v_m <= VAL_TOL and best["val_err_scaled"] <= VAL_TOL:
+                            if n_fitted(m_m) < n_fitted(best["model"]):
+                                best = cand
+                        elif v_m < best["val_err_scaled"]:
+                            best = cand
             except (RuntimeError, ValueError):
                 pass
             DEADLINE[0] = min(t_start + time_limit, hard)

@@ -2899,6 +2899,27 @@ The two probes that compared against the old scratch learner were stopped (super
 - With only 2–4 held-back bursts (drawn from the same recordings), no internal check can see extrapolation failures. External exactness remains the measure.
 - **Pattern provenance.** The pattern prototype now records which stored pattern (hence which earlier system) each component used.
 
+### Option (b), step 2: equation-pattern test design (1 Nov, ~00:05; practice half only)
+
+- **Order.** The 29 usable practice systems in the fixed order of the earlier probe. The test systems are the second half (15).
+- **Library at position k.** Built from the accepted M = 64 runs of the current strong learner on the earlier systems: their new pieces, plus each component's equation as a pattern.
+  - A pattern relabels variables as "self" and "others". Each compact piece keeps its family and exponent; its placement is refitted.
+- **Arms, all using the same strong base learner:**
+  - scratch;
+  - pieces-only library (the originally approved design);
+  - pattern library (pieces plus patterns);
+  - decoy library (same number and size of entries, random shapes and patterns);
+  - copy-the-closest (the whole earlier model closest in data, refitted).
+- **Observation budgets:** M = 8, 16, 32, with 300 s at M ≤ 8 and 900 s otherwise.
+- **The pattern stage.** Every pattern is tried on every component under every variable assignment, ranked by a linear fit and refined (VarPro) on the rate data. The assembled model is polished and validated on the step-to-step data.
+  - It runs even when the toolkit search already accepted a model. At small data that model is often an over-fitted polynomial that passed the 2–4-burst held-back check, and the pattern stage would otherwise never compete.
+  - When both models pass the held-back check, the one with fewer fitted numbers wins (the owner's "simplest model exact on held-back data").
+- **Removal check.** Every pattern-arm win (exact where scratch is not, with patterns used) is rerun with the used patterns removed from the library.
+- **Provenance.** For every pattern-based success, the report gives:
+  - the source system of each pattern used;
+  - the number of the target's other equations that share a pattern with the source system (canonical structure, any relabelling);
+  - the data-feature distance between the two systems (the copy-the-closest features, best relabelling), with its rank among all same-dimension earlier systems.
+
 ### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
 
 **G-familiar** (10 systems that resemble the history; reported, not counted). Exact-recovery rate by data amount:
