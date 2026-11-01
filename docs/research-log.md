@@ -2956,6 +2956,26 @@ The two probes that compared against the old scratch learner were stopped (super
   - Survivors get Levenberg–Marquardt refitting of all constants on the step-to-step map (RK8, float64), the same held-back check (3e-13), a refit on all bursts, a compiled artifact, and the harness's external in-range test.
 - **First observation** (114, M = 64, full budget): PySR's best formulas approximate the n = 4 switches with nested sines and tanh, missing the rate data by 2e-2 relative (noise 3e-8). Our learner recovers this system exactly in 2–5 minutes.
 
+### PySR benchmark: configuration findings (1 Nov, ~03:15; practice half only)
+
+**The operator set matters a great deal for PySR.**
+- On 753 at M = 16, the first equation is a 3-term polynomial, z0·(a + b·z0 + c·z1).
+- With + − × ÷ only, PySR finds it in 60 s at the noise level (misfit 1.7e-8, noise 3.6e-8).
+- With the toolkit-equivalent set (+ − × ÷ ^, exp, tanh, sin, abs) it falls into sine-based approximations: 1.4e-2 after 60 s, and still about 1e-2 after its full 450 s.
+- To give PySR its best chance, the benchmark's main configuration uses + − × ÷ (polynomials and ratios, which cover most of this pool). The 48 runs already done with the full set are kept as a secondary configuration.
+
+**Screening fix.** PySR's own constant fitting stops a few digits short, so a correct structure could look far off. Each candidate's constants are now refitted on the rate data (Levenberg–Marquardt, float64) before the noise-level screen. Refits are time-capped so pathological nested formulas cannot stall the finish.
+
+**Building blocks** (the owner's question 2). PySR 2.7.2 accepts:
+- discovered pieces as custom operators, e.g. `hill4(x) = x^4/(1+x^4)` with a SymPy mapping;
+- equation patterns as starting expressions (`guesses`, per output);
+- fixed structures as template expressions.
+
+Demonstration on 115, M = 32, using 114's switch piece and 114's equations as guesses:
+- First equation: misfit 6.3e-2 → 9.5e-6, and the formula contains the right switch times (x0, x1).
+- Second equation: worse, 6.2e-2 → 8.2e-2 (the search drifted into nested switch compositions).
+- So the accumulation test could run on top of PySR; whether reuse then helps is a separate question.
+
 ### Trial 26 supplementary results (record-keeping runs, finished 31 Oct afternoon)
 
 **G-familiar** (10 systems that resemble the history; reported, not counted). Exact-recovery rate by data amount:
