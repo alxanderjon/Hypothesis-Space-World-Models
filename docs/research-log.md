@@ -3343,3 +3343,30 @@ The **removal check** retrains the history network without the provenance source
   2. **Probability calibration.** Presence probabilities are calibrated for the class weighting used in training. Before this, 2–9% of wrong terms scored above 0.5.
   3. **Tolerant suggestion added.** Per equation, the network's most probable terms plus 2 are fitted exactly and pruned by the learner's own backward elimination on the step-to-step map. That map can tell a true term from its near-copy where rate data cannot.
   4. **377 and 402 excluded from the practice study.** Their reference simulations did not finish building in more than 5 hours earlier today. 787 stays: its reference builds once in about 40 minutes and is then cached.
+
+### Option (b) practice study: offline check of the practice network, negative (1 November, ~12:15; practice half)
+
+The check uses leave-one-out networks: each is trained on variations of the other 13 learned practice systems, then tested on the held-out system's real data (seed 1). It asks whether the network's suggestions contain the system's learned M = 64 structure. No learner runs are involved.
+
+| Network version | Exact structure in top 8 (4 systems × M = 4/8/16) | All true terms inside the tolerant suggestion (top + 2) |
+|---|---|---|
+| v1 (marginal evidence) | 0 of 12 | — |
+| v2 (log-residual greedy paths), history only | 0 of 12 | 0 of 12 |
+| v2, history + generic | 0 of 12 | 1 of 12 (866 at M = 8) |
+| v3 (+ mixed starting-state jitter), history only | 0 of 12 | 0 of 12 |
+| v3, history + generic | 0 of 12 | 0 of 12 |
+
+- **Held-out systems:** 866, 115, 573, 1012.
+  - With v3, the worst true term per equation ranks 5th–15th of 40 for 866, 31st–35th of 40 for 115 (even though its close sibling 114 is in the history), 7th–38th of 40 for 573, and 29th–129th of 135 for 1012.
+- **Systems the network was trained on** (real data, v3 history + generic):
+  - 728 is recognized: the exact structure is the first suggestion at M = 8 and 16.
+  - 973's terms fall inside the tolerant suggestion at M = 4 and 16, and 114's at M = 16.
+- **Reading.** The network learned to recognize systems it has practised on, not to read the structure of new ones. That is the similarity the owner ruled out as evidence. Two observations explain it:
+  1. Over the narrow range of 8–16 bursts, many candidate terms are near-copies of one another. What tells the true term from its copies is a residual difference at the 1e-6 to 1e-12 level, which the exact step-to-step fit sees and rate-based evidence does not. A greedy path over all candidates picks only 5% of the true terms.
+  2. Thirteen learned systems with about 60 variations each are memorized rather than generalized. On practice cases from the training systems, true terms rank at about 3–4; shifting the starting states or relabelling variables breaks this.
+- **Ties, by contrast, work** as a shared final step on fitted models. 114 at M = 8 turns from accepted-but-not-exact (2.6e-12) into exact (1.3e-13), and 866 becomes about 27× more precise. They are measured on every scratch run in the end-to-end stage.
+- **Next, within the approved study:**
+  - the end-to-end comparison at the headline size (scratch + ties against the history network on the second half, M = 8);
+  - the effect of ties on scratch at M = 4, 8, 16.
+
+  Both run once the practice scratch runs finish. The full set of controls matters only if the history arm shows an advantage.
