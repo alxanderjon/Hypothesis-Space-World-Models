@@ -3106,3 +3106,18 @@ Experience counts only if the history network beats the generic one, increasingl
   - **Full behaviour (866, seed 2):** bursts, in-range evaluation (exact; one-step 2.6e-15), out-of-range evaluation and the generator states afterwards are all identical.
   - **Contention:** three processes requesting one reference at once get identical copies; it is built once.
 - Results therefore cannot change. Only the time per run drops.
+
+### PySR benchmark: table update (1 November, ~06:40; practice half only)
+
+More cells have finished since the result above. The table counts only cells where both learners have a result:
+
+| M | our learner: exact | PySR + finish: exact | both | ours only | PySR only | median time per run, ours / PySR |
+|---|---|---|---|---|---|---|
+| 8 | 4/27 | 1/27 | 1 | 3 | 0 | 308 s / 344 s |
+| 16 | 7/17 | 2/17 | 2 | 5 | 0 | 320 s / 904 s |
+| 32 | 10/27 | 1/27 | 1 | 9 | 0 | 433 s / 904 s |
+| 64 | 14/27 | 2/27 | 2 | 12 | 0 | 377 s / 904 s |
+
+- PySR still recovers nothing ours misses. The recommendation (do not switch) is unchanged.
+- **Not benchmarked: 377 and 402.** The data export for PySR spent about 5 hours building their reference simulations without finishing, and was stopped. It used the old per-run construction, not the new reference cache.
+- **Pending:** our M = 16 runs on 10 systems (still running). The table is updated if they change anything.
