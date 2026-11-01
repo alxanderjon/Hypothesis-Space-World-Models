@@ -3210,3 +3210,43 @@ The owner approved downloading and converting the non-curated BioModels ODE mode
   - For information: 44 accepted models with 5–12 variables, before duplicate checks.
 - **Decision by the rule fixed beforehand.** The evaluation half has 10 and the whole pool 27, both below 30, so rule 3 applies. The Trial 27 evaluation runs on the current held-out half (35 systems), and the write-up states its prior use in Trials 18 and 23.
 - **Consequence for the next trial.** A genuinely untouched pool exists, but it is small: 27 systems at 2–4 variables, or about 71 if 5–12 variables are allowed. The pool file is `outputs/accumulating_learner/fresh_pool_v1/pool.json`; it has not been inspected.
+
+### Trial 27: final settings, recorded before the evaluation run (1 November, before launch)
+
+- **Code.** Commit 80d0c10. `trial27.py eval` with 24 workers (OMP 1, nice 10), then the removal stage, then `analyze27.py --tag eval`.
+- **Learner** (`discovery_learner.learn`, the same for every arm):
+  - Budgets: 300 s (M ≤ 8) and 900 s (M ≥ 16). Hard ceiling 1.4× the budget; the final refit may run to +0.1×.
+  - Stages, as fractions of the budget:
+    - toolkit search (levels 0–1) to 30%;
+    - discovery scan of compact shapes to max(50%, start + 20%), with polish to +10%;
+    - re-solve with the scanned pieces to 65%;
+    - curve discovery to 85%, then its re-solve;
+    - completion of near-exact models (held-back error ≤ 1e-8): pole re-placement, backward elimination, flow-map additions;
+    - compact rewrite, degenerate-piece simplification, constant-variable cleanup, exponent and zero-point snapping;
+    - final refit on all bursts (30 iterations plus 2 exact coefficient steps), kept unless worse.
+  - Small-data selection (the strong-scratch changes, all arms):
+    - exhaustive smallest supports (≤ 4 terms; all sizes when there are ≤ 12 candidates; ≤ 40 columns), with the top 15 toolkit pieces by residual correlation added for large candidate sets;
+    - ranking by log(max(residual, tolerance)) plus a cost per fitted number;
+    - sparse scan base when there are fewer than 8 rate points per base monomial;
+    - a variable is centred only if |mean| > 10 std.
+  - Pattern stage off; dense polynomial stage off.
+  - Acceptance: held-back error ≤ 3e-13 (scaled), with the model's own converged substeps × 4.
+- **Library arm.** Accepted new pieces from the library arm's M = 64 run are added. Reused exponents are fixed during the search and free in the final fitting. Decoys have the same count and templates, with random shapes.
+- **Artifact.** The learned equations plus their own adaptive RK8 (doubling until two results agree to 1e-14 of the model's scale), compiled to C. No simulator is used.
+- **Harness.**
+  - Exactness as in Trial 26: one-step ≤ 1e-12 of scale at 1,000 held-out states, plus the multi-step envelope.
+  - Reference substeps: 4 × the doubling-rule count, on 100 sampled plus ≤ 2,000 recorded states.
+  - Sampling rule: the truth needs ≤ 2 substeps per interval.
+  - Shortcuts that cannot change an outcome: multi-step is skipped after a one-step failure; the out-of-range test runs only for exact runs with pieces.
+  - Each reference is built once per system and data draw and reused (verified bit-identical).
+- **Analysis.** Systems whose reference cannot be built (the true system diverges) are excluded from every criterion in every arm, and counted.
+- **Criteria.** Unchanged from the approval: D, A1–A4, both data draws, averaged over 3 orders.
+- **Pool note (1 November check).** The held-out half has never been run or inspected for this learner. However, 34 of its 35 systems were used as data in Trials 18/23 by earlier, different learners.
+- **Test set.** The current held-out half (35 systems), by the rule fixed before the fresh-pool counts. **Disclosure, to be repeated in the write-up:** 34 of these 35 systems were used as data by earlier, different learners. Trial 23 trained on 28 of them and tested on 5; Trial 18 used 6. Neither trial worked with their equations, and nothing from either reaches this learner.
+- **Pipeline.**
+  1. `trial27.py eval --workers 24`;
+  2. `trial27.py removal --tag eval --workers 24`;
+  3. `analyze27.py --tag eval`;
+  4. the reference cache is then deleted.
+
+  Progress is watched by counts only until the run ends.
