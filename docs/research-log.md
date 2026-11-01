@@ -3257,14 +3257,14 @@ The correct structure of each system is supplied: the learner's own exact M = 64
 
 **Exact recoveries out of the 14 practice systems** (external test on held-out starting states; same bursts and held-back split as the learner's runs). "Started at answer" begins the constants at the exact M = 64 values (an upper bound). "Rough start" perturbs placements by ×exp(N(0, 0.3)) and coefficients by ×(1 + N(0, 0.3)), best of 5 restarts.
 
-| Bursts (observations) | Learner from scratch | Structure supplied, started at answer | + ties | Either | Rough start | Rough start + ties |
-|---|---|---|---|---|---|---|
-| 2 (26) | — | 6 (6 more accepted but not exact) | — | — | — | 1 |
-| 4 (52) | — | 10 | — | — | — | 6 |
-| 8 (104) | 4 | 12 | — | 13 | 7 | 9 |
-| 16 (208) | 7 | 11 | — | 12 | 9 | 10 |
+| Bursts (observations) | Learner from scratch | Structure supplied, started at answer | Rough start | Rough start + ties | Answer start or ties |
+|---|---|---|---|---|---|
+| 2 (26) | not run | 6 (6 more accepted but not exact) | not run | 1 | 6 |
+| 4 (52) | not run | 10 | not run | 6 | 10 |
+| 8 (104) | 4 | 12 | 7 | 9 | 13 |
+| 16 (208) | 7 | 11 | 9 | 10 | 12 |
 
-The "+ ties" variant was run only from rough starts. "Either" means exact with the answer start or with ties.
+"Answer start or ties" counts a system as exact if either variant is.
 
 **What it shows:**
 - **From 4 bursts up, the information is mostly in the data.**
