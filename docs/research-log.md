@@ -3283,3 +3283,48 @@ The correct structure of each system is supplied: the learner's own exact M = 64
 - **32–64 bursts** have little or no room for these systems.
 - What experience must provide to use that room is the structure *and* good starting values for switch and pole positions, plus ties between equations. This is consistent with the (b) proposal.
 - **Caveat:** these are the 14 systems the learner solves at 64 bursts. For harder systems, the structure itself is the larger problem.
+
+## Option (b) practice study: design, fixed before any comparison is run (1 November; owner-approved with three conditions)
+
+Owner approval: build (b) on practice data, with 8 bursts as the headline and 4 and 16 as secondary sizes, under three conditions:
+1. Suggestions only add candidates; the from-scratch search always runs.
+2. Ties go to the scratch learner too.
+3. Every earlier control is kept, so that test systems' similarity cannot explain the result.
+
+**Components** (code: `practice_net.py`, `ties.py`; study driver `practice_b.py` in the scratchpad):
+- **Ties** (`ties.finalize`), the shared final step of every arm:
+  - pieces equal up to a constant factor share one placement;
+  - equal terms in two equations with a simple physical coefficient ratio share one coefficient;
+  - ties are detected on the fitted model (loose tolerance), imposed exactly and refitted;
+  - the tied model is kept if the learner's held-back check passes. A refit on all bursts follows, as in `learn()`.
+- **Practice data.** For each learned practice system, variations of its learned model (practice cases): a term dropped, a toolkit term added, a variable swapped, an exponent changed, or none; constants re-drawn (coefficients ×exp(N(0, 0.5)), placements ×exp(N(0, 0.3))); variables relabelled at random.
+  - Each case is simulated on the fly from starting states around the system's observed region, and observed exactly as the learner observes data: bursts of 13 steps, M ∈ {4, 8, 16}, the learner's split and scaling.
+  - About 1,400 training cases per system. Stored compactly in the scratchpad and deleted after the study.
+- **Practice network.**
+  - Vocabulary per equation: monomials of degree ≤ 3, plus reciprocal and Hill (n = 1–4) switches of one variable times 1 or one variable. This vocabulary covers every term of all 14 learned practice models.
+  - Data evidence per candidate: partial R² over a placement grid.
+  - A transformer over all equations' candidates, with variable identities as random per-system embeddings so it can relate the same switch in two equations.
+  - Outputs: presence, and placement on the grid.
+- **Suggestions.** The top 8 whole-model suggestions are each fitted exactly: placements refined on rate data, then Levenberg–Marquardt on the step-to-step map, the held-back check, and ties. They are **added** to the scratch learner's own result, and the learner's rule chooses: log(max(held-back error, tolerance)) plus a cost per fitted constant.
+
+**Order and history.** The 29 usable practice systems in the fixed order of the earlier pattern test. The history at position k is the learned systems (accepted M = 64 models) among positions < k: 0 to 13 systems. Seed 1 (data draw 1).
+
+**Arms** (all include the scratch result and ties):
+1. **Scratch + ties.**
+2. **History network:** trained on variations of the history at that position.
+3. **Generic network:** trained on random toolkit systems placed in the same observed regions, same amount of data. Controls for "having a network" and for the extra fitting compute.
+4. **Scrambled-lessons network:** trained on variations of the history models with terms reassigned to random equations and variables, keeping term statistics.
+5. **Least-similar-history network:** the same number of learned systems, chosen as the least similar to the test system in data (the copy-the-closest similarity), from all learned systems except the test system.
+6. **Copy-the-closest:** the most similar earlier learned model, refitted, as an added candidate.
+
+The **removal check** retrains the history network without the provenance source of each win: the history system whose learned structure best matches the winning suggestion. Each win is logged with that source and how different the two systems are.
+
+**Practice criteria** (the next step is a fresh test only if all three hold):
+- **P1 (headline):** in the second half of the order, the history arm beats scratch + ties at M = 8 by ≥ 15 points in exact recoveries.
+- **P2 (from what was learned, not similarity):**
+  - the generic network, the scrambled-lessons network and copy-the-closest each keep ≤ half of that advantage;
+  - the least-similar-history network keeps ≥ half of it.
+- **P3 (grows with history):** the history-arm advantage at M = 8 rises with history size: second half > first half, and Spearman ρ ≥ 0.5 over history-size bins.
+- **Reported:** M = 4 and 16 rates, the removal check with provenance, ties' effect on scratch alone, and suggestion compute time.
+
+**Compute.** The scratch reruns (models kept at M = 4, 8, 16) and the arm runs wait for the held-out evaluation to finish, which holds 24 CPU workers. Networks train on free GPUs. Practice data are generated on one extra CPU process meanwhile.
