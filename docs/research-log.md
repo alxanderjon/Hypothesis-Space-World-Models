@@ -3427,3 +3427,36 @@ The check uses leave-one-out networks: each is trained on variations of the othe
 
 - Ties are a small, harmless gain: +1 exact at M = 16 (114, whose structure is found but whose constants were imprecise without ties). They have no effect where the structure is wrong.
 - **The option (b) practice study is complete.** The practice network adds nothing at the headline size (P1 fails), and ties add one system at M = 16. Per the owner's instruction, the next step is a plain-language assessment of why accumulation keeps failing, sent after the held-out summary and before proposing anything new.
+
+## Trial 27: held-out result (2 November, pipeline finished 10:26)
+
+**Classification: FAILED** in both data draws. Discovery is below its bar (D) and there is no accumulation (A1–A4).
+
+**Test set and disclosures:**
+- **Size.** 35 held-out systems. Excluded and counted: 1 whose reference diverges (pre-registered rule) and 3 whose references had not finished building (owner decision, 1 November). **31 evaluated.**
+- **Prior use.** 34 of the 35 held-out systems had been used as data by earlier, different learners: Trial 23 trained on 28 and tested on 5, and Trial 18 used 6. Neither worked with their equations, and nothing from either reaches this learner. For Trial 27 the held-out systems were never run or inspected until this evaluation.
+- **Stall.** The first run stalled for about 6 hours on slow references and was restarted with finished runs kept.
+
+| | Draw 1 | Draw 2 |
+|---|---|---|
+| Scratch exact at M = 2 / 4 / 8 / 16 / 32 / 64 (of 31) | 1 / 2 / 4 / 5 / 5 / 7 | 2 / 2 / 2 / 6 / 9 / 9 |
+| Library arm exact rate at M = 2 / 4 / 8 / 16 / 32 / 64 (all orders) | 3 / 8 / 11 / 17 / 18 / 27% | 6 / 6 / 6 / 19 / 25 / 28% |
+| **D**: toolkit-unlearnable systems learned exactly with discovery (need ≥ 30%) | 2 of 26 = 8% ✗ | 5 of 27 = 19% ✗ |
+| **A1**: library − scratch at M = 8, second half (need ≥ +15 points or ≤ 0.5× observations) | 0 points; ratio 1.0 ✗ | 0 points; ratio 1.0 ✗ |
+| **A2**: advantage grows with position (second half > first, ρ ≥ 0.5) | first half −4.4 points; ρ −0.06 ✗ | 0 points; ρ 0.27 ✗ |
+| **A3**: decoys and copy-the-closest keep ≤ half of the advantage | no advantage to keep (decoy −2.1, copy −6.3 points) ✗ | no advantage (decoy 0, copy −2.1) ✗ |
+| **A4**: library wins lost when the used pieces are removed (need ≥ 80%) | 5 of 7 = 71% ✗ | no library wins ✗ |
+
+**Owner additions:**
+- **Discovered pieces.** About 90% were rewritten as combinations of existing toolkit pieces (2,347 and 2,373 piece occurrences over all runs), and about 10% kept a new curve shape (221 and 177).
+- **Out-of-range exactness.** Among runs that were exact in range and used discovered or reused pieces:
+  - draw 1: 19 of 31 runs were also exact outside the fitted range, from 5 distinct systems;
+  - draw 2: 26 of 32 runs, again from 5 distinct systems;
+  - on average 94% and 97% of out-of-range states were exact;
+  - 2 systems were exact out of range in every run.
+
+**Reading:**
+- Discovery works on some new systems, but far less often than the practice half suggested: 8–19% held out against 30–39% in practice. The practice estimate was optimistic because the learner was developed on those systems.
+- Exact recovery from 64 bursts reaches 23–29% of held-out systems.
+- Reusing discovered pieces never helped. The library arm is level with scratch at every size, as in every practice study.
+- Discovered pieces that are combinations of toolkit pieces mostly stay exact outside the fitted range.
