@@ -3460,3 +3460,26 @@ The check uses leave-one-out networks: each is trained on variations of the othe
 - Exact recovery from 64 bursts reaches 23–29% of held-out systems.
 - Reusing discovered pieces never helped. The library arm is level with scratch at every size, as in every practice study.
 - Discovered pieces that are combinations of toolkit pieces mostly stay exact outside the fitted range.
+
+## Assessment sent to the owner: why accumulation keeps failing (2 November, after the held-out summary)
+
+- **Record.** Experience helped only under the old prediction-error goal:
+  - through similarity, up to 65×;
+  - through a generic skill learned from tens of thousands of synthetic systems (Trial 25), 43% better than kernel ridge on unfamiliar kinds and growing with history.
+
+  Under exactness, every form of reuse was flat or negative against a strong scratch learner: term prior, learned guide, pieces (practice and held out), patterns, and the practice network. Generic capabilities (small-data selection, discovery, ties) moved results, and they rightly go to scratch.
+  - The data are not the main limit: with the right structure, 8 bursts suffice for 12–13 of 14 practice systems.
+  - Base capability is: 23–29% of new real systems are recovered exactly at 64 bursts.
+- **Why.**
+  1. Exactness needs the specific answer. Shared regularities are generic and already in the toolkit; specific structure recurs only in variants of the same model, which is similarity.
+  2. The history is tiny and varied (about 14 learned systems).
+  3. Small-data look-alikes are separable only by exact fitting.
+  4. There is no partial credit.
+  5. Fair baselines absorb the generic gains.
+- **Implications.** On this task, history-driven reduction in data may be unreachable beyond similarity. Accumulation becomes plausible with:
+  1. a large (possibly synthetic, cheaply simulable) history for learning a generic skill;
+  2. a world that reuses its parts;
+  3. measures that experience can change: search cost, reliability, or experiment choice.
+
+  Base capability limits everything meanwhile.
+- **Status.** Awaiting the owner's choice of direction before any proposal.
