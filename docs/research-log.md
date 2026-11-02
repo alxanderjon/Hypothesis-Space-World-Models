@@ -3483,3 +3483,10 @@ The check uses leave-one-out networks: each is trained on variations of the othe
 
   Base capability limits everything meanwhile.
 - **Status.** Awaiting the owner's choice of direction before any proposal.
+
+## Owner standing rule update (2 November): disk floor
+
+*"Drop the 50 GB floor. We're not the ones filling the disk, so keep working normally. Only stop writing if free space falls below 5 GB, since at zero our own runs would crash, and notify me if that happens. Keep this project's total footprint small as you have been."*
+
+- **Rule.** Stop writing only below 5 GB free, and notify the owner. Otherwise work normally, keeping the project's footprint small.
+- **Context.** Free space fell to 45 GB on 2 November because of other users. This project's footprint was about 4.7 GB in total (outputs 0.84 GB), after 3.6 GB of temporary practice data were deleted.
