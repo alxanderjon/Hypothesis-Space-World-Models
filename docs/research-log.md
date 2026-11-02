@@ -3570,3 +3570,16 @@ The plain-language proposal sent to the owner is reproduced in the next entry on
     - denominators outside the toolkit (058, 377, 402, 714, 812, 855, 909, 1060);
     - a switch times a degree-2 product (517, 714, 855, 876);
     - other forms (402, 776 with a logarithm, 787).
+
+### Trial 28 step 1: first baseline run, and two flaws found in the evaluator (2 November, 23:30; practice half)
+
+- **First baseline run.**
+  - Data-only priorities, up to 10,000 structures per equation, 30-minute search cap, 27 practice systems at M = 4, 8, 16, plus a uniform-priority reference at M = 8; 105 of 108 runs finished.
+  - **0 exact recoveries at every M**, on all systems and on the 17 expressible ones; uniform priorities also 0. The Trial 27 learner gets 2, 4 and 8.
+  - **Effort:**
+    - median 4,000–6,700 structures per equation in 30 minutes, at 2–11 ms per structure;
+    - a candidate within 3× of the rate-data noise floor was found for 23–51% of equations, first at structure 460–830 (median);
+    - one assembly ran 1.5 hours (uncapped).
+- **Flaw 1: the fast fitter.** It mis-fits correct structures: switch placements stay at the nearest grid point (relative error about 1e-3), because Levenberg–Marquardt polishing was triggered only within 1,000× of the noise floor. On 866, the correct structures sat at 1e7–1e9× the floor under this fitter, against 1.3–1.6× with the slower screen-then-polish fitter. **Fix:** always polish structures that contain pieces (finite-difference Levenberg–Marquardt, about 10 ms).
+- **Flaw 2: the score overfits.** It uses the training bursts only. At M = 8, wrong structures with 6–8 terms fit the training data to the rate-data floor, and even the precise step-integral form (degree-12 interpolation of each burst, 8-node quadrature per step) to about 1e-12; on 866 there were 248 and 103 such look-alikes. **Fix:** fit each candidate's coefficients and placements on the training bursts' step integrals, which are precise, and score it by its step-integral prediction error on the held-back bursts. "Plausibly exact" then means a small held-back error; the assembled model's step-to-step held-back check remains the internal win.
+- Both are corrections within step 1. The baseline is re-measured before the check-in.
