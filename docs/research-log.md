@@ -3490,3 +3490,60 @@ The check uses leave-one-out networks: each is trained on variations of the othe
 
 - **Rule.** Stop writing only below 5 GB free, and notify the owner. Otherwise work normally, keeping the project's footprint small.
 - **Context.** Free space fell to 45 GB on 2 November because of other users. This project's footprint was about 4.7 GB in total (outputs 0.84 GB), after 3.6 GB of temporary practice data were deleted.
+
+## Owner direction (2 November): search over equation structures guided by a network trained on a large synthetic history
+
+*"An AlphaGo-style approach. A search over equation structures (moves = add, remove or swap a term), guided by a network that learns from a large history of solved systems which moves look promising. The search must always still explore; the network only sets priorities. Exactness on held-out starting states is the 'win' signal. The history can be large and synthetic, using cheap-to-simulate systems."*
+
+**Design rules (owner):**
+- **Fitting.** Constants are fitted by brute force (many starting values, or a global search on the nonlinear constants, then Newton polishing), built as a swappable component.
+- **Effort logging.** Time and search effort are recorded per system from the start.
+- **Fair comparison.** The same search budget for the with-history learner and the baseline; headline at 8 bursts.
+- **Wording.** Standard terms only: "baseline", "with-history learner", "applied to both".
+
+### Survey of published work (2 November)
+
+1. **Networks that write the equation directly**, pretrained on millions of synthetic equations: NeSymReS (2021), end-to-end transformers (Kamienny et al., NeurIPS 2022), ODEFormer (d'Ascoli et al., ICLR 2024; ODE systems from one trajectory; ODEBench, 63 systems).
+   - They are fast, but symbolic recovery drops sharply on problems unlike their training data. On ODEBench, about half of ODEFormer's good fits are not the true equation.
+   - A 2025 analysis (Voigt et al., arXiv 2509.19849) finds them not competitive with a search baseline (PySR) when generalization is needed.
+2. **Search guided by a learned network:**
+   - TPSR (Shojaee et al., NeurIPS 2023): tree search on top of a pretrained transformer, rewarded for fit and simplicity.
+   - DGSR-MCTS (Kamienny et al., ICML 2023): tree search whose moves are edits proposed by a pretrained "mutation" network, refined online from the search's own successes. This is the closest to add/remove/swap, and was state of the art on SRBench at the time.
+   - MGMT (Brugger et al., arXiv 2503.16953, 2025): AlphaZero-style search with a policy prior and value estimate. Supervised training on synthetic equations beat self-play, and it needed far fewer search steps than an RL baseline; the experiments are small.
+   - MOSAIC-SR (Zheng et al., arXiv 2609.20997, September 2026): a pretrained transformer proposes starting sketches and searches start from them; it claims the highest symbolic solution rates on SRSD-Feynman and six other benchmarks.
+   - uDSR (Landajuela et al., NeurIPS 2022): combines neural-guided search, pretraining, genetic programming and linear models.
+3. **Search without learned guidance:**
+   - tree search over grammars: Symbolic Physics Learner (ICLR 2023, for dynamics), RSRM (ICLR 2024), improved MCTS with bandit allocation (Huang et al., 2025);
+   - genetic programming: PySR;
+   - sparse regression: SINDy.
+
+   These are strong baselines. PySR stays robust out of distribution.
+4. **Program-synthesis analogues:**
+   - DeepCoder (Balog et al., ICLR 2017): a network predicts which functions a program uses, and enumerative search tries likely ones first while staying complete, giving about an order of magnitude speedup.
+   - DreamCoder (Ellis et al., PLDI 2021): a learned library plus a recognition network trained on self-generated examples; it solves more problems, faster, with experience.
+5. **AlphaZero-style discovery with exact verifiers:**
+   - AlphaTensor (Nature 2022): finds provably correct matrix-multiplication algorithms, partly using synthetic training games.
+   - AlphaGeometry (Nature 2024): a language model proposes constructions and a symbolic engine verifies them; trained on 100 million synthetic examples.
+6. **Constant fitting:** Levenberg–Marquardt is the strongest local fitter in genetic-programming studies. Top SRBench 2.0 methods all include a local constant-optimization step. Multi-start from log-spaced values is common (MOSAIC-SR); a pretrained model's predicted constants can serve as starting values (end-to-end transformers).
+
+**What worked:**
+- Network plus search beats either alone.
+- Supervised training from synthetic solved examples beats learning from self-play alone.
+- Keeping the search complete protects against network errors.
+- Exact verifiers make rewards and synthetic data cheap.
+- Local constant optimization is essential.
+
+**Caveats:**
+- The synthetic-to-real gap is the main weakness.
+- Most benchmarks measure approximate fit or symbolic match, not 1e-12 exactness, and few report search effort at a fixed budget.
+
+**Reused:**
+- tree search with network priors and an exploration bonus, plus a guaranteed exploration share;
+- moves as edits of a whole model;
+- supervised training from known solutions of synthetic systems;
+- multi-start Levenberg–Marquardt plus exact Newton polishing, as the swappable fitter;
+- our exactness test as the win.
+
+### Trial 28: proposed (2 November), awaiting owner approval
+
+The plain-language proposal sent to the owner is reproduced in the next entry once it is approved or revised.
