@@ -3553,3 +3553,20 @@ The plain-language proposal sent to the owner is reproduced in the next entry on
 - **Approved:** step 1 only. Build the search, the swappable fitter and the effort logging, and run the baseline on practice data. Check in afterwards with the baseline's effort numbers and a proposed budget.
 - **Addition 1.** Every real-system result is reported two ways: on all systems, and on the subset the toolkit can express. History cannot help with systems no move can reach, so the search improvement must be visible separately.
 - **Addition 2.** Before step 3, a go/no-go bar is set for the network on new synthetic systems, for example how often the true next move ranks in its top few compared with chance. It is written into the log before training. If it is not met, the work stops and is reported before any real system is touched.
+
+### Trial 28 step 1: search vocabulary and expressibility rule (fixed 2 November, before any search run)
+
+- **Vocabulary (applied to both).** This is the Trial 26 toolkit plus the weighted-sum argument approved in Trial 27:
+  - products of variables of total degree ≤ 3;
+  - single-variable pieces: reciprocal, Hill-type with a free exponent (zero point at 0), exp, tanh, sin, |·| and a free-exponent power;
+  - two-variable weighted-sum reciprocal and Hill pieces;
+  - any piece alone or times one variable;
+  - products of two single-variable switches.
+- **Moves:** add, remove or swap one term in one equation.
+- **Expressibility rule** (`expressible.py`; truth used only for reporting). A system is expressible if every additive term of every true equation, after polynomial division of each switch denominator, is a vocabulary term type. Piecewise ramps and clips count, since they are exact combinations of |·| and products of variables; logarithms do not.
+- **Practice half:**
+  - 19 of 31 systems are expressible, 17 of the 27 in the practice study.
+  - Not expressible:
+    - denominators outside the toolkit (058, 377, 402, 714, 812, 855, 909, 1060);
+    - a switch times a degree-2 product (517, 714, 855, 876);
+    - other forms (402, 776 with a logarithm, 787).
