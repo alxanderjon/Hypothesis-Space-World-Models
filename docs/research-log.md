@@ -3547,3 +3547,9 @@ The check uses leave-one-out networks: each is trained on variations of the othe
 ### Trial 28: proposed (2 November), awaiting owner approval
 
 The plain-language proposal sent to the owner is reproduced in the next entry once it is approved or revised.
+
+### Trial 28: owner approval of step 1, with two additions (2 November)
+
+- **Approved:** step 1 only. Build the search, the swappable fitter and the effort logging, and run the baseline on practice data. Check in afterwards with the baseline's effort numbers and a proposed budget.
+- **Addition 1.** Every real-system result is reported two ways: on all systems, and on the subset the toolkit can express. History cannot help with systems no move can reach, so the search improvement must be visible separately.
+- **Addition 2.** Before step 3, a go/no-go bar is set for the network on new synthetic systems, for example how often the true next move ranks in its top few compared with chance. It is written into the log before training. If it is not met, the work stops and is reported before any real system is touched.
