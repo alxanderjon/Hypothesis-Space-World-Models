@@ -3416,3 +3416,14 @@ The check uses leave-one-out networks: each is trained on variations of the othe
   - A reference-cost cutoff, for example a few minutes of build time on one core, is written into the log before anything is looked at.
   - Systems over the cutoff are dropped and counted.
   - Data that can be pulled, or systems that simulate efficiently, are preferred.
+
+### Option (b) practice study: effect of ties on the scratch learner (2 November, 00:35; practice half, seed 1)
+
+| M | Exact without ties | Exact with ties | Ties fired | Gains | Losses |
+|---|---|---|---|---|---|
+| 4 | 2 / 27 | 2 / 27 | 6 | — | — |
+| 8 | 4 / 27 | 4 / 27 | 3 | — | — |
+| 16 | 7 / 27 | 8 / 27 | 6 | 114 | — |
+
+- Ties are a small, harmless gain: +1 exact at M = 16 (114, whose structure is found but whose constants were imprecise without ties). They have no effect where the structure is wrong.
+- **The option (b) practice study is complete.** The practice network adds nothing at the headline size (P1 fails), and ties add one system at M = 16. Per the owner's instruction, the next step is a plain-language assessment of why accumulation keeps failing, sent after the held-out summary and before proposing anything new.
