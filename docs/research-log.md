@@ -3838,3 +3838,25 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
 - **Reported alongside, not part of the bar:**
   - the size match: mean terms and pieces of set-(2′) held-out equations, against set-(1) equations with two or more pieces;
   - the per-equation diagnostics as before.
+
+### Trial 28 step 2: size-matched set (2′): bar (a) and bar (b) both met (3 November, 19:31)
+
+- **Bar (a)** (150 systems, 1,335 ranking states):
+  - all equations: network top-5 78.7% against 5.5% chance (14×); data-only priorities 16.8% (reference);
+  - equations containing a held-out combination (518 states): 70.3% against 6.6%.
+  - **Met.**
+- **Bar (b)** (2,000 structures per equation, M = 8, same 150 systems):
+  - baseline 8 exact (5.3%), with-history learner 26 (17.3%): **+12.0 points**;
+  - discordant systems 19 (with history only) against 1 (baseline only); exact two-sided sign test p = 4.0×10⁻⁵.
+  - **Met.**
+- **Size match:** set-(2′) held-out equations average 3.45 terms and 2.11 pieces, against 3.50 and 2.18 for set-(1) equations with two or more pieces (and 3.47 and 2.22 for set (2′)'s other such equations).
+- **Per equation** (plausibly exact structure found, and the median structure at which it was first found):
+  - held-out equations: with history 57 of 150 at 329; baseline 27 of 150 at 674;
+  - other equations: with history 250 of 309 at 9; baseline 155 of 309 at 210.
+- **Effort:** time per system, median 316 s with history against 537 s for the baseline; network inference median 13.7 s per system (5.1% of run time).
+
+**Status of the go/no-go bar:**
+- Bar (a) is met on sets (1), (2) and (2′).
+- Bar (b) is met on sets (1) and (2′).
+- The original set (2) failed as designed, from the size confound, and is kept in this log as such.
+- The diagnostic of the original set (2) at 5,000 structures per equation (both learners, not counting toward the bar) is running. The owner check-in follows when it finishes, before step 3.
