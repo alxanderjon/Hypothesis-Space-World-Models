@@ -179,9 +179,49 @@ def _equation(rng, d, i, ic, extra=None, forbid_held_out=True):
     return terms
 
 
+def _pieces_of(eq):
+    return [t for t in eq if t[0] != "mono"]
+
+
+def draw_matched(seed):
+    """Set (2') (research log, 3 November): a training-generator system in which one equation with at least two
+    nonlinear pieces has two of them replaced by one new term of each family of a held-out pair, so the equation keeps
+    its number of terms and of pieces. Returns the description, with "reject" set when no such swap is possible."""
+    desc = draw(seed, "train")
+    desc["mode"] = "test2m"
+    rng = rng_of(seed + "-swap")
+    cands = [i for i, eq in enumerate(desc["eqs"]) if len(_pieces_of(eq)) >= 2]
+    if not cands:
+        desc["reject"] = "no equation with two or more pieces"
+        return desc
+    i = cands[int(rng.integers(len(cands)))]
+    pair = sorted(HELD_OUT)[int(rng.integers(len(HELD_OUT)))]
+    eq = dict(desc["eqs"][i])
+    pieces = sorted(_pieces_of(eq), key=str)
+    n_terms, n_pieces = len(eq), len(pieces)
+    for a_ in rng.choice(len(pieces), 2, replace=False):
+        del eq[pieces[int(a_)]]
+    ic = np.asarray(desc["ic"])
+    for fam in pair:
+        for _ in range(50):
+            got = _term(rng, desc["d"], i, ic, fam)
+            if got is not None and got[0] not in eq:
+                eq[got[0]] = got[1]
+                break
+    if len(eq) != n_terms or len(_pieces_of(eq)) != n_pieces:
+        desc["reject"] = "swap could not keep the term count"
+        return desc
+    desc["eqs"][i] = eq
+    desc["swap"] = {"eq": i, "pair": list(pair)}
+    return desc
+
+
 def draw(seed, mode="train"):
     """A system description: {seed, d, ic, eqs: [ {token: constants} ]}. mode: "train" (no held-out combination in any
-    equation) or "test2" (at least one equation built around a held-out combination)."""
+    equation), "test2" (original set (2): one equation built around a held-out combination, on top of its usual terms)
+    or "test2m" (set (2'): size-matched swap, draw_matched)."""
+    if mode == "test2m":
+        return draw_matched(seed)
     rng = rng_of(seed)
     d = int(rng.choice([2, 3, 4], p=D_DRAW))
     ic = np.exp(rng.uniform(np.log(0.3), np.log(3.0), d))
@@ -359,6 +399,8 @@ class Synthetic:
 def build(desc, Ms=(8,)):
     """Compile, build the reference under the Trial 27 transient rules, and apply the logged acceptance checks."""
     t0 = time.time()
+    if desc.get("reject"):
+        raise Rejected(desc["reject"])
     try:
         system = SynthSystem(desc)
         ref = SynthReference(system)
@@ -377,7 +419,7 @@ def build(desc, Ms=(8,)):
         raise Rejected("a variable does not move")
     syn = Synthetic(desc, ref, secs)
     held = [has_held_out(t) for t in syn.tokens]
-    if desc.get("mode") == "test2" and not any(held):
+    if desc.get("mode") in ("test2", "test2m") and not any(held):
         raise Rejected("set (2) system without a held-out combination")
     if desc.get("mode", "train") == "train" and any(held):
         raise Rejected("held-out combination in a training-generator system")
