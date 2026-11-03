@@ -221,9 +221,9 @@ def load_shards(paths):
     out = []
     for p in paths:
         z = np.load(p)
-        offs = z["offs"]
+        offs, fam, F, add, rem, meta = z["offs"], z["fam"], z["F"], z["add"], z["rem"], z["meta"]   # decompress once
         for e in range(len(offs) - 1):
             a, b = offs[e], offs[e + 1]
-            out.append({"fam": z["fam"][a:b].astype(np.int64), "F": z["F"][a:b].astype(np.float32), "add": z["add"][a:b],
-                        "rem": z["rem"][a:b], "meta": tuple(int(v) for v in z["meta"][e])})
+            out.append({"fam": fam[a:b].astype(np.int64), "F": F[a:b].astype(np.float32), "add": add[a:b],
+                        "rem": rem[a:b], "meta": tuple(int(v) for v in meta[e])})
     return out
