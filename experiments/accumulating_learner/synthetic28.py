@@ -376,6 +376,11 @@ def build(desc, Ms=(8,)):
     if np.any(np.median(span, 0) <= 1e-3 * ref.scale):
         raise Rejected("a variable does not move")
     syn = Synthetic(desc, ref, secs)
+    held = [has_held_out(t) for t in syn.tokens]
+    if desc.get("mode") == "test2" and not any(held):
+        raise Rejected("set (2) system without a held-out combination")
+    if desc.get("mode", "train") == "train" and any(held):
+        raise Rejected("held-out combination in a training-generator system")
     for M in Ms:
         view = PN.learner_view(syn.bursts(M), seed=1)
         if view["centred"]:
