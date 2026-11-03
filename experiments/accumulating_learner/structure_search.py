@@ -808,45 +808,80 @@ class EquationSearch:
             return
         n0 = eff["structures"]
         node, path = self.root, [self.root]
+        on_path = {self.root["toks"]}
         for _depth in range(2 * MAX_TERMS + 4):
-            if node["moves"] is None:
-                tp = time.perf_counter()
-                node["moves"], node["prior"] = self.prior_fn(node, self.ctx)
-                node["tried"] = np.zeros(len(node["moves"]), dtype=bool)   # moves already followed from this node
-                node["tried_idx"], node["child_of"] = [], {}
-                eff["prior_seconds"] += time.perf_counter() - tp
+            self._expand(node)
             moves, P = node["moves"], node["prior"]
             if not moves:
                 break
-            untried = ~node["tried"]
-            if untried.any() and rng.random() < self.eps:      # exploration share: a random untried move
-                k = int(rng.choice(np.flatnonzero(untried)))
-            else:
-                q = np.full(len(moves), node["value"] - 0.05)
-                nv = np.zeros(len(moves))
-                for kk in node["tried_idx"]:
-                    ch = table[node["child_of"][kk]]
-                    q[kk] = ch["best"]; nv[kk] = ch["n"]
-                score = q + self.c_puct * P * math.sqrt(node["n"] + 1) / (1 + nv)
-                k = int(np.argmax(score))
-            mv = moves[k]
-            S2 = node["child_of"].get(k) or _apply(node["toks"], mv)
-            if not node["tried"][k]:
-                node["tried"][k] = True; node["tried_idx"].append(k); node["child_of"][k] = S2
+            banned = [kk for kk in node["tried_idx"] if node["child_of"][kk] in on_path]   # moves back onto the path
+            S2 = None
+            for _pick in range(20):
+                untried = ~node["tried"]
+                if untried.any() and rng.random() < self.eps:  # exploration share: a random untried move
+                    k = int(rng.choice(np.flatnonzero(untried)))
+                else:
+                    q = np.full(len(moves), node["value"] - 0.05)
+                    nv = np.zeros(len(moves))
+                    for kk in node["tried_idx"]:
+                        ch = table[node["child_of"][kk]]
+                        q[kk] = ch["best"]; nv[kk] = ch["n"]
+                    score = q + self.c_puct * P * math.sqrt(node["n"] + 1) / (1 + nv)
+                    score[banned] = -np.inf
+                    k = int(np.argmax(score))
+                    if not np.isfinite(score[k]):
+                        break
+                cand = node["child_of"].get(k) or _apply(node["toks"], moves[k])
+                if not node["tried"][k]:
+                    node["tried"][k] = True; node["tried_idx"].append(k); node["child_of"][k] = cand
+                if cand in on_path:                            # never step back onto the current path: pick again
+                    banned.append(k)
+                    continue
+                S2 = cand
+                break
+            if S2 is None:
+                break
             if S2 in table:
-                nxt = table[S2]
-                if any(nxt is p_ for p_ in path):               # a cycle: stop descending here
-                    break
-                node = nxt; path.append(node)
+                node = table[S2]; path.append(node); on_path.add(S2)
                 continue
             child = self.evaluate(S2, node)
             path.append(child)
             break
+        if eff["structures"] == n0:                            # the descent only revisited known structures: explore
+            child = self._force_new(path)
+            if child is not None:
+                path.append(child)
         leaf_v = path[-1]["value"]
         for nd in path:                                        # risk-seeking backup: the best value found below
             nd["n"] += 1
             nd["best"] = max(nd["best"], leaf_v)
         eff["stalls"] = 0 if eff["structures"] > n0 else eff["stalls"] + 1
+
+    def _expand(self, node):
+        if node["moves"] is None:
+            tp = time.perf_counter()
+            node["moves"], node["prior"] = self.prior_fn(node, self.ctx)
+            node["tried"] = np.zeros(len(node["moves"]), dtype=bool)
+            node["tried_idx"], node["child_of"] = [], {}
+            self.eff["prior_seconds"] += time.perf_counter() - tp
+
+    def _force_new(self, path, tries=50):
+        """Evaluate a random untried move from the deepest node on `path` that still leads somewhere new, then from
+        random known structures, so that every step explores. Returns the new node, or None."""
+        rng, table = self.rng, self.table
+        keys = list(table)
+        extra = [table[keys[int(a_)]] for a_ in rng.choice(len(keys), size=min(20, len(keys)), replace=False)]
+        for node in list(reversed(path)) + extra:
+            self._expand(node)
+            untried = np.flatnonzero(~node["tried"])
+            rng.shuffle(untried)
+            for k in untried[:tries]:
+                S2 = _apply(node["toks"], node["moves"][k])
+                node["tried"][k] = True; node["tried_idx"].append(k); node["child_of"][k] = S2
+                if S2 not in table:
+                    self.eff["forced"] = self.eff.get("forced", 0) + 1
+                    return self.evaluate(S2, node)
+        return None
 
     def run(self, stop_at=None, extra_after_exact=1.0, min_extra=500):
         """Search until `stop_at` structures, or, without stop_at, until a plausibly exact structure has been found and
