@@ -3642,3 +3642,9 @@ The diagnosis used only the practice half. Where a system's correct structure wa
       - 767 rejected at 9×10⁻¹³ after one resume round;
       - 1060 at M = 4 runs cleanly (rejected; not expressible). It took 1,786 s, because at M = 4 nearly every structure passes the precise gate.
     - The 19 jobs finished before the stop are kept aside, not mixed into the restarted run.
+16. **Second restart (3 November, 02:02): the tree descent looped.**
+    - In the restarted run, 6 of the first 58 equations stopped by "stalling": the descent kept revisiting known structures and ended without evaluating a new one. Two of them (507 and 573) stopped short of their budget without any plausibly exact structure.
+    - Cause: with the risk-seeking (max) backup, every ancestor carries the best value found below it, so a move back to an ancestor scored as high as the best path, and descents looped.
+    - **Fix.** Moves that lead back onto the current path are excluded when a move is chosen. If a descent still ends without a new structure, a random untried move from the deepest node that has one is evaluated, so every step explores.
+    - Effect on the six equations that stalled (first pause point, M = 8): forced explorations fell from thousands (a first fallback-only fix) to 0–140. All six now reach a plausibly exact structure: 507 at structure 342, 753 at 423, 458 at 506, 573 at 2,087, 866 at 2,141, and 115 at 4,185. With the loop, 507, 753 and 115 had none.
+    - The 21 jobs finished before this stop are kept aside, not mixed in. The full rerun was relaunched at 02:02 with commit a832524.
