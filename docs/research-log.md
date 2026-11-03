@@ -3583,3 +3583,50 @@ The plain-language proposal sent to the owner is reproduced in the next entry on
 - **Flaw 1: the fast fitter.** It mis-fits correct structures: switch placements stay at the nearest grid point (relative error about 1e-3), because Levenberg–Marquardt polishing was triggered only within 1,000× of the noise floor. On 866, the correct structures sat at 1e7–1e9× the floor under this fitter, against 1.3–1.6× with the slower screen-then-polish fitter. **Fix:** always polish structures that contain pieces (finite-difference Levenberg–Marquardt, about 10 ms).
 - **Flaw 2: the score overfits.** It uses the training bursts only. At M = 8, wrong structures with 6–8 terms fit the training data to the rate-data floor, and even the precise step-integral form (degree-12 interpolation of each burst, 8-node quadrature per step) to about 1e-12; on 866 there were 248 and 103 such look-alikes. **Fix:** fit each candidate's coefficients and placements on the training bursts' step integrals, which are precise, and score it by its step-integral prediction error on the held-back bursts. "Plausibly exact" then means a small held-back error; the assembled model's step-to-step held-back check remains the internal win.
 - Both are corrections within step 1. The baseline is re-measured before the check-in.
+
+### Trial 28 step 1: evaluator and fitter corrections before the baseline rerun (3 November; practice half)
+
+The diagnosis used only the practice half. Where a system's correct structure was needed, it was used only to test the evaluator, never by the learner. The correct structures come from the exact M = 64 models of the Trial 27 learner, carried into the small-M coordinates. All changes apply to both the baseline and the with-history learner.
+
+1. **Precise held-back scoring (the planned fix for flaw 2).**
+   - A candidate goes to the precise stage if it is within 0.1% on the rate data and within 10⁶× the rate data's noise floor.
+   - There it is fitted on the training bursts' step integrals and scored by its step-integral error on the held-back bursts.
+2. **Polishing from more starting points (the fix for flaw 1, extended).** Polishing every structure was not enough.
+   - On 866 equation 0, the best grid start sat in a wrong valley, with the pole above the data instead of below it. Every fitter converged there, including the slow ones (2.5×10⁷ × the floor).
+   - The fix: also polish from each newly added piece's next-best placement, and from the parent's placements when the sweep moved them. This finds the true valley (1.3× the floor; held-back step error 9×10⁻¹³).
+   - The precise stage uses four starts per piece, and tries pieces of one family on one variable at a shared placement (115 has two Hill switches with the same constants).
+   - It also snaps exponents within 0.25 of an integer, as the Trial 27 learner did.
+3. **Hill-type and power pieces on the physical variable.**
+   - The code tied their zero point to the scaled variable, and dropped them whenever the learner's scaling centred that variable. The logged vocabulary puts the zero point at 0, meaning the physical zero.
+   - They are now x^n/(K + x^n) and x^p, both in the Trial 26 toolkit.
+   - Hill constants K are polished on a log scale, and the Hill start grid is denser: 12 half-saturation points instead of 6, exponents 1–4. On 114 the correct valley is about 1% wide in K and lay between grid points 250× apart.
+   - Centring itself is unchanged (the Trial 27 rule: centre only if |mean| > 10 spreads). It affects 4 of 26 practice systems at M = 8, 10 at M = 4 and 2 at M = 16.
+4. **Start grids for products of two switches.** The column bank kept only the first 24 combinations, all with the first factor at its first placement. Each factor's grid is now subsampled evenly.
+5. **Polishing cost.** Variable projection with Kaufman's Jacobian, stopping at the noise floor or on convergence. This is about 3× faster per structure for the same fits.
+6. **Plausibly-exact threshold.**
+   - The new threshold is a step-integral error ≤ max(10⁻⁹, 30 × the equation's relative rate-noise floor), on both training and held-back bursts.
+   - It was calibrated on the practice systems that are toolkit-expressible and exactly learned at M = 64 by the Trial 27 learner (13 systems; systems whose centring differs between M and 64 skipped).
+   - Of the correct structures fitted to within 3× their rate floor, 60 of 61 pass. The miss (573 at M = 4) fits its training bursts exactly but not the held-back burst, which is a data limit.
+   - Systems such as 115 have step-integral precision near 10⁻⁶ (fast dynamics relative to the sampling), which a fixed 10⁻⁹ excluded.
+7. **Data-only priorities sharpened.**
+   - The evidence for adding a term is now 1 / (fraction of the residual left unexplained), instead of the fraction explained. The old measure barely separated terms on smooth residuals: log 0.99 ≈ log 0.9999.
+   - The removal cost is computed with rate-data coefficients.
+   - The priorities are still data-only. The first version is kept as a reference (`data_prior_v1`).
+8. **Reference cache.**
+   - 876's reference had never been cached: a lock left by a builder that died on 1 November made every 876 job wait an hour, then rebuild without storing (the 6,509 s run).
+   - The lock is removed and the reference built in 56 s. All 27 practice references are now cached.
+9. **One random stream per equation.** A smaller budget is now exactly a prefix of a larger run, so success against budget can be read from one run.
+10. **Search economy and simplest answers.**
+    - Strict supersets of a plausibly exact structure skip the precise stage.
+    - The thorough refit is skipped when the ordinary fit already reaches the floor.
+    - An equation's search stops once it has a plausibly exact structure and has spent as many structures again (at least 500) looking for a smaller one.
+    - Every plausibly exact structure's one-term-smaller structures are evaluated next, recursively (pruning).
+    - A structure with a degenerate piece cannot be plausibly exact. Degenerate means collapsed to something simpler over the observed range, or singular there; this is the Trial 27 learner's generic `degenerate()` rule. Examples: exp(0·z) = 1, a zero Hill exponent, a power that is a monomial.
+    - On 866 at M = 8, the learner's own held-back check had accepted a look-alike (val 2.9×10⁻¹³, just under 3×10⁻¹³). It contained an |·| piece with its kink at the edge of the data, and it failed the external test, because the search had stopped before reaching the correct two-term structure.
+11. **Two versions of the data-only priorities in the rerun.** On 866 equation 0, the sharper version found the first plausibly exact structure later (795 against 286). Both run at M = 8 on all practice systems, and the stronger becomes the baseline (strong-baseline rule).
+12. **End-to-end check before the rerun (M = 8, data-only priorities, 3,000 structures per equation).**
+    - 728 is recovered exactly (external test passed) in 132 s.
+    - 866 is recovered exactly with either version of the priorities. Equation 1 comes out as z₁ + x₀/(10 + x₀), a Michaelis–Menten term with K = 10 exactly, which is the same function as the M = 64 model's constant plus reciprocal.
+    - Cost: about 90 ms per structure with the first version of the priorities and 325 ms with the sharper one. Most of the time goes on polishing larger structures and the thorough refits.
+13. **Calibration status after the corrections.** Correct structures carried into the small-M coordinates are plausibly exact for 24 of 30 equations at M = 8 and 26 of 30 at M = 16, all within the floor-based threshold except those listed. The fitter still misses 458 and 1012 at M = 8 (both fitted at M = 16). 507 at M = 8 also fails, a reciprocal carried over from a power piece with exponent −1. 115 is data-limited at about 10⁻⁶.
+14. **Baseline rerun launched (3 November, 00:22).** 27 practice systems; data-only priorities at M = 4, 8 and 16; the first version of the priorities and uniform priorities at M = 8. Up to 5,000 structures per equation, a one-hour cap per system, 24 workers. Outputs are in the scratchpad (`t28_baseline_v2`); the flawed first run is kept aside as v1.
