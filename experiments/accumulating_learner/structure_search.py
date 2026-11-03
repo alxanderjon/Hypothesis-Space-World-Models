@@ -598,10 +598,12 @@ def _evidence(node, ctx):
         XtX = Phi.T @ Phi + 1e-12 * torch.eye(Phi.shape[1], dtype=Phi.dtype)
         cov = torch.linalg.inv(XtX)
         c = DL.lstsq_resid(Phi, y)[1]                          # rate-data coefficients (the node's may be step-integral ones)
-        delta = (c ** 2 / torch.diag(cov)).numpy()           # increase in squared residual if the term is dropped
+        dg = torch.diag(cov)
+        ok = (dg > 0) & torch.isfinite(dg) & torch.isfinite(c)  # nearly collinear designs: a non-positive diagonal means
+        delta = torch.where(ok, c ** 2 / torch.where(ok, dg, torch.ones_like(dg)), torch.zeros_like(dg)).numpy()  # no cost
         rr = float(r @ r) + 1e-300
         for a_, t in enumerate(S):
-            rem[t] = float(delta[a_]) / rr
+            rem[t] = max(float(delta[a_]) / rr, 0.0) if math.isfinite(float(delta[a_]) / rr) else 0.0
     return gain, rem
 
 
@@ -689,30 +691,63 @@ def _apply(S, mv):
     return tuple(sorted(tuple(t for t in S if t != a) + (b,), key=str))
 
 
-def search_equation(i, ctx, budget, prior_fn, fitter, rng, c_puct=1.5, eps=0.15, time_cap=float("inf"), lam=0.02,
-                    extra_after_exact=1.0, min_extra=500):
-    """Tree search over equation i's term set within `budget` fitted structures. Returns (table of evaluated
-    structures, effort). Every evaluated structure has: toks, terms (fitted), coefs, res, value. Once a plausibly exact
-    structure is found at structure k, the search goes on for max(min_extra, extra_after_exact * k) more structures
-    (looking for a smaller one) and stops. Strict supersets of a plausibly exact structure skip the precise stage.
-    Pruning: every plausibly exact structure's one-term-smaller structures are evaluated next (recursively), so the
-    smallest exact structure near it is always tried. A structure with a degenerate piece (DL.degenerate: collapsed to
-    something simpler over the observed range, or singular there) cannot be plausibly exact."""
-    vocab, Zc, Xc = ctx["vocab"], ctx["Zc"], ctx["Xc"]
-    y = ctx["G"][:, i]
-    ctx = dict(ctx, y=y)
-    yn = float(y.norm()) + 1e-300
-    floor = max(float(ctx["noise"][i]) * math.sqrt(len(y)), 1e-15 * yn)
-    span = max(math.log10(yn / floor), 1e-3)
-    tau = max(TAU_EXACT, TAU_FLOOR * floor / yn)
-    t0 = time.perf_counter()
-    table, eff = {}, {"structures": 0, "starts": 0, "fit_seconds": 0.0, "prior_seconds": 0.0, "first_exact": None, "tau": tau,
-                      "first_exact_seconds": None, "floor_rel": floor / yn, "precise": 0, "precise_seconds": 0.0}
-    si_tr, si_va = ctx.get("si_tr"), ctx.get("si_va")
-    exact_sets = []                                            # plausibly exact structures found so far
-    prune = []                                                 # (structure, parent node) waiting to be evaluated
+class EquationSearch:
+    """Tree search over equation i's term set (PUCT with an exploration share, transpositions) within `budget` fitted
+    structures, resumable: run() searches up to a pause point and can be called again to continue the same tree.
+    Every evaluated structure has: toks, terms (fitted), coefs, res, value.
+      - Strict supersets of a plausibly exact structure skip the precise stage.
+      - Every plausibly exact structure's one-term-smaller structures, and the structures with one of its pieces replaced
+        by a plain product of its variables, are evaluated next (recursively), so simpler exact structures near it are
+        always tried.
+      - A structure with a degenerate piece (DL.degenerate: collapsed to something simpler over the observed range, or
+        singular there) cannot be plausibly exact."""
 
-    def evaluate(S, parent):
+    def __init__(self, i, ctx, budget, prior_fn, fitter, rng, c_puct=1.5, eps=0.15, time_cap=float("inf"), lam=0.02):
+        self.i, self.budget, self.prior_fn, self.fitter, self.rng = i, budget, prior_fn, fitter, rng
+        self.c_puct, self.eps, self.time_cap, self.lam = c_puct, eps, time_cap, lam
+        self.vocab, self.Zc, self.Xc = ctx["vocab"], ctx["Zc"], ctx["Xc"]
+        self.y = ctx["G"][:, i]
+        self.ctx = dict(ctx, y=self.y)
+        self.yn = float(self.y.norm()) + 1e-300
+        self.floor = max(float(ctx["noise"][i]) * math.sqrt(len(self.y)), 1e-15 * self.yn)
+        self.tau = max(TAU_EXACT, TAU_FLOOR * self.floor / self.yn)
+        self.si_tr, self.si_va = ctx.get("si_tr"), ctx.get("si_va")
+        self.table, self.exact_sets, self.prune = {}, [], []
+        self.eff = {"structures": 0, "starts": 0, "fit_seconds": 0.0, "prior_seconds": 0.0, "first_exact": None,
+                    "tau": self.tau, "first_exact_seconds": None, "floor_rel": self.floor / self.yn, "precise": 0,
+                    "precise_seconds": 0.0, "pruned": 0, "seconds": 0.0, "stalls": 0}
+        self._t = time.perf_counter()
+        self.root = self.evaluate((), None)
+        self.eff["seconds"] += time.perf_counter() - self._t
+
+    @property
+    def exhausted(self):
+        return self.eff["structures"] >= self.budget or self.eff["seconds"] >= self.time_cap or self.eff["stalls"] > 2000
+
+    def _replacements(self, t, S):
+        """Structures with piece t replaced by a plain product of its variables (times its multiplier)."""
+        if t[0] == "mono":
+            return []
+        d = self.vocab.d
+        m = self.vocab.mono_of(t)
+        vars_ = [t[2]] if t[0] == "piece" else list(t[2])
+        unit = lambda j: tuple(int(k == j) for k in range(d))
+        exps = {tuple(m)}
+        for j in vars_:
+            for a_ in range(1, 4):
+                exps.add(tuple(mm + a_ * u for mm, u in zip(m, unit(j))))
+        if len(vars_) == 2:
+            exps.add(tuple(mm + u + w for mm, u, w in zip(m, unit(vars_[0]), unit(vars_[1]))))
+        out = []
+        for e in sorted(exps):
+            tok = ("mono", e)
+            if sum(e) <= 3 and tok in self.vocab.index and tok not in S:
+                out.append(tuple(sorted([u for u in S if u != t] + [tok], key=str)))
+        return out
+
+    def evaluate(self, S, parent):
+        vocab, Zc, Xc, y, floor, yn, i = self.vocab, self.Zc, self.Xc, self.y, self.floor, self.yn, self.i
+        eff, table = self.eff, self.table
         warm = {}
         if parent is not None:
             for t, term in zip(parent["toks"], parent["terms"]):
@@ -720,20 +755,20 @@ def search_equation(i, ctx, budget, prior_fn, fitter, rng, c_puct=1.5, eps=0.15,
                     warm[t] = getattr(term, "grid_index", None)
                     if warm[t] is None:
                         warm[t] = thetas_of(term)
-        terms, res, coefs, e = fitter.fit(vocab, S, Zc, Xc, y, warm, floor=floor)
+        terms, res, coefs, e = self.fitter.fit(vocab, S, Zc, Xc, y, warm, floor=floor)
         eff["structures"] += 1; eff["starts"] += e["starts"]; eff["fit_seconds"] += e["seconds"]
         rel_rate = res / yn if math.isfinite(res) else float("inf")
         rel_t = rel_v = float("inf")
-        superset = any(E < set(S) for E in exact_sets)
-        if S and si_tr is not None and rel_rate <= PRECISE_GATE and res <= PRECISE_FLOOR * floor and not superset:
+        superset = any(E < set(S) for E in self.exact_sets)
+        if S and self.si_tr is not None and rel_rate <= PRECISE_GATE and res <= PRECISE_FLOOR * floor and not superset:
             tp = time.perf_counter()                               # precise stage: thorough refit (unless the fit is
             try:                                                   # already at the floor), step integrals, held-back
                 if res > 2.0 * floor:
-                    terms, res, coefs = thorough_fit(fitter, vocab, S, Zc, Xc, y, warm, floor, (terms, res, coefs))
-                terms2, rel_t, c2 = refine_integral(terms, si_tr, i)
+                    terms, res, coefs = thorough_fit(self.fitter, vocab, S, Zc, Xc, y, warm, floor, (terms, res, coefs))
+                terms2, rel_t, c2 = refine_integral(terms, self.si_tr, i)
                 if c2 is not None and math.isfinite(rel_t):
                     terms, coefs = terms2, c2
-                    rel_v = heldback_error(terms, coefs, si_va, i)
+                    rel_v = heldback_error(terms, coefs, self.si_va, i)
             except (RuntimeError, ValueError):
                 pass
             eff["precise"] += 1; eff["precise_seconds"] += time.perf_counter() - tp
@@ -744,36 +779,39 @@ def search_equation(i, ctx, budget, prior_fn, fitter, rng, c_puct=1.5, eps=0.15,
         rel = rel_v if math.isfinite(rel_v) and not degen else max(rel_rate, PRECISE_GATE)
         v = 0.0 if not math.isfinite(rel) else min(1.0, max(0.0, math.log10(1.0 / max(rel, 1e-14)) / 14.0))
         node = {"toks": S, "terms": terms, "coefs": coefs, "res": res, "rel_t": rel_t, "rel_v": rel_v,
-                "value": v - lam * len(S), "n": 0, "k": eff["structures"], "degenerate": degen,
-                "best": v - lam * len(S), "children": {}, "moves": None, "prior": None,
-                "exact": bool(rel_v <= tau and rel_t <= tau and not degen)}
-        if node["exact"]:
-            exact_sets.append(set(S))
-            for t in S:                                        # pruning: the one-term-smaller structures next
-                sub = tuple(u for u in S if u != t)
-                if sub and sub not in table:
-                    prune.append((sub, node))
-            if eff["first_exact"] is None:
-                eff["first_exact"] = eff["structures"]; eff["first_exact_seconds"] = time.perf_counter() - t0
+                "value": v - self.lam * len(S), "n": 0, "k": eff["structures"], "degenerate": degen,
+                "best": v - self.lam * len(S), "children": {}, "moves": None, "prior": None,
+                "exact": bool(rel_v <= self.tau and rel_t <= self.tau and not degen)}
         table[S] = node
+        if node["exact"]:
+            self.exact_sets.append(set(S))
+            nxt = [tuple(u for u in S if u != t) for t in S]      # one term smaller
+            for t in S:
+                nxt += self._replacements(t, S)                     # a piece replaced by a plain product
+            queued = {q for q, _ in self.prune}
+            for q in nxt:
+                if q and q not in table and q not in queued:
+                    self.prune.append((q, node)); queued.add(q)
+            if eff["first_exact"] is None:
+                eff["first_exact"] = eff["structures"]
+                eff["first_exact_seconds"] = eff["seconds"] + time.perf_counter() - self._t
         return node
 
-    root = evaluate((), None)
-    while eff["structures"] < budget and time.perf_counter() - t0 < time_cap:
-        if prune:                                              # pruning before the tree search continues
-            sub, par = prune.pop(0)
+    def step(self):
+        """One pruning evaluation, or one descent of the tree that evaluates at most one new structure."""
+        table, eff, rng = self.table, self.eff, self.rng
+        if self.prune:
+            sub, par = self.prune.pop(0)
             if sub not in table:
-                evaluate(sub, par)
-                eff["pruned"] = eff.get("pruned", 0) + 1
-            continue
-        if eff["first_exact"] is not None and eff["structures"] >= eff["first_exact"] + max(min_extra, extra_after_exact * eff["first_exact"]):
-            eff["stopped_after_exact"] = True
-            break
-        node, path = root, [root]
+                self.evaluate(sub, par)
+                eff["pruned"] += 1
+            return
+        n0 = eff["structures"]
+        node, path = self.root, [self.root]
         for _depth in range(2 * MAX_TERMS + 4):
             if node["moves"] is None:
                 tp = time.perf_counter()
-                node["moves"], node["prior"] = prior_fn(node, ctx)
+                node["moves"], node["prior"] = self.prior_fn(node, self.ctx)
                 node["tried"] = np.zeros(len(node["moves"]), dtype=bool)   # moves already followed from this node
                 node["tried_idx"], node["child_of"] = [], {}
                 eff["prior_seconds"] += time.perf_counter() - tp
@@ -781,7 +819,7 @@ def search_equation(i, ctx, budget, prior_fn, fitter, rng, c_puct=1.5, eps=0.15,
             if not moves:
                 break
             untried = ~node["tried"]
-            if untried.any() and rng.random() < eps:          # exploration share: a random untried move
+            if untried.any() and rng.random() < self.eps:      # exploration share: a random untried move
                 k = int(rng.choice(np.flatnonzero(untried)))
             else:
                 q = np.full(len(moves), node["value"] - 0.05)
@@ -789,7 +827,7 @@ def search_equation(i, ctx, budget, prior_fn, fitter, rng, c_puct=1.5, eps=0.15,
                 for kk in node["tried_idx"]:
                     ch = table[node["child_of"][kk]]
                     q[kk] = ch["best"]; nv[kk] = ch["n"]
-                score = q + c_puct * P * math.sqrt(node["n"] + 1) / (1 + nv)
+                score = q + self.c_puct * P * math.sqrt(node["n"] + 1) / (1 + nv)
                 k = int(np.argmax(score))
             mv = moves[k]
             S2 = node["child_of"].get(k) or _apply(node["toks"], mv)
@@ -801,21 +839,55 @@ def search_equation(i, ctx, budget, prior_fn, fitter, rng, c_puct=1.5, eps=0.15,
                     break
                 node = nxt; path.append(node)
                 continue
-            child = evaluate(S2, node)
+            child = self.evaluate(S2, node)
             path.append(child)
             break
         leaf_v = path[-1]["value"]
         for nd in path:                                        # risk-seeking backup: the best value found below
             nd["n"] += 1
             nd["best"] = max(nd["best"], leaf_v)
-    eff["seconds"] = time.perf_counter() - t0
-    return table, eff
+        eff["stalls"] = 0 if eff["structures"] > n0 else eff["stalls"] + 1
+
+    def run(self, stop_at=None, extra_after_exact=1.0, min_extra=500):
+        """Search until `stop_at` structures, or, without stop_at, until a plausibly exact structure has been found and
+        max(min_extra, extra_after_exact * k) more structures have been tried after it; never beyond the budget or the
+        time cap. Pending simpler structures are always evaluated before pausing."""
+        eff = self.eff
+        self._t = time.perf_counter()
+        while not self.exhausted:
+            if not self.prune:
+                if stop_at is not None:
+                    if eff["structures"] >= stop_at:
+                        break
+                elif eff["first_exact"] is not None and \
+                        eff["structures"] >= eff["first_exact"] + max(min_extra, extra_after_exact * eff["first_exact"]):
+                    break
+            self.step()
+            now = time.perf_counter()
+            eff["seconds"] += now - self._t
+            self._t = now
+        return self
+
+
+def search_equation(i, ctx, budget, prior_fn, fitter, rng, c_puct=1.5, eps=0.15, time_cap=float("inf"), lam=0.02,
+                    extra_after_exact=1.0, min_extra=500):
+    """One equation's search to its first pause point (EquationSearch.run without stop_at). Returns (table, effort)."""
+    s = EquationSearch(i, ctx, budget, prior_fn, fitter, rng, c_puct=c_puct, eps=eps, time_cap=time_cap, lam=lam)
+    s.run(extra_after_exact=extra_after_exact, min_extra=min_extra)
+    if s.eff["first_exact"] is not None and not s.exhausted:
+        s.eff["stopped_after_exact"] = True
+    return s.table, s.eff
+
+
+def _pieces(toks):
+    return sum(1 for t in toks if t[0] != "mono")
 
 
 def candidates_for(table, top=3):
-    """An equation's candidate structures for assembly: plausibly exact ones (fewest terms first), then the best."""
+    """An equation's candidate structures for assembly: plausibly exact ones (fewest terms, then fewest pieces, then
+    smallest held-back error first), then the best of the rest."""
     nodes = list(table.values())
-    ex = sorted([n for n in nodes if n["exact"]], key=lambda n: (len(n["toks"]), n["rel_v"]))
+    ex = sorted([n for n in nodes if n["exact"]], key=lambda n: (len(n["toks"]), _pieces(n["toks"]), n["rel_v"]))
     rest = sorted([n for n in nodes if not n["exact"]], key=lambda n: -n["value"])
     return (ex + rest)[:top]
 
@@ -838,46 +910,61 @@ def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("i
     tp = time.perf_counter()
     ctx["cols"] = CandidateColumns(vocab, Zc, Xc)
     setup = time.perf_counter() - tp
-    effort = {"vocabulary": len(vocab), "equations": []}
+    effort = {"vocabulary": len(vocab)}
     tp = time.perf_counter()
     bank = ColumnBank(vocab, Zc, Xc)
     setup += time.perf_counter() - tp
     effort["setup_seconds"] = setup
     fitter = fitter or GridSweepFitter(bank)
     prior_fn = {"data": data_prior, "data_v1": data_prior_v1, "uniform": uniform_prior}[prior] if isinstance(prior, str) else prior
-    tables = []
+    searches = []
     for i in range(d):                                         # one random stream per equation: a smaller budget is
         rng = np.random.default_rng([seed, i])                 # exactly a prefix of a larger one
-        table, eff = search_equation(i, ctx, budget, prior_fn, fitter, rng, time_cap=time_cap / d)
-        tables.append(table); effort["equations"].append(eff)
-    cands = [candidates_for(t) for t in tables]
-    all_plausible = all(c and c[0]["exact"] for c in cands)
-    combos = sorted(itertools.product(*[range(len(c)) for c in cands]), key=sum)[:max_assemblies if all_plausible else 1]
+        searches.append(EquationSearch(i, ctx, budget, prior_fn, fitter, rng, time_cap=time_cap / d).run())
+    best, assemblies, rounds, last_key = None, 0, 0, None
+    ta, asm_seconds = None, 0.0
+    while True:
+        cands = [candidates_for(se.table) for se in searches]
+        all_plausible = all(c and c[0]["exact"] for c in cands)
+        key = tuple(tuple(n["toks"] for n in c) for c in cands)
+        if key != last_key:                                    # assemble only when the candidates changed
+            last_key = key
+            combos = sorted(itertools.product(*[range(len(c)) for c in cands]), key=sum)[:max_assemblies if all_plausible else 1]
+            ta = time.perf_counter()
+            for combo in combos:
+                if time.perf_counter() - ta > ASSEMBLY_CAP or asm_seconds + time.perf_counter() - ta > 2 * ASSEMBLY_CAP:
+                    effort["assembly_capped"] = True
+                    break
+                sups = [cands[i][k]["terms"] for i, k in enumerate(combo)]
+                cfs = [cands[i][k]["coefs"] if cands[i][k]["coefs"] is not None else torch.zeros(len(sups[i]), dtype=torch.float64)
+                       for i, k in enumerate(combo)]
+                model = DL.Model(sups, cfs, view["mu"], view["sig"])
+                assemblies += 1
+                try:
+                    model, nsub, err, _ = DL.polish(model, view["z0"], view["z1"], iters=40)
+                    if not math.isfinite(err):
+                        continue
+                    model, val, info = TI.finalize(model, view["z0"], view["z1"], view["zv0"], view["zv1"])
+                except (RuntimeError, ValueError):
+                    continue
+                if best is None or val < best[1]:
+                    best = (model, val, info, combo, [cands[i][k] for i, k in enumerate(combo)])
+                if val <= DL.VAL_TOL:
+                    break
+            asm_seconds += time.perf_counter() - ta
+        if best is not None and best[1] <= DL.VAL_TOL:
+            break
+        live = [se for se in searches if not se.exhausted]
+        if not all_plausible or not live or asm_seconds > 2 * ASSEMBLY_CAP:
+            break                                              # an equation has no plausibly exact structure left to
+        rounds += 1                                            # find, or nothing left to search: stop
+        for se in live:                                        # the assembled model failed its held-back check: every
+            se.run(stop_at=2 * se.eff["structures"])           # equation searches on (doubling), then assemble again
+    effort["equations"] = [se.eff for se in searches]
     effort["all_equations_plausible"] = all_plausible
-    best, assemblies = None, 0
-    ta = time.perf_counter()
-    for combo in combos:
-        if time.perf_counter() - ta > ASSEMBLY_CAP:
-            effort["assembly_capped"] = True
-            break
-        sups = [cands[i][k]["terms"] for i, k in enumerate(combo)]
-        cfs = [cands[i][k]["coefs"] if cands[i][k]["coefs"] is not None else torch.zeros(len(sups[i]), dtype=torch.float64)
-               for i, k in enumerate(combo)]
-        model = DL.Model(sups, cfs, view["mu"], view["sig"])
-        assemblies += 1
-        try:
-            model, nsub, err, _ = DL.polish(model, view["z0"], view["z1"], iters=40)
-            if not math.isfinite(err):
-                continue
-            model, val, info = TI.finalize(model, view["z0"], view["z1"], view["zv0"], view["zv1"])
-        except (RuntimeError, ValueError):
-            continue
-        if best is None or val < best[1]:
-            best = (model, val, info, combo)
-        if val <= DL.VAL_TOL:
-            break
+    effort["resume_rounds"] = rounds
     effort["assemblies"] = assemblies
-    effort["assembly_seconds"] = time.perf_counter() - ta
+    effort["assembly_seconds"] = asm_seconds
     effort["structures"] = sum(e["structures"] for e in effort["equations"])
     effort["fit_seconds"] = sum(e["fit_seconds"] for e in effort["equations"])
     effort["seconds"] = time.perf_counter() - t0
@@ -885,8 +972,8 @@ def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("i
     if best is None:
         out.update(status="no_model", val=float("inf"))
         return out
-    model, val, info, combo = best
+    model, val, info, combo, chosen = best
     out.update(status="accepted" if val <= DL.VAL_TOL else "rejected", val=val, model=model, ties=info,
-               combo=list(combo), terms_per_eq=[len(cands[i][k]["toks"]) for i, k in enumerate(combo)],
-               chosen_k=[cands[i][k]["k"] for i, k in enumerate(combo)])   # when each chosen structure was first fitted
+               combo=list(combo), terms_per_eq=[len(n["toks"]) for n in chosen],
+               chosen_k=[n["k"] for n in chosen])              # when each chosen structure was first fitted
     return out
