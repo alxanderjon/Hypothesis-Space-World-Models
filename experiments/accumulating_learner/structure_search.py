@@ -707,7 +707,7 @@ class EquationSearch:
         self.c_puct, self.eps, self.time_cap, self.lam = c_puct, eps, time_cap, lam
         self.vocab, self.Zc, self.Xc = ctx["vocab"], ctx["Zc"], ctx["Xc"]
         self.y = ctx["G"][:, i]
-        self.ctx = dict(ctx, y=self.y)
+        self.ctx = dict(ctx, y=self.y, i=i)
         self.yn = float(self.y.norm()) + 1e-300
         self.floor = max(float(ctx["noise"][i]) * math.sqrt(len(self.y)), 1e-15 * self.yn)
         self.tau = max(TAU_EXACT, TAU_FLOOR * self.floor / self.yn)
@@ -952,6 +952,10 @@ def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("i
     effort["setup_seconds"] = setup
     fitter = fitter or GridSweepFitter(bank)
     prior_fn = {"data": data_prior, "data_v1": data_prior_v1, "uniform": uniform_prior}[prior] if isinstance(prior, str) else prior
+    if getattr(prior_fn, "needs_history_context", False):     # the network's featurizer, on this run's own objects
+        import history28 as HI
+        ctx["hctx"] = HI.Context.from_parts(view, vocab, ctx["cols"], bursts.shape[0])
+    net0 = getattr(prior_fn, "seconds", None)                 # the network's computing time, reported separately
     searches = []
     for i in range(d):                                         # one random stream per equation: a smaller budget is
         rng = np.random.default_rng([seed, i])                 # exactly a prefix of a larger one
@@ -996,6 +1000,8 @@ def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("i
         for se in live:                                        # the assembled model failed its held-back check: every
             se.run(stop_at=2 * se.eff["structures"])           # equation searches on (doubling), then assemble again
     effort["equations"] = [se.eff for se in searches]
+    if net0 is not None:
+        effort["network_seconds"] = prior_fn.seconds - net0
     effort["all_equations_plausible"] = all_plausible
     effort["resume_rounds"] = rounds
     effort["assemblies"] = assemblies

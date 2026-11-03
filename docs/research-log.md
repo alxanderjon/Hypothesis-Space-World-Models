@@ -3743,3 +3743,25 @@ If (a) or (b) fails on either set, the work stops and is reported before any rea
   - Transient recordings follow the Trial 27 rules (64 learning recordings from 0.5–1.5× the initial state, settle time 10, interval halving to at most 2 substeps), and bursts are drawn as for real systems.
   - The generator may be recalibrated on development seeds only, before training, towards a baseline success of 25–60% at the headline budget. Any change is logged.
 - **Practice systems** are used for development only. No evaluation-half or fresh-pool system is touched in step 2.
+
+### Trial 28 step 2: generator calibration on development seeds (3 November, before the training history)
+
+The changes below were made only on development seeds ("t28-dev-k"), before any training system was generated. The bar and the test rules are unchanged.
+
+1. **Settle time.** Each synthetic system now uses the Trial 23 transient rule, as real systems do: integrate from the initial state up to t = 10⁴; the settle time is the first time the distance to the final state falls below 1% of its starting value. Recordings cover 1.5 settle times. A fixed settle time of 10 left fast systems flat for most of each recording. The settle-time integration is limited to 5 s (part of the cheap-simulation rule).
+2. **Centring check at M = 8 only.** The bar is measured at 8 bursts. At M = 4, centring rejected many systems that are well-posed at M = 8. Training examples at M = 4 or 16 fall back to M = 8 when that view is centred.
+3. **Size mix.** Acceptance falls with size: 25%, 11% and 5% for d = 2, 3 and 4 in a 100-system pilot. Sizes are now drawn with probabilities 0.17, 0.33 and 0.50, so accepted systems are about 40/35/25%.
+4. **Cutoff applied while building.** The cheap-simulation cutoff stops a reference build as soon as it is exceeded, instead of after building.
+
+**Pilot (100 development systems, earlier size mix):**
+- Acceptance 15%. Main rejections: simulation cost 165, centred 150, integration failures 148, degenerate true piece 71.
+- The true structures reproduce their own data: rate residual over noise floor median 0.41, 90th percentile 2.2, over 243 equations.
+- Families present (systems): Hill 88, reciprocal 40, weighted-sum Hill 17, exp 12, weighted-sum reciprocal 10, product of Hills 10; the others fewer than 6.
+
+**Difficulty (baseline: uniform priorities, 2,000 structures per equation, M = 8, 48 development systems):**
+- 10 recovered exactly (21%): 8 of 19 with d = 2, 1 of 16 with d = 3, 1 of 13 with d = 4.
+- This is just below the 25–60% band aimed for, which lies within its uncertainty (about 10–35% on 48 systems), and close to the real practice systems at the same budget (3 of 27, 11%).
+- **The generator was left unchanged**, so the synthetic test stays about as hard as real systems.
+- Time per system: 45–1,170 s.
+
+**GPUs.** All 8 GPUs were fully used by another user, so the network is trained on CPU (it is small). Its training time and its inference time inside the search are recorded separately.
