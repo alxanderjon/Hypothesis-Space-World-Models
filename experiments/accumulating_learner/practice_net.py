@@ -281,7 +281,9 @@ def simulate(bs, P, starts, nsub, rng, n_bursts=16):
     Draws that leave a sane region, stop moving, or are not finite are dropped (returned mask)."""
     B = P.shape[0]
     idx = rng.integers(len(starts), size=(B, n_bursts))
-    z = torch.as_tensor(starts[idx]) * torch.as_tensor(np.exp(rng.normal(0, 0.2, (B, n_bursts, starts.shape[1]))))
+    # per draw, starting states exactly on observed states (natural trajectories) or jittered by 2%, 10% or 20%
+    jit = rng.choice([0.0, 0.02, 0.1, 0.2], size=(B, 1, 1))
+    z = torch.as_tensor(starts[idx]) * torch.as_tensor(np.exp(rng.normal(0, 1.0, (B, n_bursts, starts.shape[1])) * jit))
     traj = [z]
     with torch.no_grad():
         for _ in range(L - 1):
