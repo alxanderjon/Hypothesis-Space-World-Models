@@ -3794,3 +3794,25 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
 - The 2 missing set-(2) systems are added once the search runs free CPU workers.
 
 - **Bar (b), the search** (in progress; launched 11:36): learn28 at 2,000 structures per equation on both sets, with network priorities and with uniform priorities (the baseline). There are 600 runs on 24 workers, with the network's computing time recorded separately.
+
+### Trial 28 step 2: go/no-go result: bar (a) met on both sets, bar (b) met on set (1) and NOT met on set (2); stopped (3 November, 15:42)
+
+**Bar (b), the search** (learn28 at 2,000 structures per equation, M = 8, 150 systems per set; with-history learner = network priorities, baseline = uniform priorities; same systems, same budget):
+
+| Set | Baseline exact | With-history exact | Difference | Discordant (history only / baseline only) | Sign test (two-sided) | Bar (b) |
+|---|---|---|---|---|---|---|
+| (1) same generator | 34 (22.7%) | 70 (46.7%) | +24.0 points | 36 / 0 | p = 2.9×10⁻¹¹ | met |
+| (2) held-out combinations | 1 (0.7%) | 3 (2.0%) | +1.3 points | 2 / 0 | p = 0.5 | **not met** |
+
+- **Bar (a), with all 150 set-(2) systems:** network 74.2% top-5 against 6.6% chance; on the equations containing a held-out combination, 65.5% against 8.0%. Met on both sets.
+- **Per-equation diagnostics** (plausibly exact structure found, and the median structure at which it was first found):
+  - set (1): with history 360 of 460 equations at a median of structure 13; baseline 247 of 460 at a median of 245;
+  - set (2), equations without a held-out combination: with history 217 of 287 at 22; baseline 144 of 287 at 222;
+  - **set (2), equations with a held-out combination: with history 22 of 150 at 428; baseline 18 of 150 at 340.**
+- **Why set (2) fails.** By construction, each set-(2) system has one equation that receives both families of a held-out pair on top of its usual terms. These equations average 4.9 terms and 3.2 pieces, against 2.7–2.9 terms and 1.2 pieces elsewhere. Neither learner solves them within the budget, so almost no set-(2) system can be recovered whole, and set (2) leaves no room for any learner to show a difference.
+  - Set (2) therefore mixes novelty of combination with equation size. The network still ranks well on those equations (bar a), but its priorities do not make the search complete them.
+- **Effort** (network computing time separate):
+  - set (1): time per system, median 225 s with history against 518 s for the baseline; network inference median 11 s per system (6.2% of run time);
+  - set (2): median 499 s against 664 s; network inference median 20 s (4.3%);
+  - one-off costs: history generation 67 minutes on 24 CPU workers; training 5,389 s on CPU (16 threads) plus 1,222 s loading.
+- **Decision rule applied.** Bar (b) failed on set (2), so the work stops here. No real system has been touched, and step 3 is not started. The history shards (136 MB) are kept until the owner decides; the trained network is saved in outputs/accumulating_learner/trial28.
