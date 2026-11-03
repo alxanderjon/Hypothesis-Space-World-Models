@@ -3816,3 +3816,25 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
   - set (2): median 499 s against 664 s; network inference median 20 s (4.3%);
   - one-off costs: history generation 67 minutes on 24 CPU workers; training 5,389 s on CPU (16 threads) plus 1,222 s loading.
 - **Decision rule applied.** Bar (b) failed on set (2), so the work stops here. No real system has been touched, and step 3 is not started. The history shards (136 MB) are kept until the owner decides; the trained network is saved in outputs/accumulating_learner/trial28.
+
+### Trial 28: owner decision on set (2), and rules for the size-matched set (2′) (3 November, logged before any set-(2′) system is generated)
+
+**Owner decision.**
+- Replace set (2) with a size-matched version that swaps terms rather than adding them, so its equations match training in number of terms and number of nonlinear pieces. Rerun bars (a) and (b) on it.
+- Keep the original set (2) in the log, reported as **failed as designed (size confound)**: its held-out equations received both held-out pieces on top of their usual terms (4.9 terms and 3.2 pieces on average, against 2.7–2.9 and 1.2), so neither learner could solve them (baseline 1 of 150).
+- Run the original set (2) at the secondary budget (5,000 structures per equation), both learners, **as a diagnostic only**, not counting toward the bar.
+- Check in with both results before step 3.
+
+**Set (2′) generation rules (fixed now):**
+- 150 systems, seeds "t28-test2m-k" for k = 0 … 149, with replacement seeds "t28-test2m-k-r1", "-r2", … in order when a draw is rejected (up to 500). They are generated only after this entry.
+- **Construction.**
+  1. Draw a system with the training generator (no held-out combination anywhere).
+  2. Among its equations with at least two nonlinear pieces (non-monomial terms), choose one at random; choose one of the six held-out pairs at random; choose two of that equation's pieces at random. All choices use a seed derived from the system seed.
+  3. Replace the two chosen pieces with one new term from each family of the pair, drawn as in the generator and new to the equation.
+  4. The equation keeps its number of terms and its number of nonlinear pieces; the other equations are unchanged.
+  5. A draw with no equation of two or more pieces, or a replacement that cannot be drawn, is rejected and the next replacement seed used.
+- **Acceptance.** The same checks as every synthetic system, and the system must contain a held-out combination.
+- **Bars (a) and (b)** are measured exactly as before: same network, M = 8, 2,000 structures per equation, the same ranking states, and the same exact two-sided sign test (difference of at least 10 points and p < 0.05). Set (1)'s results stand.
+- **Reported alongside, not part of the bar:**
+  - the size match: mean terms and pieces of set-(2′) held-out equations, against set-(1) equations with two or more pieces;
+  - the per-equation diagnostics as before.
