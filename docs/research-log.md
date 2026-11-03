@@ -3630,3 +3630,15 @@ The diagnosis used only the practice half. Where a system's correct structure wa
     - Cost: about 90 ms per structure with the first version of the priorities and 325 ms with the sharper one. Most of the time goes on polishing larger structures and the thorough refits.
 13. **Calibration status after the corrections.** Correct structures carried into the small-M coordinates are plausibly exact for 24 of 30 equations at M = 8 and 26 of 30 at M = 16, all within the floor-based threshold except those listed. The fitter still misses 458 and 1012 at M = 8 (both fitted at M = 16). 507 at M = 8 also fails, a reciprocal carried over from a power piece with exponent −1. 115 is data-limited at about 10⁻⁶.
 14. **Baseline rerun launched (3 November, 00:22).** 27 practice systems; data-only priorities at M = 4, 8 and 16; the first version of the priorities and uniform priorities at M = 8. Up to 5,000 structures per equation, a one-hour cap per system, 24 workers. Outputs are in the scratchpad (`t28_baseline_v2`); the flawed first run is kept aside as v1.
+15. **First rerun stopped after 20 minutes, and restarted (3 November, 01:21).**
+    - One job hit a math domain error: on nearly collinear designs, the removal cost's covariance diagonal went negative. The cost is now clamped at zero.
+    - The partial results showed the more important problem: several systems with a plausibly exact structure in every equation were still rejected at assembly (728, 876, 767).
+    - On 728, equation 0's candidates were look-alikes: z₁·sin(0.004 z₀ + 3π/2) standing in for z₁, which cannot be told apart at this system's step-integral precision (about 10⁻¹⁰). The step-map check correctly rejected every combination (8.6×10⁻¹¹ against 3×10⁻¹³), but the equation had already stopped searching.
+    - **Fix 1, resumable searches.** An equation pauses after its first plausibly exact structure plus as many structures again (at least 500). If the assembled model fails its held-back check, every equation with budget left searches on (doubling its structures) and assembly is retried. The stop now rests on the real internal win.
+    - **Fix 2, piece simplification.** Plausibly exact structures also queue the structures with a piece replaced by a plain product of its variables. Exact candidates are ordered by number of terms, then number of pieces, then held-back error.
+    - **Checks with the final code** (M = 8, up to 5,000 structures per equation):
+      - 728 exact in 124 s (the simplification step found the true structure);
+      - 866 exact in 227 s;
+      - 767 rejected at 9×10⁻¹³ after one resume round;
+      - 1060 at M = 4 runs cleanly (rejected; not expressible). It took 1,786 s, because at M = 4 nearly every structure passes the precise gate.
+    - The 19 jobs finished before the stop are kept aside, not mixed into the restarted run.
