@@ -3688,3 +3688,58 @@ Setup:
   - time per system median 847 s, maximum 2,659 s; assembly median 8 s;
   - M = 4 and 16 are similar (first plausible structure at medians 252 and 439; time per system medians 1,013 s and 896 s).
 - **Step-1 check-in sent to the owner.** Proposals: uniform priorities as the baseline (the strongest search without history; a change from the approved data-only design, so the owner decides); budget 2,000 structures per equation as the headline and 5,000 secondary; a go/no-go bar on new synthetic systems.
+
+### Trial 28: owner approval of the step-1 proposals, and step 2 go-ahead (3 November)
+
+The owner approved all four proposals:
+1. The equal-priority (uniform) search is the baseline.
+2. The headline budget is 2,000 formulas (structures) per equation, with 5,000 secondary.
+3. The go/no-go bar stands as written below.
+4. Step 2 may go ahead, using practice and synthetic data only.
+
+The network's computing time is logged separately. The next check-in comes once the network is trained and evaluated against the bar.
+
+### Trial 28 step 2: go/no-go bar and test rules (fixed 3 November, before any synthetic system is generated or any network trained)
+
+**Go/no-go bar (as approved).** Measured on new synthetic systems made after training and never seen in training, at 8 bursts, in two sets:
+- **Set (1):** systems from the same generator.
+- **Set (2):** systems in which some equation contains a combination of term types that never appears together in any training equation.
+
+The bars:
+- **(a) Ranking.** At search states on the way to the true structure, a correct next move ranks in the network's top 5 at least 30% of the time, and at least twice as often as under the baseline.
+- **(b) Search.** Within the headline budget, the with-history learner recovers exactly at least 10 percentage points more of these systems than the baseline, on the same systems, with a paired test at p < 0.05.
+
+If (a) or (b) fails on either set, the work stops and is reported before any real system is touched.
+
+**How each part is measured:**
+- **Ranking states.**
+  - For each test system and equation, the states are the proper subsets of the true structure T: one subset of each size 0 … |T|−1, drawn with a seed.
+  - The correct moves are the additions of tokens in T \ S.
+  - The network's priorities over all legal moves at S (adds, removes, swaps, mixed as in the search) are ranked. A hit means some correct move is among the 5 highest.
+  - The baseline's (uniform) hit rate is the exact chance rate, 1 − C(N−c, 5)/C(N, 5), for N legal moves of which c are correct. Hit rates are averaged over states and reported per set.
+- **Search.**
+  - The learner is `learn28`: 2,000 structures per equation, a one-hour cap per system, 8 bursts. The with-history learner and the baseline differ only in their priorities.
+  - "Exact" uses the same external test as for real systems: one-step error ≤ 10⁻¹² of scale on held-out starting states, plus the multi-step envelope.
+  - The paired test is an exact two-sided sign test on the discordant systems. Bar (b) needs both a difference of at least 10 percentage points and p < 0.05.
+- **Test sets.** 150 systems each, generated only after training.
+  - Seeds: set (1) uses "t28-test1-k" and set (2) "t28-test2-k", for k = 0 … 149 (with replacement seeds when a draw is rejected, in seed order).
+  - Generator-calibration and validation systems use "t28-dev-k". Training systems use "t28-hist-k". No seed is shared between sets.
+- **Held-out combinations (set 2).** These are pairs of piece families within one equation. Six were drawn on 3 November with the seed sha256("t28-heldout-combinations-v1"), from the 21 family pairs that involve a Hill-type or reciprocal piece: (abs, hill), (hill, tanh), (pair-hill, recip), (product-of-Hills, recip), (recip, recip) and (recip, sin). No training or set-(1) equation contains a held-out pair; every set-(2) system contains at least one.
+- **Cheap simulation (cheap-reference rule; cutoff fixed now).** A synthetic system is accepted only if:
+  - its reference needs at most 4 interval halvings (at most 64 substeps per interval at the reference margin), and builds in at most 60 s;
+  - its trajectories stay finite, positive and bounded (below 100× the largest initial state);
+  - every variable moves by more than 0.1% of its scale over a recording;
+  - no variable is centred by the learner's scaling at M = 4, 8 or 16;
+  - no true piece is degenerate over the observed range (`DL.degenerate`).
+- **Generator v1.** These are biochemistry-like positive systems built from the search vocabulary, with term-type frequencies set by hand, not fitted to any system.
+  - Size: d = 2, 3 or 4 (probabilities 0.4, 0.35, 0.25), initial states log-uniform in [0.3, 3].
+  - Each equation has a degradation term −k xᵢ (probability 0.8) plus 1–3 further terms:
+    - mass-action monomials of degree 0–2 (0.35; negative when they contain xᵢ);
+    - Michaelis–Menten/Hill switches x_jⁿ/(K + x_jⁿ), with n = 1–4, optionally times one variable (0.35);
+    - reciprocals (0.10);
+    - exp, tanh, sin, |·| or power pieces (0.10);
+    - weighted-sum pieces (0.05);
+    - products of two switches (0.05).
+  - Transient recordings follow the Trial 27 rules (64 learning recordings from 0.5–1.5× the initial state, settle time 10, interval halving to at most 2 substeps), and bursts are drawn as for real systems.
+  - The generator may be recalibrated on development seeds only, before training, towards a baseline success of 25–60% at the headline budget. Any change is logged.
+- **Practice systems** are used for development only. No evaluation-half or fresh-pool system is touched in step 2.
