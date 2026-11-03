@@ -3765,3 +3765,32 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
 - Time per system: 45–1,170 s.
 
 **GPUs.** All 8 GPUs were fully used by another user, so the network is trained on CPU (it is small). Its training time and its inference time inside the search are recorded separately.
+
+### Trial 28 step 2: training history, network, and go/no-go bar (a) (3 November)
+
+- **Training history.**
+  - 7,982 accepted synthetic systems (seeds t28-hist-0 … 7999; 18 seeds had no accepted draw within 50 replacements). 58,591 draws were rejected.
+  - Each system contributes training states at one number of bursts (M = 4, 8 or 16 with probabilities 0.2, 0.6 and 0.2): about 12 states per system, 94,472 in all.
+  - The states are proper subsets of each equation's true structure, subsets with 1–2 wrong terms, and the true structure plus one wrong term.
+  - On disk: 136 MB, deleted after step 2. Generation took 67 minutes on 24 CPU workers (11 s per system).
+- **Network.**
+  - A 3-layer transformer over the candidate terms (128 wide), trained 12 epochs on CPU, because all GPUs were in use by another user.
+  - **Training time: 5,389 s, plus 1,222 s loading** (a slow loader, since fixed), reported separately from any search effort.
+  - Validation on held-out history systems (every 20th seed): a correct next move is in the top 5 at 82.5% of proper-subset states (chance 5.9%). Validation loss fell from 1.46 to 1.19.
+- **Test systems** (generated after training, as logged):
+  - set (1): 150 systems from seeds t28-test1-k;
+  - set (2): 150 systems from seeds t28-test2-k, each containing a held-out combination.
+  - In set (2), 2 seeds (k = 88, 91) found no acceptable system within 50 replacement seeds. The cap was raised to 500, so the set has 150 systems as the rule requires; this changes no other system.
+
+**Bar (a), ranking (proper-subset states, top 5 of all legal moves):**
+
+| Set | States | Network | Baseline (chance) | Data-only priorities (reference) |
+|---|---|---|---|---|
+| (1) same generator | 1,257 (150 systems) | 80.6% | 5.2% | 18.3% |
+| (2) held-out combinations | 1,528 (148 of 150 systems) | 74.3% | 6.7% | 14.6% |
+| (2), equations containing a held-out combination | 724 | 65.6% | 8.0% | – |
+
+- **Bar (a) is met on both sets**: at least 30%, and at least twice the baseline (15.6× and 11.1×).
+- The 2 missing set-(2) systems are added once the search runs free CPU workers.
+
+- **Bar (b), the search** (in progress; launched 11:36): learn28 at 2,000 structures per equation on both sets, with network priorities and with uniform priorities (the baseline). There are 600 runs on 24 workers, with the network's computing time recorded separately.

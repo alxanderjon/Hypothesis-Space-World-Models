@@ -395,7 +395,7 @@ def build(desc, Ms=(8,)):
     return syn
 
 
-def draw_accepted(prefix, k, mode="train", tries=50):
+def draw_accepted(prefix, k, mode="train", tries=500):
     """The k-th accepted system of a seed series: seeds prefix-k, prefix-k-r1, prefix-k-r2, ... (replacement seeds
     in order when a draw is rejected). Returns (Synthetic, rejection reasons)."""
     reasons = []
