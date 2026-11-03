@@ -3648,3 +3648,43 @@ The diagnosis used only the practice half. Where a system's correct structure wa
     - **Fix.** Moves that lead back onto the current path are excluded when a move is chosen. If a descent still ends without a new structure, a random untried move from the deepest node that has one is evaluated, so every step explores.
     - Effect on the six equations that stalled (first pause point, M = 8): forced explorations fell from thousands (a first fallback-only fix) to 0–140. All six now reach a plausibly exact structure: 507 at structure 342, 753 at 423, 458 at 506, 573 at 2,087, 866 at 2,141, and 115 at 4,185. With the loop, 507, 753 and 115 had none.
     - The 21 jobs finished before this stop are kept aside, not mixed in. The full rerun was relaunched at 02:02 with commit a832524.
+
+### Trial 28 step 1: baseline results (3 November, 05:22; practice half; commit a832524)
+
+Setup:
+- 27 practice systems, 17 of them toolkit-expressible.
+- Up to 5,000 structures per equation, a one-hour cap per system.
+- "Exact" means passing the external test on held-out starting states.
+- Data-only priorities at M = 4, 8 and 16; the first version of the data-only priorities at M = 8; uniform (equal) priorities at M = 4, 8 and 16.
+- 189 jobs, no errors.
+
+**Exact recoveries, all systems / expressible subset** (every recovered system is expressible):
+
+| Priorities | M = 4 | M = 8 | M = 16 |
+|---|---|---|---|
+| Uniform | 2 / 2 | 5 / 5 | 7 / 7 |
+| Data-only (sharper version) | 1 / 1 | 2 / 2 | 5 / 5 |
+| Data-only (first version) | – | 3 / 3 | – |
+| Trial 27 learner (scratch + ties), for reference | 2 | 4 | 8 |
+
+- **Against budget (uniform):**
+  - M = 4: 1 by 500 structures per equation, 2 by 3,000;
+  - M = 8: 1 by 300, 3 by 1,000, 5 by 5,000;
+  - M = 16: 1 by 500, 4 by 1,000, 5 by 3,000, 7 by 5,000.
+- **Systems recovered:**
+  - M = 8: uniform gets 458, 728, 753, 866 and 919; the Trial 27 learner gets 685, 728, 753 and 909 (909 is not expressible).
+  - M = 16: uniform gets 458, 507, 685, 728, 753, 866 and 919; the Trial 27 learner gets 114, 507, 728, 753, 866, 909, 919 and 1012.
+- **Uniform priorities beat the data-only priorities at every M.** With uniform priorities, more equations reach a plausibly exact structure (M = 8: 47 of 80, against 38 and 32), and sooner (median structure 407, against 776). The data-only evidence is measured at grid placements, before polishing, and evidently misleads the search.
+- **False acceptances.** The learner's own held-back check accepted systems that fail the external test:
+  - uniform, M = 8: 4 of 9 accepted (114 at 1×10⁻¹², 507 at 10⁻¹¹ and 573 at 2×10⁻¹¹ are near misses; 973 at 4×10⁻⁹);
+  - M = 4: 6 of 8;
+  - M = 16: 3 of 10.
+  The external test remains the only judge of exactness.
+- **Effort (uniform, M = 8):**
+  - fitting about 33 ms per structure (median);
+  - about one structure in 16 gets the precise stage, at about 0.2 s;
+  - 47 of 80 equations reach a plausibly exact structure, at a median of structure 407 (90th percentile 3,155), after a median of 30 s;
+  - unsolved equations run to the budget; the time cap stopped only 4 of 80 equations early, none with a plausible candidate;
+  - time per system median 847 s, maximum 2,659 s; assembly median 8 s;
+  - M = 4 and 16 are similar (first plausible structure at medians 252 and 439; time per system medians 1,013 s and 896 s).
+- **Step-1 check-in sent to the owner.** Proposals: uniform priorities as the baseline (the strongest search without history; a change from the approved data-only design, so the owner decides); budget 2,000 structures per equation as the headline and 5,000 secondary; a go/no-go bar on new synthetic systems.
