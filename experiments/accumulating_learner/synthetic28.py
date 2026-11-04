@@ -183,12 +183,60 @@ def _pieces_of(eq):
     return [t for t in eq if t[0] != "mono"]
 
 
-def draw_matched(seed):
-    """Set (2') (research log, 3 November): a training-generator system in which one equation with at least two
+UNTUNED_C = (0.1, 2.0)      # monomial coefficient magnitudes (log-uniform); calibrated on development seeds
+UNTUNED_S = (0.3, 3.0)      # piece coefficient scale factors (log-uniform)
+UNTUNED_WINDOW = 0.5        # window for non-settling systems, in units of their own starting timescale
+FAMILIES12 = ["mono", "recip", "hill", "exp", "tanh", "sin", "abs", "pow", "pair_recip", "pair_hill", "prod_recip",
+              "prod_hill"]
+
+
+def _term_untuned(rng, d, i, ic, fam):
+    """Trial 29 untuned term: monomials of degree uniform 0-3 with coefficient of random sign and magnitude log-uniform
+    in [0.01, 10]; pieces placed as in _term (relative to each variable's initial state, only so that they bend over the
+    data) with the coefficient's sign random and its magnitude scaled by log-uniform [0.1, 10]."""
+    if fam == "mono":
+        e = [0] * d
+        for _ in range(int(rng.integers(0, 4))):
+            e[int(rng.integers(d))] += 1
+        return ("mono", tuple(e)), {"c": float(rng.choice([-1.0, 1.0]) * np.exp(rng.uniform(np.log(UNTUNED_C[0]), np.log(UNTUNED_C[1]))))}
+    got = _term(rng, d, i, ic, fam)
+    if got is None:
+        return None
+    tok, cst = got
+    cst = dict(cst)
+    cst["c"] = float(rng.choice([-1.0, 1.0]) * abs(cst["c"]) * np.exp(rng.uniform(np.log(UNTUNED_S[0]), np.log(UNTUNED_S[1]))))
+    return tok, cst
+
+
+def draw_untuned(seed, forbid_held_out=True):
+    """Trial 29 untuned generator (research log, 4 November): d uniform over {2, 3, 4}; initial states log-uniform in
+    [0.1, 10]; each equation 1-5 terms; each term's family uniform over the 12 families, then uniform within the family;
+    no built-in decay term; held-out family pairs excluded."""
+    rng = rng_of(seed)
+    d = int(rng.integers(2, 5))
+    ic = np.exp(rng.uniform(np.log(0.1), np.log(10.0), d))
+    eqs = []
+    for i in range(d):
+        terms = {}
+        for _ in range(int(rng.integers(1, 6))):
+            for _ in range(50):
+                got = _term_untuned(rng, d, i, ic, FAMILIES12[int(rng.integers(len(FAMILIES12)))])
+                if got is None or got[0] in terms:
+                    continue
+                if forbid_held_out and has_held_out(list(terms) + [got[0]]):
+                    continue
+                terms[got[0]] = got[1]
+                break
+        eqs.append(terms)
+    return {"seed": seed, "d": d, "ic": ic.tolist(), "eqs": eqs, "mode": "untuned"}
+
+
+def draw_matched(seed, base="train", label="test2m"):
+    """Set (2') (research log, 3 November): a system from the `base` generator in which one equation with at least two
     nonlinear pieces has two of them replaced by one new term of each family of a held-out pair, so the equation keeps
     its number of terms and of pieces. Returns the description, with "reject" set when no such swap is possible."""
-    desc = draw(seed, "train")
-    desc["mode"] = "test2m"
+    desc = draw(seed, base)
+    desc["mode"] = label
     rng = rng_of(seed + "-swap")
     cands = [i for i, eq in enumerate(desc["eqs"]) if len(_pieces_of(eq)) >= 2]
     if not cands:
@@ -202,9 +250,10 @@ def draw_matched(seed):
     for a_ in rng.choice(len(pieces), 2, replace=False):
         del eq[pieces[int(a_)]]
     ic = np.asarray(desc["ic"])
+    term_fn = _term_untuned if base == "untuned" else _term
     for fam in pair:
         for _ in range(50):
-            got = _term(rng, desc["d"], i, ic, fam)
+            got = term_fn(rng, desc["d"], i, ic, fam)
             if got is not None and got[0] not in eq:
                 eq[got[0]] = got[1]
                 break
@@ -222,6 +271,10 @@ def draw(seed, mode="train"):
     or "test2m" (set (2'): size-matched swap, draw_matched)."""
     if mode == "test2m":
         return draw_matched(seed)
+    if mode == "untuned":
+        return draw_untuned(seed)
+    if mode == "untuned_test2m":
+        return draw_matched(seed, base="untuned", label="untuned_test2m")
     rng = rng_of(seed)
     d = int(rng.choice([2, 3, 4], p=D_DRAW))
     ic = np.exp(rng.uniform(np.log(0.3), np.log(3.0), d))
@@ -316,14 +369,14 @@ def learner_term(tok, cst, mu, sig):
 # building and checking
 # ---------------------------------------------------------------------------------------------------------------------
 
-def settle_time(f, x0):
+def settle_time(f, x0, seconds=5):
     """Trial 23 transient rule (biomodels_convert.transient_data): integrate from the initial state up to t = 1e4; the
     settle time is the first time the distance to the final state falls below 1% of its starting value. Rejects
     systems that do not move or do not settle within the horizon."""
     import biomodels_convert as BC
     t = np.concatenate([[0.0], np.logspace(-4, 4, 4000)])
     with np.errstate(all="ignore"):
-        traj = BC.integrate(lambda x: f(x[None, :])[0], x0, t, seconds=5)
+        traj = BC.integrate(lambda x: f(x[None, :])[0], x0, t, seconds=seconds)
     if traj is None:
         raise Rejected("simulation: settle-time integration failed")
     dist = np.linalg.norm(traj - traj[-1], axis=1)
@@ -333,6 +386,18 @@ def settle_time(f, x0):
     if len(below) == 0 or t[below[0]] <= 0:
         raise Rejected("transient: does not settle within the horizon")
     return float(t[below[0]])
+
+
+def own_timescale(f, x0, factor=None):
+    """Trial 29 window for an untuned system that does not settle: twice the median over variables of the time each
+    takes to change by its own size at the starting state, |x_i / f_i(x0)|, bounded to [1e-3, 1e3]."""
+    with np.errstate(all="ignore"):
+        rate = np.abs(np.asarray(f(x0[None, :])[0], dtype=float))
+    t = np.abs(x0) / np.maximum(rate, 1e-300)
+    t = t[np.isfinite(t)]
+    if not len(t):
+        raise Rejected("transient: no motion")
+    return float(np.clip((UNTUNED_WINDOW if factor is None else factor) * np.median(t), 1e-3, 1e3))
 
 
 class SynthSystem(H27.TrueSystem27):
@@ -352,8 +417,13 @@ class SynthSystem(H27.TrueSystem27):
         self.ic = np.array(desc["ic"], dtype=float)
         self.positive = True
         self.d = len(self.ic)
-        self.T = settle_time(self.f, self.ic)                 # the Trial 23 transient rule, as for real systems
-        self.dt = self.T / H27.STEPS
+        try:
+            self.T = settle_time(self.f, self.ic, seconds=2 if desc.get("mode") in ("untuned", "untuned_test2m") else 5)
+        except Rejected as ex:
+            if desc.get("mode") not in ("untuned", "untuned_test2m") or "no motion" in str(ex):
+                raise
+            self.T = own_timescale(self.f, self.ic)           # Trial 29 untuned systems that do not settle: a window
+        self.dt = self.T / H27.STEPS                          # from their own timescale (blow-ups still rejected)
 
 
 class SynthReference(H27.Reference27):
@@ -419,9 +489,9 @@ def build(desc, Ms=(8,)):
         raise Rejected("a variable does not move")
     syn = Synthetic(desc, ref, secs)
     held = [has_held_out(t) for t in syn.tokens]
-    if desc.get("mode") in ("test2", "test2m") and not any(held):
+    if desc.get("mode") in ("test2", "test2m", "untuned_test2m") and not any(held):
         raise Rejected("set (2) system without a held-out combination")
-    if desc.get("mode", "train") == "train" and any(held):
+    if desc.get("mode", "train") in ("train", "untuned") and any(held):
         raise Rejected("held-out combination in a training-generator system")
     for M in Ms:
         view = PN.learner_view(syn.bursts(M), seed=1)

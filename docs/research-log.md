@@ -4041,3 +4041,14 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
   - exact recoveries on half B (all / expressible) for the main network and the controls;
   - success on that round's new synthetic systems.
 - **Direction.** A → B first. The reverse direction (B → A) is run only if time allows before morning, and is reported as not run otherwise.
+- **Untuned generator calibration on development seeds only** ("t29-dev-k"; 4 November, before any history or test system).
+  - As first specified, 0 of 80 draws were accepted. With random signs and no decay term, random systems blow up or never settle, and the settle-time rule requires settling.
+  - **Changes, none touching which term families appear (still uniform over the 12):**
+    - Untuned systems that do not settle are recorded over a window of half their own starting timescale (the median of |xᵢ / fᵢ(x₀)|). Blow-ups inside the window, stiffness and non-positivity are still rejected.
+    - Coefficient magnitudes are log-uniform in [0.1, 2] for monomials, and the piece's scale times [0.3, 3] for pieces. The original 0.01–10 range made most draws too stiff to simulate cheaply.
+    - The settle-time integration is limited to 2 s for untuned systems.
+  - Acceptance is now 4 of 80 (5%), at about 5 s per draw.
+  - **History size reduced to 1,000 systems**, from 3,000, to fit the night: Trial 28's history-size curve was flat from 1,000 to 8,000 in both ranking and practice recoveries.
+  - The test sets stay at 100 systems each.
+  - Accepted untuned systems use the 12 families roughly evenly, so monomials are rare. That is unlike biochemistry, and intended.
+- **(a) almost complete** (seed 2, M = 8, 2,000): uniform 4 of 27 exact; frequency table 7 of 25 so far; scrambled network 8 of 27; full network 9 of 27.
