@@ -4176,3 +4176,36 @@ Fresh data: new reference recordings (seed 2), new bursts and a new held-back sp
    - a pass bar, written into the log before running, decides whether to go on.
 3. **Search comparison.** Both learners (the uniform baseline and the untuned-history network) with fitter v2 on Trial 29's stage-1 test sets, at M = 8 and 2,000 structures per equation. Reported: equations solved (plausibly exact, and for synthetic systems the exact true structure) as well as whole systems; search effort (structures, fitting time per structure, time to first plausible structure); and network time separately.
 4. **If the untuned-history network then passes Trial 29's bar (b)**, propose resuming Trial 29 stage 2. No held-out system is touched.
+
+### Trial 30: owner approval with two additions; fitter v2 design and known-structure pass bar (4 November, logged before any run)
+
+**Owner.** Trial 30 is approved as outlined, with two additions:
+1. Check in after the known-structure fitter test, with the old-against-new results measured against the pass bar, before running the search comparison.
+2. Snap exponents to whole numbers only when the identifiability check says the data cannot pin them down, and let the exactness test decide in every case. Report how often snapping was used.
+
+**Fitter v2** (`fitter30.py`, swappable; same interface plus an optional equation index):
+- **(a) Algebraic start.**
+  - Rational pieces are handled jointly by clearing denominators: single-variable and weighted-sum reciprocals, Hill-type pieces with whole-number exponents 1–4 (every combination tried), and products of reciprocals or of Hill-type pieces.
+  - The other terms enter at their current placements.
+  - It is a single linear least-squares problem in the lifted unknowns, normalized by fixing one coefficient, with 3 Sanathanan–Koerner reweightings.
+  - It runs on dense rate data: derivatives of each training burst's interpolating polynomial at interior points.
+  - Starts that put a pole or a switch outside its valid range are dropped.
+- **(b) Joint global search** (precise stage only, N1-style) over all the structure's hard constants together, with the linear coefficients solved exactly at every candidate: 1,024 Sobol points plus 3 rounds of refinement around the 8 best.
+- **(c) Polishing.** Levenberg–Marquardt with variable projection from the best distinct candidates (the algebraic start, the sweep start, and the global search's best), then the existing Gauss–Newton refit on the step integrals, which converges like Newton at zero residual.
+- **(d) Identifiability check.** At the step-integral fit, each exponent's uncertainty is estimated from the Jacobian and the data's precision floor. An exponent may be snapped to the nearest whole number only if that uncertainty exceeds 0.05. Both versions are then judged by the held-back step-integral error, and the lower one is kept. Snaps allowed and snaps kept are counted.
+- The old fitter (v1, `GridSweepFitter` with its snapping rule) is kept unchanged as the reference.
+
+**Known-structure fitter test.** The fitter is given the true structure (no search).
+- **Equations:**
+  - (U) 60 untuned synthetic systems (seeds "t30-fit-u-k");
+  - (T) 60 hand-tuned synthetic systems (seeds "t30-fit-t-k");
+  - (P) the practice systems' known structures: the 13 practice systems that are expressible and exactly learned at M = 64, carried into the M = 8 coordinates, skipping coordinate-inconsistent ones as in the step-1 calibration.
+- **Procedure.** M = 8, seed 1. Each true structure is evaluated exactly as the search evaluates a structure: ordinary fit, precise gate, thorough fit, step-integral refit, held-back check. "Recognized" means plausibly exact.
+- **Groups:** equations by number of nonlinear pieces (1, 2, 3 or more); monomial-only equations are reported separately.
+- **Pass bar (all four required):**
+  1. On synthetic equations with 2 or more pieces (U and T pooled), v2 recognizes at least 1.5× as many as v1, and at least 10 percentage points more.
+  2. On 1-piece synthetic equations, v2 is within 2 points of v1 or better.
+  3. On practice known structures, v2 recognizes at least as many as v1.
+  4. The ordinary fit's median time is at most 2× v1's, and the thorough fit's median time is at most 2 s.
+- **Reported alongside:** time per fit, snapping use, and identifiability flags.
+- **The search comparison waits for the owner's go-ahead after this test.**
