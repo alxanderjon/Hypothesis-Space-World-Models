@@ -704,9 +704,11 @@ class EquationSearch:
       - A structure with a degenerate piece (DL.degenerate: collapsed to something simpler over the observed range, or
         singular there) cannot be plausibly exact."""
 
-    def __init__(self, i, ctx, budget, prior_fn, fitter, rng, c_puct=1.5, eps=0.15, time_cap=float("inf"), lam=0.02):
+    def __init__(self, i, ctx, budget, prior_fn, fitter, rng, c_puct=1.5, eps=0.15, time_cap=float("inf"), lam=0.02,
+                 thorough_cap=None, probe=None):
         self.i, self.budget, self.prior_fn, self.fitter, self.rng = i, budget, prior_fn, fitter, rng
         self.c_puct, self.eps, self.time_cap, self.lam = c_puct, eps, time_cap, lam
+        self.thorough_cap, self.probe = thorough_cap, probe    # Trial 30: thorough-fit cap per equation (None: none), structure to watch
         self.vocab, self.Zc, self.Xc = ctx["vocab"], ctx["Zc"], ctx["Xc"]
         self.y = ctx["G"][:, i]
         self.ctx = dict(ctx, y=self.y, i=i)
@@ -717,7 +719,8 @@ class EquationSearch:
         self.table, self.exact_sets, self.prune = {}, [], []
         self.eff = {"structures": 0, "starts": 0, "fit_seconds": 0.0, "prior_seconds": 0.0, "first_exact": None,
                     "tau": self.tau, "first_exact_seconds": None, "floor_rel": self.floor / self.yn, "precise": 0,
-                    "precise_seconds": 0.0, "pruned": 0, "seconds": 0.0, "stalls": 0}
+                    "precise_seconds": 0.0, "pruned": 0, "seconds": 0.0, "stalls": 0,
+                    "thorough": 0, "thorough_seconds": 0.0, "thorough_capped": 0, "thorough_best_rel": float("inf")}
         self._t = time.perf_counter()
         self.root = self.evaluate((), None)
         self.eff["seconds"] += time.perf_counter() - self._t
@@ -768,9 +771,16 @@ class EquationSearch:
         if S and self.si_tr is not None and gate and not superset:
             tp = time.perf_counter()                               # precise stage: thorough refit (unless the fit is
             try:                                                   # already at the floor), step integrals, held-back
-                if res > 2.0 * floor:
-                    terms, res, coefs = thorough_fit(self.fitter, vocab, S, Zc, Xc, y, warm, floor, (terms, res, coefs),
-                                                     eq=i, si_tr=self.si_tr, si_va=self.si_va)
+                if res > 2.0 * floor:                              # past the cap (if any), only a structure whose cheap
+                    if self.thorough_cap is None or eff["thorough"] < self.thorough_cap or \
+                            rel_rate < eff["thorough_best_rel"]:   # fit beats every thorough-fitted one gets a thorough fit
+                        eff["thorough"] += 1; eff["thorough_best_rel"] = min(eff["thorough_best_rel"], rel_rate)
+                        th = time.perf_counter()
+                        terms, res, coefs = thorough_fit(self.fitter, vocab, S, Zc, Xc, y, warm, floor, (terms, res, coefs),
+                                                         eq=i, si_tr=self.si_tr, si_va=self.si_va)
+                        eff["thorough_seconds"] += time.perf_counter() - th
+                    else:
+                        eff["thorough_capped"] += 1
                 terms2, rel_t, c2 = refine_integral(terms, self.si_tr, i)
                 if c2 is not None and math.isfinite(rel_t):
                     terms, coefs = terms2, c2
@@ -789,6 +799,9 @@ class EquationSearch:
                 "best": v - self.lam * len(S), "children": {}, "moves": None, "prior": None,
                 "exact": bool(rel_v <= self.tau and rel_t <= self.tau and not degen)}
         table[S] = node
+        if self.probe is not None and S == self.probe:            # the probed structure (e.g. the true one): when and
+            eff["probe_k"], eff["probe_exact"] = eff["structures"], node["exact"]   # whether it was recognized
+            eff["probe_rel_v"], eff["probe_res_over_floor"] = rel_v, res / floor
         if node["exact"]:
             self.exact_sets.append(set(S))
             nxt = [tuple(u for u in S if u != t) for t in S]      # one term smaller
@@ -937,7 +950,8 @@ def candidates_for(table, top=3):
 # a whole learning run
 # ---------------------------------------------------------------------------------------------------------------------
 
-def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("inf"), max_assemblies=6):
+def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("inf"), max_assemblies=6, thorough_cap=None,
+            probe=None):
     """Search each equation within `budget` fitted structures, assemble, fit exactly on the step-to-step map, check on
     held-back bursts, apply ties. Returns a result dict with the model, held-back error, acceptance and effort."""
     t0 = time.perf_counter()
@@ -969,7 +983,9 @@ def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("i
     searches = []
     for i in range(d):                                         # one random stream per equation: a smaller budget is
         rng = np.random.default_rng([seed, i])                 # exactly a prefix of a larger one
-        searches.append(EquationSearch(i, ctx, budget, prior_fn, fitter, rng, time_cap=time_cap / d).run())
+        pr = tuple(sorted(probe[i], key=str)) if probe is not None and i < len(probe) and probe[i] is not None else None
+        searches.append(EquationSearch(i, ctx, budget, prior_fn, fitter, rng, time_cap=time_cap / d,
+                                       thorough_cap=thorough_cap, probe=pr).run())
     best, assemblies, rounds, last_key = None, 0, 0, None
     ta, asm_seconds = None, 0.0
     while True:

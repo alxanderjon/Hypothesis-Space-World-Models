@@ -4251,3 +4251,42 @@ The fitter is given each true structure, which is evaluated exactly as the searc
 **Snapping:** 181 exponents were checked. The identifiability check allowed snapping 44 times, every one a direction the data could not pin down. The exactness test kept the snapped version 9 times.
 
 **Still hard:** equations with 3 or more pieces (U: 16%). Awaiting the owner's go-ahead before the search comparison.
+
+### Trial 30: owner approval of the search comparison; rules (4 November, logged before any run)
+
+**Owner.** *"Approved: do the timing check on the 6 development systems and the old-fitter consistency rerun, then the search comparison. Include the plain term-frequency control as a third arm. If you need to cap thorough fits per equation, log the cap before starting, apply it equally to all arms, and report how often it was hit. Check in with the results, side by side with Trial 29's old-fitter numbers, before proposing stage 2."*
+
+**Arms** (all three with fitter v2):
+- **baseline:** uniform priorities;
+- **untuned-history network:** Trial 29's network (`t29_net_u`), unchanged;
+- **frequency control:** priorities from a plain frequency table of term types, with no network. The table is counted over the same untuned history the network was trained on (50 shards, 2,714 equations, 72 term types), built the same way as in check (a).
+
+**Systems.**
+- Trial 29's two stage-1 test sets: (1u) "t29-test1" untuned, and (2u′) "t29-test2m" size-matched; 100 systems each.
+- M = 8, seed 1, 2,000 structures per equation, and a time cap of 3,600 s per system, all as in Trial 29.
+- CPU only (the network runs on CPU, as in Trial 29); at most 24 worker processes.
+
+**Instrumentation** (it changes nothing about what the search does):
+- per equation, the number and the time of thorough fits;
+- an optional per-equation cap on thorough fits, off unless logged here;
+- a watch on each equation's true structure: when it was fitted, and whether it was recognized.
+
+**Step 1: timing check.**
+- The 6 development systems ("t30-dev-u-k", k = 0–5), the three arms with v2 (18 runs).
+- From the mean time per system, predict the comparison's run time at 24 workers (600 runs).
+- If the prediction exceeds 8 hours, a cap C on thorough fits per equation is chosen from the timing check and logged here before the comparison.
+- **Cap rule (if used):** an equation's first C structures that need a thorough fit get one; after that, a structure gets one only if its cheap fit is better than that of every structure already thorough-fitted. The same C for all arms; how often the cap was hit is reported.
+
+**Step 2: old-fitter consistency rerun.**
+- Trial 29's runner, unchanged, with today's code and fitter v1: systems k = 0–3 of each test set, baseline and network arms (16 runs).
+- Compared with Trial 29's records on status, external exactness, held-back error, chosen structures, the structures fitted per equation, resume rounds and assemblies.
+- **Pass:** identical on all of these (runs stopped by the time cap are excepted and reported). If it fails, I stop and report before the comparison.
+
+**Step 3: the comparison** (600 runs). Reported per set and arm, next to Trial 29's v1 numbers on the same systems:
+- whole systems exactly recovered;
+- equations with a plausibly exact structure found;
+- equations whose true structure was recognized: chosen in the final model (comparable with Trial 29's records), and, for v2 only, fitted and recognized at any point of the search;
+- search effort: structures, fitting time per structure, thorough fits, time to first plausible structure, time per system, time-cap hits, and cap hits if a cap is used;
+- the prior's computing time, separately;
+- Trial 29's bar (b), applied to the network against the baseline with v2: at least +10 points, with an exact two-sided sign test at p < 0.05, on each set. The frequency control is compared with both.
+- Then a check-in before any proposal for stage 2.
