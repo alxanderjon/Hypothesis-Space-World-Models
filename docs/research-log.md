@@ -4077,3 +4077,26 @@ Fresh data: new reference recordings (seed 2), new bursts and a new held-back sp
 - Most of Trial 28's gain on real systems is therefore the generator's hand-set term frequencies, as the owner suspected. Reading the data adds about 2 systems, which is not significant on 27.
 - This is the motivation for Trial 29 (untuned history, learning from its own solved searches).
 - The held-out test request, which includes the frequency-table control, goes to the owner with the morning summary.
+
+### Trial 29 stage 1: history, network, term-frequency comparison and bar (a) (4 November, 07:48)
+
+- **History.** 1,000 accepted untuned systems (seeds t29-hist-0 … 999), from 12,723 rejected draws (acceptance 7%).
+- **Network.** Trained on **GPU 0** (0% utilization, 1 MiB used at the `nvidia-smi` check), in about 1 minute. Validation on held-out untuned history systems: top-5 hits 51.1% against 6.1% chance. Trial 28's hand-tuned network reached 82.5% on its own history: untuned systems are more varied and carry more nonlinear pieces.
+- **Term-frequency comparison** (share of all terms, by class):
+
+  | Class | Untuned history (Trial 29) | Hand-tuned history (Trial 28) | 27 practice systems (true equations) |
+  |---|---|---|---|
+  | products of variables | 10% | 57% | 69% |
+  | single-variable switches | 16% | 32% | 16% |
+  | weighted-sum switches | 19% | 4% | 1% |
+  | products of switches | 17% | 3% | 0% |
+  | other functions (exp, tanh, sin, \|·\|, power) | 37% | 5% | 1% |
+  | outside the toolkit | 0% | 0% | 12% |
+  | terms per equation | 2.91 | 2.76 | 3.84 |
+
+  The hand-tuned history resembles the practice systems; the untuned history does not.
+- **Bar (a), ranking** (top 5 of all legal moves):
+  - set (1u), 100 systems and 768 states: network 44.1% against 6.6% chance (6.7×); data-only priorities 28.0% (reference);
+  - set (2u′), 100 systems and 842 states: network 36.0% against 7.0% chance (5.1×); data-only 30.6%.
+  - **Met on both sets.**
+- **Bar (b)**, the search at 2,000 structures per equation on both sets (400 runs), is running.
