@@ -4336,3 +4336,24 @@ The fitter is given each true structure, which is evaluated exactly as the searc
 1. Restate the consistency criterion at the outcome level, which the rerun met: whole systems 16 of 16, equation-level 15 of 16.
 2. Rerun Trial 29's two old-fitter arms in the same batch, so old and new fitters are compared under the same conditions. Trial 29's original numbers are reported alongside.
 3. Cap C = 200 thorough fits per equation for every arm in the batch.
+
+### Trial 30: owner decision on steps 1–2, and the comparison's final rules (4 November, 18:40, logged before the comparison starts)
+
+**Owner.** *"Go ahead: judge consistency on outcomes and treat small differences as noise. Use a cap of 200 thorough fits per equation for every arm, and include the same-batch rerun of Trial 29's old-fitter arms under the same cap. Report Trial 29's original numbers alongside. Have the results and a plain-language summary when done."*
+
+**Consistency.** Judged on outcomes, which the rerun met: whole systems 16 of 16, and equations with a plausibly exact structure 15 of 16. Differences of an equation or two, or rarely a system, are treated as run-to-run noise.
+
+**The comparison:** one batch of 1,000 runs on 24 CPU workers at nice 10, with no GPU.
+- **Arms:**
+  - fitter v2 with the baseline, the untuned-history network and the frequency control;
+  - fitter v1 with the baseline and the network: the same-batch rerun of Trial 29's arms.
+- **Every arm:**
+  - a cap of C = 200 thorough fits per equation; after the first 200, a structure gets a thorough fit only if its cheap fit beats that of every structure already thorough-fitted;
+  - M = 8, seed 1, 2,000 structures per equation and 3,600 s per system, as in Trial 29.
+  - The cap's mechanism was checked on a development system before launch (with C = 2: 4 and 6 thorough fits, 22 refused).
+- **Systems:** Trial 29's sets (1u) and (2u′), k = 0–99 each, interleaved by system so that partial results stay balanced across arms.
+- **Reported per set,** next to Trial 29's original numbers (v1, no cap):
+  - the measures logged in the rules above;
+  - how often the cap was hit: equations where it bound, and structures refused a thorough fit;
+  - the same-batch v1 against Trial 29's original, which shows noise plus what the cap costs v1.
+- **Predicted run time:** about 9 hours.
