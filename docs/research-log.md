@@ -3947,3 +3947,24 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
 1. **History helps on real practice systems** in the same direction at every data size and budget, and the with-history learner is the best learner so far on the practice half at every M. The counts are small, though: 27 systems, of which only 17 are expressible.
 2. **Most of the practice gain is reproduced by the scrambled-history network** (6 against 7). That network keeps the history's knowledge of which kinds of terms are common, but not the link to each state's data. So most of the benefit on real systems comes from a learned prior over structures, from synthetic systems built to resemble biochemistry. Reading each state's data adds about one system here, more equations reaching a plausibly exact structure (56 against 46), and faster discovery (median structure 60 against 136). On synthetic systems it adds about 7 points of ranking.
 3. **The history-size curve rises from 0 through 100 to 300 systems, then is flat** from 1,000 to 8,000, in both ranking and practice recoveries. "Better with more systems learned" holds only up to a few hundred synthetic systems in this setup.
+
+### Trial 28: owner decision (c), with two additions; plan for the fresh-seed confirmation (4 November, logged before any run)
+
+**Owner.**
+- Do (a), then (b).
+- **Addition 1.** In (a), add a control: the baseline search with priorities from a plain frequency table of term types in the synthetic generator, with no network. Compare it with the scrambled-history network and the full network on the fresh seeds, and include it in the held-out test request.
+- **Addition 2, for (b).** The history's term frequencies were set by hand to resemble biochemistry, so part of the gain may be our design choices rather than learning. Propose a history that is not tuned toward the test systems, and add learning from the learner's own solved searches (AlphaGo's second stage), so that it improves from systems it has actually learned. Send the (b) proposal in plain language before running it.
+
+**(a) Fresh-seed confirmation (fixed now):**
+- **Systems.** The 27 practice systems at M = 8 and 2,000 structures per equation (the headline), on fresh data:
+  - new reference recordings (reference seed 2, new starting states);
+  - new bursts (burst seed 2);
+  - a new held-back split and search randomness (learner seed 2).
+  Nothing from the seed-1 runs is reused.
+- **Arms.**
+  1. Baseline: uniform priorities.
+  2. **Frequency-table control.** For every vocabulary term and equation i, the priority comes from how often a term of the same type (family; relation to the equation's own variable; multiplier; degree) appears in the true structures of the training-history systems. This uses the same type description the network sees, with no network and no data. It is mixed by move type exactly like every other prior: add a term ∝ its type's frequency; remove a term ∝ 1 − frequency; swap = both.
+  3. The scrambled-history network.
+  4. The full network (7,982 systems).
+- **Report.** Exact recoveries (all / expressible), and paired sign tests for full against baseline, full against frequency table, full against scrambled, and frequency table against baseline. Effort and network time are reported separately.
+- **Then.** The held-out test request is sent to the owner with full rules, including the frequency-table control. Nothing held out is touched before approval.
