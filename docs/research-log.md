@@ -4221,7 +4221,7 @@ Fresh data: new reference recordings (seed 2), new bursts and a new held-back sp
 
 ### Trial 30: known-structure fitter test: pass bar MET (4 November, 16:10)
 
-The fitter is given each true structure, which is evaluated exactly as the search evaluates a structure. M = 8, seed 1. Sets: 60 untuned (U) and 60 hand-tuned (T) synthetic systems, and the practice known structures (P; 12 systems, 1 skipped for centred coordinates). 372 equations in all.
+The fitter is given each true structure, which is evaluated exactly as the search evaluates a structure. M = 8, seed 1. Sets: 60 untuned (U) and 60 hand-tuned (T) synthetic systems, and the practice known structures (P: 13 systems, 1 skipped for centred coordinates, 12 evaluated). 372 equations in all.
 
 | Set, pieces | Equations | v1 recognized | v2 recognized |
 |---|---|---|---|
@@ -4241,7 +4241,7 @@ The fitter is given each true structure, which is evaluated exactly as the searc
 1. Synthetic equations with 2+ pieces: v1 36 of 186, v2 87 of 186 (+27 points, 2.4×). **Met.**
 2. 1-piece synthetic equations: 91% against 94%. **Met.**
 3. Practice known structures: 24 against 25 of 30. **Met.**
-4. Ordinary fit median 0.030 s against 0.037 s (1.25×); v2's evaluation median 0.07 s where the precise stage ran. **Met.**
+4. Ordinary fit median 0.030 s against 0.037 s (1.25×). The thorough fit, run on 150 equations, has a median of 0.92 s per call (90th percentile 1.73 s, maximum 3.5 s); the report script's 0.07 s figure was the median whole evaluation over the 350 equations that reached the precise stage, most of which needed no thorough fit. **Met.**
 
 **Stages of v2 over all equations:**
 - the algebraic start improved the cheap fit 152 times (of 342 tries);
