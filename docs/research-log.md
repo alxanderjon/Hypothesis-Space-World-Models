@@ -4357,3 +4357,33 @@ The fitter is given each true structure, which is evaluated exactly as the searc
   - how often the cap was hit: equations where it bound, and structures refused a thorough fit;
   - the same-batch v1 against Trial 29's original, which shows noise plus what the cap costs v1.
 - **Predicted run time:** about 9 hours.
+
+### Owner request: log every thorough fit for future learned components (4 November, 19:20; proposal, nothing changed yet)
+
+**Owner.** *"For future runs (don't change the one in progress): save every thorough fit's inputs and outcomes (the data, the structure, the starting values, the final constants, whether it was exact, and the time taken) in a compact form. These are training data for a later learned starting-value network and a learned screen for which candidates deserve a thorough fit… Don't edit any file the running comparison uses; make the changes on a separate branch or copy until it finishes. For now, just tell me how much disk space this would need and how you'd implement it."*
+
+**Sizes measured** (3 development systems; thorough-fit counts from the 55 comparison runs finished so far, counts only):
+- **A system's data:** the raw bursts, 8 × 13 × d values, 1.6–3.2 KB in float64. Everything the fitters use (rates, step integrals, dense rates) is rebuilt deterministically from them.
+- **One structure:** 1–5 terms, 1–5 hard constants and 1–5 coefficients.
+- **Thorough fits per run** (cap 200): v2 about 440 (plus about 1,480 refused by the cap); v1 about 66.
+
+**Estimated disk use:**
+- **Per thorough fit:** about 0.25 KB for the structure, the starting and final constants, the scores, the flags and the time; about 1.2 KB if every internal start of v2's thorough fit is kept.
+- **Per v2 run:** 0.1–0.5 MB, plus up to 0.2 MB for optional short rows on structures refused by the cap.
+- **Per 1,000-run batch** like the current comparison: about **0.1–0.5 GB**, and up to about 1.5 GB without the cap. That is well inside the 20 GB footprint limit; 23 GB is free.
+
+**Proposed implementation** (awaiting the owner):
+- On a separate branch in its own git worktree, off by default, tested on development systems only, and merged after the comparison finishes.
+- **The recorder:** a small module (`fitlog.py`). The search hands each thorough fit to it, and it writes one compressed file per run in the history-shard layout. The file holds the bursts once, then one row per thorough fit:
+  - the structure;
+  - the warm start and the cheap fit's constants and residual;
+  - the gate and cap status;
+  - for v2, each internal start (sweep, algebraic, global, beam) and its polished residual, plus the snapping decisions;
+  - the constants after the thorough fit and after the step-integral refit;
+  - the residuals, the held-back error, the degenerate and plausibly-exact flags, and the times.
+- **Checks:**
+  - logging changes no outcome;
+  - reloaded rows reproduce their fits from the stored data and starts;
+  - the overhead and the file sizes are as estimated.
+- **Test-data hygiene:** each file is tagged with its set. The loader refuses test and reserve sets for training by default; fits logged on test systems may only be used to evaluate learned components.
+- **Option:** shadow thorough fits on a small random sample of the structures the gate or the cap turned away. They would be logged but not used by the search, with their own random stream. Without them, the learned screen only ever sees candidates the current gate let through. They are off in headline comparisons, because their time interacts with the 3,600 s cap.
