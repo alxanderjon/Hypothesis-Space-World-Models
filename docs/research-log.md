@@ -3910,3 +3910,40 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
 - **History-size curve, extension (decided now, from the synthetic validation numbers only, before any control result on practice systems).**
   - The planned sizes (1,000–8,000) all sit on a plateau (81–82.5%), so networks on the first 100 and 300 history systems are added, with the same recipe.
   - They are labelled as an extension in the results.
+
+### Trial 28 step 3: practice results (4 November, 05:36; 27 practice systems, no held-out system touched)
+
+**With-history learner (network on 7,982 synthetic systems) against the baseline (uniform priorities):** exact recoveries on held-out starting states, with every recovered system expressible except 909, at M = 16 and 5,000.
+
+| Budget | M = 4 | M = 8 | M = 16 |
+|---|---|---|---|
+| 2,000 (headline) | 3 vs 2 (+3 / −2, p = 1) | 7 vs 3 (+4 / −0, p = 0.13) | 11 vs 5 (+6 / −0, p = 0.031) |
+| 5,000 | 5 vs 2 (+4 / −1, p = 0.38) | 8 vs 5 (+3 / −0, p = 0.25) | 12 vs 7 (+5 / −0, p = 0.063) |
+| Trial 27 learner (reference) | 2 | 4 | 8 |
+
+- **Direction.**
+  - Across the six cells, 25 system recoveries were gained against 3 lost (458 and 728 at M = 4 and 2,000, and 458 at M = 4 and 5,000; 728 is recovered at 5,000).
+  - With 27 systems, only M = 16 at 2,000 is individually significant.
+  - The with-history learner beats the Trial 27 learner at every M, in both budgets.
+- **Systems** (M = 8, 2,000): with history gets 115, 685, 728, 753, 866, 919 and 1047; the baseline gets 728, 753 and 866; the Trial 27 learner gets 685, 728, 753 and 909 (909 is not expressible).
+- **Effort.**
+  - Time per system, median, with history against baseline: 444 against 453 s (M = 4), 277 against 412 s (M = 8), and 147 against 414 s (M = 16) at 2,000.
+  - Network inference is 4–7% of run time.
+
+**Controls at M = 8 and 2,000:**
+
+| Network | Exact (all / expressible) | Against baseline | Equations with a plausibly exact structure (median structure first found) | Ranking on synthetic set (1), top 5 |
+|---|---|---|---|---|
+| none (baseline) | 3 / 3 | – | 36/80 (168) | 5.2% (chance) |
+| scrambled history | 6 / 6 | +3 / −0 | 46/80 (136) | 73.3% |
+| 100 systems (extension) | 4 / 4 | +2 / −1 | 51/80 (97) | 76.5% |
+| 300 systems (extension) | 8 / 8 | +5 / −0 (p = 0.063) | 57/80 (47) | 78.7% |
+| 1,000 systems | 7 / 7 | +4 / −0 | 53/80 (48) | 80.3% |
+| 2,000 systems | 7 / 7 | +4 / −0 | 55/80 (48) | 80.7% |
+| 4,000 systems | 7 / 7 | +4 / −0 | 53/80 (36) | 80.5% |
+| 8,000 systems (main) | 7 / 7 | +4 / −0 | 56/80 (60) | 80.6% |
+
+**Reading.**
+1. **History helps on real practice systems** in the same direction at every data size and budget, and the with-history learner is the best learner so far on the practice half at every M. The counts are small, though: 27 systems, of which only 17 are expressible.
+2. **Most of the practice gain is reproduced by the scrambled-history network** (6 against 7). That network keeps the history's knowledge of which kinds of terms are common, but not the link to each state's data. So most of the benefit on real systems comes from a learned prior over structures, from synthetic systems built to resemble biochemistry. Reading each state's data adds about one system here, more equations reaching a plausibly exact structure (56 against 46), and faster discovery (median structure 60 against 136). On synthetic systems it adds about 7 points of ranking.
+3. **The history-size curve rises from 0 through 100 to 300 systems, then is flat** from 1,000 to 8,000, in both ranking and practice recoveries. "Better with more systems learned" holds only up to a few hundred synthetic systems in this setup.
