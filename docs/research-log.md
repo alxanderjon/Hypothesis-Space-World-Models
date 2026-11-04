@@ -4290,3 +4290,49 @@ The fitter is given each true structure, which is evaluated exactly as the searc
 - the prior's computing time, separately;
 - Trial 29's bar (b), applied to the network against the baseline with v2: at least +10 points, with an exact two-sided sign test at p < 0.05, on each set. The frequency control is compared with both.
 - Then a check-in before any proposal for stage 2.
+
+### Trial 30 steps 1–2: timing check and old-fitter consistency rerun (4 November, 18:05). Consistency criterion not met; stopped before the comparison, as logged
+
+**Step 2: old-fitter consistency rerun** (16 runs: systems k = 0–3 of each test set, baseline and network arms, Trial 29's runner unchanged, fitter v1).
+- **Against Trial 29's records:** identical on every compared field in 9 of 16 runs. The logged criterion (identical on all fields) is **not met**; no run was stopped by the time cap.
+- **Where the 7 differ:**
+  - the inexact structures chosen for a failed final model, and that model's held-back error, in 6;
+  - when the chosen structures were first fitted, in 7;
+  - slightly different search paths (structures fitted, first plausible find, pruning, precise-stage count), in 4.
+- **Outcomes:**
+  - status (accepted or rejected) and whole-system exactness: identical in 16 of 16;
+  - which equations found a plausibly exact structure: identical in 15 of 16. In one network-arm run, the rerun found a plausibly exact structure for one equation (at structure 762) where Trial 29 found none.
+- **Diagnosis** (counts only; test systems from the rerun itself):
+  - **No code change on the old fitter's path.** Since Trial 29, the only changes there are the Trial 30 dispatch hooks, which v1 does not use, and bookkeeping. No module the search imports was modified after Trial 29 ran.
+  - **Run-to-run noise.** The 5 runs that differed among the first 14 were rerun once more with the same settings:
+    - 1 of 5 matched the first rerun;
+    - 3 of 5 matched Trial 29 exactly;
+    - whole-system exactness was unchanged in all.
+  - **Python's hash seed:** on the one system tested, it made no difference (seeds 0, 0 and 1 gave identical results, equal to Trial 29). The two unpinned reruns of that system differed from each other only in the failed model's chosen structures, with the same search.
+  - **Likely cause** (not proven): floating-point results that vary between processes in the math library torch uses (MKL, single-threaded), so near-ties among inexact fits break differently.
+  - **Consequence:** Trial 29's numbers are a fair reference in distribution. Differences of an equation or two, and rarely a system, are within run-to-run noise.
+
+**Step 1: timing check** (6 development systems, three arms, fitter v2, no cap; no errors):
+
+| Arm | Time per system, mean (median) | Equations stopped by the time cap | Thorough fits per equation, median | Thorough share of search time | Ordinary fit per structure |
+|---|---|---|---|---|---|
+| baseline | 2,125 s (2,020 s) | 4 of 15 | 559 | 84% | 86 ms |
+| network | 2,534 s (2,315 s) | 7 of 15 | 532 | 82% | 119 ms |
+| frequency | 2,316 s (2,142 s) | 4 of 15 | 569 | 80% | 113 ms |
+
+- **For comparison**, Trial 29's old-fitter medians were 205 s (baseline) and 302 s (network) per system. In the 16 old-fitter reruns, the median equation had no thorough fit; 7 of 40 equations had more than 200, and thorough fits took 28% of search time.
+- **The cost:** in the search, v2's precise gate admits about 45% of structures, each with a thorough fit of about 1 s.
+- **Predicted run time for the comparison** (600 runs at 24 workers) with no cap: **16.1 h**, and 15 of 45 equation searches would stop at the time cap before 2,000 structures. With a cap C on thorough fits per equation (logged rule):
+
+  | C | Predicted time | Equations over the cap | First plausibly exact finds after more than C thorough fits (upper bound on what the cap can cost) |
+  |---|---|---|---|
+  | 100 | 5.7 h | 42 of 45 | 6 of 18 |
+  | 200 | 7.6 h | 38 of 45 | 4 of 18 |
+  | 400 | 10.7 h | 30 of 45 | 1 of 18 |
+
+- **Development systems only, too few to judge:** whole systems exact: baseline 1, network 0, frequency 1 of 6. Equations with a plausibly exact structure: 6 of 15 in each arm.
+
+**Stopped before the comparison, as logged. Proposal to the owner:**
+1. Restate the consistency criterion at the outcome level, which the rerun met: whole systems 16 of 16, equation-level 15 of 16.
+2. Rerun Trial 29's two old-fitter arms in the same batch, so old and new fitters are compared under the same conditions. Trial 29's original numbers are reported alongside.
+3. Cap C = 200 thorough fits per equation for every arm in the batch.
