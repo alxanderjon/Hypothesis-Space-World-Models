@@ -3860,3 +3860,14 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
 - Bar (b) is met on sets (1) and (2′).
 - The original set (2) failed as designed, from the size confound, and is kept in this log as such.
 - The diagnostic of the original set (2) at 5,000 structures per equation (both learners, not counting toward the bar) is running. The owner check-in follows when it finishes, before step 3.
+
+### Trial 28 step 2: diagnostic: the original set (2) at 5,000 structures per equation (4 November, 01:42; not part of the bar)
+
+- **Result** (both learners, the same 150 original set-(2) systems): baseline 3 exact (2.0%), with-history learner 6 (4.0%), +2.0 points. Discordant 3 against 0; sign test p = 0.25. At 2,000 the figures were 1 and 3.
+- **The oversized held-out equations** (4.9 terms, 3.2 pieces) remain mostly unsolved: a plausibly exact structure in 37 of 150 with history (first at median structure 977) and 28 of 150 for the baseline (1,151). At 2,000 the figures were 22 and 18.
+- **The ordinary equations of the same systems:** 237 of 287 with history (first at median 34) against 164 of 287 (317).
+- **Effort:** time per system, median 1,313 s with history against 1,725 s for the baseline; network inference median 33 s (3.1% of run time).
+- **Reading.**
+  - Two and a half times the budget barely changes whole-system recovery on the original set (2), and every system there contains an equation of about five terms with three pieces.
+  - Set (2′), which places the same held-out combinations in equations of training size, gives +12 points at 2,000.
+  - So the original set (2)'s failure comes from equation size, a limit of the search and fitting on large multi-piece equations for both learners, rather than from novelty of combination.
