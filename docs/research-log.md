@@ -4100,3 +4100,21 @@ Fresh data: new reference recordings (seed 2), new bursts and a new held-back sp
   - set (2u′), 100 systems and 842 states: network 36.0% against 7.0% chance (5.1×); data-only 30.6%.
   - **Met on both sets.**
 - **Bar (b)**, the search at 2,000 structures per equation on both sets (400 runs), is running.
+- **Bar (b), search** (2,000 structures per equation, M = 8; 09:28):
+
+  | Set | Baseline exact | Untuned-history network exact | Difference | Sign test | Bar (b) |
+  |---|---|---|---|---|---|
+  | (1u) | 10 of 100 | 11 of 100 | +1 point | p = 1.0 | not met |
+  | (2u′) | 2 of 100 | 3 of 100 | +1 point | p = 1.0 | not met |
+
+- **Stage 1 bar not met. The pipeline stopped before stage 2, as instructed; stage 2 was not run.**
+- **Why (diagnostics).**
+  - Untuned equations are dominated by nonlinear pieces: 2.5 per equation on average, against 1.2 in the hand-tuned history.
+  - Per equation, the network finds a plausibly exact structure somewhat more often (set (1u): 111 against 97 of 278) and much sooner (median structure 32 against 140; set (2u′): 17 against 112).
+  - Most piece-heavy equations stay unsolved by both learners within the budget, so whole systems rarely complete. The network's ranking skill shows as speed, not as more systems recovered.
+  - No false acceptances in either learner.
+- **Effort.** Time per system, median 302 s with the network against 205 s for the baseline; network inference 7% of run time. Training took about 1 minute on GPU 0.
+- **Reading.**
+  - With an untuned history, what the network learns (bar a: 36–44% top-5 against 7% chance) does not turn into more exactly recovered systems at the headline budget.
+  - Together with (a), where a plain frequency table explains most of Trial 28's practice gain, the evidence so far is that history helps mainly through the term frequencies we put into it.
+  - The binding limit on harder systems is the search and fitting of equations with several nonlinear pieces, for every learner.
