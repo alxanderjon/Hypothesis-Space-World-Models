@@ -171,3 +171,57 @@ def rank_hit(scores, inS, add, k=5):
     hit = bool(correct[top].any())
     chance = (1.0 - math.comb(N - c, k) / math.comb(N, k)) if N >= k else float(c > 0)
     return hit, chance
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# control: priorities from a plain frequency table of term types (no network, no data)
+# ---------------------------------------------------------------------------------------------------------------------
+
+def type_key(tok, i, d):
+    """A term's type for equation i: its family and its relation features (the same description the network sees)."""
+    fam, st = HI.static_features(tok, i, d)
+    return f"{fam}|" + ",".join(f"{v:.4f}" for v in st)
+
+
+def frequency_table(shard_paths):
+    """P(term in the true structure | its type), counted over the equations of the training history (each equation
+    once; true structure = additions plus kept terms of any of its states), with add-half smoothing."""
+    n_tok, n_true, seen = {}, {}, set()
+    for p in shard_paths:
+        z = np.load(p)
+        offs, fam, F, add, rem, meta = z["offs"], z["fam"], z["F"], z["add"], z["rem"], z["meta"]
+        for e in range(len(offs) - 1):
+            k, eq = int(meta[e][0]), int(meta[e][1])
+            if (k, eq) in seen:
+                continue
+            seen.add((k, eq))
+            a, b = offs[e], offs[e + 1]
+            inS = F[a:b, HI.N_STATIC + HI.CODE_DIM].astype(np.float32) > 0.5
+            true = add[a:b] | (inS & ~rem[a:b])
+            st = F[a:b, :HI.N_STATIC].astype(np.float32)
+            for j in range(b - a):
+                key = f"{int(fam[a + j])}|" + ",".join(f"{v:.4f}" for v in st[j])
+                n_tok[key] = n_tok.get(key, 0) + 1
+                n_true[key] = n_true.get(key, 0) + int(true[j])
+    return {key: (n_true[key] + 0.5) / (n_tok[key] + 1.0) for key in n_tok}, len(seen)
+
+
+class FrequencyPrior:
+    """Prior function for structure_search from a frequency table of term types: add t with logit log f(t), remove s
+    with log(1 - f(s)), swap with both, mixed by move type as every prior. Unseen types get the smallest frequency."""
+
+    def __init__(self, table):
+        self.table = table
+        self.floor = min(table.values())
+        self.seconds, self.calls = 0.0, 0
+
+    def __call__(self, node, ctx):
+        t0 = time.perf_counter()
+        vocab, i = ctx["vocab"], ctx["i"]
+        f = np.array([self.table.get(type_key(t, i, vocab.d), self.floor) for t in vocab.tokens])
+        scores = np.stack([np.log(f), np.log1p(-np.minimum(f, 1 - 1e-9))], 1)
+        moves, logit = move_logits(vocab.tokens, node["toks"], scores)
+        P = SS._mix(logit)
+        self.seconds += time.perf_counter() - t0
+        self.calls += 1
+        return moves, P

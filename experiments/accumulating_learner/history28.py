@@ -227,3 +227,45 @@ def load_shards(paths):
             out.append({"fam": fam[a:b].astype(np.int64), "F": F[a:b].astype(np.float32), "add": add[a:b],
                         "rem": rem[a:b], "meta": tuple(int(v) for v in meta[e])})
     return out
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Trial 29 stage 2: lessons from the learner's own solved searches (hindsight labels from the structure it found)
+# ---------------------------------------------------------------------------------------------------------------------
+
+def examples_from(bursts, M, found, rng, n_sub=2, n_wrong=1, n_over=1):
+    """Training examples like examples_for, labelled relative to `found` (one token set per equation: the structure the
+    learner's own search found and verified), not a known true structure."""
+    ctx = Context(bursts, M)
+    codes = random_codes(rng, ctx.d)
+    out = []
+    for i in range(ctx.d):
+        T = set(found[i]) if i < len(found) else set()
+        if not T or any(t not in ctx.vocab.index for t in T):
+            continue
+        y = ctx.G[:, i]
+        floor, _ = ctx.floor(i)
+        for S in states_for(rng, sorted(T, key=str), ctx.vocab.tokens, n_sub=n_sub, n_wrong=n_wrong, n_over=n_over):
+            terms, res, coefs, _ = ctx.fitter.fit(ctx.vocab, S, ctx.Zc, ctx.Xc, y, {}, floor=floor)
+            fam, F = features(ctx, i, S, terms, res, codes)
+            add = np.array([t in T and t not in S for t in ctx.vocab.tokens])
+            rem = np.array([t in S and t not in T for t in ctx.vocab.tokens])
+            out.append({"eq": i, "toks": S, "fam": fam, "F": F, "add": add, "rem": rem})
+    return out
+
+
+def write_shard(items, path):
+    """items: list of (system id, list of examples, d, M) -> one compressed shard in the history format."""
+    rows_F, rows_fam, rows_add, rows_rem, offs, meta = [], [], [], [], [0], []
+    for k, exs, d, M in items:
+        for ex in exs:
+            rows_F.append(ex["F"].astype(np.float16)); rows_fam.append(ex["fam"].astype(np.int8))
+            rows_add.append(ex["add"]); rows_rem.append(ex["rem"])
+            offs.append(offs[-1] + len(ex["fam"]))
+            meta.append((k, ex["eq"], d, M, len(ex["toks"])))
+    np.savez_compressed(path, F=np.concatenate(rows_F) if rows_F else np.zeros((0, N_FEAT), np.float16),
+                        fam=np.concatenate(rows_fam) if rows_fam else np.zeros(0, np.int8),
+                        add=np.concatenate(rows_add) if rows_add else np.zeros(0, bool),
+                        rem=np.concatenate(rows_rem) if rows_rem else np.zeros(0, bool),
+                        offs=np.asarray(offs, dtype=np.int64), meta=np.asarray(meta, dtype=np.int32))
+    return sum(len(e) for _, e, _, _ in items)
