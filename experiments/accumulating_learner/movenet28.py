@@ -46,6 +46,7 @@ def loss_fn(logits, inS, add, rem, pad):
     lr = logits[..., 1].masked_fill(~inS | pad, big)
     lsa = torch.log_softmax(la, -1)
     lsr = torch.log_softmax(lr, -1)
+    add, rem = add & ~inS & ~pad, rem & inS & ~pad             # only possible targets (matters for scrambled labels)
     has_a, has_r = add.any(-1), rem.any(-1)
     pa = torch.logsumexp(lsa.masked_fill(~add, big), -1)
     pr = torch.logsumexp(lsr.masked_fill(~rem, big), -1)
