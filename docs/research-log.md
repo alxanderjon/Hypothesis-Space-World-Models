@@ -3871,3 +3871,23 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
   - Two and a half times the budget barely changes whole-system recovery on the original set (2), and every system there contains an equation of about five terms with three pieces.
   - Set (2′), which places the same held-out combinations in equations of training size, gives +12 points at 2,000.
   - So the original set (2)'s failure comes from equation size, a limit of the search and fitting on large multi-piece equations for both learners, rather than from novelty of combination.
+
+### Trial 28 step 3: owner approval and plan (4 November, logged before any step-3 run)
+
+**Owner.**
+- Step 3 is approved as outlined. Check in with the practice results, including the scrambled-history control and the history-size curve, before requesting any held-out test.
+- **GPU rule:** if all GPUs are busy, I may share 1–2 GPUs that have enough free memory and are not fully utilized, alongside the other user's jobs. I must never stop, pause or interfere with anyone else's processes, must check `nvidia-smi` before each launch, and must log which GPU was used.
+
+**Plan (fixed now):**
+- **Systems.** The 27 practice systems (development half) only, reported on all 27 and on the 17 the toolkit can express. No evaluation-half, fresh-pool or reserve system is touched.
+- **Main comparison.**
+  - With-history learner: the network trained on 7,982 synthetic systems, exactly as evaluated in step 2. Baseline: uniform priorities.
+  - M = 4, 8 and 16; 2,000 structures per equation (headline) and 5,000 (secondary); one-hour cap per system.
+  - The baseline at 5,000 reuses the step-1 runs (commit a832524). The only later changes to `structure_search.py` add the equation index to the search context and the network's featurizer and timing, none of which touches the uniform path. The baseline at 2,000 is run fresh.
+  - Paired comparison per M and budget: exact recoveries, difference, exact two-sided sign test. Network time is reported separately.
+- **Scrambled-history control.** The same network and recipe, trained on the same synthetic states with the labels permuted among examples of the same vocabulary size (seeded), which destroys the link between what the network sees and what it should do. It is run on the practice systems at M = 8 and 2,000.
+- **History-size curve.**
+  - Networks trained on the first 1,000, 2,000 and 4,000 history systems (seed index below N; 8,000 is the main network), with the same recipe and the same validation systems.
+  - Each is run on the practice systems at M = 8 and 2,000, and ranked on synthetic test set (1) (the bar-(a) measure).
+  - The question is whether exact recoveries and ranking improve as the history grows.
+- **Training recipe for every variant.** 12 epochs, the same optimizer and schedule, the last epoch kept: the step-2 network's best epoch was its last, and keeping the last epoch avoids choosing the scrambled control's epoch by true labels. Training device, GPU index and time are logged.
