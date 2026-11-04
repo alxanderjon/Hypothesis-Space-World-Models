@@ -3891,3 +3891,22 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
   - Each is run on the practice systems at M = 8 and 2,000, and ranked on synthetic test set (1) (the bar-(a) measure).
   - The question is whether exact recoveries and ranking improve as the history grows.
 - **Training recipe for every variant.** 12 epochs, the same optimizer and schedule, the last epoch kept: the step-2 network's best epoch was its last, and keeping the last epoch avoids choosing the scrambled control's epoch by true labels. Training device, GPU index and time are logged.
+- **Control networks trained (4 November, 02:35).** All keep the last of 12 epochs. Validation is on held-out history systems with true labels:
+
+  | Network | GPU | Training time | Validation top-5 hits |
+  |---|---|---|---|
+  | scrambled history | GPU 0 | 528 s | 71.3% |
+  | 1,000 systems | GPU 1 | 83 s | 81.0% |
+  | 2,000 systems | GPU 1 | 159 s | 81.9% |
+  | 4,000 systems | GPU 1 | 276 s | 82.0% |
+  | 8,000 (main, step 2) | CPU | 5,389 s | 82.5% |
+
+  The GPUs were free: 0% utilization, checked with `nvidia-smi` before each launch.
+- **Scrambled history, interpretation.**
+  - Moving labels among examples of the same vocabulary size removes the link to each state's data.
+  - It keeps how often each vocabulary token is a correct move across the history, for example own-variable decay terms. The control therefore retains this population knowledge (71% on validation).
+  - On the practice systems it separates two things: the gain from knowing which terms are common, and the gain from reading each state's data, which is the full network minus the scrambled one.
+  - The first launch reported an infinite training loss: moved labels can name impossible moves, such as adding a term already present. The loss now counts only possible targets; this is unchanged for real labels. The control was rerun from scratch.
+- **History-size curve, extension (decided now, from the synthetic validation numbers only, before any control result on practice systems).**
+  - The planned sizes (1,000–8,000) all sit on a plateau (81–82.5%), so networks on the first 100 and 300 history systems are added, with the same recipe.
+  - They are labelled as an extension in the results.
