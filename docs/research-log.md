@@ -3968,3 +3968,31 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
   4. The full network (7,982 systems).
 - **Report.** Exact recoveries (all / expressible), and paired sign tests for full against baseline, full against frequency table, full against scrambled, and frequency table against baseline. Effort and network time are reported separately.
 - **Then.** The held-out test request is sent to the owner with full rules, including the frequency-table control. Nothing held out is touched before approval.
+
+### Trial 29 proposal (option b): an untuned history plus learning from its own solved searches (4 November; awaiting owner approval)
+
+**Why.** Trial 28's synthetic term frequencies were set by hand to resemble biochemistry, so part of the gain on real systems may be a design choice rather than learning. The frequency-table control (running in (a)) measures how much a plain table of those frequencies explains on its own.
+
+1. **Stage 1, untuned history.**
+   - The same building blocks with no hand-set preferences: every term type equally likely, 1–5 terms per equation drawn evenly, wide constant ranges, random signs, and no built-in decay term.
+   - Only the checks needed for usable data remain: finite, bounded, cheap to simulate, moving, no degenerate pieces, and positive states (required by the toolkit's Hill-type and power pieces). Any remaining preference comes from which random systems survive those checks.
+   - The resulting term-type frequencies are reported next to the practice systems' frequencies.
+   - The same network is trained on it, as in step 2.
+   - A go/no-go bar on new untuned synthetic systems, the same as step 2's, is written into the log before training.
+2. **Stage 2, learning from its own solved searches** (AlphaGo's second stage).
+   - The learner works on systems without being told their answers.
+   - When its search finds a model that passes its own held-back check with a margin (val ≤ 10⁻¹³, three times tighter than acceptance), the search path and the structure found become new lessons. The network is retrained on them together with stage 1's data, in about 3 rounds.
+   - **Sources:**
+     - (i) new untuned synthetic systems, whose answers are never used;
+     - (ii) the practice systems in two halves: it learns from what it solves in one half and is tested on the other, then the halves swap.
+   - Only the learner's own verified solutions are used, never true structures or external test results.
+   - Wrong lessons (false acceptances) are counted afterwards against the external test, but not used.
+3. **Measured.**
+   - The accumulation curve: exact recoveries on the held-apart practice half (M = 8, 2,000 structures per equation, all / expressible) after each round, against the number of systems solved and learned from.
+   - The step-2 ranking and search measures on new untuned synthetic systems.
+   - **Comparisons** at the same budget: uniform baseline; the untuned frequency table; the stage-1-only network; the Trial 28 hand-tuned network.
+   - **Controls:**
+     - stage 2 with its lessons scrambled (the same amount of retraining, no real lesson);
+     - stage 2 learning from synthetic solutions only, which separates learning from solved real systems from more synthetic practice.
+4. **Decision points.** Stop and report if stage 1 fails its bar. Check in with the curves after stage 2, before any held-out test.
+5. **Cost.** About 1 hour for the history, minutes of GPU training (under the GPU rule), and about 2 hours per stage-2 round, about 6–8 hours in total.
