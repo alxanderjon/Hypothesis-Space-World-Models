@@ -716,19 +716,23 @@ class EquationSearch:
         self.floor = max(float(ctx["noise"][i]) * math.sqrt(len(self.y)), 1e-15 * self.yn)
         self.tau = max(TAU_EXACT, TAU_FLOOR * self.floor / self.yn)
         self.si_tr, self.si_va = ctx.get("si_tr"), ctx.get("si_va")
+        self.fitlog = ctx.get("fitlog")                         # fit log (fitlog.py): off unless learn28 is given one
+        self.shadow_rng = np.random.default_rng([self.fitlog.shadow_seed, i, 31]) \
+            if self.fitlog is not None and self.fitlog.shadow_rate > 0 else None
         self.table, self.exact_sets, self.prune = {}, [], []
         self.eff = {"structures": 0, "starts": 0, "fit_seconds": 0.0, "prior_seconds": 0.0, "first_exact": None,
                     "tau": self.tau, "first_exact_seconds": None, "floor_rel": self.floor / self.yn, "precise": 0,
                     "precise_seconds": 0.0, "pruned": 0, "seconds": 0.0, "stalls": 0,
                     "thorough": 0, "thorough_seconds": 0.0, "thorough_capped": 0, "thorough_best_rel": float("inf"),
-                    "thorough_exact": 0, "thorough_at_first_exact": None}
+                    "thorough_exact": 0, "thorough_at_first_exact": None, "shadow": 0, "shadow_seconds": 0.0}
         self._t = time.perf_counter()
         self.root = self.evaluate((), None)
         self.eff["seconds"] += time.perf_counter() - self._t
 
     @property
     def exhausted(self):
-        return self.eff["structures"] >= self.budget or self.eff["seconds"] >= self.time_cap or self.eff["stalls"] > 2000
+        return self.eff["structures"] >= self.budget or self.eff["seconds"] - self.eff["shadow_seconds"] >= self.time_cap or \
+            self.eff["stalls"] > 2000
 
     def _replacements(self, t, S):
         """Structures with piece t replaced by a plain product of its variables (times its multiplier)."""
@@ -764,11 +768,13 @@ class EquationSearch:
         kw = {"eq": i} if getattr(self.fitter, "wants_eq", False) else {}
         terms, res, coefs, e = self.fitter.fit(vocab, S, Zc, Xc, y, warm, floor=floor, **kw)
         eff["structures"] += 1; eff["starts"] += e["starts"]; eff["fit_seconds"] += e["seconds"]
+        log, cheap, rec, breaker, refused, t_precise = self.fitlog, (terms, res, coefs), None, False, False, 0.0
         rel_rate = res / yn if math.isfinite(res) else float("inf")
         rel_t = rel_v = float("inf")
         superset = any(E < set(S) for E in self.exact_sets)
         gate = self.fitter.precise_gate(S, res, rel_rate, floor) if hasattr(self.fitter, "precise_gate") else \
             (rel_rate <= PRECISE_GATE and res <= PRECISE_FLOOR * floor)
+        gate_code = (1 if rel_rate <= PRECISE_GATE and res <= PRECISE_FLOOR * floor else 2) if gate else 0
         thorough_now = False
         if S and self.si_tr is not None and gate and not superset:
             tp = time.perf_counter()                               # precise stage: thorough refit (unless the fit is
@@ -776,21 +782,32 @@ class EquationSearch:
                 if res > 2.0 * floor:                              # past the cap (if any), only a structure whose cheap
                     if self.thorough_cap is None or eff["thorough"] < self.thorough_cap or \
                             rel_rate < eff["thorough_best_rel"]:   # fit beats every thorough-fitted one gets a thorough fit
+                        breaker = self.thorough_cap is not None and eff["thorough"] >= self.thorough_cap
                         eff["thorough"] += 1; eff["thorough_best_rel"] = min(eff["thorough_best_rel"], rel_rate)
                         th = time.perf_counter()
+                        rec = log.before(self.fitter) if log is not None else None
                         terms, res, coefs = thorough_fit(self.fitter, vocab, S, Zc, Xc, y, warm, floor, (terms, res, coefs),
                                                          eq=i, si_tr=self.si_tr, si_va=self.si_va)
+                        if rec is not None:
+                            log.after(self.fitter, rec, (terms, res, coefs))
                         eff["thorough_seconds"] += time.perf_counter() - th
                         thorough_now = True
                     else:
                         eff["thorough_capped"] += 1
+                        refused = True
                 terms2, rel_t, c2 = refine_integral(terms, self.si_tr, i)
                 if c2 is not None and math.isfinite(rel_t):
                     terms, coefs = terms2, c2
                     rel_v = heldback_error(terms, coefs, self.si_va, i)
             except (RuntimeError, ValueError):
                 pass
-            eff["precise"] += 1; eff["precise_seconds"] += time.perf_counter() - tp
+            t_precise = time.perf_counter() - tp
+            eff["precise"] += 1; eff["precise_seconds"] += t_precise
+        shadowed = log is not None and log.shadow_rate > 0 and bool(S) and self.si_tr is not None and not superset and \
+            math.isfinite(cheap[1]) and cheap[1] > 2.0 * floor and (not gate or refused) and \
+            self.shadow_rng.random() < log.shadow_rate
+        if shadowed:
+            self._shadow(S, warm, cheap, gate_code)
         try:
             degen = any(DL.degenerate(t, Zc, Xc, strict=False) for t in terms)
         except (RuntimeError, ValueError, ZeroDivisionError):
@@ -802,6 +819,12 @@ class EquationSearch:
                 "best": v - self.lam * len(S), "children": {}, "moves": None, "prior": None,
                 "exact": bool(rel_v <= self.tau and rel_t <= self.tau and not degen)}
         table[S] = node
+        if log is not None and S:
+            if rec is not None:
+                log.row("thorough", i, eff["structures"], eff["thorough"], gate_code, S, warm, cheap, rec, final=(terms, coefs),
+                        rel_t=rel_t, rel_v=rel_v, degen=degen, exact=node["exact"], t_precise=t_precise, breaker=breaker)
+            elif refused and not shadowed:
+                log.row("refused", i, eff["structures"], eff["thorough"], gate_code, S, warm, cheap)
         if node["exact"] and thorough_now:
             eff["thorough_exact"] += 1                             # recognized after a thorough fit
         if self.probe is not None and S == self.probe:            # the probed structure (e.g. the true one): when and
@@ -819,8 +842,39 @@ class EquationSearch:
             if eff["first_exact"] is None:
                 eff["first_exact"] = eff["structures"]
                 eff["thorough_at_first_exact"] = eff["thorough"]
-                eff["first_exact_seconds"] = eff["seconds"] + time.perf_counter() - self._t
+                eff["first_exact_seconds"] = eff["seconds"] - eff["shadow_seconds"] + time.perf_counter() - self._t
         return node
+
+    def _shadow(self, S, warm, cheap, gate_code):
+        """Fit-log option: a thorough fit of a structure the gate or the cap turned away, recorded but not used. The
+        fitter's random state and statistics are restored afterwards and the time is kept off the search's clock."""
+        log, i, eff = self.fitlog, self.i, self.eff
+        ts = time.perf_counter()
+        snap = log.freeze(self.fitter)
+        rec = log.before(self.fitter)
+        rel_t = rel_v = float("inf")
+        final, degen = None, False
+        try:
+            out = thorough_fit(self.fitter, self.vocab, S, self.Zc, self.Xc, self.y, warm, self.floor, cheap, eq=i,
+                               si_tr=self.si_tr, si_va=self.si_va)
+            log.after(self.fitter, rec, out)
+            terms, coefs = out[0], out[2]
+            terms2, rel_t, c2 = refine_integral(terms, self.si_tr, i)
+            if c2 is not None and math.isfinite(rel_t):
+                terms, coefs = terms2, c2
+                rel_v = heldback_error(terms, coefs, self.si_va, i)
+            final = (terms, coefs)
+            degen = any(DL.degenerate(t, self.Zc, self.Xc, strict=False) for t in terms)
+        except (RuntimeError, ValueError, ZeroDivisionError):
+            degen = True
+        log.thaw(self.fitter, snap)
+        if hasattr(self.fitter, "trace"):
+            self.fitter.trace = None
+        eff["shadow"] += 1
+        log.row("shadow", i, eff["structures"], eff["shadow"], gate_code, S, warm, cheap, rec, final=final, rel_t=rel_t,
+                rel_v=rel_v, degen=degen, exact=bool(rel_v <= self.tau and rel_t <= self.tau and not degen),
+                t_precise=time.perf_counter() - ts)
+        eff["shadow_seconds"] += time.perf_counter() - ts
 
     def step(self):
         """One pruning evaluation, or one descent of the tree that evaluates at most one new structure."""
@@ -957,7 +1011,7 @@ def candidates_for(table, top=3):
 # ---------------------------------------------------------------------------------------------------------------------
 
 def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("inf"), max_assemblies=6, thorough_cap=None,
-            probe=None):
+            probe=None, fitlog=None):
     """Search each equation within `budget` fitted structures, assemble, fit exactly on the step-to-step map, check on
     held-back bursts, apply ties. Returns a result dict with the model, held-back error, acceptance and effort."""
     t0 = time.perf_counter()
@@ -986,6 +1040,11 @@ def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("i
         import history28 as HI
         ctx["hctx"] = HI.Context.from_parts(view, vocab, ctx["cols"], bursts.shape[0])
     net0 = getattr(prior_fn, "seconds", None)                 # the network's computing time, reported separately
+    if fitlog is not None:                                     # fit log (fitlog.py): the data once, then every
+        yns = [float(G[:, i].norm()) + 1e-300 for i in range(d)]   # thorough fit (see EquationSearch)
+        floors = [max(float(view["noise"][i]) * math.sqrt(G.shape[0]), 1e-15 * yns[i]) for i in range(d)]
+        fitlog.begin(bursts, seed, vocab, floors, yns, [max(TAU_EXACT, TAU_FLOOR * f / yn) for f, yn in zip(floors, yns)])
+        ctx["fitlog"] = fitlog
     searches = []
     for i in range(d):                                         # one random stream per equation: a smaller budget is
         rng = np.random.default_rng([seed, i])                 # exactly a prefix of a larger one
@@ -1032,6 +1091,8 @@ def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("i
         for se in live:                                        # the assembled model failed its held-back check: every
             se.run(stop_at=2 * se.eff["structures"])           # equation searches on (doubling), then assemble again
     effort["equations"] = [se.eff for se in searches]
+    if fitlog is not None:
+        fitlog.finish(effort["equations"])
     if hasattr(fitter, "stats"):
         effort["fitter_stats"] = dict(fitter.stats)
     if net0 is not None:
