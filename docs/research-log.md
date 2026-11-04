@@ -4218,3 +4218,36 @@ Fresh data: new reference recordings (seed 2), new bursts and a new held-back sp
     4. v2's precise gate also admits structures with two or more nonlinear pieces whose cheap fit explains 99% of the rates.
   - **Development result:** v1 recognized 5 of 15 equations, v2 6 (multi-piece 0 of 10 against 1 of 10). The ordinary fit's median time was 0.074 s against 0.123 s (1.66×); v2's evaluation median was 0.94 s.
   - Run directly with no gate, v2's thorough fit solved 2 of 9 hard development equations exactly. Success on 6–7 hard constants is partly a matter of the search's sampling.
+
+### Trial 30: known-structure fitter test: pass bar MET (4 November, 16:10)
+
+The fitter is given each true structure, which is evaluated exactly as the search evaluates a structure. M = 8, seed 1. Sets: 60 untuned (U) and 60 hand-tuned (T) synthetic systems, and the practice known structures (P; 12 systems, 1 skipped for centred coordinates). 372 equations in all.
+
+| Set, pieces | Equations | v1 recognized | v2 recognized |
+|---|---|---|---|
+| U, 0 | 4 | 4 | 4 |
+| U, 1 | 35 | 32 (91%) | 33 (94%) |
+| U, 2 | 46 | 15 (33%) | 31 (67%) |
+| U, 3+ | 77 | 3 (4%) | 12 (16%) |
+| T, 0 | 28 | 28 | 28 |
+| T, 1 | 89 | 81 (91%) | 83 (93%) |
+| T, 2 | 50 | 16 (32%) | 40 (80%) |
+| T, 3+ | 13 | 2 | 4 |
+| P, 0 | 10 | 10 | 10 |
+| P, 1 | 16 | 14 | 14 |
+| P, 2 | 4 | 0 | 1 |
+
+**Bar:**
+1. Synthetic equations with 2+ pieces: v1 36 of 186, v2 87 of 186 (+27 points, 2.4×). **Met.**
+2. 1-piece synthetic equations: 91% against 94%. **Met.**
+3. Practice known structures: 24 against 25 of 30. **Met.**
+4. Ordinary fit median 0.030 s against 0.037 s (1.25×); v2's evaluation median 0.07 s where the precise stage ran. **Met.**
+
+**Stages of v2 over all equations:**
+- the algebraic start improved the cheap fit 152 times (of 342 tries);
+- the joint-placement beam 42 times;
+- the global search won 73 of 150 thorough fits.
+
+**Snapping:** 181 exponents were checked. The identifiability check allowed snapping 44 times, every one a direction the data could not pin down. The exactness test kept the snapped version 9 times.
+
+**Still hard:** equations with 3 or more pieces (U: 16%). Awaiting the owner's go-ahead before the search comparison.
