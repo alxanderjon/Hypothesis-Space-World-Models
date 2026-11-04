@@ -4209,3 +4209,12 @@ Fresh data: new reference recordings (seed 2), new bursts and a new held-back sp
   4. The ordinary fit's median time is at most 2× v1's, and the thorough fit's median time is at most 2 s.
 - **Reported alongside:** time per fit, snapping use, and identifiability flags.
 - **The search comparison waits for the owner's go-ahead after this test.**
+- **Fitter v2 development on development seeds only** ("t30-dev-u-k", 6 untuned systems, 15 equations; 4 November, before the logged test).
+  - As first built, v2 recognized no more equations than v1: most 3–5-piece true structures never reached the precise stage, because the cheap fit stayed 10⁸–10¹⁰× above the floor. The global search's box, taken from the start grids, missed gentle pieces; on one equation the true sine is about a tenth of a period over the data, below the grid's half period.
+  - **Changes, all in v2 (v1 unchanged):**
+    1. The global search samples natural data-based ranges: frequencies and rates from gentle to steep on a log scale, switch centres and kinks across the data, poles at log-spaced distances on either side, Hill constants on a log scale with free exponents. Its budget is 256 samples per hard constant, up to 2,048.
+    2. v2's sweep uses a start grid built from the same natural ranges, joined to v1's grid points.
+    3. A joint-placement beam in the cheap fit: each piece's 3 best placements, combinations solved jointly, the best one polished.
+    4. v2's precise gate also admits structures with two or more nonlinear pieces whose cheap fit explains 99% of the rates.
+  - **Development result:** v1 recognized 5 of 15 equations, v2 6 (multi-piece 0 of 10 against 1 of 10). The ordinary fit's median time was 0.074 s against 0.123 s (1.66×); v2's evaluation median was 0.94 s.
+  - Run directly with no gate, v2's thorough fit solved 2 of 9 hard development equations exactly. Success on 6–7 hard constants is partly a matter of the search's sampling.

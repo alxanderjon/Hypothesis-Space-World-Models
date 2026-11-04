@@ -410,10 +410,12 @@ def snap_exponents(terms, Z, X, y, floor, iters=10, tol=0.25):
     return (cur, res, c) if changed else None
 
 
-def thorough_fit(fitter, vocab, toks, Zc, Xc, y, warm, floor, current=None):
+def thorough_fit(fitter, vocab, toks, Zc, Xc, y, warm, floor, current=None, eq=None, si_tr=None, si_va=None):
     """The precise stage's fit on the rate data: the fitter with more polishing starts per piece (and shared placements
     for pieces of one family on one variable), then exponent snapping; the better of this and `current` (terms,
-    residual, coefficients) is returned."""
+    residual, coefficients) is returned. A fitter with its own thorough() (Trial 30 fitter v2) is used as is."""
+    if hasattr(fitter, "thorough") and current is not None:
+        return fitter.thorough(vocab, toks, Zc, Xc, y, warm, floor, current, eq=eq, si_tr=si_tr, si_va=si_va, i=eq)
     terms, res, coefs, _ = fitter.fit(vocab, toks, Zc, Xc, y, warm, floor=floor, basins=PRECISE_BASINS)
     if current is not None and not (math.isfinite(res) and res < current[1]):
         terms, res, coefs = current
@@ -755,16 +757,20 @@ class EquationSearch:
                     warm[t] = getattr(term, "grid_index", None)
                     if warm[t] is None:
                         warm[t] = thetas_of(term)
-        terms, res, coefs, e = self.fitter.fit(vocab, S, Zc, Xc, y, warm, floor=floor)
+        kw = {"eq": i} if getattr(self.fitter, "wants_eq", False) else {}
+        terms, res, coefs, e = self.fitter.fit(vocab, S, Zc, Xc, y, warm, floor=floor, **kw)
         eff["structures"] += 1; eff["starts"] += e["starts"]; eff["fit_seconds"] += e["seconds"]
         rel_rate = res / yn if math.isfinite(res) else float("inf")
         rel_t = rel_v = float("inf")
         superset = any(E < set(S) for E in self.exact_sets)
-        if S and self.si_tr is not None and rel_rate <= PRECISE_GATE and res <= PRECISE_FLOOR * floor and not superset:
+        gate = self.fitter.precise_gate(S, res, rel_rate, floor) if hasattr(self.fitter, "precise_gate") else \
+            (rel_rate <= PRECISE_GATE and res <= PRECISE_FLOOR * floor)
+        if S and self.si_tr is not None and gate and not superset:
             tp = time.perf_counter()                               # precise stage: thorough refit (unless the fit is
             try:                                                   # already at the floor), step integrals, held-back
                 if res > 2.0 * floor:
-                    terms, res, coefs = thorough_fit(self.fitter, vocab, S, Zc, Xc, y, warm, floor, (terms, res, coefs))
+                    terms, res, coefs = thorough_fit(self.fitter, vocab, S, Zc, Xc, y, warm, floor, (terms, res, coefs),
+                                                     eq=i, si_tr=self.si_tr, si_va=self.si_va)
                 terms2, rel_t, c2 = refine_integral(terms, self.si_tr, i)
                 if c2 is not None and math.isfinite(rel_t):
                     terms, coefs = terms2, c2
@@ -950,6 +956,10 @@ def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("i
     bank = ColumnBank(vocab, Zc, Xc)
     setup += time.perf_counter() - tp
     effort["setup_seconds"] = setup
+    if fitter == "v2":                                        # Trial 30 fitter v2 (swappable)
+        import fitter30 as F30
+        fitter = F30.FitterV2(bank, F30.DenseRates(view["Ztr"], view["mu"], view["sig"]), seed=seed,
+                              natural=F30.NaturalBank(vocab, Zc, Xc, v1_bank=bank, seed=seed))
     fitter = fitter or GridSweepFitter(bank)
     prior_fn = {"data": data_prior, "data_v1": data_prior_v1, "uniform": uniform_prior}[prior] if isinstance(prior, str) else prior
     if getattr(prior_fn, "needs_history_context", False):     # the network's featurizer, on this run's own objects
@@ -1000,6 +1010,8 @@ def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("i
         for se in live:                                        # the assembled model failed its held-back check: every
             se.run(stop_at=2 * se.eff["structures"])           # equation searches on (doubling), then assemble again
     effort["equations"] = [se.eff for se in searches]
+    if hasattr(fitter, "stats"):
+        effort["fitter_stats"] = dict(fitter.stats)
     if net0 is not None:
         effort["network_seconds"] = prior_fn.seconds - net0
     effort["all_equations_plausible"] = all_plausible
@@ -1016,5 +1028,6 @@ def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("i
     model, val, info, combo, chosen = best
     out.update(status="accepted" if val <= DL.VAL_TOL else "rejected", val=val, model=model, ties=info,
                combo=list(combo), terms_per_eq=[len(n["toks"]) for n in chosen],
-               chosen_k=[n["k"] for n in chosen])              # when each chosen structure was first fitted
+               chosen_k=[n["k"] for n in chosen],              # when each chosen structure was first fitted
+               chosen_toks=[[repr(t) for t in n["toks"]] for n in chosen])
     return out
