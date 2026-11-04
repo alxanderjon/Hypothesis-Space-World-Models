@@ -4052,3 +4052,28 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
   - The test sets stay at 100 systems each.
   - Accepted untuned systems use the 12 families roughly evenly, so monomials are rare. That is unlike biochemistry, and intended.
 - **(a) almost complete** (seed 2, M = 8, 2,000): uniform 4 of 27 exact; frequency table 7 of 25 so far; scrambled network 8 of 27; full network 9 of 27.
+
+### Trial 28 (a): fresh-seed confirmation with the frequency-table control (4 November, 06:56; practice half)
+
+Fresh data: new reference recordings (seed 2), new bursts and a new held-back split. M = 8, 2,000 structures per equation, 27 practice systems, every recovery expressible.
+
+| Arm | Exact | Systems | Time per system (median) |
+|---|---|---|---|
+| Baseline (uniform) | 4 | 115, 753, 866, 919 | 372 s |
+| Frequency table (no network, no data) | 7 | 115, 275, 507, 728, 753, 866, 1047 | 409 s |
+| Scrambled-history network | 8 | the table's 7 + 919 | 239 s |
+| Full network | 9 | the scrambled network's 8 + 685 | 290 s |
+
+**Paired comparisons:**
+- full against baseline +5 / −0 (p = 0.063);
+- full against frequency table +2 / −0 (p = 0.5);
+- full against scrambled +1 / −0 (p = 1);
+- frequency table against baseline +4 / −1 (p = 0.38);
+- scrambled against baseline +4 / −0 (p = 0.13).
+
+**Reading.**
+- The direction of the seed-1 result is confirmed on fresh data: full 9 against baseline 4 here, against 7 and 3 with seed 1.
+- But a plain table of how common each term type is in the hand-tuned generator, with no network and no data, recovers 7 of the full network's 9.
+- Most of Trial 28's gain on real systems is therefore the generator's hand-set term frequencies, as the owner suspected. Reading the data adds about 2 systems, which is not significant on 27.
+- This is the motivation for Trial 29 (untuned history, learning from its own solved searches).
+- The held-out test request, which includes the frequency-table control, goes to the owner with the morning summary.
