@@ -4118,3 +4118,61 @@ Fresh data: new reference recordings (seed 2), new bursts and a new held-back sp
   - With an untuned history, what the network learns (bar a: 36–44% top-5 against 7% chance) does not turn into more exactly recovered systems at the headline budget.
   - Together with (a), where a plain frequency table explains most of Trial 28's practice gain, the evidence so far is that history helps mainly through the term frequencies we put into it.
   - The binding limit on harder systems is the search and fitting of equations with several nonlinear pieces, for every learner.
+
+## Owner direction (4 November): next trial on fitting equations with several nonlinear pieces; held-out set kept for a stronger candidate
+
+*"Keep the held-out set for a stronger candidate, and make the next trial about fitting equations with several nonlinear pieces."* First a literature search, then a proposal that reuses the N1/N2/N3 ideas, keeps the fitter swappable, applies the improvement to both learners, reruns the untuned-history network against the baseline, and reports equations solved as well as whole systems, plus search effort. Survey and proposal before running anything.
+
+### Survey: fitting the constants of models with several nonlinear pieces exactly (4 November)
+
+1. **Variable projection**
+   - Golub & Pereyra 2003 review; Kaufman's simplification; R's `nls(algorithm = "plinear")`.
+   - The linear coefficients are solved exactly at every value of the nonlinear constants, which leaves a smaller, better-conditioned problem. It is the standard tool for sums of nonlinear pieces, especially exponentials.
+   - Systems biology uses the same idea ("hierarchical optimization", Loos, Krause & Hasenauer 2018).
+   - Our N1/N2/N3 archive found one case 53,921× better once the linear output weights were solved exactly. We already use it.
+2. **Rational pieces can be linearized by clearing denominators**
+   - The Sanathanan–Koerner iteration (1963); vector fitting (Gustavsen & Semlyen 1999), which relocates poles by repeated linear least squares; the AAA algorithm (Nakatsukasa, Sète & Trefethen 2018), which finds rational approximants and their poles with no initial guesses.
+   - Implicit SINDy (Mangan et al. 2016) and SINDy-PI (Kaheman, Kutz & Brunton 2020) apply the same idea to Michaelis–Menten and other rational dynamics. Implicit SINDy was very sensitive to noise, and SINDy-PI fixed that.
+   - Algebraic estimation for rational ODE models (Bassik et al. 2023; Demin, Ovchinnikov & Rouillier 2025) finds all parameter values consistent with the data, with no initial guesses, by solving polynomial systems. It is practical up to about 10 states and 10 parameters.
+   - Our reciprocals, integer-exponent Hill switches, products of switches and weighted-sum reciprocals are all rational, and our data are noise-free, which is the case where clearing denominators works best.
+3. **Shooting and collocation.** Multiple shooting (Bock; Peifer & Timmer 2007) and collocation-type matching both reduce the multimodality of fitting by simulation.
+   - Gradient matching (Varah 1982; Brunel 2008) and integral matching (Dattner & Klaassen 2015; `simode`) avoid integrating the model at all.
+   - Integral matching is more stable than matching derivatives, and both are used as warm starts for a final local fit.
+   - Our rate fit followed by a step-integral refit is this two-stage pattern, already in place.
+4. **Global optimizers for a few hard parameters**
+   - Multistart of derivative-based local fits, with log-scaled parameters and Latin-hypercube starts, outperformed the alternatives by orders of magnitude (Raue et al. 2013).
+   - In larger benchmarks a hybrid of stochastic global search with local refinement did better still (enhanced scatter search, MEIGO; Villaverde et al. 2019).
+   - Deterministic global methods with guarantees (Esposito & Floudas 2000; Singer & Barton; Miró et al. 2012) are limited to about 5 parameters and 5 states.
+   - DIRECT-style partitioning, as in our N1, suits a handful of parameters.
+5. **Continuation (homotopy)** smooths the objective, for example by adding observer-like terms (Vyasarayani, Uchida & McPhee 2012), and follows the solution as the smoothing is removed. Analogues for us: soften steep switches, or move a Hill exponent from 1 upwards, then follow the fit.
+6. **Identifiability**
+   - Structural: SIAN and StructuralIdentifiability.jl, based on differential algebra.
+   - Practical: the profile likelihood (Raue et al. 2009).
+   - The Hill curve is structurally identifiable, but its exponent is often practically non-identifiable from limited data (2025 framework paper). Two pieces sharing one switch are functionally related.
+   - Detecting flat directions tells a fit to tie, snap or stop instead of wandering.
+7. **Constant fitting in symbolic regression**
+   - Levenberg–Marquardt with restarts is the strongest local fitter (Kommenda et al. 2013 and 2020; de Veloso et al.). No single constant optimizer wins everywhere (2024 benchmark).
+   - Exhaustive enumeration shows that local optima in constant fitting make the same expression look good or bad depending on the fit (Kronberger et al. 2024). That wastes search, which is our situation when a correct structure is mis-fitted.
+   - End-to-end transformers (Kamienny et al. 2022) predict constants as starting values for a final optimizer: the template for a learned initializer.
+
+**What we could reuse:**
+- clearing denominators for joint, guess-free starting values of all rational pieces;
+- an N1-style joint global search over the few remaining nonlinear constants, with variable projection inside, in place of today's one-piece-at-a-time sweeps;
+- multistart Levenberg–Marquardt (N2's role) and Newton polishing on the precise step integrals (N3's role);
+- log-scaled constants and continuation for steep switches;
+- an identifiability check that ties, snaps or stops.
+
+### Trial 30 proposal: a fitter for equations with several nonlinear pieces (4 November; awaiting owner approval)
+
+1. **Fitter v2** (swappable; the same interface as today's, used by both learners):
+   - (a) **algebraic start** for rational pieces: clear denominators, solve one linear least-squares problem for all of them jointly (integer Hill exponents 1–4 tried), and remove the bias with Sanathanan–Koerner reweighting;
+   - (b) **joint global search** (N1-style) over the remaining nonlinear constants (exp rates, tanh/sin placements, |·| kinks, free exponents), with the linear coefficients solved exactly at every candidate;
+   - (c) **Levenberg–Marquardt** from the best few distinct candidates, then **Newton polishing** on the step integrals;
+   - (d) **identifiability check**: flat directions lead to tying shared switches, snapping exponents, or reporting "not identifiable from these data".
+   - A learned starting-value network can later replace (a) and (b).
+2. **Fitter benchmark with known structures** (no search):
+   - synthetic equations from both generators, grouped by number of nonlinear pieces (1, 2, 3+), and the practice systems' known structures;
+   - measures: the share fitted to exactness and the time per fit, for v1 against v2;
+   - a pass bar, written into the log before running, decides whether to go on.
+3. **Search comparison.** Both learners (the uniform baseline and the untuned-history network) with fitter v2 on Trial 29's stage-1 test sets, at M = 8 and 2,000 structures per equation. Reported: equations solved (plausibly exact, and for synthetic systems the exact true structure) as well as whole systems; search effort (structures, fitting time per structure, time to first plausible structure); and network time separately.
+4. **If the untuned-history network then passes Trial 29's bar (b)**, propose resuming Trial 29 stage 2. No held-out system is touched.
