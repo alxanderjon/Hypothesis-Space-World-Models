@@ -3996,3 +3996,48 @@ The changes below were made only on development seeds ("t28-dev-k"), before any 
      - stage 2 learning from synthetic solutions only, which separates learning from solved real systems from more synthetic practice.
 4. **Decision points.** Stop and report if stage 1 fails its bar. Check in with the curves after stage 2, before any held-out test.
 5. **Cost.** About 1 hour for the history, minutes of GPU training (under the GPU rule), and about 2 hours per stage-2 round, about 6–8 hours in total.
+
+### Trial 29: owner approval with conditions, and rules for stages 1 and 2 (4 November, logged before any Trial 29 system is generated)
+
+**Owner's conditions.**
+1. Check in after stage 1 whether or not its bar passes, with a term-frequency comparison between the untuned history and the practice systems.
+2. In stage 2, report for each round how many real and how many synthetic solutions were learned from, alongside the accumulation curve.
+3. Practice-half gains are suggestive only, since those systems have been used throughout Trials 26–28. The fresh-pool held-out test remains the real check.
+4. The owner is asleep: do not wait after stage 1.
+   - If stage 1 passes its bar, log the term-frequency comparison and continue straight into stage 2.
+   - If it fails, stop and report.
+   - Either way, have a plain-language summary ready for the morning, covering stage 1, the frequency comparison, stage 2 so far, and the results of (a).
+
+**Stage 1 rules (fixed now).**
+- **Untuned generator.**
+  - d is uniform over {2, 3, 4}; initial states are log-uniform in [0.1, 10].
+  - Each equation has 1–5 terms (uniform). Each term's family is uniform over the 12 families (monomial; reciprocal; Hill-type; exp; tanh; sin; |·|; power; weighted-sum reciprocal; weighted-sum Hill; product of reciprocals; product of Hills), then uniform within the family over variables and multiplier.
+  - Monomial degree is uniform 0–3.
+  - Every coefficient has a random sign and a wide magnitude: log-uniform in [0.01, 10] for monomials, and the piece's scale times log-uniform [0.1, 10] for pieces.
+  - Piece placements are relative to each variable's initial state, only so that pieces bend over the data.
+  - There is no built-in decay term. Held-out family pairs are excluded from the history and set (1u).
+- **Acceptance.** The same checks as every synthetic system: the cheap-simulation cutoff, the settle-time rule, finite, bounded, positive, moving, not centred at M = 8, and no degenerate true piece.
+- **History.** 3,000 accepted systems (seeds "t29-hist-k"), fewer than Trial 28's 7,982 because that curve saturated by 300–1,000 systems. About 12 states per system, with M drawn from 4, 8 and 16 (probabilities 0.2, 0.6, 0.2).
+- **Network.** The same architecture and recipe: 12 epochs, last epoch kept. On a free GPU, or shared under the owner's rule; the GPU used is logged.
+- **Bar** (as in step 2, at M = 8), with 100 systems per set to fit the night:
+  - set (1u): 100 new untuned systems (seeds "t29-test1-k");
+  - set (2u′): 100 untuned systems with a size-matched held-out combination (seeds "t29-test2m-k"; two pieces swapped, as in set (2′));
+  - (a) ranking top-5 at least 30% and at least twice the uniform chance rate on each set;
+  - (b) search at 2,000 structures per equation: with history at least +10 points over uniform, with an exact two-sided sign test at p < 0.05, on each set.
+- **Term-frequency comparison.** Per equation, the share of terms in each class: products of variables; single-variable switches (reciprocal, Hill); weighted-sum switches; products of switches; other functions (exp, tanh, sin, |·|, power); and, for practice systems, terms outside the toolkit. It covers three sources: the untuned history; the Trial 28 hand-tuned history; and the 27 practice systems' true right-hand sides, classified with `expressible.py`.
+
+**Stage 2 rules (fixed now).**
+- **Practice halves.** Half A holds the practice systems whose sha256("t29-half:" + id) starts with a hex digit 0–7; half B holds the rest. Counts are reported.
+- **Rounds r = 1, 2, 3.** In each round the current main network (round 1: the stage-1 network) does the following.
+  1. It searches 150 new untuned synthetic systems (seeds "t29-s2syn-r-k") and practice half A (seed 1), at M = 8 and 2,000 structures per equation.
+  2. **Solutions** are runs accepted by the learner's own held-back check with val ≤ 10⁻¹³, three times tighter than acceptance.
+  3. **Lessons.** For each equation, about 4 states around the found structure (proper subsets, subsets with 1–2 other terms, and the found structure plus one other term), labelled relative to the found structure (hindsight), as in the history.
+  4. **Retraining from scratch** on the stage-1 history plus all lessons so far, with lessons repeated 10× per epoch. This gives the main network and two controls: (i) scrambled lessons (labels permuted among lesson examples of the same vocabulary size); (ii) synthetic lessons only.
+  5. **Evaluation on practice half B** (seed 1, M = 8, 2,000) of the new main network and the two controls. Round 0 is the stage-1 network. References: the uniform baseline and the Trial 28 hand-tuned network (seed-1 step-3 runs).
+- **Reported each round:**
+  - real and synthetic solutions learned from, new and cumulative;
+  - lesson examples;
+  - wrong lessons, counted afterwards and never used (synthetic: the found structure differs from the true one; practice: the external test failed);
+  - exact recoveries on half B (all / expressible) for the main network and the controls;
+  - success on that round's new synthetic systems.
+- **Direction.** A → B first. The reverse direction (B → A) is run only if time allows before morning, and is reported as not run otherwise.
