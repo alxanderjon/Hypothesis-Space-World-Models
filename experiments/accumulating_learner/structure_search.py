@@ -720,7 +720,8 @@ class EquationSearch:
         self.eff = {"structures": 0, "starts": 0, "fit_seconds": 0.0, "prior_seconds": 0.0, "first_exact": None,
                     "tau": self.tau, "first_exact_seconds": None, "floor_rel": self.floor / self.yn, "precise": 0,
                     "precise_seconds": 0.0, "pruned": 0, "seconds": 0.0, "stalls": 0,
-                    "thorough": 0, "thorough_seconds": 0.0, "thorough_capped": 0, "thorough_best_rel": float("inf")}
+                    "thorough": 0, "thorough_seconds": 0.0, "thorough_capped": 0, "thorough_best_rel": float("inf"),
+                    "thorough_exact": 0, "thorough_at_first_exact": None}
         self._t = time.perf_counter()
         self.root = self.evaluate((), None)
         self.eff["seconds"] += time.perf_counter() - self._t
@@ -768,6 +769,7 @@ class EquationSearch:
         superset = any(E < set(S) for E in self.exact_sets)
         gate = self.fitter.precise_gate(S, res, rel_rate, floor) if hasattr(self.fitter, "precise_gate") else \
             (rel_rate <= PRECISE_GATE and res <= PRECISE_FLOOR * floor)
+        thorough_now = False
         if S and self.si_tr is not None and gate and not superset:
             tp = time.perf_counter()                               # precise stage: thorough refit (unless the fit is
             try:                                                   # already at the floor), step integrals, held-back
@@ -779,6 +781,7 @@ class EquationSearch:
                         terms, res, coefs = thorough_fit(self.fitter, vocab, S, Zc, Xc, y, warm, floor, (terms, res, coefs),
                                                          eq=i, si_tr=self.si_tr, si_va=self.si_va)
                         eff["thorough_seconds"] += time.perf_counter() - th
+                        thorough_now = True
                     else:
                         eff["thorough_capped"] += 1
                 terms2, rel_t, c2 = refine_integral(terms, self.si_tr, i)
@@ -799,6 +802,8 @@ class EquationSearch:
                 "best": v - self.lam * len(S), "children": {}, "moves": None, "prior": None,
                 "exact": bool(rel_v <= self.tau and rel_t <= self.tau and not degen)}
         table[S] = node
+        if node["exact"] and thorough_now:
+            eff["thorough_exact"] += 1                             # recognized after a thorough fit
         if self.probe is not None and S == self.probe:            # the probed structure (e.g. the true one): when and
             eff["probe_k"], eff["probe_exact"] = eff["structures"], node["exact"]   # whether it was recognized
             eff["probe_rel_v"], eff["probe_res_over_floor"] = rel_v, res / floor
@@ -813,6 +818,7 @@ class EquationSearch:
                     self.prune.append((q, node)); queued.add(q)
             if eff["first_exact"] is None:
                 eff["first_exact"] = eff["structures"]
+                eff["thorough_at_first_exact"] = eff["thorough"]
                 eff["first_exact_seconds"] = eff["seconds"] + time.perf_counter() - self._t
         return node
 
