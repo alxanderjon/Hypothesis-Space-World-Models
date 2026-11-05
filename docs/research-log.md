@@ -4615,3 +4615,56 @@ The starting points of the thorough fit are where a learned component can help.
 **Check-in 1** (before Stage A): data sizes, the label and symmetry checks, the development results (v2 against v3 by number of pieces, and the accumulation curve), and time.
 
 **Owner, 5 November, 05:40:** the disk stop rule is now **2 GB remaining**, replacing 5 GB. Runs stop writing below 2 GB free and the owner is told. The collector and the watchdog use 2 GB.
+
+### Trial 31 check-in 1: data, labels, network on development systems (5 November, 12:40). Stage A not started
+
+**Data collection** (05:45–12:03, 24 CPU workers):
+- 1,040 systems: 40 development, 800 untuned training, 200 hand-tuned training. No errors; 149 worker-hours; 215 MB.
+- The disk watchdog (2 GB floor) never fired; free space stayed at 8–9 GB.
+- **v2's known-structure pass on these systems:** 0 pieces 176 of 176; 1 piece 824 of 856 (96%); 2 pieces 536 of 700 (77%); 3+ pieces **137 of 1,141 (12%)**.
+- **Training examples:** 3,565 in all.
+  - 2,585 true structures: 826 with 0–1 pieces, 670 with 2, 1,089 with 3+;
+  - 980 other structures that a recorded fit made exact: 212, 487 and 281;
+  - a median of 4 free constants per example (maximum 18), and 45 of 16,469 constants masked as not identifiable.
+  - Development: 104 true-structure examples (46 with 3+ pieces).
+- **Labels:** true constants outside the search coordinates are clipped to the nearest point (polishing can still reach them), not dropped. Constants that depend on a clipped one are labelled given the clipped value; this was fixed after 2 of 516 development constants failed the round trip.
+
+**Label checks** (all 40 development systems, 106 equations):
+- the converted true constants use the vocabulary's families and fit exactly in 106 of 106 (worst error 0.91 of the threshold);
+- 516 constants: 509 inside the search space (all round-trip exactly, worst relative error 4 × 10⁻¹⁵), 6 clipped, 1 not representable, 5 masked;
+- 950 symmetry images: all fit exactly (residual gap ≤ 5 × 10⁻¹⁴ of the rate scale); 421 lie inside the search space.
+
+**Network.** Trained on GPU 7, at 0% utilization at most launches; once 6% with 418 MiB of another user's, which sharing allows. Dropout 0.1, data-point subsampling and rate jitter, 6,000 steps, best development distance kept.
+
+**Development results, v2 against v3,** same process, 40 systems, 106 equations, recognized:
+
+| Training systems | Development distance | Within 0.02 | 3+ pieces (46) | 2 pieces (30) | 0–1 pieces (30) | v2 only (any group) |
+|---|---|---|---|---|---|---|
+| (v2) | – | – | 5 | 22 | 28 | – |
+| 100 | 0.055 | 0.24 | 7 | 23 | 28 | 0 |
+| 300 | 0.047 | 0.26 | 7 | 22 | 28 | 0 |
+| 1,000 | 0.040 | 0.37 | 7 | 22 | 28 | 0 |
+
+- **The network learns from more systems:** its distance to the nearest valid answer falls with data.
+- **But equations fitted exactly do not rise:** 7 of 46 on 3+ pieces at every size, against v2's 5.
+- **Never worse:** no equation was recognized by v2 and missed by v3.
+- **Time:** evaluation +12–20% (median 0.69 s against 0.83 s).
+
+**Diagnostics** (development only):
+1. **Candidates, not choice, are the limit.** Whenever any polished candidate (v2's own or learned) passes the exactness test, the chosen one does (3+ pieces: 7 and 7).
+2. **Wrong valleys.** The learned starts give the best residual in about 15 of the 3+-piece thorough fits, but held-back errors stay at 10⁻⁴–10⁻¹, against about 10⁻¹² for an exact fit.
+3. **A wider local search does not help.** A cloud of 32 points around each of the 16 guesses gave 6 against 7.
+
+**Screen** (secondary, offline; training systems for training, development systems for evaluation):
+- 301,911 recorded rows; development AUC 0.93;
+- keeping 98% of exact finds it would skip 68% of thorough fits (3+ pieces: 78%); keeping all, 46%.
+- **Shadow sample** (training searches, cap 100):
+  - of structures the gate turned away, 16 exact in 32,970 shadow fits;
+  - of structures the cap refused, 63 exact in 15,234. Scaled to the 307,000 refusals, that is about as many exact structures as the 1,086 found by the 253,707 thorough fits made.
+
+**Outlook for Stage A's bar** (3+ pieces at least 1.5× and +15 points): on development, v3 gives 5 → 7 of 46 (+4 points, 1.4×). The bar is unlikely to be met with this network.
+
+**Options put to the owner:**
+- **A (recommended).** Train the network on examples generated on the fly: the collected systems' measured states and structures, new constants drawn in the search coordinates, and rates computed exactly from the term formulas. There is no ODE simulation and the supply is unlimited, with the same symmetry and mask handling. Accumulation is measured over the number of collected systems feeding the generator. Re-run development, and go to Stage A only on a clear gain.
+- **B.** Stage A now with the current network.
+- **C.** A test of the screen in place of the cap (secondary).
