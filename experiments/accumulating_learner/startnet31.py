@@ -588,3 +588,63 @@ def system_examples(rec, data_dir):
             out.append(ex + ({"prefix": rec["prefix"], "k": rec["k"], "eq": i, "source": "recorded",
                               "pieces": sum(1 for t in S if t[0] != "mono"), "slots": int(ex[1].shape[0])},))
     return out
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# the screen (secondary; option C): which structures most deserve a thorough fit
+# ---------------------------------------------------------------------------------------------------------------------
+
+SCREEN_FAM = ("hill", "recip", "exp", "tanh", "sin", "abs", "pow")
+
+
+def screen_features(S, gate_code, res, floor, scale, step):
+    """What is known before a thorough fit: size, pieces, families, the gate's verdict, the cheap fit's distance from
+    the floor and from the rates' scale, and how far the search has gone (no feature of the thorough-fit policy)."""
+    fam = np.zeros(len(SCREEN_FAM) + 2)
+    for t in S:
+        if t[0] == "mono":
+            fam[-2] += 1
+        else:
+            if t[1] in SCREEN_FAM:
+                fam[SCREEN_FAM.index(t[1])] += 1
+            fam[-1] += t[0] in ("pair", "prod")
+    g = np.zeros(3); g[int(gate_code)] = 1
+    pieces = sum(1 for t in S if t[0] != "mono")
+    r = math.log10(max(res, 1e-300) / floor) if math.isfinite(res) else 20.0
+    rs = math.log10(max(res, 1e-300) / scale) if math.isfinite(res) else 5.0
+    return np.concatenate([[len(S), pieces], fam, g, [r, rs, math.log10(1 + step)]]).astype(np.float32)
+
+
+class Screen:
+    """Callable for EquationSearch(screen=...): a score (logit) per structure, higher = more likely exact."""
+
+    def __init__(self, path):
+        z = torch.load(path, weights_only=False)
+        self.mu, self.sd = z["mu"], z["sd"]
+        self.net = nn.Sequential(nn.Linear(len(self.mu), 64), nn.ReLU(), nn.Linear(64, 64), nn.ReLU(), nn.Linear(64, 1))
+        self.net.load_state_dict(z["state"]); self.net.eval()
+
+    def __call__(self, S, gate_code, res, floor, scale, step):
+        x = (screen_features(S, gate_code, res, floor, scale, step) - self.mu) / self.sd
+        with torch.no_grad():
+            return float(self.net(torch.tensor(x, dtype=next(self.net.parameters()).dtype)[None])[0, 0])
+
+
+def generated_examples(bursts, eqs, meta, seed=1):
+    """True-structure examples of a generated system from its own bursts and drawn constants (no search logs):
+    the learner's view of the bursts exactly as at test time, labels from the generator's constants."""
+    import ast
+    import practice_net as PN
+    import synthetic28 as SY
+    view = PN.learner_view(bursts, seed=seed)
+    Zc, G = view["Zc"], view["G"]; Xc = Zc * view["sig"] + view["mu"]
+    dense = F30.DenseRates(view["Ztr"], view["mu"], view["sig"])
+    out = []
+    for i, eq in enumerate(eqs):
+        toks_c = sorted([(ast.literal_eval(t), cst) for t, cst in eq], key=lambda tc: str(tc[0]))
+        terms = [SY.learner_term(t, cst, view["mu"], view["sig"]) for t, cst in toks_c]
+        ex = make_example(terms, [], Zc, Xc, G[:, i], float(view["noise"][i]), dense, i)
+        if ex is not None:
+            out.append(ex + (dict(meta, eq=i, source="true", pieces=sum(1 for t, _ in toks_c if t[0] != "mono"),
+                                  slots=int(ex[1].shape[0])),))
+    return out

@@ -16,6 +16,7 @@ Pieces of the vocabulary (fixed 2 November, docs/research-log.md):
   learn28           per-equation searches, assembly, exact fitting on the step-to-step map, held-back check, ties.
 """
 
+import heapq
 import itertools
 import math
 import time
@@ -705,8 +706,9 @@ class EquationSearch:
         singular there) cannot be plausibly exact."""
 
     def __init__(self, i, ctx, budget, prior_fn, fitter, rng, c_puct=1.5, eps=0.15, time_cap=float("inf"), lam=0.02,
-                 thorough_cap=None, probe=None):
+                 thorough_cap=None, probe=None, screen=None):
         self.i, self.budget, self.prior_fn, self.fitter, self.rng = i, budget, prior_fn, fitter, rng
+        self.screen, self.pending, self._pc = screen, [], 0     # Trial 31 option C: screen-ordered thorough fits
         self.c_puct, self.eps, self.time_cap, self.lam = c_puct, eps, time_cap, lam
         self.thorough_cap, self.probe = thorough_cap, probe    # Trial 30: thorough-fit cap per equation (None: none), structure to watch
         self.vocab, self.Zc, self.Xc = ctx["vocab"], ctx["Zc"], ctx["Xc"]
@@ -779,7 +781,12 @@ class EquationSearch:
         if S and self.si_tr is not None and gate and not superset:
             tp = time.perf_counter()                               # precise stage: thorough refit (unless the fit is
             try:                                                   # already at the floor), step integrals, held-back
-                if res > 2.0 * floor:                              # past the cap (if any), only a structure whose cheap
+                if res > 2.0 * floor and self.screen is not None and self.thorough_cap is not None:
+                    self._pc += 1                                  # screen policy: wait for a thorough fit, best score
+                    heapq.heappush(self.pending, (-float(self.screen(S, gate_code, res, floor, yn, eff["structures"])),
+                                                  self._pc, S, warm, (terms, res, coefs)))   # first (see _drain)
+                    eff["deferred"] = eff.get("deferred", 0) + 1
+                elif res > 2.0 * floor:                            # past the cap (if any), only a structure whose cheap
                     if self.thorough_cap is None or eff["thorough"] < self.thorough_cap or \
                             rel_rate < eff["thorough_best_rel"]:   # fit beats every thorough-fitted one gets a thorough fit
                         breaker = self.thorough_cap is not None and eff["thorough"] >= self.thorough_cap
@@ -977,10 +984,65 @@ class EquationSearch:
                         eff["structures"] >= eff["first_exact"] + max(min_extra, extra_after_exact * eff["first_exact"]):
                     break
             self.step()
+            if self.screen is not None and self.pending and eff["structures"] % 50 == 0:
+                self._drain(int(self.thorough_cap * min(1.0, eff["structures"] / max(self.budget, 1))))
+            now = time.perf_counter()
+            eff["seconds"] += now - self._t
+            self._t = now
+        if self.screen is not None and self.pending:              # budget left at the end of a phase
+            self._drain(self.thorough_cap)
             now = time.perf_counter()
             eff["seconds"] += now - self._t
             self._t = now
         return self
+
+    def _drain(self, limit):
+        """Screen policy: thorough fits for the best-scored waiting structures, while the equation has used fewer than
+        `limit`; a structure made exact updates its node as evaluate() would have."""
+        vocab, Zc, Xc, y, floor, i, eff = self.vocab, self.Zc, self.Xc, self.y, self.floor, self.i, self.eff
+        while self.pending and eff["thorough"] < limit:
+            _, _, S, warm, cheap = heapq.heappop(self.pending)
+            node = self.table.get(S)
+            if node is None or node["exact"] or any(E < set(S) for E in self.exact_sets):
+                continue
+            eff["thorough"] += 1
+            th = time.perf_counter()
+            rel_t = rel_v = float("inf")
+            try:
+                terms, res, coefs = thorough_fit(self.fitter, vocab, S, Zc, Xc, y, warm, floor, cheap, eq=i,
+                                                 si_tr=self.si_tr, si_va=self.si_va)
+                terms2, rel_t, c2 = refine_integral(terms, self.si_tr, i)
+                if c2 is not None and math.isfinite(rel_t):
+                    terms, coefs = terms2, c2
+                    rel_v = heldback_error(terms, coefs, self.si_va, i)
+                degen = any(DL.degenerate(t, Zc, Xc, strict=False) for t in terms)
+            except (RuntimeError, ValueError, ZeroDivisionError):
+                eff["thorough_seconds"] += time.perf_counter() - th
+                continue
+            eff["thorough_seconds"] += time.perf_counter() - th
+            exact = bool(rel_v <= self.tau and rel_t <= self.tau and not degen)
+            if not exact and not (math.isfinite(rel_v) and rel_v < node["rel_v"]):
+                continue
+            rel = rel_v if math.isfinite(rel_v) and not degen else max(res / self.yn, PRECISE_GATE)
+            v = 0.0 if not math.isfinite(rel) else min(1.0, max(0.0, math.log10(1.0 / max(rel, 1e-14)) / 14.0))
+            node.update(terms=terms, coefs=coefs, res=res, rel_t=rel_t, rel_v=rel_v, degenerate=degen, exact=exact,
+                        value=v - self.lam * len(S), best=max(node["best"], v - self.lam * len(S)))
+            if self.probe is not None and S == self.probe:
+                eff["probe_exact"], eff["probe_rel_v"] = exact, rel_v
+            if exact:
+                eff["thorough_exact"] += 1
+                self.exact_sets.append(set(S))
+                nxt = [tuple(u for u in S if u != t) for t in S]
+                for t in S:
+                    nxt += self._replacements(t, S)
+                queued = {q for q, _ in self.prune}
+                for q in nxt:
+                    if q and q not in self.table and q not in queued:
+                        self.prune.append((q, node)); queued.add(q)
+                if eff["first_exact"] is None:
+                    eff["first_exact"] = eff["structures"]
+                    eff["thorough_at_first_exact"] = eff["thorough"]
+                    eff["first_exact_seconds"] = eff["seconds"] - eff["shadow_seconds"] + time.perf_counter() - self._t
 
 
 def search_equation(i, ctx, budget, prior_fn, fitter, rng, c_puct=1.5, eps=0.15, time_cap=float("inf"), lam=0.02,
@@ -1011,7 +1073,7 @@ def candidates_for(table, top=3):
 # ---------------------------------------------------------------------------------------------------------------------
 
 def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("inf"), max_assemblies=6, thorough_cap=None,
-            probe=None, fitlog=None):
+            probe=None, fitlog=None, screen=None):
     """Search each equation within `budget` fitted structures, assemble, fit exactly on the step-to-step map, check on
     held-back bursts, apply ties. Returns a result dict with the model, held-back error, acceptance and effort."""
     t0 = time.perf_counter()
@@ -1050,7 +1112,7 @@ def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("i
         rng = np.random.default_rng([seed, i])                 # exactly a prefix of a larger one
         pr = tuple(sorted(probe[i], key=str)) if probe is not None and i < len(probe) and probe[i] is not None else None
         searches.append(EquationSearch(i, ctx, budget, prior_fn, fitter, rng, time_cap=time_cap / d,
-                                       thorough_cap=thorough_cap, probe=pr).run())
+                                       thorough_cap=thorough_cap, probe=pr, screen=screen).run())
     best, assemblies, rounds, last_key = None, 0, 0, None
     ta, asm_seconds = None, 0.0
     while True:
