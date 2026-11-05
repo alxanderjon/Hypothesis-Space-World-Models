@@ -4564,3 +4564,52 @@ The starting points of the thorough fit are where a learned component can help.
 1. after data collection and training (development results, data sizes, label check), before Stage A;
 2. after Stage A, before Stage B;
 3. with Stage B's results.
+
+### Trial 31: owner approval with one addition; rules (5 November, 05:35, logged before any system is drawn)
+
+**Owner.** *"Approved as written, including the generator's true constants as labels and the pass bar. One addition: some equations have more than one exact set of constants (symmetries, interchangeable pieces). Make sure training only requires the best of the 16 candidates to match, and doesn't penalize valid alternative answers. Check in at each of the three points you listed."*
+
+**Systems** (none drawn yet):
+- "t31-train-u-k" (k = 0–799, untuned generator) and "t31-train-t-k" (k = 0–199, hand-tuned generator), tagged "train";
+- "t31-dev-u-k" (k = 0–39, untuned), tagged "dev".
+- **The generator's existing acceptance rules, as the cheap-reference cutoff fixed before looking:**
+  - refine ≤ 4, nsub ≤ 64, build ≤ 60 s, settle-time limits 2 s (untuned) and 5 s;
+  - positive, finite and bounded; every variable moves;
+  - no held-out family pair; not centred at M = 8; no degenerate true piece.
+- **The build-time limit is wall-clock time,** so which draw is accepted can depend on machine load. This is harmless for training data, because each system's bursts and labels are stored. It is the likely cause of the 4 differently drawn (2u′) systems in Trial 30.
+
+**Per system** (fitter v2, M = 8, seed 1; recorder on):
+- (a) the known-structure pass: each equation's true structure through `EquationSearch.evaluate`, as in Trial 30's test;
+- (b) a search: `learn28`, 500 structures per equation, cap 100, time cap 3,600 s, shadow sample 5% (shadow seed k). Baseline priorities for even k; the untuned-history network for odd k.
+- A labels file: the generator's description (tokens and constants) and the learner's scaling at M = 8.
+- 24 CPU workers at nice 10. Free disk watched every minute: below 5 GB my runs stop (by PID) and the owner is told. The runner resumes, skipping finished systems.
+
+**Labels and the owner's addition** (alternative exact answers are never penalized):
+1. **Winner-takes-all.** An example's loss is the distance from the best of the 16 hypotheses to the nearest valid answer; the other 15 get no loss.
+2. **Valid answers:**
+   - the generator's true constants, converted with `synthetic28.learner_term` into the global search's natural-range unit cube (numerical inversion of its maps, in its dependency order);
+   - their symmetry images: permutations of interchangeable pieces (factors or terms of identical form: same family, variables and multiplier); sign flips that stay inside the search space (tanh (b, c) ↔ (−b, −c), with the coefficient changing sign); periodic constants compared circularly (sine phase), and canonical forms where the search space holds one sign only (positive sine frequency);
+   - the final constants of any recorded fit of the true structure that ended plausibly exact.
+3. **Constants the data cannot pin down are left out of the distance.** These are slots whose uncertainty in unit-cube coordinates exceeds 0.05, from the Jacobian at the true constants and the data's noise level.
+4. **Checked before training, on development systems:**
+   - the converted true constants reproduce the data (coefficients solved exactly: step-integral and held-back errors within each equation's exactness threshold);
+   - every symmetry image fits as exactly as the original.
+   - Counts are reported at check-in 1.
+5. **Every measurement judges success by the exactness test,** so any exact answer counts.
+
+**The network:**
+- **Tokens:** sample points (state values normalized to each variable's observed range, and the equation's rates normalized by their scale); one token per free constant (family, position, variables, multiplier exponents, its variable's data range); one per monomial term.
+- **Model:** 3 transformer layers, width 128, float32. Outputs 16 hypotheses per free constant, inside the unit cube.
+- **Training:** on a GPU under the sharing rule (`nvidia-smi` checked before launch, GPU logged).
+- **Model selection:** development systems only, by known-structure recognition of 3+-piece equations with v3.
+- **Sizes:** trained on 100, 300 and 1,000 training systems (the accumulation curve); the full-size model goes to Stage A.
+
+**Fitter v3** = v2 plus a hook after v2's candidates (v2 returns none there, so its behaviour is unchanged):
+- the network's 16 points are scored in one batch (coefficients solved exactly);
+- 2 refinement rounds around the best follow, with their own fixed random stream;
+- the best 4 distinct points are added to the candidates for polishing;
+- the recorder tags them "learned".
+
+**The screen** (secondary, offline): trained on the same records, and reported by check-in 2 at the latest.
+
+**Check-in 1** (before Stage A): data sizes, the label and symmetry checks, the development results (v2 against v3 by number of pieces, and the accumulation curve), and time.
