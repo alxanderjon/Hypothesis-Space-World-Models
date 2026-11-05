@@ -464,10 +464,11 @@ class FitterV3(F30.FitterV2):
     """Fitter v2 with the network's starting points added after v2's own candidates (never replacing them)."""
 
     def __init__(self, bank, dense=None, seed=0, lm_iters=10, natural=None, net=None, keep=4, refine_rounds=2,
-                 refine_n=32, radius=0.05, cloud=0, cloud_radius=0.1):
+                 refine_n=32, radius=0.05, cloud=0, cloud_radius=0.1, prepolish=0):
         super().__init__(bank, dense, seed=seed, lm_iters=lm_iters, natural=natural)
         self.net, self.keep, self.refine_rounds, self.refine_n, self.radius = net, keep, refine_rounds, refine_n, radius
         self.cloud, self.cloud_radius = cloud, cloud_radius        # points sampled around every hypothesis first
+        self.prepolish = prepolish                                 # extra rate-data iterations for the learned picks
         self.stats.update(learned_tried=0, learned_won=0, learned_seconds=0.0)
 
     def _extra_candidates(self, vocab, toks, current, Zc, Xc, y, eq):
@@ -478,13 +479,28 @@ class FitterV3(F30.FitterV2):
         slots, maps = slots_of(terms, Zc, Xc)
         if not slots:
             return []
-        pts, sl, mo = features(terms, slots, Zc, Xc, self.dense.Z, self.dense.dZ[:, eq], eq)
-        with torch.no_grad():
-            U = self.net(pts[None], torch.ones(1, pts.shape[0], dtype=torch.bool), sl[None],
-                         torch.ones(1, sl.shape[0], dtype=torch.bool), mo[None] if mo.shape[0] else torch.zeros(1, 1, F_MONO),
-                         torch.ones(1, max(mo.shape[0], 1), dtype=torch.bool) if mo.shape[0] else torch.zeros(1, 1, dtype=torch.bool))
-        U = U[0].T.double().numpy()                                   # (K, h)
         rng = np.random.default_rng([31, int(eq), zlib.crc32(repr(tuple(toks)).encode())])   # own stream
+        if isinstance(self.net, str) and self.net == "global":     # control: v2's own global search (fresh stream),
+            outs = []                                                # its best 4, with the same pre-polish
+            for cand in F30.global_search(vocab, toks, terms, Zc, Xc, y, rng)[:self.keep]:
+                if self.prepolish:
+                    try:
+                        cand = SS.fast_refine(cand, Zc, Xc, y, iters=self.prepolish, stop_below=1e-14 * float(y.norm()))[0]
+                    except (RuntimeError, ValueError):
+                        pass
+                outs.append(cand)
+            self.stats["learned_tried"] += 1
+            self.stats["learned_seconds"] += time.perf_counter() - t0
+            return outs
+        if isinstance(self.net, str) and self.net == "random":     # control: random points instead of the network's
+            U = rng.random((K_HYP, len(slots)))
+        else:
+            pts, sl, mo = features(terms, slots, Zc, Xc, self.dense.Z, self.dense.dZ[:, eq], eq)
+            with torch.no_grad():
+                U = self.net(pts[None], torch.ones(1, pts.shape[0], dtype=torch.bool), sl[None],
+                             torch.ones(1, sl.shape[0], dtype=torch.bool), mo[None] if mo.shape[0] else torch.zeros(1, 1, F_MONO),
+                             torch.ones(1, max(mo.shape[0], 1), dtype=torch.bool) if mo.shape[0] else torch.zeros(1, 1, dtype=torch.bool))
+            U = U[0].T.double().numpy()                               # (K, h)
         if self.cloud:
             U = np.concatenate([U] + [np.clip(U + self.cloud_radius * (rng.random(U.shape) * 2 - 1), 0, 1)
                                       for _ in range(self.cloud)])
@@ -513,7 +529,13 @@ class FitterV3(F30.FitterV2):
                 break
             if all(np.max(np.abs(U[k] - U[j_])) > 0.02 for j_ in picks):
                 picks.append(k)
-                outs.append(with_constants(terms, slots, P[k]))
+                cand = with_constants(terms, slots, P[k])
+                if self.prepolish:
+                    try:
+                        cand = SS.fast_refine(cand, Zc, Xc, y, iters=self.prepolish, stop_below=1e-14 * float(y.norm()))[0]
+                    except (RuntimeError, ValueError):
+                        pass
+                outs.append(cand)
             if len(picks) >= self.keep:
                 break
         self.stats["learned_tried"] += 1
