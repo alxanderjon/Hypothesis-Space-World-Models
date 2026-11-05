@@ -4825,3 +4825,48 @@ Check in with all three before Stage A."*
 **Also reported:** results by set and number of pieces; time per arm; how often learned and global starts win; per-family results on H.
 
 **Check-in before Stage B.**
+
+### Trial 31 Stage A results (5 November, 21:14–21:30): deciding bar NOT met; original bar (v3 against v2) met
+
+**Run.** Three arms in one process per equation; 24 CPU workers; 710 equations (U 162, T 180, U′ 165, H 173, P 30). One practice system was skipped for centred coordinates, as in Trial 30.
+
+**Recognized** (v2 / v2-strong / v3):
+
+| Set | 0 pieces | 1 piece | 2 pieces | 3+ pieces |
+|---|---|---|---|---|
+| U | 4 / 4 / 4 (4) | 33 / 33 / 33 (35) | 31 / 37 / 36 (46) | 12 / 20 / 22 (77) |
+| T | 28 / 28 / 28 (28) | 83 / 84 / 84 (89) | 40 / 43 / 44 (50) | 4 / 5 / 6 (13) |
+| U′ | 5 / 5 / 5 (5) | 43 / 43 / 43 (44) | 26 / 30 / 29 (36) | 11 / 19 / 25 (80) |
+| H (unfamiliar families) | 3 / 3 / 3 (3) | 44 / 44 / 44 (44) | 22 / 25 / 26 (30) | 13 / 20 / 28 (96) |
+| P (practice) | 10 / 10 / 10 (10) | 14 / 15 / 15 (16) | 1 / 1 / 1 (4) | – |
+
+**Deciding comparison, v3 against v2-strong: NOT MET.**
+1. 3+ pieces (U, T, U′ pooled, 170 equations): 44 → 53; v3 only 16, v2-strong only 7; sign test **p = 0.093**. Not significant.
+2. Losses (v2-strong only): U 6 of 162 (3.7%), T 1 of 180, U′ 4 of 165 (2.4%), H 4 of 173 (2.3%), P 0 of 30. **Above 2% on three sets.**
+3. H and P: H 92 → 101, P 26 → 26. Met.
+
+**For the record, v3 against plain v2 under the originally approved bar: MET.**
+1. 3+ pieces pooled: 27 → 53 of 170 (+15 points, 2.0×); v3 only 26, v2 only 0; p = 3 × 10⁻⁸.
+2. No losses on any set; 0–2 pieces within 2 points.
+3. H 82 → 101, P 25 → 26.
+
+**Also reported:**
+- **Evaluation time, mean (median):** v2 0.71 s (0.21 s), v2-strong 1.50 s (0.31 s), v3 1.29 s (0.26 s).
+- **Added starts won the thorough fit:** global picks 225 times (v2-strong), learned picks 261 times (v3).
+- **H by family** (equations containing it; v2 / v2-strong / v3):
+  - abs 3: 1/1/1;
+  - exp 32: 8/8/14;
+  - hill 47: 17/18/25;
+  - pair_hill 43: 6/8/11;
+  - pair_recip 31: 10/11/16;
+  - pow 36: 9/11/10;
+  - prod_hill 41: 14/20/21;
+  - prod_recip 29: 6/8/10;
+  - recip 65: 28/34/35;
+  - sin 40: 10/16/15;
+  - tanh 40: 10/11/14.
+
+**Reading.**
+- The long polish is most of the gain (v2 → v2-strong: 27 → 44 on 3+ pieces). The network adds to it (→ 53, and 20 → 28 on unfamiliar families), but not significantly on the pooled sets.
+- **v3's "losses" are not failures on shared candidates.** v2-strong and v3 are different supersets of v2 (global picks against learned picks), so each solves some equations the other misses.
+- **A fitter with both picks** would hold both candidate sets. From the union of the two arms it is estimated at about 60 of 170 on 3+ pieces; this is not measured.
