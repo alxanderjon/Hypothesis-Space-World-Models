@@ -4703,3 +4703,37 @@ Check in with all three before Stage A."*
   - A thorough fit that makes a structure exact updates its node: the exact flag, the value, and the simplification queue.
 - **The screen** is retrained on training systems without the two features that depend on the cap policy (the thorough-fit count so far and the record-breaker flag).
 - **Reported:** equations with a plausibly exact structure, true structures recognized, whole systems, thorough fits used, and time, at the same budget.
+
+### Trial 31 addition 1: basin test (5 November, development systems; 40 systems, 104 equations with free constants)
+
+**How close a start must be.** Every free constant of the true structure is moved by exactly δ of its range (search coordinates, random direction, 8 draws). The start then follows a learned start's path: polish on the rate data, step-integral refit, exactness test. Reaches exactness (20 / 60 polishing iterations):
+
+| Pieces | Equations | δ = 0 | δ = 0.01 | δ = 0.02 | δ = 0.05 | δ = 0.10 |
+|---|---|---|---|---|---|---|
+| 1 | 28 | 100% | 99% / 99% | 99% / 99% | 92% / 92% | 74% / 75% |
+| 2 | 30 | 100% | 84% / 89% | 69% / 77% | 45% / 48% | 27% / 33% |
+| 3+ | 46 | 89%* | 26% / 33% | 15% / 23% | 4% / 7% | 2% / 2% |
+
+\* At δ = 0, the misses are equations whose true constants lie outside the search coordinates, so the start is the clipped point.
+
+**The network's accuracy on the same equations** (1,000-system network; best of 16 guesses against the nearest valid answer):
+
+| Pieces | Mean per-constant error (median) | Largest-constant error (median) | Every constant within 0.01 | Within 0.02 | Within 0.05 | Within 0.10 |
+|---|---|---|---|---|---|---|
+| 1 | 0.012 | 0.014 | 32% | 57% | 64% | 82% |
+| 2 | 0.037 | 0.061 | 3% | 13% | 43% | 70% |
+| 3+ | 0.059 | 0.143 | 0% | 2% | 7% | 28% |
+
+**Which polish widens the basin** (3+ pieces; δ = 0.02 / δ = 0.05):
+- (a) the current path: 15% / 4%;
+- (b) the step-integral refit alone, 60 iterations: 23% / 8%;
+- (c) 60 iterations on the dense rates, then the step-integral refit: 25% / 12%;
+- (d) 200 iterations on the rate data: 27% / 13%.
+- 2 pieces: 69% → 77–80% and 45% → 52–56%.
+
+**Reading.**
+- For equations with 3 or more pieces, polishing reaches exactness from about 1% of every constant's range only a quarter to a third of the time.
+- The network's guesses are about 5 times further off (median 6% mean, 14% on the worst constant).
+- From 100 to 1,000 training systems its error fell only from 0.055 to 0.040. At that rate, the 1% scale would need thousands of times more data.
+- A stronger polish doubles or triples the hit rate at 5%, but the basin stays narrow.
+- **Generation (addition 2) goes ahead as approved,** sized to measure the scaling point: 4,000 new systems, about 1.8 h on 24 workers, after option C finishes.
