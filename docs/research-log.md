@@ -4902,3 +4902,39 @@ Check in with all three before Stage A."*
 - how often learned and global picks win.
 
 **Check-in before Stage B.**
+
+### Trial 31 combined-fitter test results (5 November, 21:42–21:59): pass bar MET; the gain grows with history
+
+**Run.** Four arms in one process per equation, 24 CPU workers. 738 equations on fresh sets: U″ (100 untuned) 275, T″ (60 hand-tuned) 182, H″ (100 with held-out family pairs) 281. No failures. Before the run, on 28 development equations, the new `FitterV2S` reproduced Stage A's v2-strong exactly, and the combined fitter recognized every equation v2-strong did.
+
+**Recognized** (v2-strong / combined with the 100- / 1,000- / 5,000-system network):
+
+| Set | 0 pieces | 1 piece | 2 pieces | 3+ pieces |
+|---|---|---|---|---|
+| U″ | 5/5/5/5 (5) | 61/61/61/61 (62) | 62/63/63/63 (71) | **25 / 42 / 46 / 52** (137) |
+| T″ | 34/34/34/34 (35) | 83/83/83/83 (88) | 39/39/40/40 (48) | **3 / 4 / 4 / 6** (11) |
+| H″ (unfamiliar) | 5/5/5/5 (5) | 58/58/58/58 (59) | 70/71/70/72 (77) | **35 / 46 / 47 / 53** (140) |
+
+**Deciding comparison, combined (5,000-system network) against v2-strong: MET.**
+1. 3+ pieces, pooled over U″, T″ and H″ (288 equations): 63 → 111. Combined only 48, v2-strong only 0; sign test **p = 7 × 10⁻¹⁵**.
+2. Losses (v2-strong only): 0 on every set.
+
+**Does the gain grow with history?** 3+ pieces pooled:
+
+| Network trained on | Recognized | Gain over v2-strong | Combined only / v2-strong only | p |
+|---|---|---|---|---|
+| 100 systems | 92 | +29 | 29 / 0 | 4 × 10⁻⁹ |
+| 1,000 systems | 97 | +34 | 34 / 0 | 1 × 10⁻¹⁰ |
+| 5,000 systems | 111 | +48 | 48 / 0 | 7 × 10⁻¹⁵ |
+
+- Familiar sets (U″ + T″, 148): 28 → 46 / 50 / 58.
+- Unfamiliar families (H″, 140): 35 → 46 / 47 / 53.
+- **The gain grows with the number of systems learned,** on familiar and on unfamiliar families. No set lost anything at any size.
+
+**Time.**
+- Evaluation per equation, mean (median): v2-strong 1.63 s (0.52 s); combined 2.27–2.31 s (0.60–0.61 s), about +40% on the mean.
+- Thorough fits won by the added starts: v2-strong's global picks 236. In the combined fitters, global picks 134 / 118 / 112 and learned picks 180 / 208 / 209 (100 / 1,000 / 5,000 systems).
+
+**Reading.**
+- Given the correct structure, the combined fitter recognizes **39% of 3+-piece equations against v2-strong's 22%** (and v2's 16% in Stage A) on fresh systems, with no losses.
+- The learned part improves with the history it was trained on. This is the first fitting component in the programme that gets better the more systems it has learned from, and it holds on families never seen in training.
