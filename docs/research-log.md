@@ -4737,3 +4737,19 @@ Check in with all three before Stage A."*
 - From 100 to 1,000 training systems its error fell only from 0.055 to 0.040. At that rate, the 1% scale would need thousands of times more data.
 - A stronger polish doubles or triples the hit rate at 5%, but the basin stays narrow.
 - **Generation (addition 2) goes ahead as approved,** sized to measure the scaling point: 4,000 new systems, about 1.8 h on 24 workers, after option C finishes.
+
+### Trial 31 addition 3: option C, the screen ordering thorough fits against the cap (5 November, 16:57–19:00; development systems)
+
+160 runs: 40 development systems (stored bursts, identical across arms) × {uniform, untuned-history network} priorities × {cap, screen ordering}; fitter v2, M = 8, 2,000 structures per equation, 200 thorough fits per equation. No errors.
+
+| Priorities | Policy | Equations with a plausibly exact structure (of 106) | True structures recognized | Systems accepted (all exact when checked externally) | Thorough fits per equation | Time per system (median) |
+|---|---|---|---|---|---|---|
+| uniform | cap | 51 | 32 | 5 | 172 | 827 s |
+| uniform | screen | 52 | 33 | 5 | 170 | 835 s |
+| network | cap | 49 | 36 | 3 | 179 | 1,257 s |
+| network | screen | 49 | 38 | 3 | 172 | 1,092 s |
+
+- **Discordant equations, screen against cap:** uniform 4 vs 3 (p = 1); network 1 vs 1 (p = 1). True structures 5 vs 4 and 4 vs 2. Whole systems are identical.
+- **At the same budget, ordering by the screen solves the same equations as the cap,** and saves 13% of time with the network's priorities.
+- **Why the shadow data overstated the loss.** In the training searches (budget 500, cap 100), 40 equations had an exact structure among the cap-refused shadow fits: 37 of them were solved anyway by another exact structure, and only 3 were left unsolved. The cap mostly turns away further exact variants of equations that are already solved.
+- **The screen used:** retrained without the cap-policy features; development AUC 0.943. Keeping 98% of exact finds it would skip 61% of thorough fits (76% for 3+ pieces).
