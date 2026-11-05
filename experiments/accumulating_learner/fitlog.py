@@ -29,7 +29,7 @@ import time
 import numpy as np
 
 KINDS = {"thorough": 0, "refused": 1, "shadow": 2}
-TAGS = {"current": 0, "v1": 1, "algebraic": 2, "global": 3, "snap": 4}
+TAGS = {"current": 0, "v1": 1, "algebraic": 2, "global": 3, "snap": 4, "learned": 5}
 TRAIN_SETS = ("train", "dev")                                   # usable for training without an explicit allowance
 NEVER_TRAIN = ("test", "reserve")                               # refused for training, always
 VERSION = 1
@@ -110,10 +110,11 @@ class FitLog:
     """Recorder for one run. learn28 calls begin(); the search calls before()/after() around each thorough fit and
     row() for every record; learn28 calls finish(); the runner calls save()."""
 
-    def __init__(self, meta, shadow_rate=0.0, shadow_seed=0):
+    def __init__(self, meta, shadow_rate=0.0, shadow_seed=0, trace=True):
         if "set" not in meta:
             raise ValueError("a fit log needs a set tag")
         self.meta, self.shadow_rate, self.shadow_seed = dict(meta), float(shadow_rate), int(shadow_seed)
+        self.keep_trace = bool(trace)                           # v2's internal starts (about half of a log's size)
         self.header, self.bursts = {}, None
         self.cols = {k: [] for k in ("kind", "eq", "step", "seq", "gate", "breaker", "failed", "res0", "res1", "rel_t",
                                      "rel_v", "degen", "exact", "t_thorough", "t_precise", "snaps_checked",
@@ -130,7 +131,7 @@ class FitLog:
         self.header = {"version": VERSION, "meta": self.meta, "seed": int(seed), "d": int(vocab.d),
                        "vocab": [repr(t) for t in vocab.tokens], "floors": [float(v) for v in floors],
                        "scales": [float(v) for v in yns], "taus": [float(v) for v in taus],
-                       "shadow_rate": self.shadow_rate, "shadow_seed": self.shadow_seed}
+                       "shadow_rate": self.shadow_rate, "shadow_seed": self.shadow_seed, "trace": self.keep_trace}
 
     def finish(self, equations):
         self.header["equations"] = [{k: e.get(k) for k in ("structures", "precise", "thorough", "thorough_capped",
@@ -139,7 +140,7 @@ class FitLog:
     # -- around a thorough fit ---------------------------------------------------------------------------------------
     def before(self, fitter):
         rec = {"rng": rng_state(fitter), "stats": dict(getattr(fitter, "stats", {}) or {}), "t0": time.perf_counter()}
-        if hasattr(fitter, "trace"):
+        if hasattr(fitter, "trace") and self.keep_trace:
             fitter.trace = []
         return rec
 

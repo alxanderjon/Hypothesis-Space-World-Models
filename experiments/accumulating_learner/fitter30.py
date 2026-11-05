@@ -581,6 +581,10 @@ class FitterV2:
             out.append(tl)
         return out
 
+    def _extra_candidates(self, vocab, toks, current, Zc, Xc, y, eq):
+        """Additional thorough-fit starts after v2's own (Trial 31: fitter v3's learned starts); v2 adds none."""
+        return []
+
     def _rates(self, eq, Zc, Xc, y):
         if self.dense is not None and eq is not None:
             return self.dense.Z, self.dense.X, self.dense.dZ[:, eq]
@@ -632,6 +636,8 @@ class FitterV2:
             cands.append((cand, None, None, "algebraic"))
         for cand in global_search(vocab, toks, current[0], Zc, Xc, y, self.rng):
             cands.append((cand, None, None, "global"))
+        for cand in self._extra_candidates(vocab, toks, current, Zc, Xc, y, eq):   # none in v2 (Trial 31 hook)
+            cands.append((cand, None, None, "learned"))
         winner = "current"
         for terms, res, coefs, tag in cands:
             try:
