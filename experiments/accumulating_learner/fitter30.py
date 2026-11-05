@@ -518,6 +518,8 @@ class FitterV2:
     the held-back step-integral error."""
 
     wants_eq = True                                            # the search passes the equation index (dense rates)
+    trace = None                                               # fit log (fitlog.py): a list collects every internal
+    last = None                                                # start of a thorough fit; `last` its winner
 
     def precise_gate(self, toks, res, rel_rate, floor):
         """v2's precise-stage gate: the search's usual gate, or, for structures with two or more nonlinear pieces (whose
@@ -635,7 +637,11 @@ class FitterV2:
             try:
                 t2, r2, c2 = SS.fast_refine(terms, Zc, Xc, y, iters=2 * self.lm_iters, stop_below=1.5 * floor)
             except (RuntimeError, ValueError):
+                if self.trace is not None:
+                    self.trace.append((tag, terms, None, float("inf")))
                 continue
+            if self.trace is not None:
+                self.trace.append((tag, terms, t2, r2))
             if math.isfinite(r2) and r2 < best[1]:
                 best, winner = (t2, r2, c2), tag
         if winner == "global":
@@ -659,6 +665,8 @@ class FitterV2:
                     t3, r3, c3 = SS.fast_refine(trial, Zc, Xc, y, iters=2 * self.lm_iters, stop_below=1.5 * floor)
                 except (RuntimeError, ValueError):
                     continue
+                if self.trace is not None:
+                    self.trace.append(("snap", trial, t3, r3))
                 if math.isfinite(r3):
                     alt = (t3, r3, c3)
                     terms = t3                                   # further exponents are checked on the snapped fit
@@ -677,4 +685,5 @@ class FitterV2:
         dt = time.perf_counter() - t0
         self.stats["thorough"] += 1
         self.stats["thorough_seconds"] += dt
+        self.last = {"winner": winner, "snap_kept": alt is not None and best is alt}
         return best
