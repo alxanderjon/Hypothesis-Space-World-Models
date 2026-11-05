@@ -4870,3 +4870,35 @@ Check in with all three before Stage A."*
 - The long polish is most of the gain (v2 → v2-strong: 27 → 44 on 3+ pieces). The network adds to it (→ 53, and 20 → 28 on unfamiliar families), but not significantly on the pooled sets.
 - **v3's "losses" are not failures on shared candidates.** v2-strong and v3 are different supersets of v2 (global picks against learned picks), so each solves some equations the other misses.
 - **A fitter with both picks** would hold both candidate sets. From the union of the two arms it is estimated at about 60 of 170 on 3+ pieces; this is not measured.
+
+### Trial 31: owner decision after Stage A, and the combined-fitter test pre-registered (5 November, 22:00, logged before running)
+
+**Owner.** *"Adopt v2-strong as the standard fitter for both learners. Then run option 2: v2-strong plus the network's picks vs v2-strong, on fresh known-structure sets including an unfamiliar-family set. Pre-register before running: a significant gain on 3+-piece equations (p < 0.05) and noise-level losses. Also run the combined fitter with networks trained on 100, 1,000 and 5,000 systems, to show whether the gain grows with history. Report time too. Check in with the results before Stage B."*
+
+**Standard fitter from now on: v2-strong**, for both learners. It is fitter v2 plus its own fresh global search's best 4 starts, each pre-polished with 200 rate iterations, as Stage A's v2-strong arm. In code it becomes `fitter30.FitterV2S` and `learn28(fitter="v2s")`.
+
+**Combined fitter:** v2-strong plus the network's best 4 picks (16 guesses, 2 refinement rounds, own random stream), each pre-polished with 200 iterations.
+- Its global picks are generated exactly as v2-strong's (same random stream), so its candidates include all of v2-strong's.
+- Networks: trained on 100, 1,000 and 5,000 systems (Trial 31's networks, unchanged).
+
+**Fresh sets** (never used before; Trial 30's harness; M = 8, seed 1; counts only):
+- U″: 100 untuned systems ("t31c-fit-u-k");
+- T″: 60 hand-tuned systems ("t31c-fit-t-k");
+- H″: 100 systems whose equations include held-out family pairs ("t31c-fit-h-k", mode untuned_test2m).
+
+**Arms, all in one process per equation:**
+- v2-strong;
+- the combined fitter with the 100-system, the 1,000-system and the 5,000-system network.
+
+**Deciding comparison: combined (5,000-system network) against v2-strong. Pass bar (both required):**
+1. Equations with 3+ pieces, pooled over U″, T″ and H″: significantly more recognized by the combined fitter. Exact two-sided sign test on discordant equations, p < 0.05, with more combined-only than v2-strong-only.
+2. Noise-level losses: on every set, the equations v2-strong recognizes and the combined fitter misses are at most 2% of the set's equations.
+
+**Also reported:**
+- the same comparison with the 100- and 1,000-system networks (whether the gain grows with history);
+- 3+ results for the familiar sets (U″ + T″) and for H″ separately;
+- results by number of pieces;
+- evaluation time per arm;
+- how often learned and global picks win.
+
+**Check-in before Stage B.**
