@@ -4613,3 +4613,5 @@ The starting points of the thorough fit are where a learned component can help.
 **The screen** (secondary, offline): trained on the same records, and reported by check-in 2 at the latest.
 
 **Check-in 1** (before Stage A): data sizes, the label and symmetry checks, the development results (v2 against v3 by number of pieces, and the accumulation curve), and time.
+
+**Owner, 5 November, 05:40:** the disk stop rule is now **2 GB remaining**, replacing 5 GB. Runs stop writing below 2 GB free and the owner is told. The collector and the watchdog use 2 GB.
