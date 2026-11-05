@@ -4938,3 +4938,24 @@ Check in with all three before Stage A."*
 **Reading.**
 - Given the correct structure, the combined fitter recognizes **39% of 3+-piece equations against v2-strong's 22%** (and v2's 16% in Stage A) on fresh systems, with no losses.
 - The learned part improves with the history it was trained on. This is the first fitting component in the programme that gets better the more systems it has learned from, and it holds on families never seen in training.
+
+### Trial 31 Stage B: rules (5 November, 22:15, logged before running)
+
+**Owner.** *"Run the full Stage B with 32 workers for the whole run. Never stop or interfere with other users' processes. Send a push notification and a plain-language summary when the results are in. After Stage B, plan the first test of the combined fitter on real systems (practice set first, then propose a held-out test under the usual rules)."*
+
+**Arms** (4 × 200 systems = 800 runs):
+- priorities: {uniform baseline, Trial 29's untuned-history network};
+- fitters: {v2-strong (the standard), combined (v2-strong plus the 5,000-system network's picks)}.
+
+**Systems and settings, as in Trial 30:**
+- Trial 29's sets (1u) "t29-test1" and (2u′) "t29-test2m", 100 each;
+- M = 8, seed 1, 2,000 structures per equation, 200 thorough fits per equation (Trial 30's cap rule), 3,600 s per system;
+- 32 CPU workers at nice 10.
+
+**Reported, per set and priorities:**
+- **Primary:** equations with a plausibly exact structure, and true structures recognized. Combined against v2-strong, paired, with exact two-sided sign tests.
+- **Then:** whole systems exactly recovered (external check), combined against v2-strong.
+- **Trial 29's bar (b) re-checked under each fitter:** network priorities against baseline, +10 points with p < 0.05 on each set.
+- **Context:** Trial 30's fitter-v2 records of the same systems.
+- **Secondary:** search effort and time, including time-cap hits.
+- Drawn-system identity is checked before any pairing; systems drawn differently in any run are excluded and counted.
