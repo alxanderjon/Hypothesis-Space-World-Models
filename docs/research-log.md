@@ -4794,3 +4794,34 @@ Check in with all three before Stage A."*
   - "v2 strong": v2 plus its own fresh global search's best 4 with the 200-iteration pre-polish, the strong-baseline rule's fair control;
   - v3: v2 plus the 5,000-system network's best 4 with the same pre-polish.
 - **The approved bar applies to v3 against v2.** v3 against v2-strong is reported as the test of the learned component itself (on development: 15 against 10, +11 points, 1.5×).
+
+### Trial 31 Stage A: owner's decision and rules (5 November, 21:45, logged before running)
+
+**Owner.** *"Run Stage A with all three arms. The deciding comparison is v3 vs v2-strong, since the long polish is a generic improvement and goes to both. Pass bar for it: a statistically significant gain on 3+-piece equations (p < 0.05), no more than noise-level losses on any set, and no loss on the unfamiliar-family and practice sets. Also report v3 vs plain v2 against the originally approved bar, for the record. Write this into the log before running, and check in with the results before Stage B."*
+
+**Arms.** Each equation's true structure goes through `EquationSearch.evaluate` (Trial 30's harness), all three arms in the same process:
+- **v2:** fitter v2;
+- **v2-strong:** v2 plus its own fresh global search's best 4 (own random stream), each pre-polished with 200 rate iterations;
+- **v3:** v2 plus the 5,000-system network's best 4 (16 guesses, 2 refinement rounds, own random stream), each pre-polished with 200 rate iterations.
+
+**Sets:**
+- U: Trial 30's 60 untuned systems;
+- T: Trial 30's 60 hand-tuned systems;
+- P: the practice known structures, as in Trial 30;
+- U′: 60 fresh untuned systems ("t31-fit-u-k");
+- H: 60 fresh systems whose equations include held-out family pairs ("t31-fit-h-k", mode untuned_test2m; families never seen in training).
+- M = 8, seed 1. Counts only are printed.
+
+**Deciding comparison, v3 against v2-strong. Pass bar (all required):**
+1. Synthetic equations with 3+ pieces (U, T and U′ pooled): v3 recognizes significantly more than v2-strong. Exact two-sided sign test on discordant equations, p < 0.05, with more v3-only than v2-strong-only.
+2. No more than noise-level losses: on every set, the equations v2-strong recognizes and v3 misses are at most 2% of the set's equations.
+3. No loss on H and P: v3 recognizes at least as many as v2-strong on each.
+
+**For the record, v3 against plain v2 under the originally approved bar:**
+1. 3+ pieces pooled: at least 1.5× and at least +15 points, p < 0.05;
+2. on every set, v2-only at most 2%, and 0–2-piece equations within 2 points or better;
+3. on H and P, v3 at least v2.
+
+**Also reported:** results by set and number of pieces; time per arm; how often learned and global starts win; per-family results on H.
+
+**Check-in before Stage B.**
