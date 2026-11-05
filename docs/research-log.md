@@ -4499,3 +4499,68 @@ The fitter is given each true structure, which is evaluated exactly as the searc
 - **Pre-existing, not from the recorder:** Intel MKL prints "Parameter 4 was incorrect on entry to DGELSD" from batched least squares (as often in logging-off runs and in the comparison's log). Such candidates are always refitted and kept only if better.
 
 **Kept:** the runner and check scripts are in `outputs/accumulating_learner/fit_recorder/`. Trial 30's scripts, reports and run records are in `outputs/accumulating_learner/trial30/`.
+
+### Trial 31 proposal: a learned starting-value network for thorough fits (5 November; awaiting owner approval, nothing run)
+
+**Owner.** *"Write up the proposal, with this change of focus: the main limit is that thorough fits fail on equations with 3+ nonlinear pieces even when given the correct structure. Make the learned starting-value network the primary goal, trained on recorded fits from training and development systems only (shadow sample on), with the screen secondary. Measure success first: equations fitted exactly, using the known-structure test from Trial 30 broken down by number of pieces, then in the full search at the same budget for both learners. Report time as secondary. Include how a learned starting-value network would be kept from failing on unfamiliar systems (e.g. it only adds starting points alongside the existing ones, never replaces them). Send the proposal before running anything."*
+
+**Why.** In Trial 30's known-structure test, the new fitter (v2) recognized 16 of the 90 synthetic equations with 3 or more pieces. Of the 74 failures:
+- **69 failed inside the thorough fit,** ending far from exact (median residual 1.1 × 10⁸ times the precision floor): wrong valleys, not near misses;
+- only 5 were stopped at the gate.
+
+The starting points of the thorough fit are where a learned component can help.
+
+**1. Data collection** (training and development systems only; recorder on, shadow sample on):
+- **Systems:**
+  - about 800 new untuned and 200 new hand-tuned training systems (prefixes "t31-train-u-k" and "t31-train-t-k", tagged "train");
+  - 40 new development systems ("t31-dev-u-k", tagged "dev") for model selection, plus the 6 existing ones;
+  - the generators' training modes, so the held-out family pairs are excluded;
+  - the generator's existing cheap-reference cutoff (refine ≤ 4, nsub ≤ 64, simulation time limits 2 s / 5 s), logged as the cutoff before any system is drawn.
+- **Per system:**
+  - (a) each equation's true structure through the v2 evaluation, as in the known-structure test (recorded);
+  - (b) one search at 500 structures per equation, cap 100, recorder and shadow sample on (5%). Half use the baseline's priorities and half the network's, so both search styles are covered.
+- **Labels:**
+  - for a true structure: **the generator's true constants**, converted into the learner's terms with the existing `synthetic28.learner_term`, even when the recorded fit failed. These are exactly the hard 3+-piece cases;
+  - for any other recorded fit that ended plausibly exact: its final constants;
+  - first, on development systems, check that the converted true constants reproduce the data to the precision floor.
+- **Never in training:** Trial 29's and Trial 30's test sets, the practice systems and the fresh pool. The loader refuses test and reserve sets.
+- **Estimated cost:** about 4–5 h on 24 CPU workers, about 0.3–0.5 GB, under the 5 GB stop rule.
+
+**2. The network.**
+- **Model:** a small set transformer in the style of MoveNet (3 layers, width 128, float32), trained on a GPU under the GPU sharing rule.
+- **Input:** the structure's terms (family, variables, exponents, which constant is which) and a fixed-size summary of the equation's rate data over each piece's variables.
+- **Output:** 16 candidate points in **the global search's natural-range unit cube**, the same scale-free coordinates v2 already samples (switch centres across the data, rates and frequencies on log scales relative to the data range, poles at log distances outside it).
+- **Loss:** winner-takes-all over the 16 hypotheses, matching interchangeable pieces in any order and treating phases as circular.
+- **Model selection:** development systems only.
+- **Accumulation curve:** also trained on 100, 300 and 1,000 training systems, so recognition can be shown as a function of how many systems the fitter has learned from.
+
+**3. Fitter v3 = v2 plus learned starts, and how it is kept from failing on unfamiliar systems.**
+1. **Additive only.** v2's candidates (the v1 sweep fit, 3 algebraic starts, the global search) are computed exactly as now, with the same random stream. The network's points are scored in one batch (coefficients solved exactly), refined around the best few with their own fixed random stream, and the best 4 distinct are added to the candidate list. Polishing, snapping and the exactness test are unchanged. So **v3's best fit can never have a higher residual than v2's on the same inputs**; the network can only add options.
+2. **Bounded.** Its points lie inside the natural ranges the global search already explores (polishing can leave them). A fixed number of extra polishes caps the cost when the network is no help.
+3. **Unfamiliar families tested separately.** The held-out family pairs never appear in training. A known-structure set built on them, and the practice systems, measure the network on unfamiliar systems. "Never worse" is counted on every set.
+4. **No test data** in training or model selection.
+
+**4. Measurement** (primary: equations fitted exactly; time secondary).
+- **Stage A, known-structure test** (Trial 30's harness, v2 against v3, by number of pieces 0 / 1 / 2 / 3+):
+  - **Sets:**
+    - Trial 30's U (60 untuned), T (60 hand-tuned) and P (12 practice systems), for direct comparison;
+    - fresh U′ (60 new untuned systems), as confirmation;
+    - H (60 new systems whose equations include held-out family pairs), for unfamiliar systems.
+  - **Pass bar (all required):**
+    1. Synthetic equations with 3+ pieces (U, T and U′ pooled): v3 recognizes at least 1.5× as many as v2 and at least 15 points more, paired sign test p < 0.05.
+    2. Never worse: on every set, the equations recognized by v2 but not v3 are at most 2% of the set (run-to-run noise). Equations with 0–2 pieces are within 2 points of v2 or better.
+    3. Unfamiliar set H and practice P: v3 recognizes at least as many as v2.
+  - **Also reported:** the accumulation curve (100 / 300 / 1,000 training systems), which starts win, thorough-fit time against v2 (secondary), and per-family results.
+- **Check-in after Stage A, before Stage B.**
+- **Stage B, full search** (at the same budget as Trial 30: M = 8, 2,000 structures per equation, cap 200):
+  - both learners (baseline and untuned-history network) with v3 on Trial 29's sets (1u) and (2u′);
+  - next to Trial 30's v2 records of the same systems, with a 16-run same-batch v2 rerun as an outcome-level consistency check;
+  - drawn-system identity checked before pairing.
+  - **Primary:** equations with a plausibly exact structure and true structures recognized (paired sign tests per learner and set). **Then:** whole systems, and Trial 29's bar (b) re-checked with v3. **Time:** secondary.
+
+**5. The screen (secondary).** Trained on the same recorded thorough fits and shadow fits, to predict whether a thorough fit will end plausibly exact. Evaluated **offline only** on development data: how many thorough fits could be skipped while keeping 98% of exact finds. It is not used in Stage A or B; a later trial decides.
+
+**Check-ins:**
+1. after data collection and training (development results, data sizes, label check), before Stage A;
+2. after Stage A, before Stage B;
+3. with Stage B's results.
