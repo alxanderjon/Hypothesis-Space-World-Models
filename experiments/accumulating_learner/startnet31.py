@@ -72,14 +72,29 @@ def _pole_inv(c, lo, hi, sp):
     return 0.5, False                                           # a pole inside the data: not in the search space
 
 
-def invert(terms, slots, Z, X):
+def _forward(terms, slot, mp, u, th, X):
+    """One slot's value at u given its factor's current constants (as fitter30._apply_samples)."""
+    m, fi, pos = slot
+    if mp is None:                                              # Hill K follows the exponent
+        j = terms[m].factors[fi].var
+        xmed = float(X[:, j].abs().median()) + 1e-300
+        return (10.0 ** (-1.5 + 3.0 * u) * xmed) ** th[1]
+    try:
+        return float(mp(u, th))
+    except TypeError:
+        return float(mp(u))
+
+
+def invert(terms, slots, Z, X, maps=None):
     """Cube coordinates of the terms' own constants: (u (h,) clipped to the cube, status (h,): 0 inside, 1 outside the
-    natural range (u is the nearest point of the cube), 2 not representable (e.g. a pole inside the data))."""
+    natural range (u is the nearest point of the cube), 2 not representable (e.g. a pole inside the data)). With
+    `maps`, a constant that depends on an earlier, clipped one of its factor is inverted given that clipped value."""
     us, ins = [], []
-    for (m, fi, pos) in slots:
+    cur = {}
+    for q, (m, fi, pos) in enumerate(slots):
         f = terms[m].factors[fi]
-        th = [float(v) for v in f.theta]
-        v, fam = th[pos], f.family
+        th = cur.setdefault((m, fi), [float(v) for v in f.theta])
+        v, fam = float(f.theta[pos]), f.family
         if isinstance(f.var, tuple):
             j, k = f.var
             _, _, sj = _rng(Z[:, j]); _, _, sk = _rng(Z[:, k])
@@ -128,7 +143,13 @@ def invert(terms, slots, Z, X):
             else:
                 u, ok = 0.5, False
         st = 0 if ok else (1 if (math.isfinite(u) and _representable(f, pos, v, th, Z)) else 2)
-        us.append(min(max(u, 0.0), 1.0) if math.isfinite(u) else 0.5)
+        u = min(max(u, 0.0), 1.0) if math.isfinite(u) else 0.5
+        if st and maps is not None:                             # later constants of this factor see the clipped value
+            try:
+                th[pos] = _forward(terms, (m, fi, pos), maps[q], u, th, X)
+            except (ValueError, ZeroDivisionError, OverflowError):
+                pass
+        us.append(u)
         ins.append(st)
     return np.array(us), np.array(ins, dtype=np.int8)
 
@@ -318,7 +339,7 @@ def label(terms, Z, X, y, noise, extra=()):
     answers, inside = [], []
     for alt in [terms] + list(extra):
         for img in images(alt, Z, X):
-            u, st = invert(img, slots, Z, X)
+            u, st = invert(img, slots, Z, X, maps)
             answers.append(u); inside.append(st)
     u0 = answers[0]
     sig = slot_sigma(terms, slots, maps, u0, Z, X, y, noise)
@@ -386,11 +407,11 @@ def features(terms, slots, Zc, Xc, Zd, yd, eq):
 # ---------------------------------------------------------------------------------------------------------------------
 
 class StartNet(nn.Module):
-    def __init__(self, width=128, layers=3, heads=4, k=K_HYP):
+    def __init__(self, width=128, layers=3, heads=4, k=K_HYP, dropout=0.0):
         super().__init__()
         self.k = k
         self.ep, self.es, self.em = nn.Linear(F_POINT, width), nn.Linear(F_SLOT, width), nn.Linear(F_MONO, width)
-        layer = nn.TransformerEncoderLayer(width, heads, 4 * width, dropout=0.0, batch_first=True)
+        layer = nn.TransformerEncoderLayer(width, heads, 4 * width, dropout=dropout, batch_first=True)
         self.enc = nn.TransformerEncoder(layer, layers)
         self.head = nn.Linear(width, k)
 
@@ -443,9 +464,10 @@ class FitterV3(F30.FitterV2):
     """Fitter v2 with the network's starting points added after v2's own candidates (never replacing them)."""
 
     def __init__(self, bank, dense=None, seed=0, lm_iters=10, natural=None, net=None, keep=4, refine_rounds=2,
-                 refine_n=32):
+                 refine_n=32, radius=0.05, cloud=0, cloud_radius=0.1):
         super().__init__(bank, dense, seed=seed, lm_iters=lm_iters, natural=natural)
-        self.net, self.keep, self.refine_rounds, self.refine_n = net, keep, refine_rounds, refine_n
+        self.net, self.keep, self.refine_rounds, self.refine_n, self.radius = net, keep, refine_rounds, refine_n, radius
+        self.cloud, self.cloud_radius = cloud, cloud_radius        # points sampled around every hypothesis first
         self.stats.update(learned_tried=0, learned_won=0, learned_seconds=0.0)
 
     def _extra_candidates(self, vocab, toks, current, Zc, Xc, y, eq):
@@ -463,6 +485,9 @@ class FitterV3(F30.FitterV2):
                          torch.ones(1, max(mo.shape[0], 1), dtype=torch.bool) if mo.shape[0] else torch.zeros(1, 1, dtype=torch.bool))
         U = U[0].T.double().numpy()                                   # (K, h)
         rng = np.random.default_rng([31, int(eq), zlib.crc32(repr(tuple(toks)).encode())])   # own stream
+        if self.cloud:
+            U = np.concatenate([U] + [np.clip(U + self.cloud_radius * (rng.random(U.shape) * 2 - 1), 0, 1)
+                                      for _ in range(self.cloud)])
         P = constants_of(terms, slots, maps, U, Zc, Xc)
         rn = F30._batch_resid(terms, toks, slots, torch.tensor(P), Zc, Xc, y).numpy()
         for rnd in range(self.refine_rounds):
@@ -477,7 +502,7 @@ class FitterV3(F30.FitterV2):
                     break
             if not top:
                 break
-            rad = 0.05 * 0.4 ** rnd
+            rad = self.radius * 0.4 ** rnd
             newU = np.concatenate([np.clip(U[k] + rad * (rng.random((self.refine_n, U.shape[1])) * 2 - 1), 0, 1) for k in top])
             newP = constants_of(terms, slots, maps, newU, Zc, Xc)
             U = np.concatenate([U, newU]); P = np.concatenate([P, newP])
