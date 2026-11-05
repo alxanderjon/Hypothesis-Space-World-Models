@@ -4462,3 +4462,40 @@ The fitter is given each true structure, which is evaluated exactly as the searc
   - the search fits the true structure more often (139 against 102 equations on (1u)), and with v2 recognizes it more often once fitted.
 - **The untuned history's frequency table adds nothing over uniform priorities** (at the equation level it is worse on (2u′)), and the network beats it at the equation level on both sets. With an untuned history, the network learns more than term frequencies, but not enough to change whole-system recovery.
 - **Whole systems stay rare** (at most 15 of 100). Untuned equations average 2.5 nonlinear pieces, every equation of a system must be right, and equations with 3 or more pieces remain the binding limit (16–31% recognized even when given the true structure).
+
+### Fit recorder: built, checked and merged (5 November, 05:20)
+
+**Owner.** *"Approved: build the fit recorder now on a separate branch and working copy, off by default, with the checks you listed. Include the shadow sample of rejected candidates as an option, off by default and never used in headline comparisons; we'll turn it on for dedicated data-collection runs. Keep the loader refusing test and reserve sets for training. Merge only after the comparison finishes…"*
+
+**Built** on branch `claude/fit-recorder-2026-11-04` in its own worktree; nothing the running comparison loaded was touched. Merged after the comparison and the checks (merge commit e6d05ea).
+- **`fitlog.py`** writes one compressed file per run. It holds the run's bursts once and a header: the set tag, the vocabulary, and each equation's floor, scale and exactness threshold. Then one row per record:
+  - **kind 0, a thorough fit:**
+    - the structure, the warm start, and the cheap fit's constants, coefficients and residual (the starting values);
+    - the fitter's random state before the fit;
+    - the constants after the thorough fit and after the step-integral refit;
+    - the step-integral and held-back errors, the degenerate and plausibly-exact flags, the snapping counts, the winning internal start and the times;
+  - **kind 1:** a structure the cap refused, with inputs only;
+  - **kind 2:** a shadow fit.
+  - **Trace (fitter v2):** every internal start (v1 sweep, algebraic, global, snap), with its start and polished constants and its polished residual.
+- **Shadow fits** (option `shadow_rate`, default 0) go to a random sample of the structures the gate or the cap turned away. They are recorded but never used by the search. The fitter's random state and statistics are restored afterwards, the time is kept off the search's clock, and they draw from their own random stream.
+- **Set tags:** test and reserve prefixes can never be tagged otherwise. The loader always refuses test and reserve files for training (no override), and refuses untagged files unless allowed explicitly.
+- **Hooks:** in `EquationSearch.evaluate` and `learn28(fitlog=…)`, plus an optional trace in `FitterV2`. With no fit log, the code paths are unchanged.
+
+**Checks** (6 development systems, fitters v1 and v2, budget 300, cap 40; 4 configurations, 48 runs; no errors):
+1. **Outcomes identical** to logging off in 12 of 12 runs, both with logging on and with logging plus shadow fits (rate 5%).
+   - Details differed in 1 and 2 runs respectively, against 1 for a second logging-off run.
+   - All of these were on one noise-sensitive system, where the logging runs agree with the repeat; this is run-to-run noise.
+2. **Reproduction** (352 sampled rows, data rebuilt from the stored bursts):
+   - the cheap fit was bitwise identical in 352 of 352;
+   - the thorough fit, from the stored inputs and random state, was bitwise identical in 288 of 288, and the plausibly-exact flag agreed in 288 of 288;
+   - the stored constants rebuild the fitter's terms exactly. The fitter's own reported residual can differ slightly from a direct recomputation (up to 4 × 10⁻⁵ of the rate scale in about 3% of fits); this is noted in the file format.
+3. **Overhead:**
+   - run time with logging on was 0.98× logging off (median; off against off 1.02×), and saving a log takes 0.01 s;
+   - shadow fits at 5% cost 1.03×;
+   - files take about 565 bytes per row (v2, with the trace) and 504 (v1). At the comparison's scale that is about 0.75 MB per new-fitter run, or about 0.5 GB per 1,000-run batch.
+4. **Shadow fits on development systems (first look):**
+   - of 346 structures the gate turned away, none was plausibly exact;
+   - of 51 the cap refused, 1 was (with v2).
+- **Pre-existing, not from the recorder:** Intel MKL prints "Parameter 4 was incorrect on entry to DGELSD" from batched least squares (as often in logging-off runs and in the comparison's log). Such candidates are always refitted and kept only if better.
+
+**Kept:** the runner and check scripts are in `outputs/accumulating_learner/fit_recorder/`. Trial 30's scripts, reports and run records are in `outputs/accumulating_learner/trial30/`.
