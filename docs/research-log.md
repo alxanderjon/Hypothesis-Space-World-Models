@@ -4387,3 +4387,78 @@ The fitter is given each true structure, which is evaluated exactly as the searc
   - the overhead and the file sizes are as estimated.
 - **Test-data hygiene:** each file is tagged with its set. The loader refuses test and reserve sets for training by default; fits logged on test systems may only be used to evaluate learned components.
 - **Option:** shadow thorough fits on a small random sample of the structures the gate or the cap turned away. They would be logged but not used by the search, with their own random stream. Without them, the learned screen only ever sees candidates the current gate let through. They are off in headline comparisons, because their time interacts with the 3,600 s cap.
+
+### Trial 30 step 3: search comparison results (5 November, 04:47)
+
+**Run.**
+- 1,000 runs from 18:38 to 04:47 on 24 CPU workers (no GPU), with no errors; about 240 worker-hours.
+- A cap of C = 200 thorough fits per equation applied to every arm.
+- **Disk.** The shared disk's free space fell from 23 GB to 12 GB during the night through other users' writing; this batch's own files are a few MB. Free space was watched every minute against the 5 GB stop rule and never came near it.
+
+**Systems.**
+- Set (1u): all 100 systems were drawn identically in all seven runs (Trial 29's two and this batch's five).
+- Set (2u′): 96 of 100 were. The other 4 came out differently in at least one run, because the generator's acceptance step uses simulation time limits, which can flip under load. All (2u′) comparisons use the 96. Trial 29's original (2u′) comparison may have paired a differently drawn system or two.
+
+**Whole systems exactly recovered, and equations with a plausibly exact structure:**
+
+| Arm | (1u) systems of 100 | (1u) equations of 278 | (2u′) systems of 96 | (2u′) equations of 267 |
+|---|---|---|---|---|
+| Trial 29 baseline (v1, no cap) | 10 | 97 | 2 | 81 |
+| Trial 29 network (v1, no cap) | 11 | 111 | 3 | 87 |
+| baseline, v1, this batch | 10 | 97 | 2 | 79 |
+| network, v1, this batch | 10 | 106 | 3 | 88 |
+| **baseline, v2** | **12** | **116** | **8** | **100** |
+| **network, v2** | **15** | **129** | **7** | **104** |
+| **frequency control, v2** | **13** | **113** | **6** | **88** |
+
+**The true structure** (synthetic systems), per equation:
+
+| Arm | (1u) chosen in the final model | (1u) recognized during the search | (1u) fitted during the search | (2u′) chosen | (2u′) recognized | (2u′) fitted |
+|---|---|---|---|---|---|---|
+| Trial 29 baseline (v1) | 68 | – | – | 50 | – | – |
+| Trial 29 network (v1) | 72 | – | – | 63 | – | – |
+| baseline, v1, this batch | 68 | 74 | 92 | 51 | 58 | 73 |
+| network, v1, this batch | 73 | 81 | 133 | 64 | 70 | 107 |
+| baseline, v2 | 79 | 90 | 102 | 66 | 70 | 84 |
+| network, v2 | 90 | 107 | 139 | 89 | 95 | 109 |
+| frequency control, v2 | 84 | 96 | 122 | 72 | 77 | 94 |
+
+**Paired comparisons** (exact two-sided sign tests; "a vs b" counts the systems or equations only a solved, and only b solved):
+- **New fitter against old fitter, same batch:**
+  - baseline (1u): systems +2 points (2 vs 0, p = 0.5); equations 27 vs 8 (p = 0.002);
+  - baseline (2u′): systems +6 points (6 vs 0, **p = 0.031**); equations 25 vs 4 (p = 0.0001);
+  - network (1u): systems +5 points (5 vs 0, p = 0.062); equations 25 vs 2 (p = 6 × 10⁻⁶);
+  - network (2u′): systems +4 points (4 vs 0, p = 0.12); equations 18 vs 2 (p = 0.0004).
+- **Network against baseline, both with v2 (Trial 29's bar (b)):** **not met on either set.**
+  - (1u): systems +3 points (4 vs 1, p = 0.38); equations 23 vs 10 (p = 0.035);
+  - (2u′): systems −1 point (0 vs 1, p = 1); equations 15 vs 11 (p = 0.56).
+- **Frequency control (v2):**
+  - against the baseline: (1u) systems +1 point (p = 1), equations 12 vs 15 (p = 0.7); (2u′) systems −2 points (p = 0.5), equations 8 vs 20 (p = 0.036);
+  - the network against it: (1u) systems +2 points (p = 0.62), equations 22 vs 6 (p = 0.004); (2u′) +1 point (p = 1), equations 20 vs 4 (p = 0.002).
+- **Noise and cap reference** (old fitter, this batch with the cap, against Trial 29's original):
+  - baseline: identical whole-system outcomes on both sets; equations 0 vs 0 and 0 vs 2;
+  - network: systems 0 vs 1 and 1 vs 1; equations 7 vs 12 and 4 vs 3.
+
+**Effort** (set (1u); set (2u′) is within a few percent):
+
+| Arm | Time per system, median (mean) | Ordinary fit per structure | Thorough fits per equation, mean | Refused by the cap per equation, mean | Thorough share of search time | First plausible structure, median (s) | Prior's time per system, median |
+|---|---|---|---|---|---|---|---|
+| baseline, v1 | 226 s (239 s) | 36 ms | 22 | 26 | 8% | structure 140 (6 s) | 0 |
+| network, v1 | 350 s (346 s) | 54 ms | 18 | 20 | 8% | 20 (1 s) | 16 s |
+| baseline, v2 | 981 s (1,067 s) | 84 ms | 178 | 627 | 54% | 187 (101 s) | 0 |
+| network, v2 | 1,387 s (1,306 s) | 135 ms | 167 | 624 | 48% | 32 (14 s) | 15 s |
+| frequency, v2 | 1,317 s (1,338 s) | 124 ms | 182 | 555 | 51% | 139 (78 s) | 3 s |
+
+- **The cap** bound in 200–239 equations per new-fitter arm and set (of 267–278), and in 14–21 for the old fitter.
+- **The time cap** (3,600 s per system) stopped 2 equations of the network with v2 in each set, and none elsewhere.
+- **The network's computing time** was about 1% of a new-fitter run.
+
+**Reading.**
+- **The new fitter helps both learners.** Equations solved rise by 18 to 25 (discordant counts) in all four learner-and-set comparisons (p ≤ 0.002 each). Whole systems rise modestly, by 2–6 points, significantly only for the baseline on (2u′). The search takes 4–5 times as long.
+- **It does not open a system-level gap between the network and the baseline.** Trial 29's bar (b) is not met, so, as logged, stage 2 is not proposed.
+- **What the network adds:**
+  - more equations on (1u);
+  - its first plausible structure comes after about 20–30 structures instead of 140–190;
+  - the search fits the true structure more often (139 against 102 equations on (1u)), and with v2 recognizes it more often once fitted.
+- **The untuned history's frequency table adds nothing over uniform priorities** (at the equation level it is worse on (2u′)), and the network beats it at the equation level on both sets. With an untuned history, the network learns more than term frequencies, but not enough to change whole-system recovery.
+- **Whole systems stay rare** (at most 15 of 100). Untuned equations average 2.5 nonlinear pieces, every equation of a system must be right, and equations with 3 or more pieces remain the binding limit (16–31% recognized even when given the true structure).
