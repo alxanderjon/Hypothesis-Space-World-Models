@@ -4668,3 +4668,38 @@ The starting points of the thorough fit are where a learned component can help.
 - **A (recommended).** Train the network on examples generated on the fly: the collected systems' measured states and structures, new constants drawn in the search coordinates, and rates computed exactly from the term formulas. There is no ODE simulation and the supply is unlimited, with the same symmetry and mask handling. Accumulation is measured over the number of collected systems feeding the generator. Re-run development, and go to Stage A only on a clear gain.
 - **B.** Stage A now with the current network.
 - **C.** A test of the screen in place of the cap (secondary).
+
+### Trial 31: owner decision after check-in 1 (5 November, 13:00): option A with three additions; rules logged before running
+
+**Owner.** *"Go with A, with three additions:
+1. First, measure how close a start must be for polishing to reach exactness: on development systems, start from the true constants perturbed by 1%, 2%, 5% and 10% of each constant's range, and report how often polishing reaches exact, broken down by number of pieces. Compare with the network's current accuracy (about 4%) before generating more data.
+2. Make sure on-the-fly training examples match what the network sees at test time (states on real trajectories of the new constants, in burst form), not states taken from a different system.
+3. Run option C in parallel on development systems: let the screen, instead of the fixed cap, decide which candidates get thorough fits, ordering rather than skipping. Report equations solved at the same budget. The shadow data suggests the cap is turning away as many exact answers as the search finds.
+
+Check in with all three before Stage A."*
+
+**1. Basin test** (development systems only; 40 systems, 104 equations with free constants):
+- Each true structure starts from the generator's true constants in the search coordinates, every free constant moved by exactly δ = 0.01, 0.02, 0.05 or 0.10 of its range, in a random direction (clipped to the cube); 8 random draws per equation and level.
+- The start then goes through **the same path as a learned start in v3:** polishing (`fast_refine`, 20 iterations), then the step-integral refit and the exactness test (training and held-back errors within the threshold, no degenerate piece). A stronger polish (60 iterations) is reported alongside.
+- Reported by number of pieces: the share of starts that reach exactness.
+- **Compared with the network:** the 1,000-system network's best guess on the same equations, as its per-constant error and its largest error over an equation's constants.
+
+**2. On-the-fly training data with real trajectories:**
+- Each example is a whole new synthetic system from the generators' training modes (new prefixes "t31-gen-u-k" untuned and "t31-gen-t-k" hand-tuned, tagged "train"), with the same acceptance rules as the collection.
+- It is simulated into M = 8 bursts and seen through the learner's view exactly as at test time. Labels are its own drawn constants (images, masks and clipping as before).
+- **Cost:** drawing and simulating one accepted system takes 46 s on average for untuned systems (12 rejected draws each) and 11 s for hand-tuned ones. That is about 1,900 untuned systems an hour on 24 workers.
+- **How much is generated depends on step 1:** enough to measure how accuracy scales with data, at least 5,000 systems. Systems are produced in rounds and fed to training; only the small per-system bursts and labels are kept (about 3 KB each), not search logs.
+- **Development selection and accumulation curve as before:** the 40 development systems, sizes up to the largest generated.
+
+**3. Option C, the screen ordering thorough fits** (development systems, 40):
+- **Arms:** fitter v2 at M = 8, 2,000 structures per equation, time cap 3,600 s, under four combinations:
+  - {uniform baseline, untuned-history network} priorities;
+  - {cap: 200 thorough fits per equation, first come, then only record-breaking cheap fits; screen ordering: the same 200, by screen score}.
+  - That is 160 runs.
+- **Screen ordering:**
+  - A structure that passes the gate and needs a thorough fit waits in a queue, with the screen's score.
+  - Its precise stage without the thorough fit runs at once, as for a capped structure now.
+  - Every 50 structures, waiting candidates are given thorough fits, best score first, up to the pro-rata budget (200 × structures so far / 2,000). Any budget left is spent at the end of each search phase.
+  - A thorough fit that makes a structure exact updates its node: the exact flag, the value, and the simplification queue.
+- **The screen** is retrained on training systems without the two features that depend on the cap policy (the thorough-fit count so far and the record-breaker flag).
+- **Reported:** equations with a plausibly exact structure, true structures recognized, whole systems, thorough fits used, and time, at the same budget.
