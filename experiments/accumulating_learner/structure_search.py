@@ -1092,10 +1092,13 @@ def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("i
     bank = ColumnBank(vocab, Zc, Xc)
     setup += time.perf_counter() - tp
     effort["setup_seconds"] = setup
-    if fitter == "v2":                                        # Trial 30 fitter v2 (swappable)
+    if fitter in ("v2", "v2s"):                               # Trial 30 fitter v2; Trial 31's standard v2-strong
         import fitter30 as F30
-        fitter = F30.FitterV2(bank, F30.DenseRates(view["Ztr"], view["mu"], view["sig"]), seed=seed,
-                              natural=F30.NaturalBank(vocab, Zc, Xc, v1_bank=bank, seed=seed))
+        fitter = (F30.FitterV2 if fitter == "v2" else F30.FitterV2S)(
+            bank, F30.DenseRates(view["Ztr"], view["mu"], view["sig"]), seed=seed,
+            natural=F30.NaturalBank(vocab, Zc, Xc, v1_bank=bank, seed=seed))
+    elif callable(fitter) and not hasattr(fitter, "fit"):     # a factory: fitter(bank, view, vocab, Zc, Xc, seed)
+        fitter = fitter(bank, view, vocab, Zc, Xc, seed)
     fitter = fitter or GridSweepFitter(bank)
     prior_fn = {"data": data_prior, "data_v1": data_prior_v1, "uniform": uniform_prior}[prior] if isinstance(prior, str) else prior
     if getattr(prior_fn, "needs_history_context", False):     # the network's featurizer, on this run's own objects

@@ -29,7 +29,7 @@ import time
 import numpy as np
 
 KINDS = {"thorough": 0, "refused": 1, "shadow": 2}
-TAGS = {"current": 0, "v1": 1, "algebraic": 2, "global": 3, "snap": 4, "learned": 5}
+TAGS = {"current": 0, "v1": 1, "algebraic": 2, "global": 3, "snap": 4, "learned": 5, "extra_global": 6}
 TRAIN_SETS = ("train", "dev")                                   # usable for training without an explicit allowance
 NEVER_TRAIN = ("test", "reserve")                               # refused for training, always
 VERSION = 1

@@ -18,6 +18,7 @@ so it is swappable and used by both learners. Stages:
 import itertools
 import math
 import time
+import zlib
 
 import numpy as np
 import torch
@@ -582,7 +583,7 @@ class FitterV2:
         return out
 
     def _extra_candidates(self, vocab, toks, current, Zc, Xc, y, eq):
-        """Additional thorough-fit starts after v2's own (Trial 31: fitter v3's learned starts); v2 adds none."""
+        """Additional thorough-fit starts after v2's own, as (tag, terms) pairs (Trial 31); v2 adds none."""
         return []
 
     def _rates(self, eq, Zc, Xc, y):
@@ -636,8 +637,8 @@ class FitterV2:
             cands.append((cand, None, None, "algebraic"))
         for cand in global_search(vocab, toks, current[0], Zc, Xc, y, self.rng):
             cands.append((cand, None, None, "global"))
-        for cand in self._extra_candidates(vocab, toks, current, Zc, Xc, y, eq):   # none in v2 (Trial 31 hook)
-            cands.append((cand, None, None, "learned"))
+        for tag, cand in self._extra_candidates(vocab, toks, current, Zc, Xc, y, eq):   # none in v2 (Trial 31 hook)
+            cands.append((cand, None, None, tag))
         winner = "current"
         for terms, res, coefs, tag in cands:
             try:
@@ -692,4 +693,40 @@ class FitterV2:
         self.stats["thorough"] += 1
         self.stats["thorough_seconds"] += dt
         self.last = {"winner": winner, "snap_kept": alt is not None and best is alt}
+        return best
+
+
+class FitterV2S(FitterV2):
+    """v2-strong, the standard fitter from Trial 31 on (owner, 5 November): fitter v2 plus its own fresh global search's
+    best `keep` starts (own random stream), each pre-polished with `prepolish` rate iterations before the thorough fit's
+    usual polish."""
+
+    def __init__(self, bank, dense=None, seed=0, lm_iters=10, natural=None, prepolish=200, keep=4):
+        super().__init__(bank, dense, seed=seed, lm_iters=lm_iters, natural=natural)
+        self.prepolish, self.keep = prepolish, keep
+        self.stats.update(extra_global_won=0, extra_global_seconds=0.0)
+
+    def _global_picks(self, vocab, toks, current, Zc, Xc, y, eq):
+        if self.dense is None or eq is None:
+            return []
+        t0 = time.perf_counter()
+        rng = np.random.default_rng([31, int(eq), zlib.crc32(repr(tuple(toks)).encode())])
+        outs = []
+        for cand in global_search(vocab, toks, current[0], Zc, Xc, y, rng)[:self.keep]:
+            if self.prepolish:
+                try:
+                    cand = SS.fast_refine(cand, Zc, Xc, y, iters=self.prepolish, stop_below=1e-14 * float(y.norm()))[0]
+                except (RuntimeError, ValueError):
+                    pass
+            outs.append(("extra_global", cand))
+        self.stats["extra_global_seconds"] += time.perf_counter() - t0
+        return outs
+
+    def _extra_candidates(self, vocab, toks, current, Zc, Xc, y, eq):
+        return self._global_picks(vocab, toks, current, Zc, Xc, y, eq)
+
+    def thorough(self, *a, **kw):
+        best = super().thorough(*a, **kw)
+        if (self.last or {}).get("winner") == "extra_global":
+            self.stats["extra_global_won"] += 1
         return best

@@ -460,18 +460,25 @@ def wta_loss(pred, ans, aok, msk, circ, beta=0.02):
 # fitter v3: v2 plus the network's starts
 # ---------------------------------------------------------------------------------------------------------------------
 
-class FitterV3(F30.FitterV2):
-    """Fitter v2 with the network's starting points added after v2's own candidates (never replacing them)."""
+class FitterV3(F30.FitterV2S):
+    """The network's starting points added after the fitter's own candidates (never replacing them). Without
+    `with_global` it is Trial 31's v3 (fitter v2 + learned picks); with it, the combined fitter: v2-strong's own global
+    picks first (same random stream as v2-strong, so all of v2-strong's candidates are included), then the learned
+    picks (their own stream)."""
 
     def __init__(self, bank, dense=None, seed=0, lm_iters=10, natural=None, net=None, keep=4, refine_rounds=2,
-                 refine_n=32, radius=0.05, cloud=0, cloud_radius=0.1, prepolish=0):
-        super().__init__(bank, dense, seed=seed, lm_iters=lm_iters, natural=natural)
-        self.net, self.keep, self.refine_rounds, self.refine_n, self.radius = net, keep, refine_rounds, refine_n, radius
+                 refine_n=32, radius=0.05, cloud=0, cloud_radius=0.1, prepolish=0, with_global=False):
+        super().__init__(bank, dense, seed=seed, lm_iters=lm_iters, natural=natural, prepolish=prepolish, keep=keep)
+        self.net, self.refine_rounds, self.refine_n, self.radius = net, refine_rounds, refine_n, radius
         self.cloud, self.cloud_radius = cloud, cloud_radius        # points sampled around every hypothesis first
-        self.prepolish = prepolish                                 # extra rate-data iterations for the learned picks
+        self.with_global = with_global
         self.stats.update(learned_tried=0, learned_won=0, learned_seconds=0.0)
 
     def _extra_candidates(self, vocab, toks, current, Zc, Xc, y, eq):
+        outs = self._global_picks(vocab, toks, current, Zc, Xc, y, eq) if self.with_global else []
+        return outs + [("learned", c) for c in self._learned_picks(vocab, toks, current, Zc, Xc, y, eq)]
+
+    def _learned_picks(self, vocab, toks, current, Zc, Xc, y, eq):
         if self.net is None or self.dense is None or eq is None:
             return []
         t0 = time.perf_counter()
@@ -479,7 +486,7 @@ class FitterV3(F30.FitterV2):
         slots, maps = slots_of(terms, Zc, Xc)
         if not slots:
             return []
-        rng = np.random.default_rng([31, int(eq), zlib.crc32(repr(tuple(toks)).encode())])   # own stream
+        rng = np.random.default_rng([33 if self.with_global else 31, int(eq), zlib.crc32(repr(tuple(toks)).encode())])
         if isinstance(self.net, str) and self.net == "global":     # control: v2's own global search (fresh stream),
             outs = []                                                # its best 4, with the same pre-polish
             for cand in F30.global_search(vocab, toks, terms, Zc, Xc, y, rng)[:self.keep]:
