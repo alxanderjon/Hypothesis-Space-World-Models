@@ -4753,3 +4753,44 @@ Check in with all three before Stage A."*
 - **At the same budget, ordering by the screen solves the same equations as the cap,** and saves 13% of time with the network's priorities.
 - **Why the shadow data overstated the loss.** In the training searches (budget 500, cap 100), 40 equations had an exact structure among the cap-refused shadow fits: 37 of them were solved anyway by another exact structure, and only 3 were left unsolved. The cap mostly turns away further exact variants of equations that are already solved.
 - **The screen used:** retrained without the cap-policy features; development AUC 0.943. Keeping 98% of exact finds it would skip 61% of thorough fits (76% for 3+ pieces).
+
+### Trial 31 check-in 2 (all three additions; 5 November, 21:30). Stage A not started
+
+**Addition 2: on-the-fly data with real trajectories.**
+- 4,000 new systems (3,200 untuned, 800 hand-tuned; 19:01–20:39, 24 CPU workers), each simulated into its own M = 8 bursts and seen exactly as at test time.
+- 10,358 true-structure examples, 4,605 of them with 3+ pieces; 175 MB. Together with the collection: 5,000 systems, 13,923 examples.
+- Trained on GPUs 0 and 1 (both free: 0%, 1 MiB), 15,000 steps.
+
+| Training systems | 100 | 300 | 1,000 | 2,500 | 5,000 |
+|---|---|---|---|---|---|
+| Development distance (best) | 0.055 | 0.047 | 0.040 | 0.037 | 0.034 |
+| Share within 0.02 | 0.24 | 0.26 | 0.37 | 0.37 | 0.42 |
+| 3+ pieces recognized, v3 (v2: 5 of 46) | 7 | 7 | 7 | 7 | 8 |
+| 2 pieces recognized, v3 (v2: 22 of 30) | 23 | 22 | 22 | 23 | 23 |
+
+- **Accuracy accumulates with systems learned** (error ∝ N^−0.12).
+- **Measured as in the basin test,** the 5,000-system network on 3+ pieces: every constant within 0.05 for 13% of equations (1,000 systems: 7%), within 0.10 for 37% (28%), within 0.02 for only 2%.
+
+**Learned starts plus a longer polish** (development; same process as v2; nothing v2 solved was lost in any variant):
+
+| Variant | 3+ pieces (46) | 2 pieces (30) | Evaluation median |
+|---|---|---|---|
+| v2 | 5 | 22 | 0.69 s |
+| v3, the network's 4 picks, usual polish | 8 | 23 | 0.85 s |
+| control: 16 random points, same refinement, the 4 picks pre-polished 200 iterations | 6 | 22 | 0.95 s |
+| control: v2's own global search (fresh stream), its best 4 pre-polished 200 iterations | 10 | 24 | 1.12 s |
+| **v3 + pre-polish: the network's 4 picks pre-polished 200 iterations** | **15** | 23 | 0.98 s |
+
+- **The network brings starts near the answer, and the longer polish closes the gap.** Each half alone gives 8 or 10; together 15.
+- The network's 16 guesses beat v2's 2,000-sample global search as starting points (15 against 10) at lower cost, and random starts (6) by far.
+
+**Addition 1 (basin test) and addition 3 (option C):** logged above.
+- Equations with 3+ pieces need starts within about 1% of every constant (from 1%, 26–33% reach exactness); a stronger polish doubles or triples the 5% hit rate.
+- The screen ordering thorough fits solves the same equations as the cap at the same budget.
+
+**Proposal for Stage A** (owner's decision):
+- **Arms:**
+  - v2, as approved;
+  - "v2 strong": v2 plus its own fresh global search's best 4 with the 200-iteration pre-polish, the strong-baseline rule's fair control;
+  - v3: v2 plus the 5,000-system network's best 4 with the same pre-polish.
+- **The approved bar applies to v3 against v2.** v3 against v2-strong is reported as the test of the learned component itself (on development: 15 against 10, +11 points, 1.5×).
