@@ -16,7 +16,10 @@ One compressed file per run holds:
   - for fitter v2, a trace of every internal start (v1 sweep, algebraic, global, snap): its start and polished
     constants and its polished residual.
 Term lists are stored as shapes (per term: number of factors, then each factor's number of constants) and the flat
-constants, in float64. The loader refuses test and reserve sets for training."""
+constants, in float64; vocab.term(token, constants) rebuilds each term exactly (only a snapped factor's "snap"
+provenance tag is not kept). res0/res1 are the residuals the fitter reported, which the search acted on; recomputing
+|y - Phi c| from the stored terms and coefficients can differ slightly (up to ~4e-5 of |y| in ~3% of v1 fits, a
+property of the fitter's own residual). The loader refuses test and reserve sets for training."""
 import ast
 import json
 import math
