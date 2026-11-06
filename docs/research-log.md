@@ -5111,3 +5111,37 @@ Check in with all three before Stage A."*
 - The learner itself solves very few 3+-piece equations (1–4 of about 270 per arm in Stage B), so its own solutions would teach mostly the easy structures it already finds.
 - On synthetic systems the true structures are known, and they are strictly better labels than the learner's own solutions.
 - Stage 2 matters for real systems, which have no labels. Resume it there, as fine-tuning of the proposal network on its own solved practice and real systems, once the proposals raise the number of hard equations solved.
+
+### Before Trial 32: the owner's two questions; why the real practice systems fail (6 November, 16:00; existing records only, nothing run)
+
+**Owner.** *"1. What architecture are the move network and the proposed structure network? Scoring each term independently can't capture that a true term and its look-alike shouldn't both appear. Consider a design that models interactions between terms… 2. Real practice systems have no 3+-piece equations in toolkit terms, so recent gains are on a synthetic-only difficulty. Give me a breakdown of why the real practice systems currently fail… Make sure Trial 32 targets what limits real systems, not just synthetic ones. Answer both in plain language before running anything."*
+
+**1. Architectures.**
+- **The move network (Trial 28):**
+  - a 3-layer transformer (width 128) over all candidate terms of the vocabulary, one token per term;
+  - each token carries 28 features: the term's family and its relation to the equation (variables, multiplier), random variable codes, and evidence from the current partial fit (how much adding the term would cut the residual now and from scratch, whether it is already in, the cost of removing it, the current residual and size);
+  - attention runs across all candidate terms; it outputs an add score and a remove score per term.
+- **It is used inside the tree search one move at a time,** and its features are recomputed after each fit. So it is conditioned on the terms already chosen: once a true term is in, a look-alike's evidence drops.
+- **The whole-structure network as first sketched** (independent per-term scores, then a beam) has the flaw the owner names.
+- **Replacement design:** an autoregressive set generator. It proposes one term at a time, attending to the data, to all candidate terms and to the terms already chosen, until a stop token; beam search over these steps gives whole structures with joint scores. It is trained on true structures in random orders, so the order does not matter. Optionally the partial structure is refitted after each choice, so the next choice sees the residual.
+
+**2. Why the 27 practice systems fail at M = 8.**
+- **Sources:** the best earlier search (Trial 28: history network, 5,000 structures, old fitter v1); Trial 31's known-structure check (combined fitter); the expressibility classifier on the true right-hand sides.
+- **Systems:**
+  - **8 recovered exactly;**
+  - **10 have an equation outside the toolkit.** 23 equations; the terms outside are rational terms with denominators the toolkit lacks (30), logarithms (4), exponentials of non-linear arguments (3), other (1);
+  - **9 are expressible but not recovered.**
+- **The 9 expressible systems not recovered:**
+  - **7: every equation has a plausibly exact structure, but the system is not exact.**
+    - 4 passed the learner's own held-back check but failed on new starting states, with one-step errors of 1.1, 2.0, 3.3 × 10⁻¹² and 4.4 × 10⁻⁹ (pass mark 10⁻¹²).
+    - 3 failed the held-back check at 9 × 10⁻¹³, 1.1 × 10⁻¹² and 6.3 × 10⁻¹⁰ (pass mark 3 × 10⁻¹³).
+    - **5 of the 7 are precision near-misses, within about 3× of the thresholds.** With M = 16, 3 of the 7 become exact.
+  - **1:** an equation the fitter cannot fit at M = 8 even given its known structure.
+  - **1:** not learned even at M = 64.
+- **Equations** (80): 49 solved (plausibly exact), 23 outside the toolkit, 4 failing to fit even given the known structure, 4 without a plausibly exact structure and no known toolkit structure to check against.
+- **None** failed because the search did not reach a structure the fitter could fit. Toolkit-expressible practice equations have 0 pieces (24), 1 (28) or 2 (5); none has 3 or more.
+- **Reading.** On real practice systems the limits are, in order:
+  1. toolkit coverage (10 of 27 systems), which falls under the owner's rule against hand-added pieces;
+  2. final precision of the assembled model: about 5 near-misses within about 3× of the thresholds;
+  3. two genuinely wrong or unassembled models, one fitting failure and one system never learned.
+- **Search reach for 3+-piece structures is a synthetic-only limit at present.**
