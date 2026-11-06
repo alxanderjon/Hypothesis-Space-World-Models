@@ -5324,3 +5324,154 @@ Check in with all three before Stage A."*
 - **Stage 4, held-out multi-domain tests** (dysts, ODEBench, BioModels fresh pool) under the usual rules, after the owner approves the request.
 - **Retired:** the curated families and their hand-made ranges, and the hand-tuned history.
 - **Kept:** the exactness machinery, the search framework, variable projection, the verifier-based learning loop, the fit recorder and the screen.
+
+### Stage 1 of the general learner: detailed rules (6 November; awaiting owner approval, nothing run)
+
+**Owner.** *"Write up Stage 1's rules in detail for my approval, with these additions: 1. Build the plan on DreamCoder's wake/abstraction/dreaming loop … Explain how the design adopts each phase (at least in a later stage if not Stage 1), why Trial 27's growing library failed where DreamCoder's worked, and what's different this time. For every major design choice, say which published method it borrows from and whether that method succeeded. 2. Some domains share identical equations (e.g. a damped spring and an RLC circuit)… report transfer separately for test systems whose forms appear in the earlier domain and for those that don't. 3. Keep discontinuous systems like the bouncing ball on the list for a later stage."*
+
+#### 1. The loop: DreamCoder's three phases
+
+- **Wake (Stage 1).**
+  - **What happens:** the learner searches each task (a system's bursts, with no answer given) with its current network guiding the search, and keeps every model that passes the exactness test.
+  - **DreamCoder:** the recognition network guides enumeration; tasks are checked against their examples.
+  - **Here:** the existing tree search over term sets, with the move network as the guide. The exactness test is the check.
+- **Dreaming (Stage 1).**
+  - **What happens:** the network is retrained on two kinds of examples:
+    - (i) **replays:** the learner's own verified solutions to the tasks so far, as search states along each solution, in the history format;
+    - (ii) **fantasies:** new systems sampled from the current language, with term frequencies taken from the library's usage so far. They are simulated into bursts with the existing reference machinery and acceptance rules, so their answers are known.
+  - **DreamCoder:** trains on replays and fantasies sampled from the current library's grammar.
+  - Fantasies here come from the language and library, not from the domain generators: the modeller-written generators only supply tasks and test systems.
+- **Abstraction (Stage 2).**
+  - **What happens:** fragments that recur across verified solutions (for example, a subexpression 1 / (1 + c·x) appearing in many terms) are found by compression. They are added to the library as new building blocks that the search can add in a single move.
+  - **DreamCoder:** refactoring by compression over all solutions; Stitch is a much faster equivalent.
+  - **Controls (Trial 27's):** a decoy library (the same number and size of fragments, random, from no data) and the removal check with provenance for every library win.
+  - **Why not Stage 1:** abstraction needs a corpus of verified solutions, and Stage 1 is where that corpus is first built.
+- **Value network and learning from real unlabelled systems:** Stage 3 (the AlphaZero part).
+
+#### 2. Why Trial 27's library failed where DreamCoder's worked, and what is different now
+
+- **What Trial 27 did and found:**
+  - pieces discovered on single systems (at M = 64) were added to a library in a fixed order;
+  - at M = 8: scratch 2 of 26, library 2 of 17, decoy 1 of 15; the one library-only success used no library piece;
+  - the later pattern library produced no exact model from its patterns.
+- **Why it failed:**
+  1. **Entries came from single systems, not from fragments that recur across many solutions.** With a few dozen real systems, little recurs.
+  2. **The bottleneck at small data was over-selection of terms** (8-term equations fitting the training bursts and missing the held-back ones). A larger library does not fix that; it enlarges the search.
+  3. **No learned network decided when to use an entry,** so entries were just more candidates.
+  4. **No dreaming:** the guidance never trained on what the library could generate.
+  5. **Too few tasks** and no repeated cycles.
+- **What DreamCoder did differently:**
+  - libraries built by compression across hundreds of solved tasks;
+  - a recognition network trained on replays and fantasies to choose entries;
+  - many tasks of graded difficulty over repeated wake–sleep cycles.
+- **What is different now:**
+  - thousands of generated tasks across domains;
+  - an exact verifier;
+  - a move network trained by dreaming before any abstraction is tried;
+  - abstraction only once the solution corpus is large (Stage 2), with Trial 27's controls;
+  - parsimony (the simplest model exact on held-back data) kept against over-selection.
+- **Remaining risk:** over-selection at small data. Stage 1 measures it directly (true structure recognized, against other structures that are exact on the data).
+
+#### 3. Scope and data
+
+- **Systems:** autonomous, fully observed systems with 2 state variables, learned from trajectory bursts as now (M = 8, seed 1, the learner's view and scaling unchanged).
+- **Not in Stage 1:** discontinuous and hybrid systems (bouncing ball, stick–slip friction, relay circuits), forced systems, partial observation. Discontinuous systems are kept on the list for a later stage.
+- **Exactness bars unchanged:** step-integral and held-back checks at the learner; external one-step ≤ 10⁻¹² plus the multi-step envelope.
+- **Stage 1 uses synthetic systems only;** real multi-domain test sets are kept unopened for Stage 4.
+
+#### 4. Language L1 (replaces the curated toolkit)
+
+- **Leaves:** the state variables (scaled as now) and fitted constants.
+- **Operations:** +, ×, ÷, power with a constant exponent (fitted, or the integers 2 and 3), exp, log, sin.
+- **A term** is an expression of at most 7 nodes with at most 2 fitted constants, and no exp or log nested inside the same function. Examples:
+  - x/(1 + c·x) has 7 nodes;
+  - sin x has 2;
+  - x³ has 3;
+  - exp(c·v) has 4.
+- **An equation** is a sum of at most 6 terms, with coefficients solved exactly (variable projection).
+- **Canonical form:** each term is simplified and ordered (sympy), stripped of an overall constant factor, and terms whose columns agree up to a scale on random points are merged.
+- **The vocabulary** is all canonical terms, enumerated per system (an estimated 10³–10⁴ for 2 variables). The exact count is logged before any task is drawn.
+- **Larger terms** come only through abstraction (Stage 2).
+
+#### 5. Generic fitter
+
+- **Starting grids** for each term's internal constants come from generic rules on the data:
+  - a constant added to a subexpression is gridded across that subexpression's observed range, extended by half;
+  - a multiplying constant is gridded on a log scale from 10⁻² to 10² of 1/scale, both signs;
+  - an exponent is gridded on [−3, 3].
+- **The rest is unchanged:** sweeps, joint beam, global search in these units, Levenberg–Marquardt with variable projection, step-integral refit, exactness test.
+- **The algebraic start** is used only when a term is rational (detected automatically).
+- Learned starting values follow in Stage 2.
+
+#### 6. Domain generators (fixed now, before any task exists)
+
+- **Mechanics** (x, v): ẋ = v; v̇ = −k x plus 0–2 of {−a x³, −a sin x, −c v, −c v³, −c v·(v²)^½, −c x² v}.
+- **Circuits** (v, i): v̇ = (i − g(v))/C and i̇ = (−v − R i)/L, with g in {g₁v (linear), g₁v − g₃v³, I(exp(v/V) − 1)}. Or FitzHugh–Nagumo: v̇ = v − v³/3 − w + I, ẇ = ε(v + a − b w).
+- **Ecology** (x, y):
+  - predator–prey: ẋ = r x − (r/K) x² − f(x) y and ẏ = e f(x) y − m y, with f in {a x, a x/(1 + h x)};
+  - or two-species competition.
+- **Constants** are random in physical ranges fixed in code, with the existing acceptance rules (bounded, moving, positive for ecology, cheap reference, own-timescale windows).
+- **Every generated term is expressible in L1** (checked by the generator).
+- **Shared forms, owner's addition 2:**
+  - Linear damped oscillators arise in mechanics and in circuits (linear g), and other forms can coincide.
+  - A test system's form *appears in an earlier domain* if its equations' canonical term sets (constants ignored, variables relabelled) match the true structure of some task in an earlier domain's training stream.
+  - The classification uses the known structures, which the learner never sees, and is made before evaluation.
+
+#### 7. Tasks and tests
+
+- **Per domain:** 150 training tasks (prefixes "g1-train-{domain}-k") and 40 test systems ("g1-test-{domain}-k"), drawn with separate seeds.
+- **The learner sees tasks as data only.** Answers are used for evaluation and for the shared-form classification.
+- **Counts only for test systems.**
+
+#### 8. Cycles
+
+- **Order:** mechanics (A), then circuits (B), then ecology (C).
+- **Each domain gets 2 wake–dream cycles:**
+  - **wake:** all 150 tasks searched, 1,000 structures per equation, 200 thorough fits per equation, time limits set from a pilot so that they rarely bind (the standing rule);
+  - **dream:** the move network retrained on the replays so far plus 500 fantasies.
+- **Fresh networks for comparison:** the same 2 cycles on B alone and on C alone.
+- **Test evaluations** at the same budget: uniform priorities; and the networks after A, after A + B, after A + B + C, fresh-B and fresh-C.
+- **Compute:** roughly 1–1.5 days on 24 CPU workers, the network trained on a free or shareable GPU (rule), a few hundred MB on disk.
+
+#### 9. Measures and pass bars (all four required)
+
+1. **(a) Language and fitter:** given the true structure, at least 80% of test equations with at most 2 nonlinear terms are recognized exactly, in each domain. **If not met, stop.**
+2. **(c) Learning on the first domain:** after A's cycles, on A's tests, guided search solves at least 20 points more equations than uniform search at the same budget, or needs at most half the structures (median) to its first plausible model.
+3. **(d) Forward transfer, on B and on C:** after the first cycle on the new domain, the continued network solves at least 10 points more test equations than the fresh network. After the second cycle, it is not worse (within noise).
+   - Reported separately for test systems whose forms appear in an earlier domain and those that do not.
+4. **(e) Retention:** after C, results on A's and B's tests are judged per system. At most 2 systems per domain (5%) are lost compared with right after that domain's cycles.
+
+- **(b) Uniform search** is reported as the baseline, without a bar.
+- **Also reported:**
+  - true structures recognized, against other structures exact on the data (the over-selection risk);
+  - whole systems exact;
+  - search effort and time, and time-limit hits.
+
+#### 10. Later stages
+
+- **Stage 2:**
+  - abstraction (compression over verified solutions; decoys and removal checks);
+  - chemistry and chaotic flows (d ≤ 3);
+  - learned starting values for the generic fitter;
+  - rehearsal choices for retention compared on development.
+- **Stage 3:** the AlphaZero part: a value network, with search plus learning from its own verified solutions on synthetic and real unlabelled systems; terms up to 9 nodes; d up to 4.
+- **Stage 4:** held-out multi-domain real tests (dysts, ODEBench, SRBench's Strogatz set, BioModels fresh pool) under the usual rules, after the owner's approval.
+- **Later still:** discontinuous and hybrid systems (bouncing ball, stick–slip, relays), forced systems, partial observation.
+
+#### 11. What each design choice borrows, and whether it worked there
+
+| Choice | Borrowed from | Did it succeed there? |
+|---|---|---|
+| Wake–abstraction–dreaming cycles | DreamCoder (Ellis et al., 2021) | Yes, on list processing, text editing, regular expressions, graphics, towers, symbolic regression and physics laws; compute-heavy, small domains |
+| Abstraction by compression | DreamCoder's refactoring; Stitch (Bowers et al., 2023) | Yes; Stitch matched DreamCoder's libraries 1,000–10,000× faster |
+| Search guided by learned priors, improved by its own solutions | AlphaZero (Silver et al., 2018); expert iteration (Anthony et al., 2017) | Yes in games; also AlphaTensor and AlphaDev for algorithm discovery |
+| Neural-guided search for equations | TPSR (Shojaee et al., 2023); DSO/uDSR (Petersen 2021; Landajuela 2022) | Yes, improved accuracy on SRBench and over transformer-only methods |
+| Whole-expression proposals from data (later, for the term-by-term design) | NeSymReS (Biggio 2021); E2E (Kamienny 2022); ODEFormer (d'Ascoli 2024) | Partly: good proposals, imprecise constants; best combined with refinement |
+| Sparse regression over a fixed library | SINDy (Brunton 2016); SINDy-PI (Kaheman 2020) | Yes when the library holds the right terms; fails otherwise, the problem this replaces |
+| Exact coefficients | Variable projection (Golub & Pereyra, 1973) | Yes, widely |
+| Constants by multistart global search and local polishing | Raue et al. (2013) for ODE parameters; Trials 30–31 here | Yes |
+| Learned starting values with long polishing | Trial 31 here | Yes on synthetic 3+-piece equations (63 → 111 of 288); no effect on the full search, which rarely reaches them |
+| Canonical forms of equivalent expressions | e-graphs and equality saturation (egg; Willsey et al., 2021) | Yes in compilers; partial in symbolic regression. Stage 1 uses the simpler sympy and numerical merging |
+| Rehearsal against forgetting | Experience replay (Rolnick 2019; Chaudhry 2019); A-GEM; EWC (Kirkpatrick 2017) | Replay and A-GEM yes on benchmarks; EWC mixed; our PDEBench replay failed |
+| Explicit library as memory that cannot be forgotten | DreamCoder; Voyager's skill library (Wang et al., 2023) | Yes |
+| Cross-domain synthetic training, multi-domain tests | ODEFormer's random ODEs; dysts (Gilpin, 2021) | Moderate generalization to real benchmarks; dysts widely used |
