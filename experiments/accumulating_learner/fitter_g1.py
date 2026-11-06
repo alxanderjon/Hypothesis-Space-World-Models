@@ -545,16 +545,22 @@ def exponent_uncertainty(terms, W, y, floor):
     def resid(th):
         with torch.no_grad():
             Phi = torch.stack([value(t, W, th[m]) for m, t in enumerate(terms)], 1)
-        return SS._project(Phi, y)[0]
+        out = SS._project(Phi, y)
+        return None if out is None else out[0]
 
     r0 = resid(th0)
+    if r0 is None:
+        return []
     Jm = torch.empty(len(y), len(slots), dtype=W.dtype)
     for s_, (m, a) in enumerate(slots):
         v = th0[m][a]
         h = 1e-6 * (1.0 + abs(v))
         th = [list(x) for x in th0]
         th[m][a] = v + h
-        Jm[:, s_] = (resid(th) - r0) / h
+        r1 = resid(th)
+        if r1 is None:
+            return [(m_, a_, terms[m_].theta[a_], float("inf")) for _, m_, a_ in ex]
+        Jm[:, s_] = (r1 - r0) / h
     sig_y = floor / math.sqrt(len(y))
     H = Jm.T @ Jm
     try:

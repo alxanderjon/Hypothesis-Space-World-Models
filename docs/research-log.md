@@ -5674,3 +5674,48 @@ Check in with all three before Stage A."*
 - **Condition 1.** The cycles start only if the development timing pilot projects Stage 1's whole compute within 1.5 days on 24 workers. That compute covers every cycle, every fresh network and every test evaluation.
 - **Condition 2.** If the projection is longer, I check in with it and a smaller version before running anything.
 - **Condition 3.** After mechanics' two cycles, bar (c) is judged on mechanics' tests. If it fails, I stop and report before circuits.
+
+### Stage 1: development timing pilot, three changes found by it, projection, launch (6 November, 22:40)
+
+**Three changes, generic and applied to every arm, found before any cycle on development systems only.** They are logged before the run.
+
+1. **Search vocabulary: the 1,143 terms that keep their form when the variables are rescaled** (`g1_scale_closed.py`; x_j → s_j·x_j).
+   - The learner's coordinates are the physical ones divided by scales from the data. So only these terms can be exact.
+   - A term like sin(x₁) is the K0 = 1 member of sin(K0·x₁), which is kept.
+   - The other 13,263 terms of L1 drop out.
+   - Every true term of every stored system is among the 1,143 (counts checked for all sets: training, development and test). This holds by construction, for any physical system.
+   - Found because fantasies drawn from the whole language were rejected for terms that left the language after rescaling. On a first try, many such terms also misled the search.
+2. **The guiding network attends to every term of the system's vocabulary (at most 1,143), as in Trial 28.** The rules' 512 shortlist (by single-term evidence) is dropped. It was a compute measure for 10³–10⁴ terms.
+   - **Rank check** (`g1_rank_diag`, development systems): at states with more than one true term still missing, the missing true terms ranked inside the top 512 by evidence in:
+     - 26% of states over the whole language;
+     - 51% over the 1,143 terms.
+   - **Why:** flexible terms with fitted constants explain most of the 30 rate points on their own. A network that never saw the true terms could not rank them.
+   - **Cost:** attention over all terms costs about 0.15 s per search node on one core, which the projection includes.
+3. **Fantasies draw only from the search vocabulary**, with the approved rule otherwise unchanged: half usage, half every term size equally likely.
+
+- **Robustness fixes:**
+  - the exponent-uncertainty step now handles non-finite fits; this was the pilot's first crash;
+  - the search records fitting errors instead of stopping.
+
+**Pilot** (`g1_pilot.py`; uniform search, 1,000 structures and 200 thorough fits per equation, no time limit; 30 development systems).
+
+| Domain | Equations solved | With the true structure | Time per system (median / max) | Median structures to the first plausible model |
+|---|---|---|---|---|
+| Mechanics | 20 of 20 | 16 | 158 s / 547 s | 17 |
+| Circuits | 19 of 20 | 15 | 119 s / 322 s | 13 |
+| Ecology | 8 of 20 | 4 | 547 s / 762 s | not reached (fewer than half solved) |
+
+- **Thorough fits take most of the time:** 82 s, 55 s and 206 s per equation.
+- **Uniform search is already strong on mechanics and circuits with the 1,143 terms.** So bar (c)'s +20 points may be out of reach on mechanics. Its other criterion is still open: at most half of uniform's median structures to the first plausible model.
+
+**Time limit.** 3,600 s per system, 1,800 s per equation. That is 4.7× the pilot's slowest system and leaves room for the network's time. Hits are reported per arm.
+
+**Projection.**
+- **Search:** about 318 core-hours, 13.3 h on 24 workers. This assumes 0.25 s per network call and 600 calls per equation for guided searches.
+- **Dreams:** about 3 h, at about 14 minutes of fantasies and 5 minutes of GPU training per dream.
+- **Total:** about 16 h, within the planned 1–1.5 days. The owner's condition for starting is met.
+
+**Launch** (`cycles_g1.py`, 24 workers, nice 10, one thread each).
+- **Order:** mechanics' two cycles, then the uniform and guided tests on mechanics, then **bar (c)**.
+- **Stop rule:** the run stops there if bar (c) is not met (owner's instruction).
+- **GPU:** training uses a free GPU, checked before each dream and logged per dream (GPUs 0–5 and 7 were free at 22:00).
