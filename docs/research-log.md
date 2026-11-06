@@ -5749,3 +5749,14 @@ Check in with all three before Stage A."*
 **What this shows and what it does not.**
 - **Shown:** learning within one domain. The network, trained on its own verified solutions and on fantasies, finds mechanics' test structures far faster than uniform search, and finds 10 that uniform search misses.
 - **Not shown:** nothing yet about accumulation across domains. Bars (d) and (e) test that. Claims rest on new-form equations (ecology's, and circuits' 30 new-form equations).
+
+**Whole systems exact, mechanics tests** (`g1_systems.py`; the external test is one-step ≤ 10⁻¹² of the scale plus the multi-step envelope; rebuilt systems identical in every case).
+
+| Arm | Systems with every equation solved | Accepted internally (held-back) | Exact |
+|---|---|---|---|
+| Uniform | 30 of 40 | 27 | 26 |
+| Network after mechanics | 40 of 40 | 40 | 40 |
+
+**Uniform baseline on circuits' tests:**
+- 74 of 80 equations solved (62 with the true structure); 34 of 40 systems.
+- **Bar (d) has a ceiling on circuits.** It counts equations solved, and uniform already solves 74 of 80. So the continued network can beat a fresh one by at most 7.5 points there, short of the +10 required, whatever it learns. The speed and new-form numbers will be reported beside it.
