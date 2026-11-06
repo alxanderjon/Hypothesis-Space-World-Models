@@ -5540,3 +5540,78 @@ Check in with all three before Stage A."*
   4. Run the development timing pilot.
   5. Run bar (a), the fitter on true structures.
   6. **Check in with the owner** before any wake–dream cycle.
+
+### Stage 1: L1 vocabulary count and implementation details (6 November, 20:30; fixed before any task is drawn)
+
+**Vocabulary (two variables).** Built by `g1_vocab.py` and `g1_families.py`; saved in `outputs/accumulating_learner/g1/vocab_d2.json`.
+- **Counts:**
+  - 34,173 trees within the limits give 15,225 canonical forms;
+  - 148 are dropped as undefined or constant on test points;
+  - 472 constant-free terms are merged because their values agree up to a scale;
+  - 200 families are merged by the fitting test, out of 22,129 candidate pairs from nearest neighbours.
+- **Final vocabulary: 14,406 terms.**
+  - By number of constants: 9,801 without constants, 4,003 with one, 602 with two.
+  - By the size of the smallest generating tree: 3, 6, 23, 125, 461, 2,463 and 11,325 terms for 1 to 7 nodes.
+  - This is above the estimate of 10³–10⁴.
+- **Canonical-form rules added during the build.** Each is valid wherever the term is defined:
+  - powers combine (x·x^K becomes x^K′);
+  - nested powers are rewritten: (u^a)^b becomes u^(ab), or |u|^(ab) when a is an even integer;
+  - logs of powers are rewritten: log(u^b) becomes b·log u;
+  - |c·f| becomes |f|.
+- **Checks.**
+  - Every term the three generators can produce is in the vocabulary. The generator checks this for each draw.
+  - Examples: x₁x₂/(K0 + x₁) (Holling type II), sin(K0·x₁), exp(K0·x₁), x₂·|x₂|.
+
+**Generators** (`domains_g1.py`).
+- **Physical ranges** (log-uniform unless noted):
+  - **mechanics:**
+    - k in [0.5, 5]; cubic a in [0.1, 2]; sine a in [0.5, 5];
+    - damping coefficients in [0.05, 1];
+    - the number of extra terms is uniform on {0, 1, 2};
+    - x₀ = ±[0.5, 2.5] and v₀ = ±[0.5, 2.5]·√k (uniform);
+  - **circuits:**
+    - ω² in [0.5, 5]; R/L, R and g₁ in [0.05, 1]; C and L in [0.2, 2];
+    - Van der Pol: g₁ in [0.1, 1], g₃ in [0.05, 0.5];
+    - diode: I_s in [0.01, 0.5], V_t in [0.5, 3];
+    - FitzHugh–Nagumo: I in [0, 1] and a, b in [0.5, 1] (uniform), ε in [0.05, 0.5];
+  - **ecology:**
+    - r in [0.5, 2], K in [2, 10], a in [0.2, 2], e in [0.2, 1], m in [0.1, 0.5], h in [0.2, 2];
+    - competition: r in [0.5, 2], a_ii in [0.1, 1], a_ij in [0.05, 1].
+- **Windows:** from each system's own timescale (the Trial 29 rule) for every system, because many mechanical and electrical systems do not settle. Recordings follow the existing transient rules.
+- **Cheap-reference cutoff** (cheap-reference rule): the existing one. At most 4 interval halvings, at most 64 reference substeps, and at most 60 s to build.
+- **Acceptance** (as approved, made precise):
+  - finite;
+  - positive (ecology only);
+  - bounded (within 100× the largest initial magnitude);
+  - every variable moves;
+  - not centred by the learner's scaling at M = 8;
+  - every true non-polynomial term is not singular on the learner's M = 8 data, and differs from every cubic polynomial there by at least 10⁻⁶ (relative least-squares residual).
+
+**Fitter** (`fitter_g1.py`).
+- The rules in section 5, with v2-strong's stages.
+- A fitted term counts as degenerate if it is singular on the data, or within 10⁻¹⁰ (relative) of a cubic polynomial there.
+
+**Pilot on pilot seeds only** ("g1-pilot*": never used again; separate from task, development and test seeds).
+- **Acceptance:** 84% of draws in mechanics, 88% in circuits, 81% in ecology.
+- **The drag motif v·|v| was never accepted, in 20 draws.** It is not smooth at v = 0. Either its reference needs too many substeps, or v keeps one sign on the data, so that v·|v| = ±v² there. Mechanics therefore effectively has five motifs.
+- **Fitting:** known-structure fits were exact on 240 of 240 pilot equations, 32 of them with constants inside terms. The slowest took 0.6 s.
+
+**Seeds and storage** (`g1_draw.py`).
+- **Seeds:** "g1-{train, dev, test}-{domain}-k" for k = 0–149, 0–9 and 0–39. Replacement seeds "-r1", "-r2", … are used in order when a draw is rejected.
+- **Storage:** `outputs/accumulating_learner/g1/systems/{set}_{domain}.json`, with bursts at M = 8 (seed 1) and a hash per system.
+- **Hygiene:** test files are read by scripts only, and only counts are printed.
+- **Shared-form classification:** `g1_shared.py`, run right after the draw; counts are logged.
+
+**Bar (a): procedure and limits, fixed now.**
+- **Per test equation:** `fitter_g1.evaluate_structure` on its true structure. This is the search's judgement of a structure:
+  - ordinary fit;
+  - the precise-stage gate;
+  - a thorough fit unless the fit is already at the floor;
+  - step-integral refit;
+  - held-back check;
+  - degenerate check.
+- **Exact** means plausibly exact, as in the search: the step-integral error on training and held-back bursts is at most max(10⁻⁹, 30 × the equation's relative noise floor), and no term is degenerate.
+- **Scope:** every Stage 1 test equation has at most one term with constants inside it, so all count toward bar (a).
+- **Time limit:** 600 s per system, from the pilot's slowest fit of 0.6 s. Hits are reported.
+- **Context:** whole systems with both equations exact are reported alongside.
+- **Timing pilot first:** the 10 development systems per domain go through the same procedure before the test run.
