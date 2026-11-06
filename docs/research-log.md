@@ -5523,3 +5523,20 @@ Check in with all three before Stage A."*
 | Cross-domain synthetic training, multi-domain tests | ODEFormer's random ODEs; dysts (Gilpin, 2021) | Moderate generalization to real benchmarks; dysts widely used |
 
 *Clarified before sending (same day):* added the guiding network (section 6), development sets and stored draws, node counting with the Holling example, the charge-form RLC circuit, the per-equation shared-form rule, significance tests for transfer, the provenance and zero-shot reports, and the compute check.
+
+### Stage 1 of the general learner: owner approval, with two notes (6 November)
+
+**Owner.** *"Approved as written. Two notes: 1. Any claim of accumulation should rest mainly on equations with new forms (ecology, and circuits' new-form equations). Report it that way; no extra deciding bar needed. 2. In Stage 2, include a second domain order to check that transfer doesn't depend on the order. Check in after bar 1 (the fitter on true structures) before starting the wake–dream cycles."*
+
+- **Bars unchanged.** Bars (a), (c), (d) and (e) are as written above.
+- **Reporting.**
+  - Every claim of accumulation rests mainly on new-form test equations: ecology's, and circuits' new-form equations.
+  - Shared-form results are reported beside them, as context only.
+- **Stage 2** adds a second domain order, to check that transfer does not depend on the order.
+- **Order of work:**
+  1. Count the L1 terms.
+  2. Build the generators and the generic fitter.
+  3. Draw and store tasks, development and test systems, and log the shared-form counts.
+  4. Run the development timing pilot.
+  5. Run bar (a), the fitter on true structures.
+  6. **Check in with the owner** before any wake–dream cycle.
