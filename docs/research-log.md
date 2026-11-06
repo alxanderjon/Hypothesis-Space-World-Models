@@ -5034,3 +5034,27 @@ Check in with all three before Stage A."*
   - combined against v2-strong paired (systems, then equations);
   - no system recovered by v2-strong and lost by combined beyond noise.
 - **With 27 systems** the test can show harm or a large gain, not a small one.
+
+### Trial 31 step 1 on the practice set: owner approval and a new standing rule (6 November, 14:45, logged before running)
+
+**Owner.** *"Approved: start step 1 on the practice set as described, with the time limit raised so the structure budget binds, not time. Make that the rule for all future comparisons: set time limits generously enough that they rarely bind, and report how often they did. After the practice results, propose how to improve the search's reach for structures with 3+ pieces, including whether to resume Trial 29's stage 2 (learning from its own solved searches) now that the fitter solves more. Check in before the held-out request."*
+
+**New standing rule (all future comparisons).** Time limits are set generously from measured timings, so that the budget binds, not the clock, and every report says how often a time limit was hit, per arm.
+
+**Time limit for step 1: 8 hours per system** (learn28's limit, divided equally among a system's equations). Projected from Stage B's runs, scaling each equation to the full 2,000 structures, the full-budget time per system was:
+- v2-strong: median 2,300–3,400 s, 99th percentile 11,400–15,500 s;
+- combined: median 2,900–5,500 s, 99th percentile 22,100–23,700 s, maximum 29,500 s.
+
+**Step 1(a), known structures:** set P (the practice systems' known structures, as in Trials 30 and 31). v2, v2-strong and the combined fitter in one process; M = 8, seed 1.
+
+**Step 1(b), full search:**
+- the 27 usable practice systems at M = 8, seed 1;
+- priorities {uniform baseline, untuned-history network} × fitters {v2-strong, combined}, 108 runs;
+- 2,000 structures per equation, 200 thorough fits per equation (Trial 30's cap rule), 8 h per system; 24 CPU workers.
+- **Reported:**
+  - whole systems exactly recovered (external check on held-back starting states, the success definition);
+  - equations with a plausibly exact structure;
+  - combined against v2-strong paired, by priorities;
+  - time per system and **time-limit hits per arm**;
+  - Trial 28's practice results (M = 8) as context.
+- Practice-set gains are suggestive only.
