@@ -5112,7 +5112,7 @@ Check in with all three before Stage A."*
 - On synthetic systems the true structures are known, and they are strictly better labels than the learner's own solutions.
 - Stage 2 matters for real systems, which have no labels. Resume it there, as fine-tuning of the proposal network on its own solved practice and real systems, once the proposals raise the number of hard equations solved.
 
-### Before Trial 32: the owner's two questions; why the real practice systems fail (6 November, 16:00; existing records only, nothing run)
+### Before Trial 32: the owner's two questions; why the real practice systems fail (6 November, 15:20; existing records only, nothing run)
 
 **Owner.** *"1. What architecture are the move network and the proposed structure network? Scoring each term independently can't capture that a true term and its look-alike shouldn't both appear. Consider a design that models interactions between terms… 2. Real practice systems have no 3+-piece equations in toolkit terms, so recent gains are on a synthetic-only difficulty. Give me a breakdown of why the real practice systems currently fail… Make sure Trial 32 targets what limits real systems, not just synthetic ones. Answer both in plain language before running anything."*
 
@@ -5146,7 +5146,7 @@ Check in with all three before Stage A."*
   3. two genuinely wrong or unassembled models, one fitting failure and one system never learned.
 - **Search reach for 3+-piece structures is a synthetic-only limit at present.**
 
-### Trial 32 step 1: precision near-misses; diagnosis and the practice-set check pre-registered (6 November, 17:00, logged before running the check)
+### Trial 32 step 1: precision near-misses; diagnosis and the practice-set check pre-registered (6 November, 15:40, logged before running the check)
 
 **Owner.** *"Agreed on the order: Trial 32 does the precision near-misses first, then the toolkit-coverage proposal, then the structure-proposal network (with the term-by-term design). For the near misses: improve precision genuinely (reference accuracy, final polish, conditioning). Do not change the exactness bar. Pre-register the practice-set check before running. For toolkit coverage: discovering a general class from data, such as rational terms with denominators found by the algebraic start, kept in a library and reused, is within my rule, since the specific forms come from data. Test reuse with Trial 27's controls (decoys, removal check). Also add such general terms to the synthetic generator, so synthetic results transfer to real systems. Send that proposal before running it."*
 
