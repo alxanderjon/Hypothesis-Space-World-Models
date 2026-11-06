@@ -5079,3 +5079,35 @@ Check in with all three before Stage A."*
 - **On real systems' known structures, the combined fitter loses nothing.** These systems have no equations with 3+ pieces in the toolkit's terms, which is where it helps on synthetic systems.
 
 **One more fact for the reach proposal** (Stage B, combined fitter): for the 3+-piece equations whose true structure was never fitted (251 with baseline priorities, 247 with network priorities), the structure the search finally chose holds a median of **none** of the true terms (mean 10–16%), and usually misses 3–5 of the true pieces. **The search is not close to these structures; it is elsewhere.**
+
+### Trial 32 proposal: learned whole-structure proposals to improve the search's reach on 3+-piece equations (6 November; awaiting owner approval, nothing run)
+
+**Why.** In Stage B, the search fitted the true structure of only 3–8% of 3+-piece equations within 2,000 structures. Where it missed, its final structure shared a median of none of the true terms.
+- **The step-by-step search is badly guided for multi-piece structures.** It builds structures one term at a time, and the value of a partial structure (a fit missing several pieces) says little about which pieces are missing.
+- **With a vocabulary of 60–250 terms,** a 4–6-term structure needs 4–6 correct moves in a row. The network priorities get one right in their top 5 only about 40% of the time (Trial 29).
+- **The fitter is no longer the limit:** given the structure, the combined fitter recognizes 39% of 3+-piece equations.
+
+**Proposal: propose whole structures, then let the search refine.**
+1. **The proposal network.**
+   - Given an equation's data (the dense rates and states, as at test time) and the system's vocabulary, it scores each candidate term's chance of belonging to the true structure. It also predicts the number of terms.
+   - A beam over term sets, by joint score, then gives the top-k complete structures. If that falls short, an autoregressive set decoder replaces the beam.
+   - **Training:** generated systems with known true structures. The generators' training modes exclude the held-out family pairs; each system is simulated into its own bursts (real trajectories, as for the starting-value network). Bursts and true structures are stored (about 3 KB per system).
+   - **Data size:** 10,000 new systems, about 5 h on 24 workers, plus the 1,040 collected systems.
+   - **Accumulation curve:** trained on 1,000, 3,000 and 10,000 systems.
+2. **In the search (additive only).** The top-k proposals are evaluated first, with the combined fitter, and the usual PUCT search then continues within the same total budget. Proposals add candidates and never remove any.
+3. **Stage 1, development (reach):**
+   - the share of equations whose true structure is among the top-k proposals (k = 10, 50, 200), by number of pieces;
+   - against the PUCT search's reach within the same number of evaluated structures, and against a zero-cost baseline: proposals built from the existing move network's first-move scores.
+4. **Stage 2, fresh known-data sets** (untuned, hand-tuned, unfamiliar families): equations recognized when the k proposals are fitted by the combined fitter, against PUCT at the same number of evaluations; by pieces, with time.
+5. **Stage 3, full search** on Trial 29's sets:
+   - proposals then PUCT, against PUCT alone, at the same structure budget, with generous time limits under the new rule;
+   - both priorities;
+   - equations, true structures and whole systems; Trial 29's bar (b) re-checked.
+- **Pass bars are written into the log before each stage;** check-ins between stages.
+
+**Secondary: the screen as a time saver.** Skipping thorough fits the screen scores lowest (development: 61–68% skipped at 98% recall of exact finds) would give the search's time back to more structures. It is a generic improvement for every arm, used only if a known-structure check shows no loss.
+
+**Trial 29's stage 2 (learning from its own solved searches): not now.**
+- The learner itself solves very few 3+-piece equations (1–4 of about 270 per arm in Stage B), so its own solutions would teach mostly the easy structures it already finds.
+- On synthetic systems the true structures are known, and they are strictly better labels than the learner's own solutions.
+- Stage 2 matters for real systems, which have no labels. Resume it there, as fine-tuning of the proposal network on its own solved practice and real systems, once the proposals raise the number of hard equations solved.
