@@ -5058,3 +5058,24 @@ Check in with all three before Stage A."*
   - time per system and **time-limit hits per arm**;
   - Trial 28's practice results (M = 8) as context.
 - Practice-set gains are suggestive only.
+
+### Trial 31 step 1: change of plan, and the practice known-structure check (6 November, 15:10)
+
+**Owner.** *"Change of plan: run only the known-structure check on the 12 expressible practice systems now (v2, v2-strong, combined), to confirm the combined fitter helps and loses nothing on real data. Skip the full-search practice run for now; it would likely repeat Stage B's finding that the search rarely reaches hard structures. We'll run it after the search's reach improves. Then move straight to the proposal for improving the search's reach on 3+-piece structures, including whether to resume stage 2. Keep the time-limit rule for future comparisons."*
+
+**Full-search practice run stopped** (my processes only, by PID) after 5 minutes; no run had finished and no output was written.
+
+**Known-structure check, practice set P** (12 systems, 30 equations; 1 skipped for centred coordinates as before; M = 8, all three fitters in one process):
+
+| Pieces | Equations | v2 | v2-strong | combined |
+|---|---|---|---|---|
+| 0 | 10 | 10 | 10 | 10 |
+| 1 | 16 | 14 | 15 | 15 |
+| 2 | 4 | 1 | 1 | 1 |
+| all | 30 | 25 | 26 | 26 |
+
+- Combined against v2-strong: no equation lost, none gained.
+- Evaluation time, mean: v2 0.09 s, v2-strong 0.14 s, combined 0.17 s.
+- **On real systems' known structures, the combined fitter loses nothing.** These systems have no equations with 3+ pieces in the toolkit's terms, which is where it helps on synthetic systems.
+
+**One more fact for the reach proposal** (Stage B, combined fitter): for the 3+-piece equations whose true structure was never fitted (251 with baseline priorities, 247 with network priorities), the structure the search finally chose holds a median of **none** of the true terms (mean 10–16%), and usually misses 3–5 of the true pieces. **The search is not close to these structures; it is elsewhere.**
