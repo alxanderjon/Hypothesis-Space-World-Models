@@ -5381,16 +5381,20 @@ Check in with all three before Stage A."*
 
 #### 4. Language L1 (replaces the curated toolkit)
 
-- **Leaves:** the state variables (scaled as now) and fitted constants.
-- **Operations:** +, ×, ÷, power with a constant exponent (fitted, or the integers 2 and 3), exp, log, sin.
-- **A term** is an expression of at most 7 nodes with at most 2 fitted constants, and no exp or log nested inside the same function. Examples:
-  - x/(1 + c·x) has 7 nodes;
-  - sin x has 2;
-  - x³ has 3;
-  - exp(c·v) has 4.
-- **An equation** is a sum of at most 6 terms, with coefficients solved exactly (variable projection).
-- **Canonical form:** each term is simplified and ordered (sympy), stripped of an overall constant factor, and terms whose columns agree up to a scale on random points are merged.
-- **The vocabulary** is all canonical terms, enumerated per system (an estimated 10³–10⁴ for 2 variables). The exact count is logged before any task is drawn.
+- **Leaves:** the state variables (scaled as now, and named only by position, x₁ and x₂, never by domain) and fitted constants.
+- **Operations:** +, ×, ÷, power with a constant exponent (fitted, or one of 2, 3 and ½), exp, log, sin.
+- **A term** has at most 7 nodes (operations, variables, constants and fixed exponents all count) and at most 2 fitted constants, with no exp or log inside another exp or log. A term counts as in L1 if it, or an equivalent form up to a constant factor, meets these limits. Examples:
+  - x/(c + x) has 5 nodes;
+  - x·y/(c + x) has 7. Holling type II predation, x·y/(1 + h·x), has 9 as written but equals (1/h)·x·y/(1/h + x), so it is in L1;
+  - v·(v²)^½ (that is, v·|v|) has 7;
+  - exp(c·v) has 4, x³ has 3, sin x has 2.
+- **An equation** is a sum of at most 6 terms (the constant 1 is one of the terms), with coefficients solved exactly by variable projection.
+- **Canonical form:**
+  - each term is simplified and ordered (sympy) and stripped of an overall constant factor;
+  - two terms are merged when they describe the same family: for random values of one term's constants, the other's constants can be fitted to reproduce its values exactly, up to a scale, on random points.
+- **The vocabulary:**
+  - all canonical terms, enumerated once for 2 variables (an estimated 10³–10⁴); the exact count is logged before any task is drawn;
+  - for each system, terms that are undefined or constant on its data are dropped.
 - **Larger terms** come only through abstraction (Stage 2).
 
 #### 5. Generic fitter
@@ -5399,72 +5403,114 @@ Check in with all three before Stage A."*
   - a constant added to a subexpression is gridded across that subexpression's observed range, extended by half;
   - a multiplying constant is gridded on a log scale from 10⁻² to 10² of 1/scale, both signs;
   - an exponent is gridded on [−3, 3].
-- **The rest is unchanged:** sweeps, joint beam, global search in these units, Levenberg–Marquardt with variable projection, step-integral refit, exactness test.
+- **The rest is v2-strong, unchanged:** sweeps, joint beam, global search in these units with the best starts pre-polished, Levenberg–Marquardt with variable projection, snapping of constants only where identifiable, step-integral refit, exactness test.
 - **The algebraic start** is used only when a term is rational (detected automatically).
-- Learned starting values follow in Stage 2.
+- **Learned starting values follow in Stage 2.** Trial 31's network was trained on toolkit terms and does not apply to L1 terms.
 
-#### 6. Domain generators (fixed now, before any task exists)
+#### 6. The guiding network
+
+- **One network for all domains,** with no per-domain parts. Its weights are carried from domain to domain and never re-initialized.
+- **Design: Trial 28's move network,** with attention across candidate terms.
+  - At each search step it scores every addition and removal given the terms already chosen. A true term and its look-alike are judged together, and the structure is proposed term by term.
+  - **Change 1, what a term is:** a small encoder reads each term's expression (operations, variables by position, constants), instead of a toolkit slot number. The same term then has the same description in every domain.
+  - **Change 2, which terms attend:** the terms in the current structure, plus the 512 candidates with the most single-term evidence from the current fit. Attending across 10³–10⁴ terms at every step would be too slow; the remaining terms keep the uniform prior.
+- **Inputs from the data:** as in Trial 28, each term carries the current fit's evidence (gain, removal cost, membership). No domain label is given.
+- **Output and training:** the add and remove scores become the search's priors. Training uses Trial 28's multi-positive loss on the search states along verified solutions.
+- **Cycle 0 is uniform** (no network), for the continued network and for each fresh network.
+- **Not in Stage 1:** a network that proposes whole structures directly from the data (the proposer planned for Trial 32). It needs the corpus of verified solutions that Stage 1 builds.
+
+#### 7. Domain generators (fixed now, before any task exists)
 
 - **Mechanics** (x, v): ẋ = v; v̇ = −k x plus 0–2 of {−a x³, −a sin x, −c v, −c v³, −c v·(v²)^½, −c x² v}.
-- **Circuits** (v, i): v̇ = (i − g(v))/C and i̇ = (−v − R i)/L, with g in {g₁v (linear), g₁v − g₃v³, I(exp(v/V) − 1)}. Or FitzHugh–Nagumo: v̇ = v − v³/3 − w + I, ẇ = ε(v + a − b w).
+- **Circuits,** one of five forms, equally likely:
+  - series RLC in charge form (q, i): q̇ = i, i̇ = −(R/L) i − q/(LC), the same form as the damped spring;
+  - a parallel circuit (v, i): v̇ = (i − g(v))/C and i̇ = (−v − R i)/L, where g is one of g₁v (linear), g₁v − g₃v³ (Van der Pol type) and I(exp(v/V) − 1) (diode);
+  - FitzHugh–Nagumo: v̇ = v − v³/3 − w + I, ẇ = ε(v + a − b w).
 - **Ecology** (x, y):
   - predator–prey: ẋ = r x − (r/K) x² − f(x) y and ẏ = e f(x) y − m y, with f in {a x, a x/(1 + h x)};
   - or two-species competition.
 - **Constants** are random in physical ranges fixed in code, with the existing acceptance rules (bounded, moving, positive for ecology, cheap reference, own-timescale windows).
 - **Every generated term is expressible in L1** (checked by the generator).
 - **Shared forms, owner's addition 2:**
-  - Linear damped oscillators arise in mechanics and in circuits (linear g), and other forms can coincide.
-  - A test system's form *appears in an earlier domain* if its equations' canonical term sets (constants ignored, variables relabelled) match the true structure of some task in an earlier domain's training stream.
-  - The classification uses the known structures, which the learner never sees, and is made before evaluation.
+  - **Some forms are shared on purpose.** The charge-form RLC circuit is the damped spring. The Van der Pol circuit's v̇ equation has the same terms as a damped Duffing oscillator's v̇ equation.
+  - **Per equation:** a test equation's form *appears in an earlier domain* if its canonical term set (constants ignored, the two variables possibly swapped) equals the true term set of an equation of some training task in an earlier domain.
+  - **Per system:** a test system is *shared-form* when all its equations are.
+  - **How it is made:** from the known structures, which the learner never sees. It is made when the test systems are drawn, before any evaluation, and its counts are logged.
+  - **Ecology:** its forms (x·y, x², x·y/(c + x)) do not occur in mechanics or circuits, so transfer to ecology is almost entirely to new forms.
 
-#### 7. Tasks and tests
+#### 8. Tasks and tests
 
-- **Per domain:** 150 training tasks (prefixes "g1-train-{domain}-k") and 40 test systems ("g1-test-{domain}-k"), drawn with separate seeds.
+- **Per domain,** drawn with separate seeds:
+  - 150 training tasks ("g1-train-{domain}-k");
+  - 10 development systems ("g1-dev-{domain}-k"), for the timing pilot and debugging only, never in headline numbers;
+  - 40 test systems ("g1-test-{domain}-k").
+- **Everything is drawn once and stored** (bursts, with a hash per system), so every arm sees identical systems.
 - **The learner sees tasks as data only.** Answers are used for evaluation and for the shared-form classification.
 - **Counts only for test systems.**
 
-#### 8. Cycles
+#### 9. Cycles
 
 - **Order:** mechanics (A), then circuits (B), then ecology (C).
 - **Each domain gets 2 wake–dream cycles:**
-  - **wake:** all 150 tasks searched, 1,000 structures per equation, 200 thorough fits per equation, time limits set from a pilot so that they rarely bind (the standing rule);
-  - **dream:** the move network retrained on the replays so far plus 500 fantasies.
-- **Fresh networks for comparison:** the same 2 cycles on B alone and on C alone.
-- **Test evaluations** at the same budget: uniform priorities; and the networks after A, after A + B, after A + B + C, fresh-B and fresh-C.
-- **Compute:** roughly 1–1.5 days on 24 CPU workers, the network trained on a free or shareable GPU (rule), a few hundred MB on disk.
+  - **wake:** all 150 tasks searched, with:
+    - 1,000 structures per equation;
+    - 200 thorough fits per equation;
+    - time limits set from the development pilot so that they rarely bind (the standing rule);
+  - **dream:** the same weights are trained further on every verified solution so far, from every domain, plus 500 new fantasies. Every network gets the same number of training steps per cycle.
+- **Against forgetting:** every verified solution stays in the training mix at full weight (cheap, because solutions are small). This differs from the PDEBench replay test that failed:
+  - there, a large network adapted all its weights to each new family, with a down-weighted share of the old data, and an aggregate error hid per-case losses;
+  - here retention is judged per system, and the language itself cannot be forgotten;
+  - if retention still fails, Stage 2 compares rehearsal choices on development systems.
+- **Fresh networks for comparison:** the same 2 cycles on B alone and on C alone, with the same settings (strong-baseline rule).
+- **Test evaluations,** all at the same budget:
+  - uniform priorities;
+  - the networks after A, after each cycle of B, and after each cycle of C;
+  - fresh-B and fresh-C after each cycle.
+- **Compute:**
+  - roughly 1–1.5 days on 24 CPU workers, with the network trained on a free or shareable GPU (rule) and a few hundred MB on disk;
+  - projected from the pilot before the run. If the projection exceeds 3 days, I check in with a smaller design (for example 100 tasks per domain) before running.
 
-#### 9. Measures and pass bars (all four required)
+#### 10. Measures and pass bars (all four required)
 
-1. **(a) Language and fitter:** given the true structure, at least 80% of test equations with at most 2 nonlinear terms are recognized exactly, in each domain. **If not met, stop.**
-2. **(c) Learning on the first domain:** after A's cycles, on A's tests, guided search solves at least 20 points more equations than uniform search at the same budget, or needs at most half the structures (median) to its first plausible model.
-3. **(d) Forward transfer, on B and on C:** after the first cycle on the new domain, the continued network solves at least 10 points more test equations than the fresh network. After the second cycle, it is not worse (within noise).
-   - Reported separately for test systems whose forms appear in an earlier domain and those that do not.
-4. **(e) Retention:** after C, results on A's and B's tests are judged per system. At most 2 systems per domain (5%) are lost compared with right after that domain's cycles.
+1. **(a) Language and fitter:** given the true structure, at least 80% of test equations with at most 2 terms with internal constants are recognized exactly, in each domain. **If not met, stop.**
+2. **(c) Learning on the first domain:** after A's cycles, on A's tests, guided search must beat uniform search at the same budget in one of two ways:
+   - it solves at least 20 points more equations; or
+   - it needs at most half the structures (median) to its first plausible model.
+3. **(d) Forward transfer, on B and on C:**
+   - **After the first cycle on the new domain:** the continued network solves at least 10 points more test equations than the fresh network, and the gain is significant (paired sign test on equations, p < 0.05).
+   - **After the second cycle:** the continued network is not worse; the fresh network is not significantly better (p < 0.05).
+   - **Reported separately** for shared-form and novel-form test equations, and for shared-form systems and the rest (owner's addition 2).
+   - **The bar applies to all test equations together.** On C almost every form is new, so C's bar is in effect a test on novel forms. If B's gain comes only from shared forms, the report will say so.
+4. **(e) Retention:** after C, results on A's and B's tests are judged per system. At most 2 systems per domain (5%) may be lost, compared with right after that domain's cycles.
 
 - **(b) Uniform search** is reported as the baseline, without a bar.
 - **Also reported:**
-  - true structures recognized, against other structures exact on the data (the over-selection risk);
+  - **zero-shot transfer:** the network from earlier domains on the new domain's tests before any cycle there, against uniform;
+  - **provenance:** each test equation solved only by the continued network, with the earlier-domain solutions that share any of its true terms;
+  - **the over-selection risk:** true structures recognized, against other structures exact on the data;
   - whole systems exact;
-  - search effort and time, and time-limit hits.
+  - search effort and time, and time-limit hits per arm.
 
-#### 10. Later stages
+#### 11. Later stages
 
 - **Stage 2:**
   - abstraction (compression over verified solutions; decoys and removal checks);
   - chemistry and chaotic flows (d ≤ 3);
   - learned starting values for the generic fitter;
+  - a network proposing whole structures from the data;
   - rehearsal choices for retention compared on development.
 - **Stage 3:** the AlphaZero part: a value network, with search plus learning from its own verified solutions on synthetic and real unlabelled systems; terms up to 9 nodes; d up to 4.
 - **Stage 4:** held-out multi-domain real tests (dysts, ODEBench, SRBench's Strogatz set, BioModels fresh pool) under the usual rules, after the owner's approval.
 - **Later still:** discontinuous and hybrid systems (bouncing ball, stick–slip, relays), forced systems, partial observation.
 
-#### 11. What each design choice borrows, and whether it worked there
+#### 12. What each design choice borrows, and whether it worked there
 
 | Choice | Borrowed from | Did it succeed there? |
 |---|---|---|
 | Wake–abstraction–dreaming cycles | DreamCoder (Ellis et al., 2021) | Yes, on list processing, text editing, regular expressions, graphics, towers, symbolic regression and physics laws; compute-heavy, small domains |
-| Abstraction by compression | DreamCoder's refactoring; Stitch (Bowers et al., 2023) | Yes; Stitch matched DreamCoder's libraries 1,000–10,000× faster |
+| Abstraction by compression | DreamCoder's refactoring; Stitch (Bowers et al., 2023); LILO (Grand et al., 2024) | Yes. Stitch matched DreamCoder's libraries 1,000–10,000× faster. LILO, which adds language-model guidance to Stitch, solved more tasks than DreamCoder |
 | Search guided by learned priors, improved by its own solutions | AlphaZero (Silver et al., 2018); expert iteration (Anthony et al., 2017) | Yes in games; also AlphaTensor and AlphaDev for algorithm discovery |
+| Move network with attention across candidate terms, scoring moves given the terms already chosen | Trial 28 here, after AlphaZero's policy network | Partly. On synthetic sets like its history: 47% against 23% of systems exact, and +12 points on a size-matched set. On real practice systems, most of the gain came from its history's hand-set term frequencies (a plain frequency table matched it); reading the data added about 2 systems, not significant |
 | Neural-guided search for equations | TPSR (Shojaee et al., 2023); DSO/uDSR (Petersen 2021; Landajuela 2022) | Yes, improved accuracy on SRBench and over transformer-only methods |
 | Whole-expression proposals from data (later, for the term-by-term design) | NeSymReS (Biggio 2021); E2E (Kamienny 2022); ODEFormer (d'Ascoli 2024) | Partly: good proposals, imprecise constants; best combined with refinement |
 | Sparse regression over a fixed library | SINDy (Brunton 2016); SINDy-PI (Kaheman 2020) | Yes when the library holds the right terms; fails otherwise, the problem this replaces |
@@ -5472,6 +5518,8 @@ Check in with all three before Stage A."*
 | Constants by multistart global search and local polishing | Raue et al. (2013) for ODE parameters; Trials 30–31 here | Yes |
 | Learned starting values with long polishing | Trial 31 here | Yes on synthetic 3+-piece equations (63 → 111 of 288); no effect on the full search, which rarely reaches them |
 | Canonical forms of equivalent expressions | e-graphs and equality saturation (egg; Willsey et al., 2021) | Yes in compilers; partial in symbolic regression. Stage 1 uses the simpler sympy and numerical merging |
-| Rehearsal against forgetting | Experience replay (Rolnick 2019; Chaudhry 2019); A-GEM; EWC (Kirkpatrick 2017) | Replay and A-GEM yes on benchmarks; EWC mixed; our PDEBench replay failed |
+| Full rehearsal of every verified solution against forgetting | Experience replay (Rolnick 2019; Chaudhry 2019); A-GEM; EWC (Kirkpatrick 2017) | Replay and A-GEM yes on benchmarks; EWC mixed. Our PDEBench replay (a down-weighted share of old data) failed |
 | Explicit library as memory that cannot be forgotten | DreamCoder; Voyager's skill library (Wang et al., 2023) | Yes |
 | Cross-domain synthetic training, multi-domain tests | ODEFormer's random ODEs; dysts (Gilpin, 2021) | Moderate generalization to real benchmarks; dysts widely used |
+
+*Clarified before sending (same day):* added the guiding network (section 6), development sets and stored draws, node counting with the Holling example, the charge-form RLC circuit, the per-equation shared-form rule, significance tests for transfer, the provenance and zero-shot reports, and the compute check.
