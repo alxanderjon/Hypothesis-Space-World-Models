@@ -267,10 +267,13 @@ class Driver:
         try:
             q = subprocess.run(["nvidia-smi", "--query-gpu=index,utilization.gpu,memory.used", "--format=csv,noheader,nounits"],
                                capture_output=True, text=True, timeout=30).stdout.strip().splitlines()
+            import os
+            vis = os.environ.get("CUDA_VISIBLE_DEVICES")
+            vis = [int(v) for v in vis.split(",") if v.strip()] if vis else None
             for line in q:
                 i, u, m = [int(x) for x in line.split(",")]
-                if u < 10 and m < 1000:
-                    return i, f"GPU {i} (utilization {u}%, {m} MiB used at the check)"
+                if u < 10 and m < 1000 and (vis is None or i in vis):
+                    return (i if vis is None else vis.index(i)), f"GPU {i} (utilization {u}%, {m} MiB used at the check)"
         except Exception:
             pass
         return None, "CPU (no free GPU at the check)"
