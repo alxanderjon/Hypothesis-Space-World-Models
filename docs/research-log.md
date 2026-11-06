@@ -5145,3 +5145,41 @@ Check in with all three before Stage A."*
   2. final precision of the assembled model: about 5 near-misses within about 3× of the thresholds;
   3. two genuinely wrong or unassembled models, one fitting failure and one system never learned.
 - **Search reach for 3+-piece structures is a synthetic-only limit at present.**
+
+### Trial 32 step 1: precision near-misses; diagnosis and the practice-set check pre-registered (6 November, 17:00, logged before running the check)
+
+**Owner.** *"Agreed on the order: Trial 32 does the precision near-misses first, then the toolkit-coverage proposal, then the structure-proposal network (with the term-by-term design). For the near misses: improve precision genuinely (reference accuracy, final polish, conditioning). Do not change the exactness bar. Pre-register the practice-set check before running. For toolkit coverage: discovering a general class from data, such as rational terms with denominators found by the algebraic start, kept in a library and reused, is within my rule, since the specific forms come from data. Test reuse with Trial 27's controls (decoys, removal check). Also add such general terms to the synthetic generator, so synthetic results transfer to real systems. Send that proposal before running it."*
+
+**Diagnosis** (development: the 4 practice near-misses whose models were stored; the 3 rejected near-misses have no stored model):
+
+| Recorded one-step error | Reference's own error (4× substeps) | Model integrated 4× finer | Least-squares re-polish | Library precise final stage |
+|---|---|---|---|---|
+| 2.0 × 10⁻¹² | 3.5 × 10⁻¹⁵ | 2.0 × 10⁻¹² | 1.9 × 10⁻¹² | 1.7 × 10⁻¹² |
+| 1.1 × 10⁻¹² | 4.6 × 10⁻¹⁵ | 1.1 × 10⁻¹² | 1.1 × 10⁻¹² | 1.2 × 10⁻¹² |
+| 4.4 × 10⁻⁹ | 9.7 × 10⁻¹⁵ | 6.0 × 10⁻⁹ | 2.0 × 10⁻¹⁰ | 2.9 × 10⁻⁹ |
+| 3.3 × 10⁻¹² | 1.1 × 10⁻¹⁴ | 7.0 × 10⁻¹³ | 5.4 × 10⁻¹³ | **9.4 × 10⁻¹³, exact** (multi-step included) |
+
+- **The reference is accurate** (≤ 1.1 × 10⁻¹⁴).
+- **One near-miss was integration and polish:** fixed by the precise stage.
+- **Two are identifiability:** the model matches the observed data to about 10⁻¹⁵ but misses new starting states by 1–2 × 10⁻¹². Precision cannot fix that, though M = 16 fixed one of them in Trial 28.
+- **One is a wrong structure.**
+
+**The precise final stage** (`DL.set_precise`, `learn28(precise=True)`; off by default, default path unchanged):
+- Levenberg–Marquardt steps by scaled least squares instead of normal equations, at the model's final substep count, refitted if that count changes, with a convergence-based stop (up to 5× the iterations). This applies in the polish and in the tied refit.
+- Substep convergence to 1 × 10⁻¹⁵ instead of 1 × 10⁻¹⁴.
+- Artifact and held-back check at 16× the converged count instead of 4×.
+- **The exactness bars are unchanged:** external one-step ≤ 10⁻¹² plus the multi-step envelope; internal held-back ≤ 3 × 10⁻¹³.
+- **Cost:** the artifact's substeps rise from 4 to 16–32 per step on these systems, while the references use 8–64. This is reported against the goal that the artifact be cheaper than the simulation.
+
+**Practice-set check, pre-registered:**
+- 27 practice systems at M = 8, seed 1; fitter v2-strong; untuned-history network priorities; 2,000 structures per equation; 200 thorough fits per equation; 8 h per system (rarely binds; hits reported); 24 CPU workers.
+- Arms: **A**, the default final stage; **B**, the precise final stage. 54 runs.
+- **Pass (both required):**
+  1. B recovers more systems exactly than A;
+  2. B loses none of A's exact systems (outcome level, as the consistency rule).
+- **Reported:**
+  - systems exact, paired;
+  - near-misses in each arm (one-step error between 10⁻¹² and 10⁻¹¹, or held-back between 3 × 10⁻¹³ and 3 × 10⁻¹²);
+  - artifact substeps against the reference's;
+  - time and time-limit hits.
+- Practice gains are suggestive only.
