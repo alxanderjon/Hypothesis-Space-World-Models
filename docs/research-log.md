@@ -4959,3 +4959,78 @@ Check in with all three before Stage A."*
 - **Context:** Trial 30's fitter-v2 records of the same systems.
 - **Secondary:** search effort and time, including time-cap hits.
 - Drawn-system identity is checked before any pairing; systems drawn differently in any run are excluded and counted.
+
+### Trial 31 Stage B results (5 November 22:15 – 6 November 14:20): no gain in the full search at Trial 30's limits
+
+**Run.** 800 runs on 32 CPU workers, no errors; other users' processes untouched. Drawn identically in all six arms (including Trial 30's v2 records): (1u) 100 of 100, (2u′) 97 of 100.
+
+| Set | Arm | Systems exact | Equations with a plausibly exact structure | True structures recognized | Equations stopped by the time cap | Time per system (median) |
+|---|---|---|---|---|---|---|
+| (1u) | baseline, v2 (Trial 30) | 12 | 116 / 278 | 90 | 0 | 981 s |
+| (1u) | baseline, v2-strong | 16 | 111 | 88 | 44 | 1,800 s |
+| (1u) | baseline, combined | 15 | 109 | 83 | 75 | 2,180 s |
+| (1u) | network, v2 (Trial 30) | 15 | 129 | 107 | 2 | 1,387 s |
+| (1u) | network, v2-strong | 14 | 125 | 109 | 67 | 2,289 s |
+| (1u) | network, combined | 14 | 125 | 110 | 111 | 2,701 s |
+| (2u′) | baseline, v2 (Trial 30) | 8 | 100 / 269 | 70 | 0 | 953 s |
+| (2u′) | baseline, v2-strong | 8 | 94 | 74 | 27 | 1,801 s |
+| (2u′) | baseline, combined | 8 | 95 | 77 | 56 | 2,104 s |
+| (2u′) | network, v2 (Trial 30) | 7 | 104 | 95 | 2 | 1,324 s |
+| (2u′) | network, v2-strong | 8 | 105 | 93 | 59 | 2,394 s |
+| (2u′) | network, combined | 7 | 103 | 91 | 114 | 2,812 s |
+
+**Combined against v2-strong** (paired; only combined / only v2-strong):
+
+| Set | Priorities | Systems | Equations | p (equations) | True structures |
+|---|---|---|---|---|---|
+| (1u) | baseline | 2 / 3 | 12 / 14 | 0.85 | 12 / 17 |
+| (1u) | network | 1 / 1 | 8 / 8 | 1 | 9 / 8 |
+| (2u′) | baseline | 1 / 1 | 11 / 10 | 1 | 10 / 7 |
+| (2u′) | network | 1 / 2 | 7 / 9 | 0.8 | 6 / 8 |
+
+**No difference.**
+
+**Trial 29's bar (b)** (network against baseline priorities): not met under either fitter.
+- Equations: (1u) 23 / 9 (p = 0.02) under v2-strong and 24 / 8 (p = 0.007) under combined;
+- (2u′) 20 / 9 and 20 / 12;
+- systems: −2 to 0 points.
+
+**Why, from the diagnostics** (post hoc):
+1. **The search rarely reaches the 3+-piece structures** where the fitter's gain lies:
+
+   | Arm | 3+ pieces: true structure fitted / recognized (of about 270) | 2 pieces (of 142) | 0–1 pieces (of about 144) |
+   |---|---|---|---|
+   | baseline v2 | 11 / 2 | 45 / 33 | 131 / 126 |
+   | baseline v2-strong | 7 / 1 | 48 / 39 | 129 / 126 |
+   | baseline combined | 14 / 3 | 41 / 35 | 128 / 125 |
+   | network v2-strong | 21 / 2 | 84 / 68 | 143 / 138 |
+   | network combined | 18 / 4 | 78 / 66 | 141 / 136 |
+
+   With the true structure reached in 3–8% of 3+-piece equations, the fitter's known-structure gain (22% → 39%) cannot show.
+2. **Same reach, same recognition.** Where both v2-strong and combined fitted the true structure, recognition is the same: only combined / only v2-strong 0 / 1, 4 / 3, 1 / 2, 1 / 1.
+3. **The time cap penalizes the slower fitters.** The equations stopped before 2,000 structures rise from 0–2 (v2) to 27–67 (v2-strong) and 56–114 (combined). Thorough fits take 70–82% of search time.
+   - On equations stopped by neither arm, combined against v2-strong: 10 / 6, 4 / 1, 11 / 4, 6 / 2; pooled 31 / 13.
+   - Combined against Trial 30's v2 on such equations: pooled 33 / 16.
+   - These are post hoc and suggestive only.
+
+**Reading.**
+- The combined fitter fixes fitting once a structure is found (known-structure test: 63 → 111 of 288 on 3+ pieces). But in the full search the binding limit for 3+-piece equations is now **finding the structure**: the true structure is tried in only 3–8% of them within 2,000 structures.
+- The fitter's extra cost also uses up the time cap.
+- The next lever is the search's reach for multi-piece structures, and the time given to it. The network priorities already reach about twice as many 2-piece true structures as uniform priorities (78–84 against 41–48).
+
+### Proposal: first test of the combined fitter on real systems (awaiting the owner)
+
+**Step 1, practice set** (development; gains suggestive only, as the owner ruled in Trial 29):
+1. **Known structures:** the practice systems' known structures (Trial 30's set P, 12 systems, 30 equations), with v2, v2-strong and the combined fitter in one process. This checks that nothing is lost on real systems; they have few equations with several pieces.
+2. **Full search:** the 27 usable practice systems at M = 8, baseline and network priorities × v2-strong and combined. The structure budget is 2,000 per equation and **the time cap is raised to 2 hours per system**, so that the budget, not time, binds; time is reported.
+   - Measures: whole systems exactly recovered (the success definition: one-step error ≤ 10⁻¹² on held-back starting states, multi-step envelope), equations solved, time.
+   - Compared with Trial 28's practice results.
+
+**Step 2, held-out test** (only after the owner approves the request; usual rules):
+- **Data:** the fresh pool, 27 real systems with 2–4 variables, never inspected (split by seeded hash before conversion; not used in any development since). The whole pool is used, since nothing in this work was developed on it. Reserve sets A and B stay untouched under the gating rule.
+- **Arms:** v2-strong and combined, each with baseline and network priorities, plus the frequency-table control for priorities (owner's earlier addition to any held-out request). Same settings as Step 2 of the practice test, one run, counts only.
+- **Criteria, fixed before running:**
+  - whole systems exactly recovered per arm;
+  - combined against v2-strong paired (systems, then equations);
+  - no system recovered by v2-strong and lost by combined beyond noise.
+- **With 27 systems** the test can show harm or a large gain, not a small one.
