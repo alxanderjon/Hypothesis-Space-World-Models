@@ -5233,3 +5233,94 @@ Check in with all three before Stage A."*
 - **Why.** The near misses diagnosed earlier came from Trial 28's runs (hand-tuned-history network, 5,000 structures, fitter v1). Today's learner (untuned-history network, v2-strong, 2,000 structures) mostly does not produce them: 1 near miss in each arm, and the precise stage does not fix it.
 - **The precise stage also makes the artifact more expensive than the simulation** in 4 of 6 accepted systems, against the programme's goal. **It is not adopted;** the code stays, off by default.
 - **Configuration matters on the practice set.** Today's standard learner recovers 4 of 27 practice systems at M = 8, against 8 for Trial 28's best arm (hand-tuned history, 5,000 structures, fitter v1). Which history and budget to carry forward for real systems is a decision for the owner. The hand-tuned history was built to resemble biochemistry (the owner's earlier concern about design choices), but that resemblance may be legitimate prior knowledge for real biochemical systems.
+
+### Direction change under assessment: one general learner for physical systems across domains (6 November; owner's question, nothing run)
+
+**Owner.** *"Pause step 2. Bigger question first: biochemistry is just the codebase we pulled from; the learner must work on physical systems in general… a curated toolkit of biochemistry-shaped terms doesn't fit our goal. Our goal also goes beyond AlphaZero: … one network that learns physical domains in sequence (e.g. biochemistry, then mechanics, then circuits) and accumulates, so each new domain is learned faster or better than by a fresh network, while earlier domains are retained. In plain language, assess: 1. … a general expression language … 2. A synthetic history drawn from many physical domains … 3. Test systems from several domains … 4. Where AlphaZero-style learning … fits … 5. How to measure accumulation across domains: forward transfer … and retention …, and how to avoid the forgetting problem seen in the earlier PDEBench replay test. Don't run anything. Send the assessment and a staged plan, with the first stage small enough to show whether this direction is viable."*
+
+**1. A general expression language in place of the toolkit.**
+- **Carries over unchanged:**
+  - the exactness tests (step integrals, held-back check, external check on new starting states, multi-step envelope), which judge any right-hand side;
+  - the compiled artifact;
+  - the search framework (tree search with learned priors and values, transpositions, simplification of exact finds);
+  - variable projection for the outer sum (most physical right-hand sides are sums of terms with coefficients);
+  - the fit recorder, the screen, the idea of a learned starting-value network, and the shadow sample.
+- **Breaks or must be generalized:**
+  1. **The algebraic start** works only for rational parts; with exp, log or trigonometric functions inside a term there is nothing to clear.
+  2. **The fitter's "natural ranges"** are hand-made per family (Hill constant around the data median, tanh centre across the data range). For a general language they must come from the data flowing into each operator.
+  3. **Constants can sit deep inside compositions** (e.g. exp(−a/(b + x))). The multi-piece fitting problem of Trials 30–31 becomes the normal case.
+  4. **The vocabulary can no longer be listed:** terms must be proposed, not enumerated. The move network's per-candidate evidence would be computed only for proposed candidates.
+  5. **Equivalent forms** (x(y + z) and xy + xz) need canonicalization for the transposition table.
+  6. **More alternative models fit the observed data exactly** (the identifiability failures seen on 2 practice systems), so parsimony and validation matter more.
+- **Search-space size** (counted, before merging equivalent forms; leaves: the variables and a constant; operations: +, ×, ÷, power, exp, log, sin):
+  - **today's toolkit:** 60 terms (d = 2) or 247 (d = 4), so 6 × 10⁷ and 3 × 10¹¹ structures of up to 6 terms;
+  - **the general language:**
+
+    | Variables | Terms with up to 5 / 7 / 9 / 15 operations | Sums of up to 6 terms of up to 7 operations |
+    |---|---|---|
+    | d = 2 | 4.5 × 10³ / 2.8 × 10⁵ / 1.9 × 10⁷ / 9.3 × 10¹² | 6 × 10²⁹ |
+    | d = 4 | 1.2 × 10⁴ / 1.0 × 10⁶ / 1.0 × 10⁸ / 1.3 × 10¹⁴ | 2 × 10³³ |
+
+  - Blind search is hopeless; **learned guidance becomes essential**, as in Go.
+- **Recommended form** (keeps what works): each equation is a sum of terms, each term a small expression from the general language (up to 5–7 operations at first, more later), with coefficients solved exactly by variable projection. Today's curated pieces are special cases (a Hill term is x^n / (K + x^n)); nothing biochemistry-specific is built in.
+
+**2. A synthetic history from many physical domains.**
+- Generators per domain, each a small grammar of that domain's typical motifs, with random structure, variables and constants:
+  - **mechanics:** oscillators, Duffing, pendulum, damping forms, coupling, rigid bodies;
+  - **circuits:** RLC, Van der Pol, FitzHugh–Nagumo, Chua-like, diode exponentials, saturating amplifiers;
+  - **chemistry:** mass-action networks, enzyme rate laws, Brusselator / Oregonator, Arrhenius factors;
+  - **ecology and epidemiology:** Lotka–Volterra, Holling II / III, logistic, SIR / SEIR;
+  - **chaotic flows:** Lorenz, Rössler and Sprott-type, Thomas, the double pendulum.
+- **Each system** is simulated into bursts under the existing acceptance rules.
+- **Risk:** generators still encode modelling choices. **Mitigation:** generator rules are fixed before any test system is opened; test systems come from independent published collections; generated systems are de-duplicated against test systems.
+- **Scope:** autonomous, fully observed ODEs from trajectory bursts, as today. Mechanics is written in first order (positions and velocities). Forced or partially observed systems come later.
+
+**3. Test systems from several domains** (ground-truth equations published):
+- **dysts** (about 130 chaotic flows from physics, mechanics, circuits, ecology, chemistry, climate, neuroscience);
+- **ODEBench** (63 ODEs, 1–4 dimensions, from Strogatz's textbook and other sources);
+- **SRBench's Strogatz set;**
+- **textbook mechanics and circuit models;**
+- **BioModels:** practice set, fresh pool and reserve sets, as now.
+- **Usual rules:** splits by seeded hash before opening, reserve sets, held out by domain and source, the cheap-reference cutoff, the time-limit rule, counts only.
+
+**4. Where AlphaZero-style learning fits.**
+- **The "game"** is finding an exact model of a system. Search runs over terms and term edits, guided by a policy (which term or edit next; the term-by-term design) and a value (the chance that a partial model leads to an exact one).
+- **The outcome is checked by the exactness test, which plays the role of the game's rules:** a verified exact model is a trustworthy training example without any label.
+- **The loop is expert iteration:**
+  1. search many systems (synthetic, and real systems without labels) with the current network;
+  2. keep the verified solutions;
+  3. train the policy on what the search found and the value on outcomes;
+  4. repeat.
+- **This is Trial 29's stage 2,** now central rather than optional. Supervised pretraining on generated systems with known answers (AlphaGo's first stage) can start it; AlphaZero showed it is not required. One network serves all domains: its inputs (bursts and the partial model) carry no domain label.
+- **A difference from games:** problems do not come from self-play. They come from the generators and from real data, so the curriculum is a design choice.
+
+**5. Measuring accumulation across domains, and avoiding forgetting.**
+- **Protocol:** a fixed sequence of domains (e.g. chemistry, mechanics, circuits, ecology, chaotic flows). For each domain, a training stream and a held-out test set of real systems.
+- **Measures** (per domain, at fixed search and training budgets):
+  - **exact recovery and search effort;**
+  - **forward transfer:** the learning curve on the new domain (success against the number of the domain's training systems) for the network that has learned the earlier domains, against a fresh network on the same data;
+  - **retention, per system:** each earlier domain's test systems after each new domain, against right after that domain was learned;
+  - **reference:** a network trained jointly on all domains, as an upper bound.
+- **The PDEBench lessons:**
+  - replay at a fixed loss weight (0.5) harmed the new family in both seeds;
+  - aggregate error hid case-level regressions (50 of 120 earlier cases within 10% in one seed);
+  - all of about a million weights were updated per new family.
+- **Remedies:**
+  1. **Knowledge that cannot be forgotten.** Verified solutions and discovered terms are kept as an explicit library. Correctness never depends on the network; forgetting can only slow the search, and that is measurable.
+  2. **Rehearsal from stored verified solutions,** with the mix tuned on development (not fixed), and gradient-interference control (stop updates that raise earlier-domain loss) compared with simple rehearsal.
+  3. **Retention judged per system,** with pre-registered tolerances, never on aggregates.
+  4. **Enough capacity in one shared network;** growth only if forgetting persists.
+
+**Staged plan** (each stage pre-registered, with a check-in between stages):
+- **Stage 1, viability (small):**
+  - **Setup:** 2-variable systems from 3 synthetic domains (mechanics, circuits, ecology), each with a generator fixed in advance (about 300 training and 40 test systems per domain), and the general language with terms of up to 5 operations.
+  - **(a) Language and fitter, no learning:** given the true structure, does the generalized fitter recover exact constants? **Bar:** at least 80% of equations with at most 2 nonlinear terms.
+  - **(b) Search without learning:** uniform priorities at 2,000 structures per equation; a baseline.
+  - **(c) Learning and transfer:** a policy network trained on domain A, tested on domain B, against uniform priorities and against a network trained on B alone with the same amount of data. Then A followed by B, with retention on A per system. **Bars:** the network beats uniform priorities on its own domain by at least 20 points (or needs at most half the search); no negative transfer; a positive transfer at small data, for example +10 points at 50 systems of B.
+  - **Cost:** about a day of computing.
+  - **If (a) fails, stop and rethink the fitter; if (c) shows no transfer, rethink before scaling.**
+- **Stage 2, sequential domains** (5 domains, d ≤ 3): forward-transfer curves and per-system retention, with rehearsal choices compared on development.
+- **Stage 3, the AlphaZero loop:** search plus learning from its own verified solutions, on synthetic and real unlabelled systems; terms up to 7 operations, d up to 4.
+- **Stage 4, held-out multi-domain tests** (dysts, ODEBench, BioModels fresh pool) under the usual rules, after the owner approves the request.
+- **Retired:** the curated families and their hand-made ranges, and the hand-tuned history.
+- **Kept:** the exactness machinery, the search framework, variable projection, the verifier-based learning loop, the fit recorder and the screen.
