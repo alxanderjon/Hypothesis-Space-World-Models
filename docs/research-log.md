@@ -5675,7 +5675,7 @@ Check in with all three before Stage A."*
 - **Condition 2.** If the projection is longer, I check in with it and a smaller version before running anything.
 - **Condition 3.** After mechanics' two cycles, bar (c) is judged on mechanics' tests. If it fails, I stop and report before circuits.
 
-### Stage 1: development timing pilot, three changes found by it, projection, launch (6 November, 22:40)
+### Stage 1: development timing pilot, three changes found by it, projection, launch (6 November, 22:20)
 
 **Three changes, generic and applied to every arm, found before any cycle on development systems only.** They are logged before the run.
 
