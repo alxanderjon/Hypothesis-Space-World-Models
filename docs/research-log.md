@@ -5719,3 +5719,33 @@ Check in with all three before Stage A."*
 - **Order:** mechanics' two cycles, then the uniform and guided tests on mechanics, then **bar (c)**.
 - **Stop rule:** the run stops there if bar (c) is not met (owner's instruction).
 - **GPU:** training uses a free GPU, checked before each dream and logged per dream (GPUs 0–5 and 7 were free at 22:00).
+
+### Stage 1: mechanics' two cycles and bar (c): MET (6 November, 23:25)
+
+**Cycles (continued network, mechanics; training tasks).**
+
+| Phase | What ran | Result |
+|---|---|---|
+| Wake 1 (uniform) | 150 tasks, 1,495 s | 270 of 300 equations solved (254 with the true structure); 120 of 150 systems |
+| Dream 1 | 500 of 500 fantasies accepted, 3,659 examples, 329 s; trained on 859 replay + 3,659 fantasy examples from 270 verified solutions | GPU 0, 214 s; final loss 1.22, top-5 add 0.88 |
+| Wake 2 (network after dream 1) | 150 tasks, 508 s | 300 of 300 solved (285 true); 150 of 150 systems |
+| Dream 2 | 500 of 500 fantasies, 3,587 examples; trained on 979 replay + 3,587 fantasy examples from 300 verified solutions | GPU 1, 212 s; final loss 0.75 |
+
+- Wake 2's gain is on training tasks, partly learned from, so it is no test. It does solve the 30 equations that were absent from the replays.
+- Time-limit hits: 0 in both wakes. Failed systems: 0.
+
+**Test (mechanics' 40 test systems, 80 equations; counts only).**
+
+| Arm | Equations solved | True structure | Systems | Median structures to the first plausible model | Time per system (median / max) | Time-limit hits |
+|---|---|---|---|---|---|---|
+| Uniform | 70 | 64 | 30 | 17 | 168 s / 492 s | 0 |
+| Network after mechanics | 80 | 74 | 40 | 2 | 44 s / 164 s | 0 |
+
+- **Paired comparison:** solved only with the network 10, only uniform 0 (sign test p = 0.002).
+- **Bar (c): MET**, on its second criterion: median structures to the first plausible model, 2 against 17, at most half. The first criterion was not met: +12.5 points against +20, a ceiling, since uniform already solves 70 of 80.
+- **Next:** per the plan, the run continues into circuits.
+- **Whole-system check:** the external exactness test of the assembled models is running on the side (`g1_systems.py`).
+
+**What this shows and what it does not.**
+- **Shown:** learning within one domain. The network, trained on its own verified solutions and on fantasies, finds mechanics' test structures far faster than uniform search, and finds 10 that uniform search misses.
+- **Not shown:** nothing yet about accumulation across domains. Bars (d) and (e) test that. Claims rest on new-form equations (ecology's, and circuits' 30 new-form equations).
