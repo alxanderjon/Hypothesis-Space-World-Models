@@ -124,6 +124,18 @@ def main():
             else:
                 verdict = "MET" if not (bo > ao and sign_p(ao, bo) < 0.05) else "NOT MET"
             print(f"== bar (d) {NAME[L]} after cycle {cyc}: {verdict}; " + "; ".join(lines))
+            rp = RUN / "replays_cont.json"
+            if rp.exists():                                    # provenance of every equation solved only by the continued
+                earlier = ("mechanics",) if L == "B" else ("mechanics", "circuits")   # network: earlier-domain verified
+                used = set()                                   # solutions sharing any of its true terms
+                for k, v in json.loads(rp.read_text()).items():
+                    if any(f"-{d}-" in k for d in earlier):
+                        used |= set(v)
+                only = [k for k in keys if tc.get(k, (False,))[0] and not tf.get(k, (False,))[0]]
+                with_shared_term = sum(1 for k in only if set(T[k[0]][k[1]]["keys"]) & used)
+                print(f"   provenance: {len(only)} equations solved only by the continued network; {with_shared_term} of "
+                      f"them have a true term that appears in an earlier domain's verified solutions; "
+                      f"{sum(1 for k in only if k in set(novel))} of them are new-form")
         z, u = load("cont_A2" if L == "B" else "cont_B2", L), load("uniform", L)
         if z and u:
             ao, bo = paired(z, u, keys)
