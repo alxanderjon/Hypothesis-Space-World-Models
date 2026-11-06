@@ -5219,3 +5219,17 @@ Check in with all three before Stage A."*
   - the 10 non-toolkit systems with discovery, and with the library built from synthetic and earlier practice systems in a fixed order: exact at M = 8;
   - the other 17 as a no-harm check.
 - **(d) Then** the term-by-term structure-proposal network (step 3), trained on the extended generator.
+
+### Trial 32 step 1 result: practice-set precision check NOT MET (6 November, 15:42–17:21)
+
+**Run.** 54 runs (27 practice systems × arms A and B), 24 CPU workers, no errors, no time-limit hits (8 h per system; medians 2,030 s for A and 2,252 s for B; maximum 4,333 s).
+
+| Arm | Exact | Accepted | Near misses | Artifact substeps (median) | Artifacts with more substeps than the reference |
+|---|---|---|---|---|---|
+| A, default final stage | 4 | 6 | 1 | 4 (reference 8) | 0 of 6 |
+| B, precise final stage | 4 | 6 | 1 | 24 (reference 8) | 4 of 6 |
+
+- **Paired:** no system differs between A and B. **The pass bar (B recovers more and loses none) is not met.**
+- **Why.** The near misses diagnosed earlier came from Trial 28's runs (hand-tuned-history network, 5,000 structures, fitter v1). Today's learner (untuned-history network, v2-strong, 2,000 structures) mostly does not produce them: 1 near miss in each arm, and the precise stage does not fix it.
+- **The precise stage also makes the artifact more expensive than the simulation** in 4 of 6 accepted systems, against the programme's goal. **It is not adopted;** the code stays, off by default.
+- **Configuration matters on the practice set.** Today's standard learner recovers 4 of 27 practice systems at M = 8, against 8 for Trial 28's best arm (hand-tuned history, 5,000 structures, fitter v1). Which history and budget to carry forward for real systems is a decision for the owner. The hand-tuned history was built to resemble biochemistry (the owner's earlier concern about design choices), but that resemblance may be legitimate prior knowledge for real biochemical systems.
