@@ -5183,3 +5183,39 @@ Check in with all three before Stage A."*
   - artifact substeps against the reference's;
   - time and time-limit hits.
 - Practice gains are suggestive only.
+
+### Trial 32 step 2 proposal: toolkit coverage by discovering a general rational class from data (6 November; awaiting owner approval, nothing run)
+
+**What it targets** (practice breakdown, development data):
+- 10 of 27 practice systems contain terms outside the toolkit: rational terms with denominators the toolkit lacks in 8 systems (31 terms), a logarithm in 1, an exponential of a non-linear argument in 1.
+- Of the 31 rational terms, **17 fit a general class**: a polynomial denominator of degree ≤ 2 in any of the system's variables (squares and products included), over a numerator polynomial of degree ≤ 3.
+- That class would make **4 of the 10 systems fully expressible**. Degrees 3 or 4 add no further system: the other 6 also contain denominators of degree 7–24, logarithms or exponentials.
+
+**1. Discovery, per system, from data** (owner: the specific forms come from data, so this is within the rule):
+- **When it runs:** for an equation with no plausibly exact toolkit structure after the search.
+- **What it looks for:** the equation's rate as one rational function, y = P(x)/D(x), in implicit form D(x)·y − P(x) = 0 (as in implicit SINDy).
+  - Libraries: D has 1 plus the monomials of degree 1–2; P has the monomials of degree ≤ 3 times those of D's support.
+  - Solved by the algebraic start on the dense rates, with a sparsity search (pruning, as for the toolkit), normalized by D's constant term.
+- **Checked** by the learner's usual exactness machinery: step integrals, held-back check, external check.
+- **Output:** a rational term whose denominator support (which monomials) and constants both came from the data.
+
+**2. Library and reuse:**
+- After the learner's own acceptance (never the external check), each discovered denominator support is stored as a pattern, with variables relabelled by role ("self" / "others", as in Trial 27's pattern library).
+- In later systems, every library pattern under every variable assignment is a candidate piece in the search's vocabulary: a numerator over the pattern's denominator, constants fitted, starting values from the algebraic start.
+
+**3. Synthetic generator** (owner's addition):
+- Both generators (training and untuned modes) gain the general rational family: terms m(x)/D(x), with D a random sparse polynomial of degree ≤ 2 in 1–3 variables (squares and products included), positive coefficients in natural ranges so that D > 0 on the domain, and monomial numerators of degree ≤ 2.
+- One held-out family pair is added with the new family.
+- The history is regenerated, and the move network and the starting-value network retrained, so that their training covers the family. Fresh pool and reserve sets untouched.
+
+**4. Tests** (bars written into the log before each run):
+- **(a) Synthetic discovery.** On systems containing the new family, the share of its equations discovered exactly from data at M = 8, by number of pieces. **Prerequisite (Trial 27's D, adapted):** at least 30% of equations the toolkit cannot learn.
+- **(b) Reuse streams on synthetic systems** (Trial 27's design):
+  - fixed random orders;
+  - library against scratch-with-discovery, a decoy library (the same number of patterns of the same size, with random supports that come from no data) and copy-the-closest;
+  - the removal check and provenance log for every library win;
+  - Trial 27's criteria adapted: accumulation, growth with history, decoys and copy-the-closest keeping at most half the advantage, attribution by removal in ≥ 80% of wins.
+- **(c) Practice set:**
+  - the 10 non-toolkit systems with discovery, and with the library built from synthetic and earlier practice systems in a fixed order: exact at M = 8;
+  - the other 17 as a no-harm check.
+- **(d) Then** the term-by-term structure-proposal network (step 3), trained on the extended generator.
