@@ -5615,3 +5615,54 @@ Check in with all three before Stage A."*
 - **Time limit:** 600 s per system, from the pilot's slowest fit of 0.6 s. Hits are reported.
 - **Context:** whole systems with both equations exact are reported alongside.
 - **Timing pilot first:** the 10 development systems per domain go through the same procedure before the test run.
+
+### Stage 1: systems drawn, shared forms classified, bar (a) MET (6 November, 20:45)
+
+**Draws** (`g1_draw.py`). All systems were accepted, all stored with hashes.
+
+| Set | Mechanics | Circuits | Ecology |
+|---|---|---|---|
+| Training | 150 (25 rejected draws) | 150 (14) | 150 (28) |
+| Development | 10 (5) | 10 (0) | 10 (1) |
+| Test | 40 (5) | 40 (3) | 40 (10) |
+
+- **Most common rejections:**
+  - mechanics: a true term not visibly nonlinear on the data;
+  - ecology: centred at M = 8.
+
+**Shared forms** (`g1_shared.py`; true structures only; made before any evaluation).
+
+| Test set | Shared-form equations | Shared-form systems |
+|---|---|---|
+| Circuits | 50 of 80 | 19 of 40 |
+| Ecology | 0 of 80 | 0 of 40 |
+
+- **Circuits:** its linear two-term equations, the charge-form RLC circuit and the Van der Pol voltage equation match mechanics forms.
+- **New-form equations:** FitzHugh–Nagumo and the diode's voltage equation have new forms, 30 equations in all.
+- **Basis for accumulation claims** (owner's note): ecology's 80 equations and circuits' 30 new-form equations.
+
+**Development timing pilot** (`g1_bar_a.py dev`).
+- 60 of 60 equations exact, 11 of them with constants inside terms.
+- At most 0.9 s per system.
+- The 600 s limit stands; 0 hits.
+
+**Bar (a) on the test systems** (`g1_bar_a.py test`; counts only).
+
+| Domain | Equations exact | With constants inside terms | Systems with both equations exact | Time per system (median / max) |
+|---|---|---|---|---|
+| Mechanics | 80 of 80 | 6 of 6 | 40 of 40 | 0.1 s / 0.7 s |
+| Circuits | 80 of 80 | 12 of 12 | 40 of 40 | 0.0 s / 0.5 s |
+| Ecology | 80 of 80 | 22 of 22 | 40 of 40 | 0.0 s / 0.7 s |
+
+- Time-limit hits, errors and hash mismatches: 0.
+- **Bar (a) is MET in every domain:** 100% against the 80% required.
+
+**Reading.**
+- **The fitter is not the limit here.** The general language and the generic fitter recover every Stage 1 equation exactly once the structure is known.
+- **Stage 1's difficulty lies in the search:** finding each equation's few terms among 14,406 candidates, from 30 rate points and 80 step integrals per equation. Bars (c), (d) and (e) test that.
+- **What this does not show:** the three domains have at most one term with constants inside it per equation. Harder fits (three or more such terms, as in Trial 31) are not tested here.
+
+**Next.**
+- **Build:** the L1 search (the tree search over L1 term sets), the move network with a term encoder, and the dreaming step.
+- **Timing pilot:** on development systems only, with uniform search and no learning, to project compute.
+- **Wake–dream cycles:** none start before the owner's go-ahead.
