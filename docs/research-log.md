@@ -5666,3 +5666,11 @@ Check in with all three before Stage A."*
 - **Build:** the L1 search (the tree search over L1 term sets), the move network with a term encoder, and the dreaming step.
 - **Timing pilot:** on development systems only, with uniform search and no learning, to project compute.
 - **Wake–dream cycles:** none start before the owner's go-ahead.
+
+### Stage 1: owner's go-ahead for the wake–dream cycles, with conditions (6 November)
+
+**Owner.** *"Start the wake–dream cycles once the pilot confirms the cost, as long as the projection is within the planned 1–1.5 days. If it's longer, check in with the projection and a smaller version first. Stop and report after bar 2 if it fails, before starting circuits."*
+
+- **Condition 1.** The cycles start only if the development timing pilot projects Stage 1's whole compute within 1.5 days on 24 workers. That compute covers every cycle, every fresh network and every test evaluation.
+- **Condition 2.** If the projection is longer, I check in with it and a smaller version before running anything.
+- **Condition 3.** After mechanics' two cycles, bar (c) is judged on mechanics' tests. If it fails, I stop and report before circuits.
