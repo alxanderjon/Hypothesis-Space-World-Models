@@ -37,6 +37,27 @@ VAL_TOL = 3e-13   # Trial 27 internal acceptance (scaled); external exactness is
 CENTER_RATIO = 10.0  # centre a variable only if |mean| > 10 std (centring splits a product x*y into several terms; with
                      # few bursts a variable's spread is narrow and the old ratio 3 centred it, breaking sparsity)
 NSUB_MARGIN = 4      # artifact substeps = 4 x self-converged count (Trial 27; 2x left 1.2e-12 on a dev system)
+PRECISE = False      # Trial 32 precise final stage (set_precise): least-squares polish steps at the final substep count,
+NSUB_TOL = 1e-14     # a stricter substep rule and a wider artifact margin. Off by default (behaviour unchanged).
+
+
+def set_precise(on):
+    """Switch the precise final stage on or off for this process: polish and tied refits take scaled least-squares
+    steps at the model's final substep count (refitting if it changes), substeps converge to 1e-15, and the artifact
+    and held-back check use 16 x the converged count. The exactness bars are unchanged."""
+    global PRECISE, NSUB_TOL, NSUB_MARGIN
+    PRECISE, NSUB_TOL, NSUB_MARGIN = bool(on), (1e-15 if on else 1e-14), (16 if on else 4)
+
+
+def lm_step(J, r, lam):
+    """One Levenberg-Marquardt step: normal equations (default) or, in the precise stage, scaled least squares."""
+    if PRECISE:
+        D = J.norm(dim=0).clamp(min=1e-300)
+        A = torch.cat([J / D, math.sqrt(lam) * torch.eye(J.shape[1], dtype=J.dtype)])
+        b = torch.cat([-r, torch.zeros(J.shape[1], dtype=J.dtype)])
+        return torch.linalg.lstsq(A, b.unsqueeze(1), driver="gelsd").solution[:, 0] / D
+    Hm = J.T @ J
+    return torch.linalg.solve(Hm + lam * torch.diag(torch.diag(Hm) + 1e-30), -(J.T @ r))
 
 
 # ---------------- terms ----------------
@@ -822,9 +843,12 @@ def spread(z, n=400):
     return z[:: max(1, len(z) // n)]
 
 
-def self_nsub(model, z, tol=1e-14, max_nsub=64):
+def self_nsub(model, z, tol=None, max_nsub=64):
     """The model's own substep count (no simulator): the harness rule in scaled coordinates (scale 1).
     Returns None if the model's one-step map is not finite (an unusable candidate)."""
+    tol = NSUB_TOL if tol is None else tol
+    if PRECISE:
+        max_nsub = max(max_nsub, 512)
     n, last = 1, float("inf")
     with torch.no_grad():
         prev = rk8_torch(model.g, z, n)
@@ -848,6 +872,8 @@ DEADLINE = [float("inf")]    # set by learn(); polish/prune stop iterating once 
 
 def polish(model, z0, z1, iters=30, nsub=None):
     """Levenberg-Marquardt on one-step residuals rk8(g, z0) - z1 over all training pairs (float64)."""
+    if PRECISE and nsub is None:
+        return _polish_precise(model, z0, z1, iters)
     if nsub is None:
         nsub = self_nsub(model, spread(z0), max_nsub=16)   # provisional; final count re-chosen below
         if nsub is None:
@@ -893,6 +919,57 @@ def polish(model, z0, z1, iters=30, nsub=None):
         nsub = nsub2
         r = f_res(p)
     return model, nsub, float(r.abs().max()), J
+
+
+def _polish_precise(model, z0, z1, iters):
+    """Precise final stage: LM with scaled least-squares steps at the model's own final substep count, up to 5 x
+    `iters` iterations with a convergence-based stop, refitted if the substep count changes (at most 3 rounds)."""
+    nsub, J = None, None
+    for _round in range(3):
+        nsub = self_nsub(model, spread(z0))
+        if nsub is None:
+            return model, 1, float("inf"), None
+        p, full, S = _free_map(model.params(), model.frozen())
+        f_res = lambda q: (rk8_torch(lambda zz: model.g(zz, full(q)), z0, nsub) - z1).reshape(-1)
+        r = f_res(p)
+        if not torch.isfinite(r).all():
+            return model, nsub, float("inf"), None
+        if p.numel() == 0:
+            return model, nsub, float(r.abs().max()), None
+        lam, stall, J = 1e-8, 0, None
+        for _ in range(5 * iters):
+            if time.time() > DEADLINE[0]:
+                break
+            J = torch.func.jacfwd(f_res)(p)
+            if not torch.all(torch.isfinite(J)):
+                break
+            try:
+                step = lm_step(J, r, lam)
+            except RuntimeError:
+                lam *= 10
+                continue
+            rn = f_res(p + step)
+            if torch.isfinite(rn).all() and float(rn.norm()) < float(r.norm()):
+                gain = 1 - float(rn.norm()) / max(float(r.norm()), 1e-300)
+                p, r, lam = p + step, rn, max(lam * 0.3, 1e-16)
+                stall = stall + 1 if gain < 1e-3 else 0
+                if stall >= 4 or float(r.abs().max()) < 1e-16:
+                    break
+            else:
+                lam *= 10
+                if lam > 1e8:
+                    break
+        model.set_params(full(p))
+        if J is not None and S is not None:
+            J = J @ S.T
+        if self_nsub(model, spread(z0)) == nsub:
+            break
+    nsub2 = self_nsub(model, spread(z0))
+    if nsub2 is None:
+        return model, nsub, float("inf"), None
+    with torch.no_grad():
+        err = float((rk8_torch(model.g, z0, nsub2) - z1).abs().max())
+    return model, nsub2, err, J
 
 
 def _removal_costs(model, J):

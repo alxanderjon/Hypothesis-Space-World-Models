@@ -1073,9 +1073,19 @@ def candidates_for(table, top=3):
 # ---------------------------------------------------------------------------------------------------------------------
 
 def learn28(bursts, budget, prior="data", fitter=None, seed=1, time_cap=float("inf"), max_assemblies=6, thorough_cap=None,
-            probe=None, fitlog=None, screen=None):
+            probe=None, fitlog=None, screen=None, precise=False):
     """Search each equation within `budget` fitted structures, assemble, fit exactly on the step-to-step map, check on
-    held-back bursts, apply ties. Returns a result dict with the model, held-back error, acceptance and effort."""
+    held-back bursts, apply ties. Returns a result dict with the model, held-back error, acceptance and effort.
+    precise: Trial 32's precise final stage (DL.set_precise) for this run; the exactness bars are unchanged."""
+    prev = DL.PRECISE
+    DL.set_precise(precise)
+    try:
+        return _learn28(bursts, budget, prior, fitter, seed, time_cap, max_assemblies, thorough_cap, probe, fitlog, screen)
+    finally:
+        DL.set_precise(prev)
+
+
+def _learn28(bursts, budget, prior, fitter, seed, time_cap, max_assemblies, thorough_cap, probe, fitlog, screen):
     t0 = time.perf_counter()
     view = PN.learner_view(bursts, seed=seed)
     Zc, G = view["Zc"], view["G"]

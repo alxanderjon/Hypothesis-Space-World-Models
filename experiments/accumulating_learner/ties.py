@@ -121,40 +121,45 @@ def tie_matrix(model, owner):
 
 
 def fit_tied(model, z0, z1, base, T, iters=40):
-    """Levenberg-Marquardt on the step-to-step map in tied coordinates (as DL.polish)."""
-    nsub = DL.self_nsub(model, DL.spread(z0), max_nsub=16)
+    """Levenberg-Marquardt on the step-to-step map in tied coordinates (as DL.polish). In DL's precise final stage the
+    steps are scaled least squares, iterations run longer, and the fit is redone if the final substep count changes."""
+    nsub = DL.self_nsub(model, DL.spread(z0), max_nsub=16 if not DL.PRECISE else 512)
     if nsub is None or T.shape[1] == 0:
         return model, nsub or 1, float("inf")
     full = lambda q: base + T @ q
-    f_res = lambda q: (DL.rk8_torch(lambda zz: model.g(zz, full(q)), z0, nsub) - z1).reshape(-1)
     q = torch.linalg.lstsq(T, model.params() - base).solution
-    r, lam = f_res(q), 1e-6
-    if not torch.isfinite(r).all():
-        return model, nsub, float("inf")
-    for _ in range(iters):
-        J = torch.func.jacfwd(f_res)(q)
-        if not torch.all(torch.isfinite(J)):
+    n2 = nsub
+    for _round in range(3 if DL.PRECISE else 1):
+        f_res = lambda q_, n_=nsub: (DL.rk8_torch(lambda zz: model.g(zz, full(q_)), z0, n_) - z1).reshape(-1)
+        r, lam = f_res(q), 1e-6
+        if not torch.isfinite(r).all():
+            return model, nsub, float("inf")
+        for _ in range(iters if not DL.PRECISE else 5 * iters):
+            J = torch.func.jacfwd(f_res)(q)
+            if not torch.all(torch.isfinite(J)):
+                break
+            try:
+                step = DL.lm_step(J, r, lam)
+            except RuntimeError:
+                lam *= 10
+                continue
+            rn = f_res(q + step)
+            if torch.isfinite(rn).all() and float(rn.norm()) <= float(r.norm()):
+                done = float(step.abs().max()) <= 1e-14 * (float(q.abs().max()) + 1e-30) or float(rn.abs().max()) < 1e-15
+                q, r, lam = q + step, rn, max(lam * 0.1, 1e-12)
+                if done:
+                    break
+            else:
+                lam *= 10
+                if lam > 1e10:
+                    break
+        model.set_params(full(q))
+        n2 = DL.self_nsub(model, DL.spread(z0))
+        if n2 is None:
+            return model, nsub, float("inf")
+        if n2 == nsub:
             break
-        Hm, g = J.T @ J, J.T @ r
-        try:
-            step = torch.linalg.solve(Hm + lam * torch.diag(torch.diag(Hm) + 1e-30), -g)
-        except RuntimeError:
-            lam *= 10
-            continue
-        rn = f_res(q + step)
-        if torch.isfinite(rn).all() and float(rn.norm()) <= float(r.norm()):
-            done = float(step.abs().max()) <= 1e-14 * (float(q.abs().max()) + 1e-30) or float(rn.abs().max()) < 1e-15
-            q, r, lam = q + step, rn, max(lam * 0.1, 1e-12)
-            if done:
-                break
-        else:
-            lam *= 10
-            if lam > 1e10:
-                break
-    model.set_params(full(q))
-    n2 = DL.self_nsub(model, DL.spread(z0))
-    if n2 is None:
-        return model, nsub, float("inf")
+        nsub = n2
     with torch.no_grad():
         err = float((DL.rk8_torch(model.g, z0, n2) - z1).abs().max())
     return model, n2, err
