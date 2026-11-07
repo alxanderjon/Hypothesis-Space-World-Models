@@ -6282,3 +6282,78 @@ The full build still decides acceptance.
 - **Order 2** follows with the same setup, after the order 1 report.
 
 **GPUs at 15:22:** all eight busy, all with one other user's jobs (93–100% utilization).
+
+### Stage 2a, order 1: results (7 November, 22:00; counts only for test systems)
+
+**Run** (`cycles_g2.py 24 1`).
+- 15:22 to 21:43, 6.3 h. That includes one 96-minute wait for a GPU. All other dreams found a free GPU, mostly GPU 0.
+- Time-limit hits: 0 in every arm. Failed systems: 0. Training steps skipped as non-finite: 0.
+- **Repeatability check:** order 1's uniform first wake on mechanics reproduced Stage 1's exactly: 270 of 300 equations, 254 with the true structure.
+
+**Learning curves.** Test equations solved, with new-form ones in parentheses, then systems.
+
+*Chemistry (4th; 101 test equations, 66 new-form):*
+
+| Arm | 0 tasks | 10 | 30 | 100 |
+|---|---|---|---|---|
+| Continued | 84 (49), 29 | 87 (52), 30 | 89 (54), 31 | 92 (57), 32 |
+| Control (fantasies only) | 75 (42), 21 | 81 (48), 24 | 86 (51), 30 | 88 (53), 28 |
+| Fresh (0 tasks = uniform) | 36 (13), 3 | 88 (53), 31 | 97 (62), 36 | 94 (59), 33 |
+
+*Quadratic flows, mostly non-chaotic (5th; 120 test equations, 45 new-form):*
+
+| Arm | 0 tasks | 10 | 30 | 100 |
+|---|---|---|---|---|
+| Continued | 111 (41), 31 | 118 (45), 38 | 112 (40), 32 | 115 (42), 35 |
+| Control | 109 (39), 30 | 94 (28), 18 | 111 (39), 31 | 117 (43), 38 |
+| Fresh | 54 (8), 4 | 99 (33), 25 | 111 (39), 32 | 117 (42), 37 |
+
+**Validity.** After 30 tasks, the fresh network solves 94% of chemistry's new-form equations and 87% of quadratic flows'. **Both domains are saturated from 30 tasks on**: those points are reported only.
+
+**Bar (B), order 1** (new-form, at 10 tasks; continued against the control).
+
+| Domain | Points | Only continued / only control | p | Verdict |
+|---|---|---|---|---|
+| Chemistry | +6.1 | 6 / 2 | 0.29 | NOT MET |
+| Quadratic flows | +37.8 | 17 / 0 | 1.5 × 10⁻⁵ | MET |
+
+- **Caveat on quadratic flows:**
+  - The control regressed after its first small dream in the domain: from 0 to 10 tasks it lost 11 new-form equations and gained 0 (p = 0.001).
+  - The continued network rehearses its whole history of real solutions in every dream. The control's training on fantasies is never rehearsed: as designed, only verified solutions are replayed.
+  - The continued network at 10 tasks still beats the control *before* that regression: 45 against 39 of 45 new-form equations, +13.3 points, 6 against 0, p = 0.031.
+  - Against the fresh network at 10 tasks: +26.7 points, 12 against 0, p = 0.0005.
+- **For the claim:** bar (B) needs both orders. Quadratic flows come 4th in order 2.
+
+**Zero-shot, the second measure** (new-form; continued against the control).
+
+| Domain | Points | Only continued / only control | p |
+|---|---|---|---|
+| Chemistry | +10.6 | 9 / 2 | 0.065 |
+| Quadratic flows | +4.4 | 5 / 3 | 0.73 |
+
+- **The control explains most of the head start over uniform search.**
+  - Chemistry: uniform 36 → control 75 → continued 84 equations overall. On all equations the continued network's margin is +8.9 points, p = 0.022.
+  - Quadratic flows: uniform 54 → control 109 → continued 111.
+
+**Against the fresh network** (new-form).
+- Chemistry at 10 tasks: −1.5 points (p = 1).
+- Chemistry at 30 tasks (saturated): −12.1 points, 0 against 8, p = 0.008. The continued network is slower there.
+  - A likely reason: full rehearsal of about 3,400 history examples dilutes chemistry's few hundred examples in each 500-step dream.
+
+**Retention (E): MET.**
+- Systems solved after both new domains against before them: mechanics 40 → 40, circuits 40 → 40, ecology 40 → 40.
+- Chemistry, after quadratic flows against right after its own cycle: 32 → 32. 0 systems lost anywhere.
+- Equations with the true structure's keys fell, though: circuits 69 → 55, ecology 67 → 45. More structures that are exact on the data but not the true form (ecology's include the |x| equivalents). The whole-system check is pending.
+
+**Shortlist probe** (share of expansions at 10 tasks where a missing true term was outside the attended set; and at the root, out of all test equations).
+
+| Domain | Continued | Control | Fresh |
+|---|---|---|---|
+| Chemistry | 6.8% (root 4) | 9.7% (root 4) | 16.0% (root 5) |
+| Quadratic flows | 0.0% (root 0) | 2.2% (root 4) | 0.3% (root 1) |
+
+**Reading.**
+1. Accumulation beyond the control shows **only on quadratic flows, at 10 tasks, in this order**. Part of it is the control's own regression.
+2. **On chemistry, the made-up-systems control explains the head start:** zero-shot +10.6 points is not significant on new-form equations, and +6.1 at 10 tasks.
+3. **Dreaming on the language is the main source of the zero-shot gain.** Real-domain experience adds little beyond it, with the one exception above.
+4. **Both new domains are learned to the ceiling within 30 tasks** by any arm.

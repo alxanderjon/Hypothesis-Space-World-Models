@@ -160,7 +160,7 @@ if __name__ == "__main__":
         path = Path(path)
         res = json.loads(path.read_text())
         letter = path.stem.rsplit("_", 1)[1]
-        dom = {"A": "mechanics", "B": "circuits", "C": "ecology"}[letter]
+        dom = {"A": "mechanics", "B": "circuits", "C": "ecology"}.get(letter, letter)   # Stage 2a files end in the domain
         recs = {r["id"]: r for r in json.loads((SYS / f"test_{dom}.json").read_text())}
         jobs = [(recs[r["id"]], [e["solution"] for e in r["equations"]]) for r in res
                 if r["status"] == "done" and all(e["solution"] for e in r["equations"])]
