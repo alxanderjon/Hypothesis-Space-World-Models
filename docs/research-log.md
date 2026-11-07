@@ -6121,3 +6121,43 @@ Check in with all three before Stage A."*
 - 100 training tasks, 10 development and 40 test systems per new domain, stored with hashes;
 - then the shared-form classification (`g2_shared.py`, every relabelling, per position and order);
 - then bar (a′) and the check-in.
+
+### Stage 2a: systems drawn, shared forms classified, bar (a′) MET (7 November, 08:20; counts only)
+
+**Draws** (`g2_draw.py`). All systems were accepted, all stored with hashes.
+
+| Domain | Training tasks | Development | Test | Rejected draws (train / dev / test) | Largest Lyapunov exponent > 0.01 (train / dev / test) |
+|---|---|---|---|---|---|
+| Chemistry | 100 (36 with two species, 64 with three) | 10 | 40 (19 two-species, 21 three-species; 101 equations) | 7 / 0 / 0 | 5 / 1 / 2 |
+| Chaotic flows | 100 (three variables) | 10 | 40 (120 equations) | 23 (mostly the cost rule) / 1 / 10 | 19 / 4 / 5 |
+
+**New-form test equations** (`g2_shared.py`; every relabelling; made before any evaluation). The claim rests on these.
+
+| Order | Domain (position) | Shared-form | New-form | Shared-form systems |
+|---|---|---|---|---|
+| 1 | Chemistry (4th, after M, C, E) | 35 | 66 of 101 | 0 of 40 |
+| 1 | Chaotic flows (5th, after M, C, E, K) | 75 | 45 of 120 | 2 of 40 |
+| 2 | Chaotic flows (4th, after E, C, M) | 61 | 59 of 120 | 0 of 40 |
+| 2 | Chemistry (5th, after E, C, M, F) | 50 | 51 of 101 | 1 of 40 |
+
+- Chaotic flows share many simple forms with earlier domains: the jerk's ẋ = y and ẏ = z, and linear two-term equations.
+
+**Bar (a′), the fitter on true structures** (`g1_bar_a.py`).
+
+| Domain | Development equations exact | Test equations exact | With constants inside terms | Test systems exact |
+|---|---|---|---|---|
+| Chemistry | 22 of 24 | 100 of 101 (99%) | 21 of 22 | 39 of 40 |
+| Chaotic flows | 30 of 30 | 120 of 120 | (none) | 40 of 40 |
+
+- At most 1.3 s per system. Time-limit hits, errors and hash mismatches: 0.
+- **Bar (a′): MET in both new domains.**
+
+**Next, after the owner's go-ahead.**
+- **Code:**
+  - the network extension: per-term scorer, attention over the state plus 768 with the rest slot, variable roles for three variables, and relabelling of training examples;
+  - the shortlist-cut probe;
+  - the Stage 2a driver: two histories, two controls, and learning curves at 0, 10, 30 and 100 tasks.
+- **Development pilot:**
+  - the budget check: if uniform search at 300 structures solves more than 50% of a new domain's development equations, that domain drops to 100 structures;
+  - timing and the projection;
+  - a further check-in if the projection exceeds 1.5 days.
