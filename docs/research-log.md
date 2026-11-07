@@ -5919,3 +5919,138 @@ Check in with all three before Stage A."*
 - a fantasies-only control network;
 - the harder domains planned for Stage 2 (chemistry, chaotic flows, d up to 3), with abstraction;
 - the second domain order (owner's note).
+
+### Stage 2 of the general learner: rules for Stage 2a, and the gate to Stage 2b (7 November; awaiting owner approval, nothing run)
+
+**Owner.** *"Write up Stage 2 for my approval, split into two parts: Stage 2a: harder domains (chemistry and chaotic flows, up to 3 variables), transfer measured where it isn't saturated (after 10, 30 and 100 tasks of the first cycle, with zero-shot pre-registered, and a tighter budget per domain), the control network trained only on made-up systems, and the second domain order. No abstraction yet. Stage 2b: add abstraction only after 2a shows transfer that the made-up-systems control doesn't explain. Any accumulation claim must beat that control, on new-form equations."*
+
+#### 1. The question Stage 2a answers
+
+- **The question:** does a network that has learned earlier domains learn a new, harder domain faster than two other networks?
+  - a network trained only on made-up systems, with the same amount of training (**the control**);
+  - a network starting from scratch.
+- **Where it is judged:** on the new domain's new-form test equations, at points where a network starting from scratch has not yet reached the ceiling.
+- **Why Stage 1 could not answer it:** a fresh network caught up within one cycle. Its zero-shot gain (ecology 66 against 20 equations) had no control separating real-domain experience from dreaming on the language.
+
+#### 2. Domains and the two orders
+
+- **Earlier domains:** Stage 1's mechanics (M), circuits (C) and ecology (E), with two variables, and Stage 1's tasks, test sets and budgets.
+- **New domains (the transfer targets):**
+  - **chemistry (K):** two or three species, positive;
+  - **chaotic flows (F):** three variables.
+- **Order 1:** M → C → E → K → F.
+- **Order 2:** E → C → M → F → K.
+- **Why this pair of orders:** each new domain appears once 4th and once 5th, after the same three earlier domains acquired in opposite orders.
+- **One architecture throughout:** both histories are rebuilt with the Stage 2a network (section 4), under Stage 1's rules (two cycles per domain, 150 tasks, 1,000 structures and 200 thorough fits per equation, 500 fantasies and 2,000 steps per dream). Stage 1's networks are not reused.
+
+#### 3. The new domains' generators (fixed before any task is drawn)
+
+**Chemistry (K):** one of six forms, equally likely, with constants log-uniform in ranges fixed in code.
+
+| Form | Species | Terms |
+|---|---|---|
+| Random mass-action network | 3 | 3–5 reactions from {X_i → X_j, X_i + X_j → X_k, 2X_i → X_j, ∅ → X_i, X_i → ∅, X_i + X_j → 2X_j}; every species takes part |
+| Michaelis–Menten pathway | 2 or 3 | inflow, conversion V·S/(K + S), outflow, optional inhibitor |
+| Brusselator | 2 | |
+| Selkov glycolysis | 2 | |
+| Goodwin-type repression loop | 3 | a/(K + x³ⁿ), with n in {1, 2, 3} |
+| Oregonator-like | 3 | polynomial |
+
+- Hill activation of order 2 or 3 enters as the pair {1, 1/(K + xⁿ)}, which is in L1.
+
+**Chaotic flows (F):** one of five families, equally likely, with constants around the families' chaotic ranges.
+
+| Family | Form |
+|---|---|
+| Jerk | ẋ = y, ẏ = z, ż = linear terms + one of {x², xy, y², x³, x²y} (+ an optional constant) |
+| Lorenz-type | with one optional extra quadratic term |
+| Rössler-type | |
+| Sprott-type | a sparse linear part with one quadratic term |
+| Random sparse quadratic | 2–3 terms of degree ≤ 2 per equation |
+
+- **Acceptance:** Stage 1's rules; positivity for chemistry only; chaos not required. The share of accepted systems with a positive largest Lyapunov exponent is reported.
+- **Overlap with Stage 4:** named families (Lorenz, Rössler, Sprott) share forms with systems in dysts, which is reserved for Stage 4. dysts is not opened before then. Stage 4 will classify those systems as shared-form, as every test does.
+- **Sets per new domain:** 100 training tasks (the first cycle), 10 development systems and 40 test systems, drawn with separate seeds and stored with hashes.
+- **Shared-form classification:** per equation, with any injective relabelling of variables; a two-variable form can match inside a three-variable system. It is computed against all earlier domains' training tasks for each position and order, before any evaluation. Counts are logged.
+
+#### 4. Language and network for up to three variables
+
+- **Language:** L1 for three variables, an estimate made before any task: about 34,700 terms, about 2,700 of them rescaling-invariant, before family merging. The exact count is logged before any task is drawn.
+- **Search vocabulary:** the rescaling-invariant terms for the system's dimension.
+- **Network:**
+  - Stage 1's network, plus a per-term scorer: a small network reading each term's encoding and its evidence.
+  - Attention covers the terms in the state plus the scorer's top 768 terms. The remaining terms share one "rest" slot, spread evenly (the Stage 1 rules' uniform prior).
+  - Why: attending across about 2,700 terms would cost about 0.8 s per search node. 768 costs about 0.07 s.
+  - The scorer is trained with the multi-positive loss over every term.
+- **Variable roles:** each variable is read relative to the equation, as its own variable or as one of the others in index order. Training examples are relabelled at random, so the network does not depend on the order.
+
+#### 5. The control network (owner's instruction)
+
+- **Training content:** made-up systems only, drawn from the language with every term size equally likely. There is no usage from real solutions and no replays.
+- **Schedule:** exactly that of the continued network it is compared with, in the same order: the same number of dreams, the same steps per dream, and the same number of examples per dream (taken from the logged counts), at the same dimension as the domain at each dream.
+- **One control per order**, built up to the start of each new domain.
+- **In the new domain**, the control learns exactly as the other arms do (section 6).
+
+#### 6. The first cycle in a new domain: the learning curve under a tighter budget
+
+- **Arms per new domain and order:** continued, control and fresh. The fresh network does not depend on the order, so it runs once per domain.
+- **Tasks:** the 100 tasks are taken in a fixed order, in increments.
+
+| Point | Before it |
+|---|---|
+| 0 (zero-shot) | no task of the domain |
+| 10 | wake on tasks 1–10, then dream |
+| 30 | wake on tasks 11–30, then dream |
+| 100 | wake on tasks 31–100, then dream |
+
+- **Test:** each arm is evaluated on the domain's 40 test systems at every point. The zero-shot point is pre-registered.
+- **Tighter budget**, the same for every arm, in the new domains only:
+  - 300 structures and 60 thorough fits per equation, in wakes and tests;
+  - 100 fantasies and 500 training steps per dream;
+  - replays as in Stage 1 (every verified solution of the lineage).
+- **Budget check on development systems, before any test:** if uniform search at 300 structures solves more than 50% of a new domain's development equations, that domain's budget drops to 100 structures and 20 thorough fits.
+- **Time limits:** from a development pilot, set so that they rarely bind; hits are reported per arm.
+
+#### 7. Bars (pre-registered)
+
+1. **(a′) Fitter on true structures**, per new domain: at least 80% of test equations exact given the true structure. **If not met, stop.**
+2. **Validity:** after 30 tasks, the fresh network solves at most 70% of a domain's new-form test equations. Otherwise that domain's points from 30 on count as saturated: reported, and not used for claims.
+3. **(B) Accumulation beyond the control: the claim.**
+   - Measure: new-form test equations at the 10-task point.
+   - Requirement: the continued network solves at least 10 points more than the control, with a paired sign test p < 0.05, **in both orders**.
+   - Judged per domain.
+   - Zero-shot is reported with the same test as a pre-registered second measure; the claim is stronger if it also holds there. Points 30 and 100 are reported likewise, when valid.
+4. **(C) Beyond the fresh network:** the same test. It is reported, and is not the claim.
+5. **(D) Order:**
+   - for each domain and point, the continued network in order 1 against order 2 on new-form equations (paired sign test), reported;
+   - "transfer does not depend on the order" means (B) holds in both orders and the two orders do not differ significantly.
+6. **(E) Retention:** at the end of each order, per system, at most 2 systems lost in each earlier domain. Each is compared with the point before the new domains (M, C and E tests) or with right after its own first cycle (the 4th domain's tests).
+
+- **Also reported:** whole systems exact; shared-form results as context; median structures to the first plausible model; search compute; the provenance of each new-form equation solved only by the continued network.
+
+#### 8. Stage 2b: abstraction, behind a gate
+
+- **The gate:** (B) is met in at least one new domain, in both orders.
+- **If the gate opens:** Stage 2b adds abstraction under the Stage 1 rules' design:
+  - compression of the verified solutions into recurring fragments that become single-move building blocks;
+  - decoy fragments, the removal check, and the provenance of every library win.
+  - The same learning-curve protocol, control and new-form rule apply, on a further new domain or on the same domains with abstraction on against off. That choice is to be proposed then.
+- **If the gate does not open:** no abstraction. I report what the control explains and propose next steps.
+
+#### 9. Cost and order of work
+
+- **Estimate:** about 20 h on 24 workers.
+  - two rebuilt histories, about 4–5 h;
+  - two control histories, about 2–3 h, mostly generating fantasies;
+  - eight new-domain runs with tests at four points, about 11 h;
+  - retention tests, about 1 h.
+- **A development pilot comes first.** If it projects more than 1.5 days, I check in with a smaller version.
+- **Order of work:**
+  1. three-variable language and its count;
+  2. generators, draws and shared-form counts;
+  3. (a′) on the true structures;
+  4. development pilot and budget check;
+  5. histories and controls;
+  6. new-domain learning curves;
+  7. bars.
+- **Check-in:** after (a′), before any history or control is built.
