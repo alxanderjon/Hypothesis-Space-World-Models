@@ -5798,3 +5798,26 @@ Check in with all three before Stage A."*
 - **Equation-level "solved" overcounts on circuits:** uniform's 34 solved systems include 10 that fail the external test. Whole systems exact is the stricter measure and is reported beside it.
 - **Zero-shot on ecology is large: 27 of 40 systems exact against 3.** Every ecology form is new relative to mechanics and circuits. What does carry over: the network's use of the data evidence, and dreaming from the language, whose fantasies can contain ecology-like terms.
 - **The comparison that decides bar (d) is still to come:** continued against fresh networks after the same number of ecology cycles.
+
+**Circuits: bar (d) (7 November, 01:45; counts only).**
+
+| Evaluation on circuits' tests | Equations solved | True structure | Systems solved | Systems exact (external) |
+|---|---|---|---|---|
+| Continued, after circuits cycle 1 | 80 | 60 | 40 | 35 |
+| Fresh, after circuits cycle 1 | 80 | 74 | 40 | 37 |
+| Continued, after circuits cycle 2 | 80 | 60 | 40 | 35 |
+| Fresh, after circuits cycle 2 | 80 | 74 | 40 | pending |
+
+- **Fresh network on circuits' training tasks:**
+  - wake 1 (uniform): 274 of 300 equations;
+  - wake 2: 300 of 300 (291 true).
+- **Bar (d), after cycle 1: NOT MET.**
+  - +0.0 points: 80 against 80 on all equations, 30 against 30 on the new-form ones, 50 against 50 on the shared-form ones.
+  - Both networks solve everything, which is the ceiling noted earlier.
+- **Bar (d), after cycle 2: MET** (the fresh network is not better).
+- **Provenance:** no equation is solved only by the continued network.
+- **Against it:** the continued network more often settles on structures other than the true one (60 against 74 true). One system fewer is exact, 35 against 37.
+- **Zero-shot against uniform:**
+  - circuits: 6 only by the network, 1 only by uniform (p = 0.12);
+  - ecology: 50 against 4 (p = 3.8 × 10⁻¹¹).
+- **Reading:** circuits cannot show forward transfer on the bar's measure. A fresh network learns it fully in one cycle. Ecology decides bar (d) next: all its forms are new, and uniform solves 20 of 80.
