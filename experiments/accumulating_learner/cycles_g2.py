@@ -7,7 +7,7 @@ chemistry. Histories (the first three domains) follow Stage 1's rules; the new d
 100 tasks with dreams after 10, 30 and 100, and tests on the domain's 40 test systems before any task and after each
 dream, at the pilot's budgets. Arms: the continued network (its own order), the made-up-systems control (the same dream
 schedule, fantasies only, drawn from the language with every term size equally likely), the fresh network.
-Usage: cycles_g2.py <workers>"""
+Usage: cycles_g2.py <workers> [order ...]"""
 
 import hashlib
 import json
@@ -292,26 +292,31 @@ class Driver:
         return str(p)
 
     def control_fantasies(self, prefix, target_by_d):
-        """Size-prior fantasies until each dimension's example count reaches its target (extra examples dropped)."""
+        """Size-prior fantasies for a control dream: unused pool batches in order (generating more when short) until
+        each dimension's example count reaches its target; extra examples of the last batch are dropped."""
         p = RUN / "examples/fantasy" / f"{prefix}.pkl"
         if p.exists():
             return str(p)
         t0 = time.time()
-        got = {d: [] for d in target_by_d}
-        batch = 0
-        while any(len(got[d]) < t for d, t in target_by_d.items()) and batch < 40:
-            jobs = []
-            for d, t in sorted(target_by_d.items()):
-                need = t - len(got[d])
-                if need > 0:
-                    n = max(24, int(math.ceil(need / (2.5 * d))) + 8)
-                    jobs += [(f"{prefix}-d{d}-b{batch}", k, self.probs(d, None), d) for k in range(n)]
-            for r in self.pool.map(fantasy_job, jobs):
-                got[r["d"]] += r["examples"]
-            batch += 1
+        (RUN / "pool").mkdir(parents=True, exist_ok=True)
+        got, taken = {d: [] for d in target_by_d}, []
+        for d, t in sorted(target_by_d.items()):
+            while len(got[d]) < t:
+                led = self._ledger()
+                used = {x for v in led["consumed"].values() for x in v} | set(taken)
+                free = [q for q in self._pool_batches(d) if q.name not in used]
+                if not free:
+                    self.gen_pool_batch(d)
+                    continue
+                got[d] += pickle.loads(free[0].read_bytes())
+                taken.append(free[0].name)
+        led = self._ledger()
+        led["consumed"][prefix] = taken
+        (RUN / "pool" / "ledger.json").write_text(json.dumps(led))
         ex = [e for d, t in sorted(target_by_d.items()) for e in got[d][:t]]
         p.write_bytes(pickle.dumps(ex))
-        log(f"control fantasies {prefix}: examples {len(ex)} for targets {target_by_d}, {time.time() - t0:.0f}s")
+        log(f"control fantasies {prefix}: examples {len(ex)} for targets {target_by_d} from {len(taken)} pool batches, "
+            f"{time.time() - t0:.0f}s")
         return str(p)
 
     def gpu(self, poll=60):
@@ -346,9 +351,47 @@ class Driver:
                         return g, (f"GPU {g} (shared: utilization mean {sum(us) / len(us):.0f}%, max {max(us)}%, at least "
                                    f"{min(free)} MiB free over a minute){note}")
             if not waited:
-                log("no free or shareable GPU: waiting (checking every minute)")
+                log("no free or shareable GPU: waiting (checking every minute; idle workers fill the control pool)")
                 waited = True
-            time.sleep(poll)
+            if not self.fill_pool():                           # the wait overlaps generating the control's fantasies
+                time.sleep(poll)
+
+    # -- the control's fantasies come from a pool (size prior only, independent of anything learned), filled while the
+    #    driver waits for a GPU and topped up on demand; each control dream consumes fresh, unused batches --
+    POOL_TARGET = {2: 50000, 3: 3000}
+
+    def _ledger(self):
+        p = RUN / "pool" / "ledger.json"
+        return json.loads(p.read_text()) if p.exists() else {"next": {"2": 0, "3": 0}, "consumed": {}}
+
+    def _pool_batches(self, d):
+        return sorted((RUN / "pool").glob(f"d{d}_b*.pkl"), key=lambda q: int(q.stem.split("_b")[1].split("__n")[0]))
+
+    def pool_size(self, d, ledger):
+        used = {x for v in ledger["consumed"].values() for x in v}
+        return sum(int(q.name.split("__n")[1].split(".")[0]) if "__n" in q.name else 0
+                   for q in self._pool_batches(d) if q.name not in used)
+
+    def gen_pool_batch(self, d, n_fant=48):
+        (RUN / "pool").mkdir(parents=True, exist_ok=True)
+        led = self._ledger()
+        b = led["next"][str(d)]
+        led["next"][str(d)] = b + 1
+        (RUN / "pool" / "ledger.json").write_text(json.dumps(led))
+        res = list(self.pool.map(fantasy_job, [(f"g2-pool-d{d}-b{b}", k, self.probs(d, None), d) for k in range(n_fant)]))
+        ex = [e for r in res for e in r["examples"]]
+        tmp = RUN / "pool" / f".tmp_d{d}_b{b}.pkl"
+        tmp.write_bytes(pickle.dumps(ex))
+        tmp.rename(RUN / "pool" / f"d{d}_b{b}__n{len(ex)}.pkl")
+        return len(ex)
+
+    def fill_pool(self):
+        led = self._ledger()
+        for d, target in self.POOL_TARGET.items():
+            if self.pool_size(d, led) < target:
+                self.gen_pool_batch(d)
+                return True
+        return False
 
     def train(self, out, paths, prev, steps, label, info):
         gi, gdesc = self.gpu()
@@ -439,34 +482,35 @@ class Driver:
 
 
 def main():
-    workers = int(sys.argv[1])
+    workers, orders = int(sys.argv[1]), [int(x) for x in sys.argv[2:]] or [1, 2]
     RUN.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, str(HERE))
     D = Driver(workers)
-    log(f"driver started: workers {workers}; history budget {HIST}; new-domain budgets {NEWB}, {NEW}; points {POINTS}")
-    # phases that need no network first (identical results whenever they run): the uniform first wakes of both histories
-    # and the fresh networks' zero-shot tests and first ten tasks
-    for o in (1, 2):
+    log(f"driver started: workers {workers}; orders {orders}; history budget {HIST}; new-domain budgets {NEWB}, {NEW}; "
+        f"points {POINTS}; fantasy pre-screen on")
+    # phases that need no network first (identical results whenever they run)
+    for o in orders:
         dom = ORDERS[o][0]
         D.search(RUN / "wake" / f"o{o}_{dom}1.json", records("train", dom), "uniform", f"wake o{o} {dom} 1", HIST["budget"], HIST["cap"])
     for dom in ("chemistry", "chaotic"):
         D.test("uniform", dom, f"fresh_{dom}_t0", *NEWB[dom])
         D.search(RUN / "wake" / f"fresh_{dom}_w10.json", records("train", dom)[:10], "uniform", f"wake fresh_{dom} tasks 1-10", *NEWB[dom])
-    for o in (1, 2):
+    for o in orders:
         d4, d5 = ORDERS[o][3], ORDERS[o][4]
         hist = D.history(o)
         D.retention(o, hist, "before")
         cbase = D.control_base(o)
         for dom in (d4, d5):                                     # the fresh networks do not depend on the order
             D.curve(f"fresh_{dom}", "uniform", dom, f"fresh_{dom}")
-        c4 = D.curve(f"o{o}", hist, d4, f"o{o}_{d4}")            # position 4: continued, then control
+        c4 = D.curve(f"o{o}", hist, d4, f"o{o}_{d4}")
         D.curve(f"c{o}_{d4}", cbase, d4, f"c{o}_{d4}")
-        cext = D.control_extend(o, d4, cbase)                    # the control's history mirrors the continued one's
-        c5 = D.curve(f"o{o}", c4, d5, f"o{o}_{d5}")              # position 5
+        cext = D.control_extend(o, d4, cbase)
+        c5 = D.curve(f"o{o}", c4, d5, f"o{o}_{d5}")
         D.curve(f"c{o}_{d5}", cext, d5, f"c{o}_{d5}")
         D.retention(o, c5, "after")
         D.test(c5, d4, f"o{o}_after", *NEWB[d4])
-    log("all phases done")
+        log(f"order {o}: all phases done")
+    log("all requested orders done")
 
 
 if __name__ == "__main__":

@@ -131,11 +131,58 @@ def draw_fantasy(seed, order, probs, d):
             "params": params, "ic": ic, "positive": False}
 
 
+def prescreen(desc, steps=150, sub=4):
+    """A cheap check before the expensive build (speed only; research log, 7 November): the derivatives at the initial
+    state must be finite, and a rough 4th-order Runge-Kutta run over the system's own window (harness27.STEPS intervals
+    per window, REC_STEPS intervals, `sub` substeps) from 4 starting states around the initial state must stay finite and
+    within 100 times the largest initial magnitude. The full build (domains_g1.build) still decides acceptance.
+    Returns None if passed, else the reason."""
+    import harness27 as H27
+    import synthetic28 as SY
+    xs = sp.symbols(" ".join(f"x{j}" for j in range(desc["d"])))
+    try:
+        f = sp.lambdify(xs, DG.numeric_rhs(desc), "numpy")
+    except Exception:
+        return "pre-screen: not compilable"
+    ic = np.asarray(desc["ic"], dtype=float)
+
+    def F(x):
+        with np.errstate(all="ignore"):
+            out = f(*[x[:, j] for j in range(x.shape[1])])
+        return np.stack([np.broadcast_to(np.asarray(v, dtype=float), (x.shape[0],)) for v in out], 1)
+    f0 = F(ic[None, :])
+    if not np.all(np.isfinite(f0)):
+        return "pre-screen: derivatives not finite"
+    try:
+        T = SY.own_timescale(lambda x: F(np.atleast_2d(x)), ic)
+    except Exception:
+        return "pre-screen: no motion"
+    h = T / H27.STEPS / sub
+    rng = np.random.default_rng(abs(hash(desc["seed"])) % (1 << 32))
+    x = ic[None, :] * rng.uniform(0.5, 1.5, (4, len(ic)))
+    bound = 100 * np.abs(ic).max()
+    with np.errstate(all="ignore"):
+        for _ in range(steps * sub):
+            k1 = F(x); k2 = F(x + 0.5 * h * k1); k3 = F(x + 0.5 * h * k2); k4 = F(x + h * k3)
+            x = x + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+            if not np.all(np.isfinite(x)) or np.abs(x).max() > bound:
+                return "pre-screen: blows up"
+    return None
+
+
+PRESCREEN = True
+
+
 def accepted_fantasy(prefix, k, order, probs, d, tries=200):
     reasons = []
     for r in range(tries):
         seed = f"{prefix}-{k}" if r == 0 else f"{prefix}-{k}-r{r}"
         desc = draw_fantasy(seed, order, probs, d)
+        if PRESCREEN:
+            why = prescreen(desc)
+            if why is not None:
+                reasons.append(why)
+                continue
         try:
             return DG.build(desc), reasons
         except DG.Rejected as ex:

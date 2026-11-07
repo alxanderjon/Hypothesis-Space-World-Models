@@ -6246,3 +6246,39 @@ This is within 1.5 days, so there is no check-in (owner's rule). The run goes ah
 
 - **Likely total: 1–2 days. Over the 1.5-day limit in the likely case**, so the owner's rule calls for a check-in.
 - Nothing of the real run has started.
+
+### Stage 2a: owner's decision (B and C), the fantasy pre-screen validated, order 1 launched (7 November, 15:25)
+
+**Owner.** *"Approved: B and C. Validate the pre-screen on pilot seeds first (speed-up and wrong rejections), and apply it identically to every arm. Start generating the made-up systems on CPU now, so that work overlaps the wait for GPUs. Run order 1, report its results in plain language, then run order 2 with the same setup."*
+
+**The pre-screen** (`dream_g2.prescreen`). A cheap check before the expensive build of every fantasy, identical for every arm:
+- the derivatives at the initial state must be finite;
+- a rough 4th-order Runge–Kutta run over the system's own window (150 intervals, 4 substeps) from 4 starting states around the initial state must stay finite and within 100× the largest initial magnitude.
+
+The full build still decides acceptance.
+
+**Validation** (pilot seeds "g2-pilotPS-*"; 300 size-prior fantasy draws per dimension; both checks run on every draw).
+
+| Variables | Accepted by the full build | Rejected by the pre-screen | Of those, accepted by the full build (wrong rejections) | Build time without / with the pre-screen | Speed-up |
+|---|---|---|---|---|---|
+| Two | 27 | 243 | **0** | 819 s / 59 s | 14× |
+| Three | 9 | 267 | **0** | 1,416 s / 75 s | 19× |
+
+- **Pre-screen reasons:**
+  - derivatives not finite at the initial state: 171 (two variables) and 214 (three variables);
+  - blow-ups: 72 and 53.
+- **The full build's reasons for those draws:** "simulation or cost" for 222 and 250, no canonical form for 15 and 16, unbounded for 6 and 1.
+- **Result:** the pre-screen changes no acceptance on these draws, and only saves time.
+
+**Overlap with the GPU wait.**
+- While the driver waits for a free or shareable GPU (checked every minute), its idle workers generate batches of the control's fantasies into a pool. These are drawn from the size prior and depend on nothing learned.
+- Each control dream consumes unused batches in order, and the ledger records which dream used which batch. If the pool runs short, more batches are generated on the spot.
+- The continued and fresh networks' fantasies depend on their own solutions, so they are generated at each dream, as before.
+
+**Run plan.**
+- **Order 1:** `cycles_g2.py 24 1`.
+  - First the phases that need no network: order 1's uniform first wake, and the fresh networks' zero-shot tests and first 10 tasks in both new domains.
+  - Then the history, the control base, the learning curves and retention.
+- **Order 2** follows with the same setup, after the order 1 report.
+
+**GPUs at 15:22:** all eight busy, all with one other user's jobs (93–100% utilization).
