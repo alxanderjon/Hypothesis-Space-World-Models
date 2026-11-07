@@ -6366,3 +6366,42 @@ The full build still decides acceptance.
 | Quadratic flows | 31 | 30 | 4 | 38 | 18 | 25 |
 
 - These agree with the equation-level picture. Order 2 starts now with the same setup (`cycles_g2.py 24 2`).
+
+### Stage 2a: report details fixed before any order-2 result (7 November, 22:30)
+
+These fill in the pre-registered "(D)" and "also reported" items (section 7). No order-2 result exists yet.
+
+- **(D) Order**: the continued network in order 1 is compared with order 2, per domain and point, by a paired sign test. The comparison uses the equations that are new-form in **both** orders, so both sides are scored on one set of equations.
+  - Chemistry: its new-form equations in order 2 (5th, after quadratic flows).
+  - Quadratic flows: its new-form equations in order 1 (5th, after chemistry).
+- **The gate to Stage 2b** is applied exactly as written: bar (B) met in at least one new domain, in both orders.
+- **Provenance** (Stage 1's definition, adapted to three variables):
+  - Unit: each new-form equation solved only by the continued network, against the control at every point and against the fresh network at 10 tasks.
+  - Count: how many have a true term, and how many have all their true terms, among the lineage's verified solutions from earlier domains.
+  - Terms are compared relative to their equation: own variable first, the others in either order, as three-variable vocabulary representatives.
+  - The base rate over all new-form test equations is reported alongside.
+- **Effort**: per arm, at 0 and 10 tasks:
+  - median structures to the first plausible model, over new-form equations;
+  - structures, thorough fits and CPU hours per test.
+
+**Order 1 under these definitions** (counts only).
+
+*Provenance at 10 tasks* (wins against the control; the base rate is over all new-form test equations):
+
+| Domain | Wins | With a true term in earlier solutions | With all | Base rate: any / all |
+|---|---|---|---|---|
+| Chemistry | 6 | 6 | 4 | 63 / 66 and 35 / 66 |
+| Quadratic flows | 17 | 17 | 15 | 45 / 45 and 40 / 45 |
+
+- **Term overlap does not tell wins apart:** almost every new-form equation has its terms in earlier solutions. The wins come from combining known terms into new forms, not from terms the control never saw.
+
+*Median structures to the first plausible model, new-form* (0 tasks → 10 tasks):
+
+| Domain | Continued | Control | Fresh |
+|---|---|---|---|
+| Chemistry | 31 → 26 | 144 → 42 | not reached → 21 |
+| Quadratic flows | 21 → 17 | 28 → 65 | not reached → 39 |
+
+- The control's regression on quadratic flows shows here as well: 28 → 65.
+
+**Compute:** each test is 0.2–1.9 CPU hours. Uniform search is the costliest because of its many thorough fits.
