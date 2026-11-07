@@ -6283,7 +6283,7 @@ The full build still decides acceptance.
 
 **GPUs at 15:22:** all eight busy, all with one other user's jobs (93–100% utilization).
 
-### Stage 2a, order 1: results (7 November, 22:00; counts only for test systems)
+### Stage 2a, order 1: results (7 November, 21:45; counts only for test systems)
 
 **Run** (`cycles_g2.py 24 1`).
 - 15:22 to 21:43, 6.3 h. That includes one 96-minute wait for a GPU. All other dreams found a free GPU, mostly GPU 0.
@@ -6357,3 +6357,12 @@ The full build still decides acceptance.
 2. **On chemistry, the made-up-systems control explains the head start:** zero-shot +10.6 points is not significant on new-form equations, and +6.1 at 10 tasks.
 3. **Dreaming on the language is the main source of the zero-shot gain.** Real-domain experience adds little beyond it, with the one exception above.
 4. **Both new domains are learned to the ceiling within 30 tasks** by any arm.
+
+**Order 1, whole systems exact** (`g1_systems.py`; the external test is one-step ≤ 10⁻¹² plus the multi-step envelope; rebuilt systems identical in every case). Counts out of 40.
+
+| Domain | Continued, 0 tasks | Control, 0 | Uniform | Continued, 10 tasks | Control, 10 | Fresh, 10 |
+|---|---|---|---|---|---|---|
+| Chemistry | 29 | 21 | 2 | 29 | 23 | 31 |
+| Quadratic flows | 31 | 30 | 4 | 38 | 18 | 25 |
+
+- These agree with the equation-level picture. Order 2 starts now with the same setup (`cycles_g2.py 24 2`).
