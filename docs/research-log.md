@@ -5861,3 +5861,61 @@ Check in with all three before Stage A."*
 - **Bar (e), equation level:** 0 systems lost in mechanics and 0 in circuits, comparing after ecology with right after each domain.
 - **Whole systems exact:** mechanics 39 after ecology against 40 right after mechanics (the original run); circuits 35 against 35. The same check on the rerun baselines is pending.
 - **Still running:** the fresh ecology network for bar (d) on ecology.
+
+### Stage 1 of the general learner: results (7 November, 04:45; counts only for test systems)
+
+**Run.** 22:20 to 04:29 (6.2 h of wall time, against a projected 16 h) on 24 workers, plus the side runs of the whole-system check.
+- Time-limit hits: 0 in every arm. Failed systems: 0.
+- GPUs used for training: 0, 1, 2 and 3, each free at its check (logged per dream). After the 00:41 fix, no idle memory was held.
+- Two driver restarts, both logged: the GPU memory fix, and the NaN network caught in ecology's first dream.
+
+**Bars.**
+
+| Bar | Verdict | Numbers |
+|---|---|---|
+| (a) fitter on true structures | MET | 240 of 240 test equations |
+| (c) learning on the first domain | MET | mechanics' tests: 80 against 70 of 80 for uniform; median structures to the first plausible model 2 against 17; only network 10, only uniform 0, p = 0.002 |
+| (d) forward transfer, after cycle 1 | NOT MET (circuits and ecology) | continued against fresh: circuits 80 against 80; ecology 80 against 80; new-form equations 30 against 30 and 80 against 80. Both networks solve every test equation after one cycle (ceiling) |
+| (d) after cycle 2 | MET | 80 against 80 in both domains (fresh not better) |
+| (e) retention | MET | systems solved after ecology against right after the domain: mechanics 40 against 40, circuits 40 against 40 (0 lost). Whole systems exact: mechanics 39 against 40, circuits 35 against 36 (1 lost each, within the 2 allowed) |
+
+**Whole systems exact** (external test; counts out of 40).
+
+| Test set | Uniform | Zero-shot (earlier domains only) | Continued, cycle 1 | Continued, cycle 2 | Fresh, cycle 1 | Fresh, cycle 2 | After ecology |
+|---|---|---|---|---|---|---|---|
+| Mechanics | 26 | not applicable | 40 (after mechanics) | | | | 39 |
+| Circuits | 24 | 36 | 35 | 35 | 37 | 38 | 35 |
+| Ecology | 3 | 27 | 40 | 40 | 39 | 39 | 40 |
+
+**Where transfer shows: before the new domain's first dream.**
+- **Zero-shot,** the network from earlier domains on the new domain's tests against uniform:
+  - circuits: equations 79 against 74 (p = 0.12); systems exact 36 against 24;
+  - ecology, all new forms: equations 66 against 20 (only network 50, only uniform 4, p = 3.8 × 10⁻¹¹); systems exact 27 against 3.
+- **First wake on the new domain** (its 150 training tasks, before any training on them):
+
+  | Domain | Continued: equations solved | Continued: compute | Fresh (uniform): equations solved | Fresh: compute |
+  |---|---|---|---|---|
+  | Circuits | 297 of 300 | 3.6 core-hours | 274 of 300 | 6.4 core-hours |
+  | Ecology | 254 of 300 | 5.9 core-hours | 89 of 300 | 21.9 core-hours |
+
+- **After one dream** on its own solutions and 500 fantasies, the fresh network solves every training task and every test equation. Speed then matches too: the median structures to the first plausible model are 4 against 4 on circuits and 7 against 7 on ecology.
+
+**Reading.**
+1. **The general direction works within a domain.**
+   - The general language (1,143 rescaling-invariant terms), the generic fitter and the guided search with wake and dreaming recover mechanics' test systems exactly: 40 of 40 against 26 for uniform search.
+   - Learning from its own solutions and fantasies makes the search about eight times faster to the first plausible model.
+2. **Forward transfer exists but Stage 1 cannot show it on its bar.**
+   - The network carried from earlier domains starts the new domain much better: zero-shot on ecology 66 against 20 equations, 27 against 3 exact systems. Its first wake there solves 254 against 89 tasks at about a quarter of the compute.
+   - But one wake–dream cycle lets a fresh network catch up completely, so "after the first cycle" sits at the ceiling for both.
+   - The claim rests on new-form equations, per the owner's note. On those (all 80 of ecology's), the earlier start is real; after one cycle there is no difference.
+3. **Part of the zero-shot gain may come from dreaming on the language rather than from the earlier domains.** The fantasies can contain ecology-like terms. Stage 1 has no control that separates the two (a network trained on fantasies alone).
+4. **No forgetting.** All earlier verified solutions stayed in training at full weight, and per system nothing was lost at the equation level. One system per domain was lost at the whole-system level.
+5. **A small cost of carrying a network over, on circuits.** The continued network settles more often on structures other than the true one: 60 against 74 true-structure keys, and 35 against 37–38 systems exact.
+6. **What limited the test: Stage 1's domains are too easy for a learner that dreams.** Measured at the end of a cycle, accumulation can only show where a fresh network cannot learn a domain within one cycle.
+
+**Next (to propose to the owner; nothing is run).** A Stage 2 design whose transfer measure is not at the ceiling:
+- learning curves inside the first cycle (after 10, 30 and 100 tasks), with zero-shot as a pre-registered measure;
+- a tighter learning budget per domain;
+- a fantasies-only control network;
+- the harder domains planned for Stage 2 (chemistry, chaotic flows, d up to 3), with abstraction;
+- the second domain order (owner's note).
