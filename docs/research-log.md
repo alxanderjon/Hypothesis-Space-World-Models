@@ -6054,3 +6054,20 @@ Check in with all three before Stage A."*
   6. new-domain learning curves;
   7. bars.
 - **Check-in:** after (a′), before any history or control is built.
+
+### Stage 2a: owner approval, with two changes (7 November)
+
+**Owner.** *"Approved, with two changes: 1. The shortlist only limits what the network attends to. The search must still be able to try any term in the full vocabulary (keep the random exploration share), and report how often a true term was cut from the shortlist. 2. Keep dysts unfamiliar: drop the Lorenz-, Rössler- and Sprott-type families, and use only jerk and random sparse quadratic flows for the chaotic domain. Check in after the fitter test on true structures, as planned."*
+
+1. **Every term stays reachable.**
+   - Terms outside the 768 attended keep a nonzero prior through the "rest" slot, spread evenly.
+   - The search's 15% random-exploration share still draws from every legal move, over the full vocabulary.
+   - **New report, a probe that never influences the search:** at each node a network-guided search expands, whether any missing true term was outside the attended set (the state plus the 768). It is reported as the share of expansions, per arm and domain, and per equation at the root.
+   - The true structures are used only for this count, and the search never reads them, as with Trial 30's probe.
+2. **Chaotic flows (F)** keep two families, equally likely:
+   - jerk: ẋ = y, ẏ = z, ż = linear terms + one of {x², xy, y², x³, x²y} (+ an optional constant);
+   - random sparse quadratic: 2–3 terms of degree ≤ 2 per equation.
+   - No named families. dysts stays unopened and unfamiliar until Stage 4.
+
+- Everything else is as written above.
+- **Check-in:** after (a′), before any history or control is built.
