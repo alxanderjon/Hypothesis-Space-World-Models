@@ -6168,3 +6168,44 @@ Check in with all three before Stage A."*
 
 - **Naming:** from here on, reports call domain F **quadratic flows (mostly non-chaotic)**. The code keeps the name "chaotic".
 - **Check-in rule:** only if the development pilot projects more than 1.5 days. Otherwise the run goes ahead, and the full results follow with a plain-language summary.
+
+### Stage 2a: development pilot, budget decisions and projection (7 November, 08:55; development systems only)
+
+**Budget check (pre-registered rule).** Uniform search at 300 structures and 60 thorough fits per equation.
+
+| Domain | Development equations solved | Budget for every arm, in wakes and tests |
+|---|---|---|
+| Chemistry | 4 of 24 (17%) | 300 structures, 60 thorough fits |
+| Quadratic flows (mostly non-chaotic) | 16 of 30 (53%) | 100 structures, 20 thorough fits |
+
+**Timing** (per system, at those budgets; an untrained network measures the network's cost only).
+
+| Domain | Uniform: mean (median / max) | Guided: mean | Network time per system |
+|---|---|---|---|
+| Chemistry | 185 s (176 s / 248 s) | 155 s | 17 s |
+| Quadratic flows | 44 s (43 s / 83 s) | 38 s | 11 s |
+
+- **Time limits:** 3,600 s per system, as in Stage 1. That is more than 14× the slowest pilot system. Hits are reported per arm.
+
+**Projection: about 15 h on 24 workers.**
+- two histories, about 4.6 h, from Stage 1's measured wake and dream times;
+- two control histories with extensions, about 3.4 h, mostly generating fantasies;
+- ten learning curves, about 5.5 h. Each curve is 4 tests of 40 systems plus 100 tasks and 3 dreams; a chemistry curve takes about 45 min, a quadratic-flow curve about 20 min;
+- retention tests, about 0.5 h.
+
+This is within 1.5 days, so there is no check-in (owner's rule). The run goes ahead.
+
+**Code for the run.**
+- `movenet_g2.py`: the scorer, attention over the state plus 768 with the rest slot, variable roles for up to three variables, and the shortlist-cut probe.
+- `dream_g2.py`: training examples relabelled at random, and fantasies of two or three variables.
+- `cycles_g2.py`: the driver. Its phase order:
+  1. history of order 1;
+  2. retention baselines;
+  3. control base;
+  4. the fresh networks' curves;
+  5. the continued and control curves at position 4;
+  6. control extension;
+  7. curves at position 5;
+  8. final retention;
+  9. the same for order 2.
+- Every dream trains in a short-lived process, so GPU memory is freed.

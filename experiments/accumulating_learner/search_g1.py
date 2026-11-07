@@ -408,9 +408,10 @@ def system_context(bursts, seed=1):
     return ctx
 
 
-def search_system(bursts, prior_fn, budget=1000, thorough_cap=200, time_cap=float("inf"), seed=1, ctx=None):
+def search_system(bursts, prior_fn, budget=1000, thorough_cap=200, time_cap=float("inf"), seed=1, ctx=None, probes=None):
     """Search every equation of one system. Returns per equation: effort, the simplest plausibly exact structure (keys,
-    constants, coefficients, held-back error) and the number of plausibly exact structures found."""
+    constants, coefficients, held-back error) and the number of plausibly exact structures found. probes: per equation,
+    the true structure's keys, passed to the prior for counting only (Stage 2a's shortlist probe); never used to search."""
     t0 = time.perf_counter()
     ctx = ctx or system_context(bursts, seed=seed)
     setup = time.perf_counter() - t0
@@ -419,7 +420,10 @@ def search_system(bursts, prior_fn, budget=1000, thorough_cap=200, time_cap=floa
     d = ctx["W"].shape[1]
     for i in range(d):
         rng = np.random.default_rng([seed, i])
-        se = EquationSearchL1(i, ctx, budget, prior_fn, fitter, rng, time_cap=time_cap / d, thorough_cap=thorough_cap).run()
+        ci = ctx
+        if probes is not None:
+            ci = dict(ctx, probe=[ctx["vocab"].index[k] for k in probes[i] if k in ctx["vocab"].index])
+        se = EquationSearchL1(i, ci, budget, prior_fn, fitter, rng, time_cap=time_cap / d, thorough_cap=thorough_cap).run()
         sols = se.solutions()
         rec = {"eq": i, "effort": dict(se.eff), "n_exact": len(sols)}
         if sols:
