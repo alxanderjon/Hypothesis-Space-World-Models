@@ -121,6 +121,8 @@ def state_features(rel, nS, d, M, floor_rel):
 def evidence_features(gain, g0, inS, rem_full):
     """(V, N_EVID): membership, gain given the state and its -log10(1 - .) / 12, gain alone and its transform, removal
     share (terms in the state)."""
+    rem_full = np.clip(np.nan_to_num(np.asarray(rem_full, dtype=np.float64), nan=0.0, posinf=1e30), 0.0, 1e30)
+    gain, g0 = np.nan_to_num(gain, nan=0.0), np.nan_to_num(g0, nan=0.0)
     return np.stack([inS.astype(np.float32), gain, -np.log10(np.clip(1 - gain, 1e-12, 1)) / 12, g0,
                      -np.log10(np.clip(1 - g0, 1e-12, 1)) / 12, np.log10(1 + rem_full) / 12], 1).astype(np.float32)
 
@@ -162,6 +164,7 @@ class NetworkPrior:
         if key not in self._g0:
             self._g0[key] = SG.evidence({"keys": (), "terms": [], "idx": ()}, ctx)[0]
         F, st, inS = node_features(node, ctx, self._g0[key])
+        F, st = np.nan_to_num(F, nan=0.0, posinf=2.5, neginf=0.0), np.nan_to_num(st, nan=0.0, posinf=0.0, neginf=-1.2)
         E = self.emb[torch.as_tensor(vocab.gid), i]
         with torch.no_grad():
             o = self.net(E[None], torch.as_tensor(F)[None], torch.as_tensor(st)[None],
@@ -203,7 +206,7 @@ def collate(examples, device):
     for b, e in enumerate(examples):
         n = len(e["gids"])
         gids[b, :n] = torch.as_tensor(e["gids"].astype(np.int64))
-        F[b, :n] = torch.as_tensor(e["F"].astype(np.float32))
+        F[b, :n] = torch.nan_to_num(torch.as_tensor(e["F"].astype(np.float32)), nan=0.0, posinf=2.5, neginf=0.0)
         ta[b, :n] = torch.as_tensor(e["add"])
         tr[b, :n] = torch.as_tensor(e["rem"])
         ins[b, :n] = torch.as_tensor(e["inS"])
@@ -245,15 +248,22 @@ def train(net, examples, table, steps, batch=32, lr=3e-4, device="cpu", seed=0, 
     net = net.to(device).train()
     table_t = torch.as_tensor(table).to(device)
     opt = torch.optim.AdamW(net.parameters(), lr=lr, weight_decay=0.01)
-    log, t0 = [], time.time()
+    log, t0, skipped = [], time.time(), 0
     for step in range(steps):
         pick = rng.choice(len(examples), size=min(batch, len(examples)), replace=False)
         loss, parts = loss_fn(net, collate([examples[k] for k in pick], device), table_t)
         opt.zero_grad()
+        if not bool(torch.isfinite(loss)):                     # a non-finite loss never reaches the weights
+            skipped += 1
+            continue
         loss.backward()
+        if not all(bool(torch.isfinite(q.grad).all()) for q in net.parameters() if q.grad is not None):
+            skipped += 1
+            opt.zero_grad()
+            continue
         torch.nn.utils.clip_grad_norm_(net.parameters(), 1.0)
         opt.step()
         if step % log_every == 0 or step == steps - 1:
-            log.append({"step": step, "loss": float(loss), **parts, "seconds": round(time.time() - t0, 1)})
+            log.append({"step": step, "loss": float(loss), **parts, "skipped": skipped, "seconds": round(time.time() - t0, 1)})
     net.eval()
     return log

@@ -404,6 +404,8 @@ def main():
     D.test(c2, "C", "cont_C2")
     D.test(c2, "A", "cont_C2")
     D.test(c2, "B", "cont_C2")
+    D.test(a2, "A", "cont_A2v2")                           # the retention baselines rerun with the fixed features
+    D.test(b2, "B", "cont_B2v2")                           # (research log, 7 November 02:15), same code as cont_C2
     fc1, fc2 = D.domain("freshC", "C", "uniform")
     D.test(fc1, "C", "freshC_C1")
     D.test(fc2, "C", "freshC_C2")

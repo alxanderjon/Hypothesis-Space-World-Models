@@ -142,7 +142,7 @@ def main():
             print(f"   zero-shot on {NAME[L]}: earlier-domain network vs uniform: only network {ao}, only uniform {bo} "
                   f"(p = {sign_p(ao, bo):.2g})")
     # (e)
-    for L, before in (("A", "cont_A2"), ("B", "cont_B2")):
+    for L, before in (("A", "cont_A2v2"), ("B", "cont_B2v2")):   # rerun with the same code as cont_C2
         b, a = load(before, L), load("cont_C2", L)
         if b and a:
             sb = {r["id"] for r in b if r["status"] == "done" and all(e["first_exact"] is not None for e in r["equations"])}

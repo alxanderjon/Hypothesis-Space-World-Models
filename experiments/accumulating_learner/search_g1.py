@@ -100,7 +100,7 @@ def evidence(node, ctx):
             ok = (dg > 0) & torch.isfinite(dg) & torch.isfinite(c)
             delta = torch.where(ok, c ** 2 / torch.where(ok, dg, torch.ones_like(dg)), torch.zeros_like(dg)).numpy()
             rr = float(r @ r) + 1e-300
-            rem = np.array([max(float(v) / rr, 0.0) if math.isfinite(float(v) / rr) else 0.0 for v in delta])
+            rem = np.array([min(max(float(v) / rr, 0.0), 1e30) if math.isfinite(float(v) / rr) else 0.0 for v in delta])   # capped: a near-exact fit makes it astronomically large (float32 overflow)
         except RuntimeError:
             pass
     return gain, rem

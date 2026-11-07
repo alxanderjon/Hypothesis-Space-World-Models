@@ -5821,3 +5821,19 @@ Check in with all three before Stage A."*
   - circuits: 6 only by the network, 1 only by uniform (p = 0.12);
   - ecology: 50 against 4 (p = 3.8 × 10⁻¹¹).
 - **Reading:** circuits cannot show forward transfer on the bar's measure. A fresh network learns it fully in one cycle. Ecology decides bar (d) next: all its forms are new, and uniform solves 20 of 80.
+
+**Incident: NaN network in ecology's first dream, caught and redone (7 November, 02:20).**
+- **What happened.**
+  - Dream "cont C1" trained on 3,197 replay examples (853 verified solutions) plus 3,676 fantasy examples. The loss was NaN from before step 200, and every weight ended NaN.
+  - The cause was one fantasy example whose removal-share feature overflowed float32 to infinity. At a near-exact fit the residual is almost zero, so the share can reach about 10⁴⁰.
+- **Wake 2 discarded.** It had started with the broken network. I stopped my driver and its workers by PID before it wrote anything.
+- **Fixes:**
+  - the removal share is capped at 10³⁰;
+  - every network input is sanitized, in training and in the search;
+  - a training step whose loss or gradient is not finite is skipped and counted;
+  - check: 300 steps on the same examples now run with finite losses and weights, and 0 skipped steps.
+- **The same overflow could have hit the search before the fix**, at rare near-exact nodes, through infinite features and so NaN priors there. The search then falls back to random moves from that node.
+  - **Effect:** small, and only after a near-exact fit.
+  - **Every ecology search uses the fixed code**, for continued and fresh networks alike.
+  - **Retention (bar e):** the two "right after the domain" tests (the network after mechanics on mechanics, after circuits on circuits) are rerun with the fixed code and used as the baselines. Retention is then judged with the same code on both sides.
+- **The driver was restarted** and resumes at dream C1's training. The fantasies are cached and unchanged.
