@@ -135,6 +135,34 @@ def fantasy_job(args):
     return {"k": k, "examples": ex, "reasons": reasons, "accepted": True, "structure": [eq["keys"] for eq in syn.structure]}
 
 
+def train_job(args):
+    """Train in a fresh process (so its GPU memory is released when it exits): examples from pickles, the previous
+    network (or a fresh one, seed 1), STEPS steps; saves the network (.pt) and the vocabulary's encodings (.npy)."""
+    paths, prev, out, gi, seed = args
+    sys.path.insert(0, str(HERE))
+    import numpy as np
+    import torch
+    import movenet_g1 as MN
+    import search_g1 as SG
+    examples = []
+    for p in paths:
+        examples += pickle.loads(Path(p).read_bytes())
+    torch.manual_seed(1)
+    net = MN.MoveNetL1()
+    if prev is not None:
+        net.load_state_dict(torch.load(prev + ".pt", map_location="cpu"))
+    device = f"cuda:{gi}" if gi is not None else "cpu"
+    if gi is None:
+        torch.set_num_threads(8)
+    table = MN.token_table(SG.vocabulary_order())
+    tl = MN.train(net, examples, table, STEPS, batch=BATCH, lr=LR, device=device, seed=seed)
+    emb = MN.encode_vocabulary(net, table, device=device)
+    net = net.cpu()
+    torch.save(net.state_dict(), out + ".pt")
+    np.save(out + ".npy", emb)
+    return tl
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 # the driver
 # ---------------------------------------------------------------------------------------------------------------------
@@ -228,6 +256,13 @@ class Driver:
             out += pickle.loads(p.read_bytes())
         return out
 
+    def replay_paths(self, rep):
+        tasks = {}
+        for k, keys in rep.items():
+            tid, eq = k.rsplit("|", 1)
+            tasks.setdefault(tid, {})[int(eq)] = keys
+        return [str(RUN / "examples/replay" / f"{tid}__{h([eqs.get(i) for i in range(2)])}.pkl") for tid, eqs in sorted(tasks.items())]
+
     def usage(self, rep):
         import dream_g1 as DR
         u = {}
@@ -291,22 +326,14 @@ class Driver:
         rex = self.replay_examples(rep)
         fex = self.fantasies(lineage, tag, rep)
         examples = rex + fex
-        torch.manual_seed(1)
-        net = MN.MoveNetL1()
-        if prev is not None:
-            net.load_state_dict(torch.load(prev + ".pt", map_location="cpu"))
+        paths = self.replay_paths(rep) + [str(RUN / "examples/fantasy" / f"{lineage}_{tag}.pkl")]
         gi, gdesc = self.gpu()
-        device = f"cuda:{gi}" if gi is not None else "cpu"
-        table = MN.token_table(SG.vocabulary_order())
         t0 = time.time()
-        tl = MN.train(net, examples, table, STEPS, batch=BATCH, lr=LR, device=device, seed=int(h(lineage + tag), 16) % (1 << 31))
-        emb = MN.encode_vocabulary(net, table, device=device)
-        net = net.cpu()
-        torch.save(net.state_dict(), str(out) + ".pt")
+        with ProcessPoolExecutor(1, mp_context=get_context("spawn")) as one:   # a fresh process: its GPU memory is
+            tl = one.submit(train_job, (paths, prev, str(out), gi, int(h(lineage + tag), 16) % (1 << 31))).result()   # freed on exit
         (RUN / "dream" / f"{lineage}_{tag}_train.json").write_text(json.dumps(
             {"replay_solutions": len(rep), "replay_examples": len(rex), "fantasy_examples": len(fex), "device": gdesc,
              "seconds": time.time() - t0, "log": tl}))
-        np.save(str(out) + ".npy", emb)
         log(f"dream {lineage} {tag}: trained on {len(rex)} replay + {len(fex)} fantasy examples ({len(rep)} verified "
             f"solutions) on {gdesc} in {time.time() - t0:.0f}s; last loss {tl[-1]['loss']:.3f}, top-5 add {tl[-1]['top5_add']:.2f}")
         return str(out)

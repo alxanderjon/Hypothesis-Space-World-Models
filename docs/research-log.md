@@ -5773,3 +5773,9 @@ Check in with all three before Stage A."*
 - One development system solved this way passed the external test: one-step error 2.3 × 10⁻¹⁵, multi-step envelope passed.
 - A second case is a reparametrization: x₂·(K0 + x₁)^K1 with K1 = −1 spans the same pair of terms as the Holling term with x₂.
 - **Consequence:** the vocabulary's terms are distinct over all signs, but some coincide on positive data. The bars' measure (equations solved, plausibly exact) and the whole-system external test are the right judges. The "true structure" count is a lower bound.
+
+**Driver restart (7 November, 00:41).**
+- **Problem:** each dream had trained inside the driver process. PyTorch then kept about 2.4 GB of idle memory on every GPU the driver had used (GPUs 0–3), and the free-GPU check moved on to a new GPU each time. Over ten dreams this would have tied up every free GPU on the shared host.
+- **Fix:** training now runs in a short-lived process that releases its GPU on exit.
+- **Restart:** I stopped my own driver and its workers by PID and restarted it. It resumed at the first unfinished phase. The circuits test of the network after circuits cycle 1 had just begun and was rerun.
+- **Effect on results:** none. Training is unchanged, with the same examples, order, seed and steps.
