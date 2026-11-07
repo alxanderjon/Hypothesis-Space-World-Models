@@ -5837,3 +5837,27 @@ Check in with all three before Stage A."*
   - **Every ecology search uses the fixed code**, for continued and fresh networks alike.
   - **Retention (bar e):** the two "right after the domain" tests (the network after mechanics on mechanics, after circuits on circuits) are rerun with the fixed code and used as the baselines. Retention is then judged with the same code on both sides.
 - **The driver was restarted** and resumes at dream C1's training. The fantasies are cached and unchanged.
+
+**Interim results, continued network through ecology (7 November, 03:00; counts only).**
+
+| Test set | Evaluation | Equations solved (true keys) | Systems solved | Systems exact (external) |
+|---|---|---|---|---|
+| Ecology | uniform | 20 (3) | 4 | 3 |
+| Ecology | network after circuits (zero-shot) | 66 (53) | 27 | 27 |
+| Ecology | after ecology cycle 1 | 80 (51) | 40 | 40 |
+| Ecology | after ecology cycle 2 | 80 (48) | 40 | 40 |
+| Mechanics (retention) | after mechanics (rerun, fixed code) | 80 (74) | 40 | pending |
+| Mechanics (retention) | after ecology | 80 (73) | 40 | 39 |
+| Circuits (retention) | after circuits (rerun, fixed code) | 80 (61) | 40 | pending |
+| Circuits (retention) | after ecology | 80 (59) | 40 | 35 |
+
+- **Ecology's training tasks:**
+  - wake 1, guided by the network after circuits: 254 of 300 equations, 109 of 150 systems;
+  - wake 2, after the redone dream: 300 of 300, 150 of 150.
+- **Retention baselines rerun with the fixed code:**
+  - mechanics: 80 (74), 40, against 80 (74), 40 before the fix;
+  - circuits: 80 (61), 40, against 80 (60), 40.
+  - So the feature fix made no measurable difference.
+- **Bar (e), equation level:** 0 systems lost in mechanics and 0 in circuits, comparing after ecology with right after each domain.
+- **Whole systems exact:** mechanics 39 after ecology against 40 right after mechanics (the original run); circuits 35 against 35. The same check on the rerun baselines is pending.
+- **Still running:** the fresh ecology network for bar (d) on ecology.
