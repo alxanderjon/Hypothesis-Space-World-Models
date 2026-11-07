@@ -5779,3 +5779,22 @@ Check in with all three before Stage A."*
 - **Fix:** training now runs in a short-lived process that releases its GPU on exit.
 - **Restart:** I stopped my own driver and its workers by PID and restarted it. It resumed at the first unfinished phase. The circuits test of the network after circuits cycle 1 had just begun and was rerun.
 - **Effect on results:** none. Training is unchanged, with the same examples, order, seed and steps.
+
+**Interim results, continued network through circuits (7 November, 01:20; counts only).**
+
+| Test set | Evaluation | Equations solved (true structure) | Systems solved | Systems exact (external) |
+|---|---|---|---|---|
+| Circuits | uniform | 74 (62) | 34 | 24 |
+| Circuits | network after mechanics (zero-shot) | 79 (66) | 39 | 36 |
+| Circuits | after circuits cycle 1 | 80 (60) | 40 | 35 |
+| Circuits | after circuits cycle 2 | 80 (60) | 40 | 35 |
+| Ecology | uniform | 20 (3) | 4 | 3 |
+| Ecology | network after circuits (zero-shot) | 66 (53) | 27 | 27 |
+
+- **Circuits training tasks:**
+  - wake 1, guided by the mechanics network: 297 of 300 equations, 147 of 150 systems;
+  - wake 2: 299 of 300, 149 of 150.
+- **Dreams B1 and B2:** trained on 2,149 and 2,156 replay examples, from 597 and 599 verified solutions across mechanics and circuits, plus about 3,600 fantasy examples each.
+- **Equation-level "solved" overcounts on circuits:** uniform's 34 solved systems include 10 that fail the external test. Whole systems exact is the stricter measure and is reported beside it.
+- **Zero-shot on ecology is large: 27 of 40 systems exact against 3.** Every ecology form is new relative to mechanics and circuits. What does carry over: the network's use of the data evidence, and dreaming from the language, whose fantasies can contain ecology-like terms.
+- **The comparison that decides bar (d) is still to come:** continued against fresh networks after the same number of ecology cycles.
