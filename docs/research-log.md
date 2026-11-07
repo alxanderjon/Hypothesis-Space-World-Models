@@ -6161,3 +6161,10 @@ Check in with all three before Stage A."*
   - the budget check: if uniform search at 300 structures solves more than 50% of a new domain's development equations, that domain drops to 100 structures;
   - timing and the projection;
   - a further check-in if the projection exceeds 1.5 days.
+
+### Stage 2a: owner's go-ahead (7 November)
+
+**Owner.** *"Go ahead with the build, the pilot and the run as written. In reports, describe the chaotic-flow domain as quadratic flows (mostly non-chaotic), since only 5 of 40 test systems are chaotic. Check in only if the pilot projects over 1.5 days; otherwise send the full results with a plain-language summary when done."*
+
+- **Naming:** from here on, reports call domain F **quadratic flows (mostly non-chaotic)**. The code keeps the name "chaotic".
+- **Check-in rule:** only if the development pilot projects more than 1.5 days. Otherwise the run goes ahead, and the full results follow with a plain-language summary.
