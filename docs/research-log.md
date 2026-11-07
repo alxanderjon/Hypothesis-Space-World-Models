@@ -6209,3 +6209,40 @@ This is within 1.5 days, so there is no check-in (owner's rule). The run goes ah
   8. final retention;
   9. the same for order 2.
 - Every dream trains in a short-lived process, so GPU memory is freed.
+
+### Stage 2a: smoke test passed; corrected projection over 1.5 days; check-in (7 November, 11:00)
+
+**Smoke test** (scratch directory, tiny settings, `G2_ALLOW_CPU` for its 5–10-step dreams only): **SMOKE OK.**
+- Every phase of `cycles_g2.py` ran: the history, retention tests, control base, the fresh, continued and control learning curves at positions 4 and 5, the control extension, and the final retention.
+- The shortlist probe works: a missing true term was outside the attended set at 7 of 876 expansions, with barely trained networks.
+- Mixed-dimension training (two- and three-variable examples) works on GPU and CPU.
+
+**GPUs** (read-only `nvidia-smi` watch, 09:03–10:03).
+- A GPU was free or shareable under the owner's rule in only 11% of one-minute windows, in three short windows.
+- The other user refills freed GPUs within minutes.
+- The driver now waits for a free or shareable GPU, checking every minute, and never trains on CPU.
+
+**Correction: the earlier ~15 h projection underestimated generating fantasies.**
+- **Measured on pilot seeds, one core** (under load):
+
+  | Fantasy type | Draws per accepted system | Time per accepted system |
+  |---|---|---|
+  | Three variables, size prior | about 50 | about 330 s |
+  | Two variables, size prior (the control's) | about 14 | about 63 s |
+
+  The earlier projection used Stage 1's usage-shaped two-variable rate, about 14 s per accepted fantasy.
+- **Corrected projection:**
+
+  | Item | Estimate |
+  |---|---|
+  | Histories' fantasies | about 1 h |
+  | Two control bases (about 4,700 fantasies each, to match the continued network's example counts) | 5–7 h |
+  | New-domain dreams (30 × 100 fantasies, mostly three-variable) | 5–10 h |
+  | Control extensions | about 3 h |
+  | Searches | about 7 h |
+  | GPU training | about 3.5 h |
+  | **Compute total** | **about 25–30 h** |
+  | Waiting for GPU windows, at the observed contention | up to about 15 h |
+
+- **Likely total: 1–2 days. Over the 1.5-day limit in the likely case**, so the owner's rule calls for a check-in.
+- Nothing of the real run has started.
