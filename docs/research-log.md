@@ -5760,3 +5760,16 @@ Check in with all three before Stage A."*
 **Uniform baseline on circuits' tests:**
 - 74 of 80 equations solved (62 with the true structure); 34 of 40 systems.
 - **Bar (d) has a ceiling on circuits.** It counts equations solved, and uniform already solves 74 of 80. So the continued network can beat a fresh one by at most 7.5 points there, short of the +10 required, whatever it learns. The speed and new-form numbers will be reported beside it.
+
+**Ecology uniform baseline and zero-shot on circuits (7 November, 00:05).**
+- **Uniform on ecology's tests:** 20 of 80 equations solved; 3 with the true structure's keys; 4 of 40 systems.
+- **Zero-shot** (the network after mechanics, no circuits training, on circuits' tests): 79 of 80 equations solved (66 true), 39 of 40 systems. Uniform: 74 (62), 34.
+
+**Why "true structure" undercounts on ecology** (checked on development systems only, `g1_imposters_dev`).
+- Populations are positive, so |x| = x on the data and everywhere the system goes. Structures written with |x| are therefore exactly the true functions:
+  - x₂·|x₁| = x₁x₂;
+  - |x₁|·|x₂| = x₁x₂;
+  - x₁·|x₁| = x₁².
+- One development system solved this way passed the external test: one-step error 2.3 × 10⁻¹⁵, multi-step envelope passed.
+- A second case is a reparametrization: x₂·(K0 + x₁)^K1 with K1 = −1 spans the same pair of terms as the Holling term with x₂.
+- **Consequence:** the vocabulary's terms are distinct over all signs, but some coincide on positive data. The bars' measure (equations solved, plausibly exact) and the whole-system external test are the right judges. The "true structure" count is a lower bound.
