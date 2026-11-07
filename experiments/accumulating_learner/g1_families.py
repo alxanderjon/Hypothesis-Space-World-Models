@@ -2,13 +2,13 @@
 # (research log, Stage 1 rules, section 4): for random values of one term's constants, the other's constants can be
 # fitted to reproduce its values exactly (relative 1e-9), up to a scale, on random points; tested both ways.
 # Candidate pairs come from nearest neighbours among normalized columns on a constant grid.
-# Usage (from experiments/accumulating_learner): g1_families.py <vocab.json (from g1_vocab.py)> <workers> <out.json>
+# Usage (from experiments/accumulating_learner): g1_families.py <vocab.json (from g1_vocab.py)> <workers> <out.json> [d]
 import json, math, sys, time
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import get_context
 import numpy as np
 sys.path.insert(0, "/home/alex/Hypothesis-Space-World-Models/experiments/accumulating_learner")
-D = 2
+D = int(sys.argv[4]) if len(sys.argv) > 4 else 2
 
 
 def grid(k):

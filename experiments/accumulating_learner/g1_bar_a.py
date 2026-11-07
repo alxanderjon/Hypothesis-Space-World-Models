@@ -1,6 +1,6 @@
 """Stage 1 of the general learner, bar (a) (research log, 6 November 20:30): the generic fitter on each stored system's
 true structures (fitter_g1.evaluate_structure per equation), with a time limit per system. Checks each system's burst
-hash. Writes per-system records (no structures or constants) and prints counts only. Usage: g1_bar_a.py <workers> <set>"""
+hash. Writes per-system records (no structures or constants) and prints counts only. Usage: g1_bar_a.py <workers> <set> [domain ...]"""
 import hashlib
 import json
 import signal
@@ -64,18 +64,18 @@ def job(rec):
 if __name__ == "__main__":
     workers, which = int(sys.argv[1]), sys.argv[2]
     OUT.mkdir(parents=True, exist_ok=True)
-    doms = ("mechanics", "circuits", "ecology")
+    doms = tuple(sys.argv[3:]) or ("mechanics", "circuits", "ecology")
     recs = [r for d in doms for r in json.loads((SYS / f"{which}_{d}.json").read_text()) if r["status"] == "accepted"]
     with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:
         res = list(ex.map(job, recs))
-    (OUT / f"{which}.json").write_text(json.dumps(res, default=float))
+    (OUT / (f"{which}.json" if len(sys.argv) <= 3 else f"{which}_{'_'.join(doms)}.json")).write_text(json.dumps(res, default=float))
     for d in doms:
         rs = [r for r in res if r["domain"] == d]
         eqs = [e for r in rs for e in r["equations"]]
         secs = sorted(r["seconds"] for r in rs)
         print(f"{which} {d}: equations exact {sum(e['exact'] for e in eqs)} of {sum(1 for r in rs for _ in r['equations'])} "
               f"(with constants inside terms: {sum(e['exact'] for e in eqs if e['with_constants'])} of "
-              f"{sum(1 for e in eqs if e['with_constants'])}); systems with both equations exact "
+              f"{sum(1 for e in eqs if e['with_constants'])}); systems with every equation exact "
               f"{sum(1 for r in rs if r['status'] == 'done' and all(e['exact'] for e in r['equations']))} of {len(rs)}; "
               f"time per system median {secs[len(secs) // 2]:.1f}s, max {secs[-1]:.1f}s; time-limit hits "
               f"{sum(r['status'] == 'time limit' for r in rs)}; errors {sum(r['status'] == 'error' for r in rs)}; "

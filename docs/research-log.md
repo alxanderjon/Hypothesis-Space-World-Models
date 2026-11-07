@@ -6071,3 +6071,53 @@ Check in with all three before Stage A."*
 
 - Everything else is as written above.
 - **Check-in:** after (a′), before any history or control is built.
+
+### Stage 2a: three-variable vocabulary, generators and one acceptance correction (7 November, 08:00; fixed before any Stage 2a task is drawn)
+
+**Vocabulary for three variables** (`g1_vocab.py 3`, `g1_families.py … 3`, `g1_scale_closed.py 20 3`).
+- **Counts:**
+  - 84,283 trees give 36,264 canonical forms;
+  - 1,311 constant-free terms are merged numerically;
+  - 466 families are merged by the fitting test, out of 42,957 candidate pairs;
+  - 268 are dropped as undefined or constant.
+- **L1 for three variables: 34,220 terms.** By number of constants: 24,993 without, 8,162 with one, 1,065 with two.
+- **Search vocabulary (rescaling-invariant): 2,494 terms.**
+- **Merged true keys:** a generated true term whose key was merged into an equivalent family takes the family's representative. In Stage 1 no true key was merged (0 of 13 distinct keys), so stored systems are unchanged.
+
+**Code made dimension-agnostic.**
+- **Fitter:** terms compile for up to three variables. Rerunning Stage 1's development bar (a) gave bitwise-identical results: 60 of 60 equations, same errors.
+- **Search vocabulary** per dimension.
+- **Generators** for two or three variables: Stage 1's forms are unchanged and their stored sets are reused.
+
+**Generators as approved** (`domains_g1.py`).
+- **Chemistry:** six forms.
+- **Chaotic flows:** jerk and random sparse quadratic.
+- Constant ranges are fixed in the code. The largest Lyapunov exponent (Benettin method) is reported for every accepted system.
+
+**Acceptance correction for all new draws** (found on pilot seeds "g2-pilot-*", never used again).
+- **The problem:** Stage 1's rule required a true non-polynomial term to differ by at least 10⁻⁶ from every cubic polynomial in all the variables. With three variables those are 20 monomials on 30 rate points, which mimic almost any smooth term.
+- **Pilot evidence (Goodwin and Michaelis–Menten terms):** 23 of 45 clearly nonlinear terms had residuals near 10⁻⁹ under the all-variable rule. Against cubics in the term's own variables, all 45 had residuals of 5 × 10⁻⁶ to 10⁻³.
+- **Effect on the mix:** Goodwin systems were accepted 2 of 20 times and three-step pathways 0 of 6. Replacement seeds redraw the form, so these forms would nearly vanish from the domain.
+- **New rule:** **the comparison uses cubic polynomials in the term's own variables.** Stage 1's stored sets stay as drawn.
+
+**Pilot after the correction** (pilot seeds; counts).
+
+| Form | Accepted | Known-structure equations exact |
+|---|---|---|
+| Brusselator | 23 of 26 | 46 of 46 |
+| Goodwin | 18 of 20 | 54 of 54 |
+| Mass-action | 16 of 17 | 48 of 48 |
+| Michaelis–Menten (2 steps) | 15 of 17 | 30 of 30 |
+| Michaelis–Menten (3 steps) | 5 of 6 | 11 of 15 |
+| Oregonator-like | 18 of 18 | 54 of 54 |
+| Selkov | 16 of 16 | 32 of 32 |
+| Jerk | 59 of 60 | 177 of 177 |
+| Sparse quadratic | 45 of 60 | 135 of 135 |
+
+- The three-step pathway's misses have two rational terms in one equation.
+- **Chaos:** 18 of the 104 accepted chaotic-flow pilot systems have a largest Lyapunov exponent above 0.01.
+
+**Draws next** (`g2_draw.py`, seeds "g2-{set}-{domain}-k"):
+- 100 training tasks, 10 development and 40 test systems per new domain, stored with hashes;
+- then the shared-form classification (`g2_shared.py`, every relabelling, per position and order);
+- then bar (a′) and the check-in.

@@ -35,7 +35,7 @@ import practice_net as PN
 import structure_search as SS
 
 COLLAPSE_EXACT = 1e-10       # a fitted term this close to a cubic polynomial over the data is degenerate (exactly so)
-D_DEFAULT = 2
+D_DEFAULT = 3                  # terms compile for up to three variables; a system with fewer leaves the rest unused
 
 
 # ---------------------------------------------------------------------------------------------------------------------

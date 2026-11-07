@@ -29,23 +29,22 @@ MAX_TERMS = 6
 FIT_ERRORS = (RuntimeError, ValueError, TypeError, ZeroDivisionError, IndexError, FloatingPointError, OverflowError)
 WEIGHTS = {"add": 0.45, "remove": 0.15, "swap": 0.40}
 VOCAB_PATH = Path(__file__).resolve().parents[2] / "outputs/accumulating_learner/g1/vocab_d2.json"
-_ORDER = None
 
 
-CLOSED_PATH = VOCAB_PATH.parent / "scale_closed_d2.json"
+G1_DIR = VOCAB_PATH.parent
+_ORDERS = {}
 
 
-def vocabulary_order():
-    """The search's vocabulary in the search's order (fewest nodes, then fewest constants, then the key): the terms
-    that keep their canonical form when the variables are rescaled (g1_scale_closed.py). The learner's coordinates are
-    the physical ones divided by scales from the data, so only these can be exact; a term like sin(x1) is the K0 = 1
-    member of sin(K0 x1), which is kept (research log, 6 November)."""
-    global _ORDER
-    if _ORDER is None:
-        V = json.loads(VOCAB_PATH.read_text())["terms"]
-        closed = set(json.loads(CLOSED_PATH.read_text()))
-        _ORDER = sorted([k for k in V if k in closed], key=lambda k: (V[k]["nodes"], V[k]["consts"], len(k), k))
-    return _ORDER
+def vocabulary_order(d=2):
+    """The search's vocabulary for d variables in the search's order (fewest nodes, then fewest constants, then the
+    key): the terms that keep their canonical form when the variables are rescaled (g1_scale_closed.py). The learner's
+    coordinates are the physical ones divided by scales from the data, so only these can be exact; a term like sin(x1)
+    is the K0 = 1 member of sin(K0 x1), which is kept (research log, 6 November)."""
+    if d not in _ORDERS:
+        V = json.loads((G1_DIR / f"vocab_d{d}.json").read_text())["terms"]
+        closed = set(json.loads((G1_DIR / f"scale_closed_d{d}.json").read_text()))
+        _ORDERS[d] = sorted([k for k in V if k in closed], key=lambda k: (V[k]["nodes"], V[k]["consts"], len(k), k))
+    return _ORDERS[d]
 
 
 class SystemVocab:
@@ -53,7 +52,7 @@ class SystemVocab:
     the global order, with their grid columns (bank) and the normalized columns for the data evidence."""
 
     def __init__(self, W, order=None):
-        order = order or vocabulary_order()
+        order = order or vocabulary_order(W.shape[1])
         self.global_index = {k: g for g, k in enumerate(order)}
         self.bank = FG.Bank(order, W)
         self.keys = [k for k in order if k in self.bank.bank]
