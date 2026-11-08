@@ -6853,3 +6853,60 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 3. **The gate to Stage 2b stays closed.**
    - The one result beyond the control (reaction networks after flows, +17.4 points) holds in one order only.
    - It would be worth re-testing on new seeds once the slowdown is understood.
+
+### Stage 2a′′: owner's decision on next steps (8 November)
+
+**Owner.** *"Run both: the direct shortlist check, then the development-only slowdown pilot. For the slowdown pilot: 1. First fix to test: a focus-then-consolidate schedule. When a new domain starts, train 100% on it (focus phase) until its learning curve flattens, then run a consolidation phase with shuffled review of all domains, and check retention after consolidation. Compare the experienced network in the focus phase against the fresh network at equal exposure: if it still learns slower, that's loss of plasticity; if it keeps its head start, the slowdown was review time. Apply the same schedule to the control. 2. Networks with earlier training learning new domains more slowly than a fresh network is a known problem (loss of plasticity). Search the literature for fixes that have worked (e.g. resetting little-used units, shrink-and-perturb, regularizing toward initial weights) and for schedules like focus-then-consolidate, and include the most promising alongside longer training rounds and a wider shortlist. 3. Don't use a separate scoring layer per domain: the learner won't be told which domain a system comes from. Test one fix at a time, judged by the gap to the fresh network after 30 tasks. Report the literature findings in plain language, and check in before any claim run."*
+
+**The direct shortlist check** (approved).
+- **Rerun:** the 10-task tests of the continued network and the control, in both domains and orders, with every term of the search vocabulary attended (shortlist = 4,683). The fresh network's 10-task test is rerun the same way, as context.
+- **Unchanged:** the networks, test systems and search seeds. Only the attended set differs, so each rerun is paired with its original test. The original results are kept.
+- **Reported:** bar (B) recomputed next to the run's.
+
+### Loss of plasticity: literature, and the slowdown pilot's design (8 November, 16:50; development systems only, fixed before any pilot run)
+
+**Literature, in plain language.**
+- **The problem is real and well studied.**
+  - Dohare et al. (Nature 2024): networks trained on a long sequence of tasks gradually lose the ability to learn new ones, until they learn no better than a shallow network. A growing share of units stops doing anything useful.
+  - Lyle et al. (CoLLAs 2024): several separate causes contribute, including dead units, units that behave linearly, and large weights. Fixing one cause alone often fails.
+- **Fixes that have worked:**
+  1. **Resetting little-used units.**
+     - *Continual backprop* (Dohare 2024) keeps re-initializing a tiny share of the least useful units as training goes on.
+     - *ReDo* (Sokar et al., ICML 2023) periodically re-initializes "dormant" units: those whose average activity is below τ = 0.1 of their layer's mean. Their incoming weights are redrawn and their outgoing weights set to zero, so the network's output does not jump.
+  2. **Shrink-and-perturb** (Ash & Adams, NeurIPS 2020). Before training on new data, scale all weights down (×0.4) and add a little fresh random initialization (×0.1). Warm-started networks then train like fresh ones without losing what they knew.
+  3. **Regularizing toward the initial weights: L2 Init** (Kumar et al., 2023). A penalty λ‖θ − θ₀‖² pulls the weights toward their own random initialization rather than toward zero. λ = 10⁻² was the usual choice with Adam. It is the most consistent of the methods they compared, about as good as continual backprop.
+  4. **Layer normalization with weight decay** (Lyle 2024): the most robust single combination in their study. **Our network already has both** (pre-norm transformer layers, AdamW with weight decay 0.01).
+- **Schedules like focus-then-consolidate:**
+  - *Progress & Compress* (Schwarz et al., ICML 2018) alternates a "progress" phase, where new tasks are learned freely, with a "compress" phase that consolidates them into a lasting knowledge base. It uses distillation rather than replay.
+  - *Hare & Tortoise* (Lee et al., 2024) pairs a fast network for new learning with a slow, consolidating one, and periodically resets the fast one to the slow one.
+  - *Wake–sleep consolidated learning* (2023) and sleep-like replay (Tadros et al., Nature Comm. 2022) consolidate in separate phases.
+  - The *stability gap* (De Lange et al., ICLR 2023): when a new task starts, performance on old tasks dips sharply and then recovers. This is a reason to check retention after consolidation, not during the focus phase.
+
+**The pilot** (owner, 8 November; development systems only; one fix at a time; judged by the gap to the fresh network after 30 tasks).
+- **Testbed:**
+  - Nonlinear flows at level 1 in 4th position, after order 2's history (ecology, circuits, mechanics), where the slowdown was largest.
+  - Same 100 training tasks (the first 30 used), the 40 development systems (159 new-form equations), and the claim run's budget (300 structures, 60 thorough fits) and dream sizes (100 fantasies, 500 steps).
+  - Tests after 10 and 30 tasks.
+- **Measure:** the fresh network minus the experienced network, new-form development equations, at 30 tasks (and 10), with paired sign tests.
+  - Baseline: the claim run's balanced schedule, testing its networks on the development systems.
+  - The fresh network's first 30 tasks are those of the saturation check.
+- **Fixes, in order:**
+  1. **Focus-then-consolidate** (owner's).
+     - **Focus:** while a new domain is learned, each dream trains only on the new domain (its verified solutions so far and this dream's fantasies). This is exactly the fresh network's recipe, so the comparison is at equal exposure. In the pilot the focus phase covers tasks 1–30, where the fresh network's curve is still rising.
+     - **Consolidation** after the focus phase: one dream of 1,000 steps on all domains' verified solutions, shuffled together (sampled in proportion to their numbers).
+     - **Checked:**
+       - retention on the development systems of mechanics, circuits and ecology (budget 1,000), against the history network;
+       - the new domain's development score after consolidation.
+     - **Reading:** if the experienced network still learns more slowly than the fresh network in the focus phase, that is loss of plasticity; if it keeps its head start, the slowdown was review time.
+     - **The control runs the same schedule.** Its consolidation reviews its own earlier made-up examples, as many as the continued network's history replays.
+  2. **Shrink-and-perturb** once, just before the first new-domain dream: θ ← 0.4·θ + 0.1·θ_fresh (Ash & Adams's values). Then the balanced schedule.
+  3. **L2 Init** in every new-domain dream: penalty λ‖θ − θ₀‖² with λ = 10⁻² (Kumar et al.'s usual value). θ₀ is the network's own initial weights, rebuilt from the same seed. Balanced schedule.
+  4. **ReDo** before every new-domain dream: τ = 0.1; dormancy measured on 512 of the dream's examples; incoming weights redrawn, outgoing set to zero. Balanced schedule.
+  5. **Longer training rounds:** 1,000 steps per new-domain dream instead of 500. Balanced; applied to the fresh network too, for a fair gap.
+  6. **Wider shortlist:** 2,048 attended terms in training and search. Balanced; applied to the fresh network too.
+- **Rules:**
+  - The learner is never told the domain: no per-domain parameters.
+  - The first wake of each fix (tasks 1–10) uses the unchanged history network, so it is the claim run's wake. Fixes act from the first dream on.
+  - The control is run only with fix 1 (owner's instruction). The fix chosen for a claim run would apply to every arm.
+  - **The best fix is confirmed on reaction networks (4th, after order 1's history) before the check-in.**
+  - No test system is used.
