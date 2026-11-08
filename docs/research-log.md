@@ -6544,3 +6544,83 @@ Term overlap does not single out the wins (provenance base rates near 100%). The
 6. **Cost:** about 5–6 h on 24 workers and one GPU, plus any GPU waits.
 
 - **If (B) still fails:** in these domains the made-up-systems control explains in-domain transfer. The next step would be harder domains, where the fresh network does not saturate within 30 tasks.
+
+### Stage 2a′′ proposal: harder new domains (8 November, 04:15; awaiting owner approval, nothing run)
+
+**Owner.** *"Skip Stage 2a′ as a separate run. The domains saturate within 30 tasks, so we need harder data to see whether anything is really being learned. Propose a harder Stage 2a′′ instead: 1. Harder new domains: more variables, more terms per equation, and more terms with constants inside, so that a fresh network does not solve most of them quickly. Pre-register a saturation check on development systems: a fresh network must stay below about 60% of new-form equations after 30 tasks; if not, make the domain harder before any test. 2. Before any learning, run the fitter test on true structures for the harder domains. If the fitter can't fit them, stop and report, since harder equations may hit the multi-piece fitting limit seen earlier. 3. Keep the fairness fixes from your 2a′ proposal: the control reviews its own earlier training as much as the real-trained network reviews real domains, and both spend half of each round on the newest domain. 4. Fresh test systems for the claim, with the same bars and gate. Send the plain-language proposal before running anything."*
+
+#### 1. Two harder new domains, four variables each
+
+The generator code is fixed before any draw.
+
+- **Reaction networks** (four species, positive):
+  - A random network of reactions drawn from seven kinds:
+    - constant inflow; decay; conversion x_i → x_j; mass action x_i + x_j → x_k;
+    - Michaelis–Menten conversion V·x_i/(K + x_i);
+    - activation of a species' production by x_j, V·x_j²/(K + x_j²);
+    - repression of a species' production by x_j, V/(K + x_j²).
+  - Each reaction's rate enters the equations of the species it consumes and produces.
+- **Nonlinear flows** (four variables, signs free):
+  - Every equation has a self-damping term −a·x_i.
+  - The other terms are drawn from linear, quadratic and cubic monomials and two bounded rational terms with a constant inside, x_j/(K + x_j²) and 1/(K + x_j²).
+- **Why these constant-bearing terms:** they are rational, the kind the fitter handled in Stage 2a (21 of 22 chemistry test equations with constants inside, exact).
+- **Acceptance** as in Stage 2a (build, reference-cost rule, the own-variable cubic check), plus: every variable appears in the system.
+
+#### 2. A difficulty ladder (both domains)
+
+| Level | Terms per equation | Terms with a constant inside, per system | At most per equation |
+|---|---|---|---|
+| 1 | 3–4 | 2–3 | 1 |
+| 2 | 4–5 | 3–4 | 1 |
+| 3 | 5–6 | 4–6 | 2 |
+
+- Start at level 1.
+- Two constant-bearing terms in one equation are allowed only at level 3. Earlier, two rational terms in one equation were the fitter's weak point: 11 of 15 for the three-step pathway in the Stage 2a pilot.
+
+#### 3. Build
+
+- **Four-variable vocabulary.** The L1 rules are unchanged: at most 7 nodes and 2 constants per term, with family merging and the rescaling-invariant search set. The vocabulary is probably 2–2.5× the three-variable one.
+- **Four variables in the fitter, generators, relabelling and shared-form rule.** Check: Stage 2a's development bar (a′) is reproduced bitwise, as for the three-variable extension.
+- **Network: a fourth variable role ("other3"), appended.**
+  - The histories and control bases of Stage 2a are reused. In every reused network the new role starts as the mean of "other1" and "other2"; nothing else changes.
+  - Their behaviour on two and three variables is unchanged, so the retention baselines stay valid.
+- **The fairness fixes** (from the 2a′ proposal):
+  - **Rehearsal-matched control.** In every dream after its base (the extension and the new-domain dreams), the control also replays its own earlier made-up examples, as many per dimension as the continued network replays from earlier domains. They are drawn with a fixed seed from its own earlier fantasy files.
+  - **Balanced dreams.** For the continued network and the control, half of each dream's training batches come from the newest domain's examples (its verified solutions so far and this dream's fantasies), half from everything earlier.
+  - The fresh network has nothing earlier and is unchanged.
+
+#### 4. Checks before any test system exists (development systems only)
+
+- **Systems per domain and level:** 100 training tasks and 40 development systems. Seeds: "g2h-{set}-{domain}-L{level}-k".
+- **(a′′) Fitter on true structures:** at least 80% of development equations exact given the true structure. **If not met: stop and report.**
+- **Saturation check:**
+  - **Procedure:** the fresh network runs a uniform first wake on training tasks 1–10, a dream, a wake on tasks 11–30 and a dream, at Stage 2a's new-domain budget (300 structures, 60 thorough fits). It is then tested on the development systems.
+  - **Requirement:** it solves **under 60%** of new-form development equations (new-form relative to mechanics, circuits and ecology).
+  - **At 60% or more:** go to the next level and repeat (a′′) and this check. If level 3 still saturates, stop and check in.
+  - **Under 15%:** check in before going on. The domain may then be too hard for every arm at this budget.
+- **Development pilot:** timing and projection. Time limits are set from measured timings so they rarely bind. Check in if the run projects over 1.5 days.
+
+#### 5. Then the test systems and the run
+
+- **Test systems:** 40 per domain at the chosen level, with new seeds. New-form is classified per order and position (every relabelling of four variables).
+- **(a′′) on the test equations;** stop if under 80%.
+- **The run, as Stage 2a:**
+  - two orders: mechanics, circuits and ecology, then the two harder domains in either order;
+  - the fresh network's first 30 tasks are reused from the saturation check;
+  - learning curves at 0, 10, 30 and 100 tasks for the continued network, the rehearsal-matched control and the fresh network;
+  - retention at the end of each order.
+
+#### 6. Bars and gate (unchanged from Stage 2a)
+
+- **Validity:** the fresh network at most 70% of new-form test equations at 30 tasks. Otherwise later points are reported only.
+- **(B) at 10 tasks,** in both orders, judged per domain: +10 points new-form against the control and p < 0.05.
+- **Also reported:**
+  - zero-shot as the second measure; (C) against the fresh network; (D) order; (E) retention, at most 2 systems lost;
+  - whole systems exact, the shortlist probe, effort and provenance.
+- **Gate to Stage 2b:** (B) met in at least one harder domain, in both orders.
+
+#### 7. Cost (rough; the pilot gives the projection)
+
+- **Build:** about half a day, of which about 3–4 h is vocabulary computation.
+- **Each ladder level:** about 2–3 h for both domains.
+- **The run:** about 1–1.5 days. Four-variable searches over more terms cost several times Stage 2a's.
