@@ -6918,3 +6918,21 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 - **Dormant units (a plasticity-loss sign):** on four-variable flow examples, the history network's main transformer has many dormant units (score ≤ 0.1 of the layer mean). In its three feed-forward layers that is 133, 174 and 278 of 512 units (26%, 34%, 54%). The term encoder and the scorer's and input projection's layers have none.
 - **L2 Init will act far from its usual regime.** The history network's squared distance from its initialization is 951, so at the registered λ = 10⁻² the penalty starts at 9.5. That is larger than the training loss (about 1–6). The method is meant to be used from the start of training, where the penalty starts at 0. The registered value is kept, and the outcome is reported as it is.
 - **Timing:** the shortlist check's full-attention tests take about 3–4× as long as the originals (attention over 4,683 terms). The check needs about 2.5–3.5 h; the pilot starts after it.
+
+**The direct shortlist check, order 1** (`g2h_fullcheck.py`; 10-task tests rerun with every term attended; same networks, test systems and seeds; counts only). Valid: no time-limit hits.
+
+| Domain, order 1 | Shortlist 768 (the run) | Every term attended |
+|---|---|---|
+| Reaction networks | continued 50, control 50 of 158 new-form; (B) +0.0 | continued 50, control 41; (B) **+5.7**, 15 / 6, p = 0.078: not met |
+| Nonlinear flows | continued 24, control 34 of 102; (B) −9.8, p = 0.013 | continued 25, control 26; (B) **−1.0**, 8 / 9, p = 1: not met |
+
+- **The continued network is unaffected by the shortlist.** Solved only with every term / only with the shortlist: 4 / 4 (reaction networks) and 4 / 3 (flows).
+- **The shortlist helped the control.** With every term attended it loses equations: 4 gained against 13 lost (p = 0.049) on reaction networks, and 0 against 8 (p = 0.008) on flows.
+- **Conclusion, order 1:** the shortlist's cuts do not explain bar (B)'s failure. Attending every term does not bring the continued network to the bar. The gap moves toward it only because the control does worse without its shortlist.
+
+**Order 2's reruns are not valid yet.**
+- **What went wrong:** under heavy machine load (another user's jobs, plus the pilot alongside), full-attention searches ran past the 3,600 s limit per equation:
+  - order 2 flows: 6 (continued) and 15 (control) equations stopped;
+  - order 2 reaction networks: 56 (continued).
+- **What was done:** the check was stopped before the control's reaction-network rerun. All four order-2 tests will be rerun with the limit raised to 4 h per equation (`G2H_TIME_CAP=14400`), under a new suffix.
+- **Why raising the limit is sound:** the limit is a safety limit. The original shortlist tests never reached it, so raising it keeps the comparison about the attended set.

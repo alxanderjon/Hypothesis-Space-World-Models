@@ -27,8 +27,12 @@ if __name__ == "__main__":
     if os.environ.get("G2H_CHECK_FRESH", "1") == "1":            # context only; skipped when the check runs long
         for dom in C.domains(level):
             nets[(0, dom, "fresh")] = (str(C.RUN / "nets" / f"fresh_{dom}_{dom}_d10"), f"fresh_{dom}_t10full")
+    suffix = os.environ.get("G2H_CHECK_SUFFIX", "")              # reruns of time-capped tests (raised time cap)
+    only = set(os.environ.get("G2H_CHECK_ONLY", "").split(",")) - {""}
     for (o, dom, arm), (net, label) in nets.items():
-        D.test(net, dom, label, *C.NEWB)
+        if only and label not in only:
+            continue
+        D.test(net, dom, label + suffix, *C.NEWB)
     shared = json.loads((C.SYS / f"shared_forms_g2h_L{level}.json").read_text())
     for o in (1, 2):
         for dom in O[o][3:]:
