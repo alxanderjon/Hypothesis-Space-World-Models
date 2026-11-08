@@ -154,7 +154,8 @@ class NetworkPrior:
     """search_g1 prior from the network (CPU inference). emb[d]: (V_d, d, d_model) encodings of the search vocabulary
     for d variables (encode_vocabulary). Probe counts (missing true terms outside the attended set) in .probe."""
 
-    def __init__(self, net, emb):
+    def __init__(self, net, emb, shortlist=None):
+        self.shortlist = SHORTLIST if shortlist is None else int(shortlist)   # attended terms (Stage 2a'' check: all)
         self.net = net.eval()
         self.emb = {d: torch.as_tensor(e, dtype=torch.float32) for d, e in emb.items()}
         self.seconds, self.calls = 0.0, 0
@@ -177,7 +178,7 @@ class NetworkPrior:
         with torch.no_grad():
             s0 = self.net.score(E, Ft, stt).double().numpy()
             s0[inS] = -np.inf
-            n_short = min(SHORTLIST, V - len(idx))
+            n_short = min(self.shortlist, V - len(idx))
             short = np.argpartition(-s0, n_short - 1)[:n_short] if n_short > 0 else np.zeros(0, dtype=np.int64)
             att = np.concatenate([np.asarray(idx, dtype=np.int64), short])
             n_rest = V - len(att)
@@ -300,7 +301,8 @@ def loss_fn(net, batch, tables):
                                      "true_add_in_shortlist": float(in_short)}
 
 
-def train(net, examples, tables_np, steps, batch=32, lr=3e-4, device="cpu", seed=0, log_every=200, groups=None, share=0.5):
+def train(net, examples, tables_np, steps, batch=32, lr=3e-4, device="cpu", seed=0, log_every=200, groups=None, share=0.5,
+          penalty=None):
     """Train further for `steps` steps; every batch is drawn from examples of one dimension (in proportion to their
     numbers). Non-finite steps are skipped and counted. Balanced dreams (Stage 2a''): with `groups` (per example, 1 for
     the newest domain's examples, 0 for everything earlier) a batch comes from group 1 with probability `share` (from
@@ -330,6 +332,8 @@ def train(net, examples, tables_np, steps, batch=32, lr=3e-4, device="cpu", seed
         pool = by_g[g][d]
         pick = rng.choice(len(pool), size=min(batch, len(pool)), replace=False)
         loss, parts = loss_fn(net, collate([examples[pool[k]] for k in pick], device), tables)
+        if penalty is not None:                                  # e.g. L2 Init (slowdown pilot, Stage 2a'')
+            loss = loss + penalty(net)
         opt.zero_grad()
         if not bool(torch.isfinite(loss)):
             skipped += 1

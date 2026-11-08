@@ -6910,3 +6910,11 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - The control is run only with fix 1 (owner's instruction). The fix chosen for a claim run would apply to every arm.
   - **The best fix is confirmed on reaction networks (4th, after order 1's history) before the check-in.**
   - No test system is used.
+
+**Pilot code checks** (`g2h_pilot.py`; before any pilot run).
+- **The fixes' functions were tested on the order 2 history network and a flows fantasy file.**
+  - Rebuilding the initial weights is deterministic and matches every parameter's shape.
+  - ReDo runs; a dtype bug was found and fixed.
+- **Dormant units (a plasticity-loss sign):** on four-variable flow examples, the history network's main transformer has many dormant units (score ≤ 0.1 of the layer mean). In its three feed-forward layers that is 133, 174 and 278 of 512 units (26%, 34%, 54%). The term encoder and the scorer's and input projection's layers have none.
+- **L2 Init will act far from its usual regime.** The history network's squared distance from its initialization is 951, so at the registered λ = 10⁻² the penalty starts at 9.5. That is larger than the training loss (about 1–6). The method is meant to be used from the start of training, where the penalty starts at 0. The registered value is kept, and the outcome is reported as it is.
+- **Timing:** the shortlist check's full-attention tests take about 3–4× as long as the originals (attention over 4,683 terms). The check needs about 2.5–3.5 h; the pilot starts after it.

@@ -88,7 +88,7 @@ def _prior(path):
         net = MN.load_net(path + ".pt")
         _NET[path] = (net.eval(), {d: np.load(f"{path}_d{d}.npy") for d in DIMS if Path(f"{path}_d{d}.npy").exists()})
     net, emb = _NET[path]
-    return MN.NetworkPrior(net, emb)
+    return MN.NetworkPrior(net, emb, shortlist=os.environ.get("G2H_SHORTLIST"))
 
 
 class _Limit(Exception):
