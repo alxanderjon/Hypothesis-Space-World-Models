@@ -6624,3 +6624,7 @@ The generator code is fixed before any draw.
 - **Build:** about half a day, of which about 3–4 h is vocabulary computation.
 - **Each ladder level:** about 2–3 h for both domains.
 - **The run:** about 1–1.5 days. Four-variable searches over more terms cost several times Stage 2a's.
+
+### Stage 2a′′: owner approval (8 November)
+
+**Owner.** *"Approved. Check in once the ladder has settled on a level, with that level's fitter and saturation numbers and the timing projection, before starting the claim run."*
