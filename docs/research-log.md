@@ -6837,3 +6837,19 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   2. **Its persistence to 10 tasks when reaction networks follow flows:** +17.4 points. Both arms had then seen four-variable systems, real for one and made-up for the other.
 - **Flows show neither.**
 - **Negative transfer:** the networks with earlier training learn flows more slowly than a fresh network, even with balanced dreams. At 30–100 tasks the continued network is 13–21 points behind it, and the control behind too.
+
+#### Proposed next steps (awaiting the owner's approval; nothing run)
+
+1. **Close the shortlist question directly** (about 1–1.5 h).
+   - Rerun the 10-task tests of the continued network and the control, in both domains and orders, with all 4,683 terms attended. The networks and test systems are unchanged.
+   - Bar (B) is recomputed and reported next to the run's.
+2. **Then the main problem: learning slows with experience.**
+   - Networks with earlier training learn flows 13–21 points more slowly than a fresh network at 30–100 tasks. The continued network is worst, and balanced dreams do not cure it. A learner that learns new domains more slowly than from scratch cannot show accumulation.
+   - **Proposal:** a development-systems-only pilot (the saturation-check protocol, 30 tasks). It measures the gap to the fresh network under up to three remedies, applied identically to every arm with earlier training:
+     - longer dreams on the new domain (1,000 steps, half new-domain batches);
+     - a fresh per-term scorer at each new domain, keeping the term encoder;
+     - a wider shortlist (2,048 terms).
+   - The best remedy would then be proposed for a claim run under the same bars, with fresh test systems.
+3. **The gate to Stage 2b stays closed.**
+   - The one result beyond the control (reaction networks after flows, +17.4 points) holds in one order only.
+   - It would be worth re-testing on new seeds once the slowdown is understood.
