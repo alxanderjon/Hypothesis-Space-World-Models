@@ -6725,3 +6725,24 @@ The generator code is fixed before any draw.
 - The dry run once trained on the CPU, when no GPU was free at that instant; it allows this. The claim run never does: it waits and re-checks every minute.
 
 **Check-in with the owner before the claim run** (owner's instruction).
+
+### Stage 2a′′: owner's go-ahead for the claim run (8 November)
+
+**Owner.** *"Start the claim run. In the results, report the shortlist's cut rate separately for each arm and domain. If bar B fails, include an assessment of whether the shortlist cuts could explain it, before proposing next steps."*
+
+- **Added before the run, for that assessment:** the shortlist probe now also counts per equation (expansions, expansions with a missing true term, cuts, and the same at the root). It is still counting only and never influences the search, so search results are unchanged.
+
+**Test systems** (`g2h_draw.py 24 1 test`, seeds "g2h-test-{domain}-k"; counts only).
+- 40 per domain, all accepted. Rejected draws: 6 (reaction networks), 8 (flows).
+- **(a′′) on the test equations: MET.** Reaction networks 160 of 160, 117 of 117 with constants inside. Nonlinear flows 160 of 160, 107 of 107. All 80 systems exact.
+- **New-form test equations** (`g2h_shared.py 1 test`):
+
+| Order | Domain (position) | New-form | Shared-form systems |
+|---|---|---|---|
+| 1 | Reaction networks (4th, after M, C, E) | 158 of 160 | 0 of 40 |
+| 1 | Nonlinear flows (5th, after M, C, E, R) | 102 of 160 | 0 of 40 |
+| 2 | Nonlinear flows (4th, after E, C, M) | 157 of 160 | 0 of 40 |
+| 2 | Reaction networks (5th, after E, C, M, F) | 92 of 160 | 2 of 40 |
+
+- In 5th position the two harder domains share many four-variable forms with each other: self-damping, linear and product terms.
+- **The claim run starts now** (`cycles_g2h.py 24 run 1`; both orders). The dry-run folder is deleted.

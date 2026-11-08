@@ -125,6 +125,7 @@ def search_job(args):
                                      "fit_errors": ef.get("fit_errors", 0)})
         out["network_seconds"] = getattr(prior, "seconds", 0.0)
         out["probe"] = getattr(prior, "probe", None)
+        out["probe_eq"] = getattr(prior, "probe_eq", None)
     except _Limit:
         out["status"] = "safety limit"
     except Exception as ex:

@@ -159,6 +159,7 @@ class NetworkPrior:
         self.emb = {d: torch.as_tensor(e, dtype=torch.float32) for d, e in emb.items()}
         self.seconds, self.calls = 0.0, 0
         self.probe = {"expansions": 0, "with_missing_true": 0, "cut": 0, "root_with_missing_true": 0, "root_cut": 0}
+        self.probe_eq = {}                                       # the same counts per equation (Stage 2a'')
         self._g0 = {}
 
     def __call__(self, node, ctx):
@@ -187,17 +188,21 @@ class NetworkPrior:
         add[short] = a[len(idx):]
         prior = SG.Prior(V, node["idx"], add, r[:len(idx)])
         probe = ctx.get("probe")                               # counting only: never used by the search
+        pe = self.probe_eq.setdefault(int(i), {"expansions": 0, "with_missing_true": 0, "cut": 0, "root_with_missing_true": 0,
+                                               "root_cut": 0})
         if probe:
             missing = [t for t in probe if t not in set(idx)]
             if missing:
                 attended = set(att.tolist())
                 cut = any(t not in attended for t in missing)
-                self.probe["with_missing_true"] += 1
-                self.probe["cut"] += cut
-                if not idx:
-                    self.probe["root_with_missing_true"] += 1
-                    self.probe["root_cut"] += cut
+                for q in (self.probe, pe):
+                    q["with_missing_true"] += 1
+                    q["cut"] += cut
+                    if not idx:
+                        q["root_with_missing_true"] += 1
+                        q["root_cut"] += cut
         self.probe["expansions"] += 1
+        pe["expansions"] += 1
         self.seconds += time.perf_counter() - t0
         self.calls += 1
         return prior
