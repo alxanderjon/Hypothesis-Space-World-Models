@@ -35,7 +35,7 @@ import practice_net as PN
 import structure_search as SS
 
 COLLAPSE_EXACT = 1e-10       # a fitted term this close to a cubic polynomial over the data is degenerate (exactly so)
-D_DEFAULT = 3                  # terms compile for up to three variables; a system with fewer leaves the rest unused
+D_DEFAULT = 4                  # terms compile for up to four variables (Stage 2a''); a system with fewer leaves the rest unused
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -374,10 +374,11 @@ def heldback_error(terms, coefs, si, i):
 # degenerate terms
 # ---------------------------------------------------------------------------------------------------------------------
 
-def _cubic_residual(col, W):
-    d = W.shape[1]
-    exps = [e for e in itertools.product(range(4), repeat=d) if sum(e) <= 3]
-    A = torch.stack([torch.prod(torch.stack([W[:, j] ** e[j] for j in range(d)]), 0) for e in exps], 1)
+def _cubic_residual(col, W, own=None):
+    """Relative residual of a column against all monomials of degree <= 3 in the variables `own` (all when None)."""
+    own = list(range(W.shape[1])) if own is None else list(own)
+    exps = [e for e in itertools.product(range(4), repeat=len(own)) if sum(e) <= 3]
+    A = torch.stack([torch.prod(torch.stack([W[:, j] ** e[k] for k, j in enumerate(own)]), 0) for e in exps], 1)
     A = A / A.abs().max(0).values.clamp(min=1e-300)
     sol = torch.linalg.lstsq(A, col.reshape(-1, 1), driver="gelsd").solution[:, 0]
     return float((col - A @ sol).norm()) / (float(col.norm()) + 1e-300)
@@ -385,7 +386,9 @@ def _cubic_residual(col, W):
 
 def degenerate(term, W):
     """True if a term with constants is singular on the data (non-finite, or a denominator, log argument or base of a
-    non-integer power reaching zero there), or has collapsed exactly into a cubic polynomial over the data."""
+    non-integer power reaching zero there), or has collapsed exactly into a cubic polynomial over the data in its own
+    variables (Stage 2a'', research log 8 November: with four variables the 35 cubic monomials in all of them exceed
+    the 30 rate points, so every term would match; a term with a constant uses at most three variables)."""
     if term.k == 0:
         return False
     if not all(math.isfinite(v) for v in term.theta):
@@ -403,7 +406,9 @@ def degenerate(term, W):
             vmin, vmax = float(v.min()), float(v.max())
             if vmin <= 0 <= vmax or min(abs(vmin), abs(vmax)) < 1e-9 * max(abs(vmin), abs(vmax), 1e-300):
                 return True
-        return _cubic_residual(col, W) < COLLAPSE_EXACT
+        X = LG.variables(W.shape[1])
+        own = [j for j, x in enumerate(X) if x in inf.expr.free_symbols]
+        return _cubic_residual(col, W, own) < COLLAPSE_EXACT
 
 
 # ---------------------------------------------------------------------------------------------------------------------

@@ -6628,3 +6628,51 @@ The generator code is fixed before any draw.
 ### Stage 2a′′: owner approval (8 November)
 
 **Owner.** *"Approved. Check in once the ladder has settled on a level, with that level's fitter and saturation numbers and the timing projection, before starting the claim run."*
+
+### Stage 2a′′: build, one fitter correction, generator pilot (8 November, 05:55; fixed before any development or test system is drawn)
+
+**Four-variable vocabulary** (`g1_vocab.py 4`, `g1_families.py … 4`, `g1_scale_closed.py 20 4`; 16 minutes).
+- 168,569 trees give 69,947 canonical forms.
+- 2,610 constant-free terms are merged numerically, and 807 families by the fitting test (out of 71,477 candidate pairs).
+- **L1 for four variables: 66,109 terms.** By number of constants: 50,549 without, 13,886 with one, 1,674 with two.
+- **Search vocabulary (rescaling-invariant): 4,683 terms** (three variables: 2,494).
+
+**Code for four variables.**
+- **Fitter** (terms compile for up to four variables), generators, relabelling, the shared-form rule (24 relabellings), fantasies (`dream_g2`) and the network:
+  - the role "other3" is appended to the tokens;
+  - `movenet_g2.load_net` gives a Stage 2a network the new role as the mean of "other1" and "other2";
+  - `train(groups=…)` gives balanced dreams.
+- **Checks:**
+  - Stage 1's and Stage 2a's development bars are reproduced bitwise with four-variable compilation (all fields but time; 30 and 20 systems);
+  - the four-variable symbols extend the three-variable ones;
+  - relabelling gives the same keys as before on 3,600 (three-variable key, permutation) pairs;
+  - no three-variable term uses the new token.
+- **Driver** `cycles_g2h.py` (saturation check and claim run), `g2h_draw.py`, `g2h_shared.py`.
+
+**One fitter correction, found on pilot seeds** ("g2h-pilot-*", never used again).
+- **The problem:** every equation with a constant-bearing term failed on its true structure (0 of 66 at level 1), although its fits were exact (step-integral error about 2.5 × 10⁻¹⁴ against τ = 10⁻⁹).
+- **The cause:** the fitter's degenerate-term check compares a fitted term with all cubic polynomials in all the variables. With four variables that is 35 monomials on the fitter's 30 rate points, so every column is matched exactly. This is not the multi-piece fitting limit.
+- **The correction: the comparison uses cubic polynomials in the term's own variables.** This is the rule Stage 2a adopted for acceptance. A term with a constant uses at most three variables in L1 (seven nodes), so at most 20 monomials.
+- **Effect on earlier results** (rerun, counts only):
+  - Stage 1's development and test bars: unchanged (30 and 120 systems).
+  - Stage 2a's development bar: 2 chemistry equations, exact fits wrongly flagged degenerate, now count as exact (22 → 24 of 24).
+  - Stage 2a's test bar: one equation loses the flag but still fails to fit, so the count is unchanged (100 of 101).
+  - So the old check occasionally rejected exact three-variable structures in Stage 2a. Every arm used the same fitter, so the comparisons stand. Stage 2a's chemistry counts may be slightly low.
+- The stored Stage 1 and Stage 2a bar files are kept as they were.
+
+**Generator pilot** (pilot seeds; 24 systems per domain and level; counts).
+
+| Level | Domain | Accepted (rejected draws) | Terms per equation | True structures exact (with constants inside) | Systems exact |
+|---|---|---|---|---|---|
+| 1 | Reaction networks | 24 (3) | 3–4 | 96 of 96 (66 of 66) | 24 of 24 |
+| 1 | Nonlinear flows | 24 (8) | 3–4 | 96 of 96 (62 of 62) | 24 of 24 |
+| 2 | Reaction networks | 24 (3) | 4–5 | 96 of 96 (88 of 88) | 24 of 24 |
+| 2 | Nonlinear flows | 24 (4) | 4–5 | 96 of 96 (86 of 86) | 24 of 24 |
+| 3 | Reaction networks | 24 (4) | 5–6 | 94 of 96 (82 of 84) | 22 of 24 |
+| 3 | Nonlinear flows | 24 (5) | 5–6 | 95 of 96 (85 of 86) | 23 of 24 |
+
+- Builds take about 1 s per system. Rejections are mostly the cost rule (flows), centred data or a term not visibly nonlinear.
+- A few flows are chaotic: 3, 2 and 1 of 24 have a largest Lyapunov exponent above 0.01.
+- The generators are fixed as they stand.
+
+**Next:** level 1's 100 training tasks and 40 development systems per domain; new-form classification; (a′′) on development equations; then the saturation check.

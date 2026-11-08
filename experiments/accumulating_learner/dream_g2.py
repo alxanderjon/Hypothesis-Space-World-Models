@@ -95,8 +95,8 @@ def make_examples(bursts, structures, seed, M=8, relabel=True):
 def draw_fantasy(seed, order, probs, d):
     """A fantasy system of d variables (domains_g1 format; constants as named parameters)."""
     rng = DG.rng_of(seed)
-    Y = DG.Y3
-    X = LG.variables(3)
+    Y = DG.Y4                                                    # up to four variables (Stage 2a''; the first three are Y3)
+    X = LG.variables(4)
     params, rhs = {}, []
     ic = [float(rng.choice([-1.0, 1.0]) * rng.uniform(0.5, 2.5)) for _ in range(d)]
     for i in range(d):

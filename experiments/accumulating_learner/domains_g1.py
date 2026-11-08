@@ -39,6 +39,8 @@ W = LG.variables(2)                                            # learner coordin
 S = (sp.Symbol("s1", positive=True), sp.Symbol("s2", positive=True))
 W3 = LG.variables(3)                                           # ... and up to three (Stage 2a)
 S3 = tuple(sp.Symbol(f"s{j + 1}", positive=True) for j in range(3))
+W4 = LG.variables(4)                                           # ... and four (Stage 2a''; the first three are W3's)
+S4 = tuple(sp.Symbol(f"s{j + 1}", positive=True) for j in range(4))
 
 
 class Rejected(Exception):
@@ -63,6 +65,7 @@ def pm(rng, lo, hi):
 
 Y = sp.symbols("y0 y1", real=True)
 Y3 = sp.symbols("y0 y1 y2", real=True)
+Y4 = sp.symbols("y0 y1 y2 y3", real=True)                       # the first three are Y3's symbols
 MECH_EXTRAS = ("cubic", "sine", "damping", "cubic_damping", "drag", "vdp_damping")
 
 
@@ -275,7 +278,202 @@ def draw_chaotic(rng):
     return form, rhs, p, [pm(rng, 0.3, 1.5) for _ in range(3)], False
 
 
+# ---------------------------------------------------------------------------------------------------------------------
+# Stage 2a'' (research log, 8 November): two harder domains with four variables, at three difficulty levels. A level
+# fixes the number of terms per equation, the number of terms with a constant inside per system, and how many of those
+# one equation may hold. Reaction networks (positive): every species decays, plus random reactions; nonlinear flows
+# (signs free): every equation has self-damping, plus random terms.
+# ---------------------------------------------------------------------------------------------------------------------
+
+LEVELS = {1: ((3, 4), (2, 3), 1), 2: ((4, 5), (3, 4), 1), 3: ((5, 6), (4, 6), 2)}
+N4 = 4
+
+
+def _connected(sig, n=N4):
+    """Is the coupling graph (i -- j when equation i has a term in variable j) connected?"""
+    adj = {i: set() for i in range(n)}
+    for i, terms in enumerate(sig):
+        for t in terms:
+            for j in t[1:]:
+                if isinstance(j, int) and j != i:
+                    adj[i].add(j); adj[j].add(i)
+    seen, todo = {0}, [0]
+    while todo:
+        for j in adj[todo.pop()] - seen:
+            seen.add(j); todo.append(j)
+    return len(seen) == n
+
+
+def _reaction_effect(r):
+    """(equations touched, term signature) of a reaction; constant-bearing signatures start with 'mm', 'act', 'rep'."""
+    kind, a, b = r
+    if kind == "in":
+        return [a], ("one",)
+    if kind == "conv":
+        return [a, b], ("x", a)
+    if kind == "auto":
+        return [a, b], ("xx", min(a, b), max(a, b))
+    if kind == "dimer":
+        return [a, b], ("xsq", a)
+    if kind == "bind":
+        i, j = a
+        return [i, j, b], ("xx", i, j)
+    if kind == "mm":
+        return [a, b], ("mm", a)
+    return [a], (kind, b)                                        # act / rep: production of X_a regulated by X_b
+
+
+REACTION_PLAIN = ([("in", i, None) for i in range(N4)]
+                  + [(k, i, j) for k in ("conv", "auto", "dimer") for i in range(N4) for j in range(N4) if j != i]
+                  + [("bind", (i, j), k) for i in range(N4) for j in range(i + 1, N4) for k in range(N4) if k not in (i, j)])
+REACTION_CB = [(k, i, j) for k in ("mm", "act", "rep") for i in range(N4) for j in range(N4) if j != i]
+
+
+def draw_reactions(rng, level):
+    """Four species. Every species decays; then constant-bearing reactions (Michaelis-Menten conversion
+    V X_i/(K + X_i); production of X_i activated by X_j, V X_j^2/(K + X_j^2), or repressed by X_j, V/(K + X_j^2)),
+    then mass-action reactions (inflow, conversion, autocatalysis, dimerization, binding) until every equation has the
+    level's number of terms. At most one Michaelis-Menten step per substrate and one reaction per pair of species
+    with a product rate, so no equation holds two different terms with the same form."""
+    (tlo, thi), (clo, chi), cmax = LEVELS[level]
+    x = Y4
+    for _ in range(1000):
+        sig = [{("x", i)} for i in range(N4)]
+        cbq, reactions, mm_sub, pairs = [0] * N4, [], set(), set()
+        want = int(rng.integers(clo, chi + 1))
+        for idx in rng.permutation(len(REACTION_CB)):
+            if len(reactions) == want:
+                break
+            r = REACTION_CB[int(idx)]
+            eqs, s = _reaction_effect(r)
+            if (r[0] == "mm" and r[1] in mm_sub) or any(cbq[e] >= cmax or len(sig[e] | {s}) > thi for e in eqs):
+                continue
+            reactions.append(r)
+            mm_sub |= {r[1]} if r[0] == "mm" else set()
+            for e in eqs:
+                sig[e].add(s); cbq[e] += 1
+        if len(reactions) < want:
+            continue
+        while True:
+            short = [e for e in range(N4) if len(sig[e]) < tlo]
+            if not short and rng.random() < 0.5:
+                break
+            ok = []
+            for r in REACTION_PLAIN:
+                eqs, s = _reaction_effect(r)
+                pair = s[1:] if s[0] == "xx" else None
+                if r in reactions or (pair is not None and pair in pairs):
+                    continue
+                if any(len(sig[e] | {s}) > thi for e in eqs) or not any(s not in sig[e] for e in eqs):
+                    continue
+                if short and not any(e in short and s not in sig[e] for e in eqs):
+                    continue
+                ok.append(r)
+            if not ok:
+                break
+            r = ok[int(rng.integers(0, len(ok)))]
+            eqs, s = _reaction_effect(r)
+            reactions.append(r)
+            if s[0] == "xx":
+                pairs.add(s[1:])
+            for e in eqs:
+                sig[e].add(s)
+        if all(tlo <= len(t) <= thi for t in sig) and _connected(sig):
+            break
+    else:
+        raise Rejected("no reaction network meets the level")
+    p, rhs = {}, [sp.Integer(0)] * N4
+    for i in range(N4):
+        p[f"d{i}"] = logu(rng, 0.1, 1.0); rhs[i] -= sp.Symbol(f"d{i}") * x[i]
+    for n, (kind, a, b) in enumerate(reactions):
+        k = sp.Symbol(f"k{n}")
+        if kind in ("mm", "act", "rep"):
+            p[f"k{n}"], p[f"K{n}"] = logu(rng, 0.5, 3.0), logu(rng, 0.3, 3.0)
+            K = sp.Symbol(f"K{n}")
+            if kind == "mm":
+                rate = k * x[a] / (K + x[a]); rhs[a] -= rate; rhs[b] += rate
+            elif kind == "act":
+                rhs[a] += k * x[b] ** 2 / (K + x[b] ** 2)
+            else:
+                rhs[a] += k / (K + x[b] ** 2)
+            continue
+        p[f"k{n}"] = logu(rng, 0.2, 2.0) if kind == "in" else logu(rng, 0.1, 2.0)
+        if kind == "in":
+            rhs[a] += k
+        elif kind == "conv":
+            rate = k * x[a]; rhs[a] -= rate; rhs[b] += rate
+        elif kind == "auto":
+            rate = k * x[a] * x[b]; rhs[a] -= rate; rhs[b] += rate
+        elif kind == "dimer":
+            rate = k * x[a] ** 2; rhs[a] -= 2 * rate; rhs[b] += rate
+        else:
+            i, j = a
+            rate = k * x[i] * x[j]; rhs[i] -= rate; rhs[j] -= rate; rhs[b] += rate
+    n_cb = sum(1 for r in reactions if r[0] in ("mm", "act", "rep"))
+    return f"reactions_L{level}_cb{n_cb}", rhs, p, [float(rng.uniform(0.5, 2.0)) for _ in range(N4)], True
+
+
+def _flow_terms(i):
+    """Plain terms for equation i of a flow (self-damping excluded): other variables, quadratic monomials, the
+    stabilizing self-cubic, a constant; and the constant-bearing terms x_j/(K + x_j^2), 1/(K + x_j^2)."""
+    plain = [("x", j) for j in range(N4) if j != i] + [("xx", j, k) for j in range(N4) for k in range(j + 1, N4)] \
+        + [("xsq", j) for j in range(N4)] + [("cube", i), ("one",)]
+    cb = [("sat", j) for j in range(N4)] + [("bump", j) for j in range(N4)]
+    return plain, cb
+
+
+def draw_flows(rng, level):
+    """Four variables. Every equation: -a x_i plus terms drawn from its plain and constant-bearing pools (the level's
+    terms per equation and constant-bearing terms per system, at most `cmax` per equation); every variable coupled."""
+    (tlo, thi), (clo, chi), cmax = LEVELS[level]
+    x = Y4
+    for _ in range(1000):
+        n_terms = [int(rng.integers(tlo, thi + 1)) for _ in range(N4)]
+        want = int(rng.integers(clo, chi + 1))
+        cbq = [0] * N4
+        slots = [e for e in range(N4) for _ in range(min(cmax, n_terms[e] - 1))]
+        if len(slots) < want:
+            continue
+        for e in rng.choice(len(slots), want, replace=False):
+            cbq[slots[int(e)]] += 1
+        sig = []
+        for i in range(N4):
+            plain, cb = _flow_terms(i)
+            picks = [cb[int(a)] for a in rng.choice(len(cb), cbq[i], replace=False)] if cbq[i] else []
+            picks += [plain[int(a)] for a in rng.choice(len(plain), n_terms[i] - 1 - cbq[i], replace=False)]
+            sig.append([("x", i)] + picks)
+        if _connected(sig):
+            break
+    else:
+        raise Rejected("no flow meets the level")
+    p, rhs = {}, []
+    for i, terms in enumerate(sig):
+        p[f"a{i}"] = logu(rng, 0.2, 1.0)
+        e = -sp.Symbol(f"a{i}") * x[i]
+        for t, term in enumerate(terms[1:]):
+            c = sp.Symbol(f"c{i}_{t}")
+            kind = term[0]
+            if kind in ("sat", "bump"):
+                K = sp.Symbol(f"K{i}_{t}")
+                p[f"c{i}_{t}"], p[f"K{i}_{t}"] = pm(rng, 0.2, 2.0), logu(rng, 0.2, 2.0)
+                j = term[1]
+                e += c * (x[j] if kind == "sat" else 1) / (K + x[j] ** 2)
+                continue
+            if kind == "cube":
+                p[f"c{i}_{t}"] = logu(rng, 0.1, 1.0); e -= c * x[i] ** 3
+                continue
+            p[f"c{i}_{t}"] = pm(rng, 0.2, 2.0)
+            e += c * {"x": lambda: x[term[1]], "xx": lambda: x[term[1]] * x[term[2]], "xsq": lambda: x[term[1]] ** 2,
+                      "one": lambda: sp.Integer(1)}[kind]()
+        rhs.append(e)
+    n_cb = sum(cbq)
+    return f"flows_L{level}_cb{n_cb}", rhs, p, [pm(rng, 0.3, 1.5) for _ in range(N4)], False
+
+
 GENERATORS = {"mechanics": draw_mechanics, "circuits": draw_circuits, "ecology": draw_ecology, "chemistry": draw_chemistry, "chaotic": draw_chaotic}
+for _l in LEVELS:
+    GENERATORS[f"reactions_L{_l}"] = (lambda rng, l=_l: draw_reactions(rng, l))
+    GENERATORS[f"flows_L{_l}"] = (lambda rng, l=_l: draw_flows(rng, l))
 
 
 def draw(seed, domain):
@@ -297,7 +495,7 @@ def numeric_rhs(desc):
     d = desc["d"]
     xs = sp.symbols(" ".join(f"x{j}" for j in range(d)))
     sub = {sp.Symbol(k): v for k, v in desc["params"].items()}
-    return [e.subs(sub).subs({Y3[j]: xs[j] for j in range(d)}) for e in _sym_rhs(desc)]
+    return [e.subs(sub).subs({Y4[j]: xs[j] for j in range(d)}) for e in _sym_rhs(desc)]
 
 
 def _terms(e):
@@ -308,10 +506,10 @@ def true_structure(desc):
     """Per equation: the sorted canonical L1 keys of its terms in the learner's coordinates, and which are
     non-polynomial (as expressions in the learner's coordinates with symbolic constants)."""
     d = desc["d"]
-    Wd, Sd = LG.variables(d), (S if d == 2 else S3[:d])
+    Wd, Sd = LG.variables(d), (S if d == 2 else S4[:d])
     out = []
     for e in _sym_rhs(desc):
-        e = e.subs({Y3[j]: Sd[j] * Wd[j] for j in range(d)})
+        e = e.subs({Y4[j]: Sd[j] * Wd[j] for j in range(d)})
         keys, nonpoly = set(), []
         for t in _terms(e):
             if not (t.free_symbols & set(Wd)):
@@ -337,13 +535,14 @@ def swapped(key):
 
 
 def relabelled(key, perm):
-    """The canonical key of a term with variable x_{j+1} renamed x_{perm[j]+1} (up to three variables)."""
+    """The canonical key of a term with variable x_{j+1} renamed x_{perm[j]+1} (up to four variables; canonical forms
+    depend only on which symbols are variables, so terms in three variables get the same keys as before)."""
     e = LG.expr_of(key)
-    used = e.free_symbols & set(W3)
+    used = e.free_symbols & set(W4)
     if not used:
         return key
-    e = e.xreplace({W3[j]: W3[perm[j]] for j in range(len(perm))})
-    r = LG.canonical(e, W3)
+    e = e.xreplace({W4[j]: W4[perm[j]] for j in range(len(perm))})
+    r = LG.canonical(e, W4)
     return r[0] if r else None
 
 

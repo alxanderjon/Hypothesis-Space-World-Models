@@ -1,4 +1,5 @@
-"""Stage 2a of the general learner (research log, 7 November): the guiding network for up to three variables.
+"""Stage 2a of the general learner (research log, 7 November): the guiding network for up to three variables
+(four from Stage 2a'': the role "other3", appended to the tokens; load_net; balanced dreams in train).
 
 movenet_g1's network (Trial 28's move network with a term encoder), with the Stage 2a changes:
   - variables are read relative to the equation: its own variable, then the others in index order ("other1",
@@ -30,14 +31,14 @@ MAX_TOK = 32
 N_EVID, N_STATE = 6, 5
 NUMBERS = ["-1", "2", "1/2", "3", "-2", "-3", "-1/2", "1", "4", "1/4", "6", "3/2", "9"]
 TOKENS = ["<pad>", "own", "other1", "other2", "K", "Add", "Mul", "Pow", "exp", "log", "sin", "Abs", "<num>"] + \
-         [f"n{v}" for v in NUMBERS]
+         [f"n{v}" for v in NUMBERS] + ["other3"]                # other3 appended for four variables (Stage 2a'')
 TOK = {t: k for k, t in enumerate(TOKENS)}
 
 
 def term_tokens(key, own, d):
     """Prefix tokens of a canonical term for the equation of variable x_{own+1}: own variable, then the others in
     index order (n-ary sums and products written as nested binary ones)."""
-    X = LG.variables(3)
+    X = LG.variables(4)
     others = [j for j in range(d) if j != own]
     out = []
 
@@ -202,6 +203,18 @@ class NetworkPrior:
         return prior
 
 
+def load_net(path):
+    """A saved network. Networks saved before the fourth variable role existed (Stage 2a) get its embedding row as
+    the mean of the "other1" and "other2" rows (research log, Stage 2a'' proposal); nothing else changes."""
+    sd = torch.load(path, map_location="cpu", weights_only=True)
+    w = sd["terms.emb.weight"]
+    if w.shape[0] == len(TOKENS) - 1:
+        sd["terms.emb.weight"] = torch.cat([w, 0.5 * (w[TOK["other1"]] + w[TOK["other2"]])[None]], 0)
+    net = MoveNetL2()
+    net.load_state_dict(sd)
+    return net
+
+
 def encode_vocabulary(net, table, device="cpu", batch=4096):
     net = net.to(device).eval()
     V, d, L = table.shape
@@ -282,24 +295,34 @@ def loss_fn(net, batch, tables):
                                      "true_add_in_shortlist": float(in_short)}
 
 
-def train(net, examples, tables_np, steps, batch=32, lr=3e-4, device="cpu", seed=0, log_every=200):
+def train(net, examples, tables_np, steps, batch=32, lr=3e-4, device="cpu", seed=0, log_every=200, groups=None, share=0.5):
     """Train further for `steps` steps; every batch is drawn from examples of one dimension (in proportion to their
-    numbers). Non-finite steps are skipped and counted."""
+    numbers). Non-finite steps are skipped and counted. Balanced dreams (Stage 2a''): with `groups` (per example, 1 for
+    the newest domain's examples, 0 for everything earlier) a batch comes from group 1 with probability `share` (from
+    the other group when one is empty), then from one dimension within the group in proportion to its numbers."""
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
     net = net.to(device).train()
     tables = {d: torch.as_tensor(t).to(device) for d, t in tables_np.items()}
-    by_d = {}
+    by_g = {}
     for k, e in enumerate(examples):
-        by_d.setdefault(int(e["d"]), []).append(k)
-    dims = sorted(by_d)
-    w = np.array([len(by_d[d]) for d in dims], dtype=float)
-    w /= w.sum()
+        g = 0 if groups is None else int(groups[k])
+        by_g.setdefault(g, {}).setdefault(int(e["d"]), []).append(k)
+    choose = {}
+    for g, by_d in by_g.items():
+        dims = sorted(by_d)
+        w = np.array([len(by_d[d]) for d in dims], dtype=float)
+        choose[g] = (dims, w / w.sum())
     opt = torch.optim.AdamW(net.parameters(), lr=lr, weight_decay=0.01)
     log, t0, skipped = [], time.time(), 0
     for step in range(steps):
+        g = 0
+        if groups is not None:
+            g = 1 if rng.random() < share else 0
+            g = g if g in by_g else 1 - g
+        dims, w = choose[g]
         d = dims[int(rng.choice(len(dims), p=w))]
-        pool = by_d[d]
+        pool = by_g[g][d]
         pick = rng.choice(len(pool), size=min(batch, len(pool)), replace=False)
         loss, parts = loss_fn(net, collate([examples[pool[k]] for k in pick], device), tables)
         opt.zero_grad()
