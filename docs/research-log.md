@@ -6746,3 +6746,9 @@ The generator code is fixed before any draw.
 
 - In 5th position the two harder domains share many four-variable forms with each other: self-damping, linear and product terms.
 - **The claim run starts now** (`cycles_g2h.py 24 run 1`; both orders). The dry-run folder is deleted.
+
+**Claim run under load** (08:15).
+- The run started at 07:36 at the lowest CPU priority (nice 19 instead of 10). Another user's jobs occupy about 41 of the 48 cores, and nice 19 keeps this run from competing with them.
+- The first test (uniform search, 40 reaction-network test systems) took 34 min against about 8 min projected: about 4× slower. At this pace the run would take about 1.5–2 days. It speeds up when the other jobs finish.
+- **Time limits:** the slowest system took 1,689 s of elapsed time. The limit is 3,600 s per equation, measured in elapsed time, so it does not bind at this load. Hits are reported per arm.
+- Owner notified. The run continues.
