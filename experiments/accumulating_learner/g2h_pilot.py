@@ -352,7 +352,9 @@ def report():
         dev = C.records("dev", dom)
         flags = shared[f"mce_dev_{dom}"]
         new = [(r["id"], i) for r in dev for i in range(len(r["structure"])) if not flags[r["id"]][i]]
-        ld = lambda lab: R.load(lab, dom)
+        def ld(lab, dom=dom):                                   # the pilot's own folder
+            q = C.RUN / "test" / f"{lab}_{dom}.json"
+            return json.loads(q.read_text()) if q.exists() else None
         rows = [("baseline (claim run's balanced schedule)", f"base_cont_o{o}", f"base_fresh_{dom}"),
                 ("baseline control", f"base_ctrl_o{o}", f"base_fresh_{dom}")]
         pre = "p" if name == "flows" else "q"
@@ -383,8 +385,8 @@ def report():
                 print(f"   {lin} after consolidation: {R.counts(a, new)} new-form (focus end {R.counts(b, new)}; only after "
                       f"{x}, only before {y}, p = {R.sign_p(x, y):.2g})")
             for hd in C.orders(LEVEL)[o][:3]:
-                b0 = R.load(f"base_hist_o{o}_ret" if "c" not in lin.split("_")[0] else f"base_cbase_o{o}_ret", hd)
-                a0 = R.load(f"{lin}_cons_ret", hd)
+                b0 = ld(f"base_hist_o{o}_ret" if "c" not in lin.split("_")[0] else f"base_cbase_o{o}_ret", hd)
+                a0 = ld(f"{lin}_cons_ret", hd)
                 if a0 is not None and b0 is not None:
                     print(f"   {lin} retention on {hd} development systems: before the new domain "
                           f"{R.systems_solved(b0)} of {len(b0)} systems ({R.counts(b0, list(R.solved_map(b0)))} eq.), after "

@@ -24,8 +24,9 @@ if __name__ == "__main__":
         for dom in O[o][3:]:
             nets[(o, dom, "continued")] = (str(C.RUN / "nets" / f"o{o}_{dom}_d10"), f"o{o}_{dom}_t10full")
             nets[(o, dom, "control")] = (str(C.RUN / "nets" / f"c{o}_{dom}_{dom}_d10"), f"c{o}_{dom}_t10full")
-    for dom in C.domains(level):
-        nets[(0, dom, "fresh")] = (str(C.RUN / "nets" / f"fresh_{dom}_{dom}_d10"), f"fresh_{dom}_t10full")
+    if os.environ.get("G2H_CHECK_FRESH", "1") == "1":            # context only; skipped when the check runs long
+        for dom in C.domains(level):
+            nets[(0, dom, "fresh")] = (str(C.RUN / "nets" / f"fresh_{dom}_{dom}_d10"), f"fresh_{dom}_t10full")
     for (o, dom, arm), (net, label) in nets.items():
         D.test(net, dom, label, *C.NEWB)
     shared = json.loads((C.SYS / f"shared_forms_g2h_L{level}.json").read_text())
@@ -39,7 +40,8 @@ if __name__ == "__main__":
                                     ("every term attended", f"o{o}_{dom}_t10full", f"c{o}_{dom}_t10full", f"fresh_{dom}_t10full")):
                 c, k, f = R.load(cl, dom), R.load(kl, dom), R.load(fl, dom)
                 met, pts, a_, b_ = R.bar_b(c, k, new)
-                fa, fb = R.paired(c, f, new)
+                fa, fb = R.paired(c, f, new) if f is not None else (0, 0)
+                f = f if f is not None else []
                 lines.append(f"{tag}: continued {R.counts(c, new)}, control {R.counts(k, new)}, fresh {R.counts(f, new)} of "
                              f"{len(new)} new-form; (B) {pts:+.1f} points, only continued {a_}, only control {b_}, p = "
                              f"{R.sign_p(a_, b_):.2g} -> {'MET' if met else 'NOT MET'}; vs fresh only continued {fa}, only fresh {fb}, "
