@@ -6405,3 +6405,53 @@ These fill in the pre-registered "(D)" and "also reported" items (section 7). No
 - The control's regression on quadratic flows shows here as well: 28 → 65.
 
 **Compute:** each test is 0.2–1.9 CPU hours. Uniform search is the costliest because of its many thorough fits.
+
+### Stage 2a, order 2: history, retention baselines, quadratic flows; the gate cannot open (8 November, 01:50; counts only for test systems)
+
+**Run so far** (`cycles_g2.py 24 2`, from 21:50).
+- No GPU waits. No time-limit hits. No failed systems. No skipped training steps.
+- **Repeatability check:** order 2's uniform first wake on ecology reproduced Stage 1's fresh ecology wake exactly: 89 of 300 equations, 19 with the true structure, 14 systems.
+- **History** (wakes 1 and 2, equations of 300):
+
+  | Domain | Wake 1 | Wake 2 |
+  |---|---|---|
+  | Ecology | 89 | 300 |
+  | Circuits | 297 | 300 |
+  | Mechanics | 291 | 294 |
+
+- **Retention baselines before the new domains:** ecology, circuits and mechanics each 40 of 40 systems.
+- **The control pool** from order 1 was used up. Order 2's control base generated its fantasies on the fly with the same procedure: 105 batches, about 35 minutes of CPU.
+
+**Quadratic flows, mostly non-chaotic** (4th in this order; 120 test equations, 59 new-form). Equations solved (new-form in parentheses), then systems:
+
+| Arm | 0 tasks | 10 | 30 | 100 |
+|---|---|---|---|---|
+| Continued | 109 (49), 31 | 112 (51), 32 | 113 (52), 33 | 112 (51), 32 |
+| Control | 90 (32), 17 | 107 (46), 28 | 111 (50), 33 | 112 (51), 32 |
+| Fresh | 54 (8), 4 | 99 (38), 25 | 111 (50), 32 | 117 (56), 37 |
+
+- **Validity:** the fresh network solves 85% of new-form equations at 30 tasks, so the domain is **saturated from 30 on**.
+
+**Results** (new-form; only continued / only control):
+
+| Measure | Points | Discordant | p | Verdict |
+|---|---|---|---|---|
+| **Bar (B), at 10 tasks** | +8.5 | 8 / 3 | 0.23 | **NOT MET** |
+| Zero-shot | +28.8 | 21 / 4 | 0.0009 | — |
+
+- Unlike in order 1, the control does not regress here: 32 → 46 new-form from 0 to 10 tasks.
+- **Against the fresh network:** +22.0 points at 10 tasks (16 / 3, p = 0.004). At 100 tasks, −8.5 (0 / 5, p = 0.06).
+- **Whole systems exact:** continued 31 at 0 tasks and 31 at 10 tasks; control 17 and 28.
+  - Every assembled system passed the internal check. One continued system at 10 tasks then failed the external test. Rebuilt systems were identical.
+- **Shortlist probe at 10 tasks:** continued 4.6% of expansions (root 5 of 120); control 0.0%; fresh 0.3%.
+- **Provenance at 10 tasks:**
+  - 8 wins. Each has a true term in earlier solutions, but none has all of them.
+  - Base rate over all new-form test equations: 58 of 59 (any), 13 of 59 (all).
+
+**The gate to Stage 2b cannot open.** Bar (B) must hold in the same domain in both orders. Chemistry failed in order 1 and quadratic flows in order 2. The rest of order 2 still runs as planned: the control extension, chemistry 5th, and retention after.
+
+**Reading.**
+- Experience of real domains gives a large head start before any task:
+  - +28.8 points beyond the control here (both arms had only two-variable experience);
+  - +10.6 for chemistry in order 1.
+- **It is gone by 10 tasks:** the made-up-systems control learns quadratic flows' terms from its own first tasks.
