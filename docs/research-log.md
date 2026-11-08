@@ -6455,3 +6455,92 @@ These fill in the pre-registered "(D)" and "also reported" items (section 7). No
   - +28.8 points beyond the control here (both arms had only two-variable experience);
   - +10.6 for chemistry in order 1.
 - **It is gone by 10 tasks:** the made-up-systems control learns quadratic flows' terms from its own first tasks.
+
+### Stage 2a: order 2 complete; combined results; the gate to Stage 2b does not open (8 November, 03:40; counts only for test systems)
+
+**Run.** Order 2 ran from 21:50 to 03:24, 5.6 h. No GPU waits. Time-limit hits 0 in every arm. Failed systems 0. Skipped training steps 0.
+
+**Chemistry, order 2** (5th; 101 test equations, 51 new-form). Equations solved (new-form in parentheses), then systems:
+
+| Arm | 0 tasks | 10 | 30 | 100 |
+|---|---|---|---|---|
+| Continued | 90 (41), 32 | 88 (38), 32 | 83 (34), 28 | 91 (41), 32 |
+| Control | 80 (32), 24 | 94 (44), 34 | 92 (43), 32 | 93 (43), 33 |
+| Fresh | 36 (13), 3 | 88 (40), 31 | 97 (47), 36 | 94 (44), 33 |
+
+- **Validity:** the fresh network solves 92% of new-form equations at 30 tasks, so chemistry is **saturated from 30 on**.
+- **Bar (B) at 10 tasks: NOT MET.** The control is ahead: −11.8 points, only continued / only control 0 / 6, p = 0.031.
+- **Zero-shot:** +17.6 points, 11 / 2, p = 0.022.
+- **Against the fresh network:** −3.9 at 10 tasks (1 / 3, p = 0.62). At 30 tasks (saturated), −25.5 (0 / 13, p = 0.0002); against the control at 30, −17.6 (0 / 9, p = 0.004).
+  - The continued network got worse over its first 30 chemistry tasks: 41 → 34 new-form. It recovered to 41 by 100.
+- **Whole systems exact:** continued 32 at 0 tasks and 31 at 10 tasks; control 24 and 34.
+  - One continued system at 10 tasks failed the internal check. Rebuilt systems were identical in every case.
+- **Shortlist probe at 10 tasks:** continued 1.7% (root 1 of 101); control 2.5% (root 2); fresh 16.0% (root 5).
+- **Median structures to the first plausible model** (new-form, 0 → 10 tasks): continued 54 → 52; control 198 → 25; fresh not reached → 36.
+- **Provenance at 10 tasks:** no new-form equation was solved only by the continued network.
+
+**Retention (E), order 2: MET.**
+- Ecology, circuits and mechanics: 40 → 40 systems each.
+- Quadratic flows, after chemistry against right after its own cycle: 32 → 33 (2 lost, 3 gained).
+
+**(D) Order** (continued network, order 1 against order 2, on the equations new-form in both orders):
+
+| Domain | 0 tasks | 10 | 30 | 100 |
+|---|---|---|---|---|
+| Chemistry (51) | 34 vs 41, 1 / 8, p = 0.039 | 37 vs 38, p = 1 | 39 vs 34, 6 / 1, p = 0.12 | 42 vs 41, p = 1 |
+| Quadratic flows (45) | 41 vs 38, p = 0.55 | 45 vs 40, 5 / 0, p = 0.062 | 40 vs 39, p = 1 | 42 vs 38, 4 / 0, p = 0.12 |
+
+- Each domain's zero-shot is better at the 5th position than at the 4th for chemistry. That fits the extra three-variable experience gained from quadratic flows.
+
+**Combined: continued network against the made-up-systems control** (new-form; only continued / only control):
+
+| Domain, order (position) | Zero-shot | At 10 tasks: bar (B) |
+|---|---|---|
+| Chemistry, 1 (4th) | +10.6, 9 / 2, p = 0.065 | +6.1, 6 / 2, p = 0.29: not met |
+| Quadratic flows, 1 (5th) | +4.4, 5 / 3, p = 0.73 | +37.8, 17 / 0, p = 1.5 × 10⁻⁵: met (the control regressed) |
+| Quadratic flows, 2 (4th) | +28.8, 21 / 4, p = 0.0009 | +8.5, 8 / 3, p = 0.23: not met |
+| Chemistry, 2 (5th) | +17.6, 11 / 2, p = 0.022 | −11.8, 0 / 6, p = 0.031: not met (the control is ahead) |
+
+- **Bar (B) in both orders:** chemistry NOT MET; quadratic flows NOT MET.
+- **The gate to Stage 2b does not open.** As pre-registered: no abstraction.
+
+**What the made-up-systems control explains.**
+1. **Most of the head start over uniform search.** Chemistry equations: uniform 36, control 75–80, continued 84–90. Quadratic flows: uniform 54, control 90–109, continued 109–111.
+2. **Everything from 10 tasks on.** By 10 tasks the control matches or beats the continued network in three of four cases. The exception, quadratic flows in order 1, is the control's own regression.
+
+**What it does not explain: a head start before any task.** The continued network is ahead in all four cases, significantly in two:
+- p = 0.0009 for quadratic flows at 4th;
+- p = 0.022 for chemistry at 5th.
+
+Term overlap does not single out the wins (provenance base rates near 100%). The edge comes from how known terms are combined and weighted.
+
+**Why the edge disappears: the continued network adapts slowly.**
+- Its new-domain dreams are about 80% rehearsal of earlier domains. Example: order 2's first chemistry dream has 5,494 examples, of which about 4,400 come from earlier domains. The control's dream is entirely the new domain: 1,088 examples.
+- Both arms use 500 steps, so the control sees each new-domain example about five times as often.
+- The control's lack of rehearsal cuts the other way once: it forgot its general skill in quadratic flows, order 1, after its first dream.
+- So at 10 tasks the comparison mixes what was learned before (real vs made-up) with how fast each arm learns the new domain.
+- The slow adaptation also shows against the fresh network: −12.1 (p = 0.008) and −25.5 (p = 0.0002) at 30 chemistry tasks.
+
+#### Proposal (awaiting the owner's approval; nothing run): Stage 2a′, matched rehearsal and balanced dreams
+
+1. **A rehearsal-matched control.**
+   - In every dream after its base training (the extension and the new-domain dreams), the control also replays its own earlier made-up examples.
+   - It replays as many per dimension as the continued network replays from earlier domains. They are drawn with a fixed seed from the control's own earlier fantasy files.
+   - Dream size and mix then match. Only real against made-up content differs.
+2. **Balanced dreams** for every arm with earlier examples (continued and control):
+   - half of each dream's training batches come from the newest domain's examples (its verified solutions so far and this dream's fantasies);
+   - half come from everything earlier.
+   - The fresh network has nothing earlier and is unchanged.
+3. **Fresh test draws for the claim.** 40 new systems each for chemistry and quadratic flows:
+   - same generators and acceptance, new seeds;
+   - new-form flags computed as before.
+   - Stage 2a's test sets become development sets. Reserve sets and dysts stay untouched.
+4. **Reused:** the two histories, control bases and fresh networks (retested on the new draws).
+   **Rerun in both orders:** the new-domain curves of the continued network and the control, the control extensions, and retention.
+5. **Bars unchanged:**
+   - (B) at 10 tasks, new-form, +10 points and p < 0.05, in both orders;
+   - zero-shot as the second measure; (C), (D) and (E) as before;
+   - the gate to Stage 2b as before.
+6. **Cost:** about 5–6 h on 24 workers and one GPU, plus any GPU waits.
+
+- **If (B) still fails:** in these domains the made-up-systems control explains in-domain transfer. The next step would be harder domains, where the fresh network does not saturate within 30 tasks.
