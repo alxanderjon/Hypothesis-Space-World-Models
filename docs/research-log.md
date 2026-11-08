@@ -6676,3 +6676,52 @@ The generator code is fixed before any draw.
 - The generators are fixed as they stand.
 
 **Next:** level 1's 100 training tasks and 40 development systems per domain; new-form classification; (a′′) on development equations; then the saturation check.
+
+### Stage 2a′′: the ladder settles at level 1 (8 November, 06:50; development systems only, no test system drawn)
+
+**Level 1 draws** (`g2h_draw.py 24 1 train dev`; seeds "g2h-{set}-{domain}-k").
+- 100 training tasks and 40 development systems per domain, all accepted.
+- Rejected draws (train / dev): reaction networks 11 / 9, mostly centred data; nonlinear flows 20 / 12, mostly the cost rule.
+- Development equations: 160 per domain.
+- New-form, relative to mechanics, circuits and ecology (`g2h_shared.py 1 dev`): reaction networks 155 of 160, nonlinear flows 159 of 160.
+
+**(a′′) Fitter on true structures, development equations** (`g1_bar_a.py 24 dev reactions_L1 flows_L1`): **MET**.
+
+| Domain | Equations exact | With constants inside | Systems exact |
+|---|---|---|---|
+| Reaction networks | 160 of 160 | 126 of 126 | 40 of 40 |
+| Nonlinear flows | 160 of 160 | 102 of 102 | 40 of 40 |
+
+- At most 1.5 s per system. Time-limit hits and errors: 0.
+
+**Saturation check** (`cycles_g2h.py 24 sat 1`; the fresh network after 30 training tasks, tested on the development systems; budget 300 structures and 60 thorough fits; GPU 0, free at every check).
+
+| Domain | Uniform first wake (tasks 1–10) | Wake 11–30 | **Fresh network after 30 tasks, new-form** | All equations | Systems | Verdict |
+|---|---|---|---|---|---|---|
+| Reaction networks | 0 of 40 | 5 of 80 | **56 of 155 (36.1%)** | 61 of 160 | 0 of 40 | passes |
+| Nonlinear flows | 2 of 40 | 31 of 80 | **88 of 159 (55.3%)** | 89 of 160 | 2 of 40 | passes |
+
+- **Both domains fall between 15% and 60%: the ladder stops at level 1.** No harder level is needed.
+- **Uniform search at this budget finds almost nothing** in four variables (4,683 terms, 3–4 per equation). The fresh network first learns from fantasies alone, then from its few verified solutions.
+- **Whole systems are rare** (0 and 2 of 40): an equation-level claim has room, a system-level one has little.
+- **The shortlist** (768 of 4,683 terms) left a missing true term out of the attended set at 40% (reaction networks) and 28% (flows) of the development test's expansions. The figure in Stage 2a was 0–16%. The search still reaches every term through its random share and the rest slot. As pre-registered, this is reported and not changed.
+- **Time-limit hits: 0.** The slowest system took 272 s against a cap of 3,600 s.
+
+**Timing** (24 workers):
+- Uniform search: 196–226 s per system on average.
+- Network-guided search: 102–147 s.
+- A 40-system test: 4.3–6.0 min.
+- A dream: about 4 min (fantasies 1–2.5 min, 500 training steps 2.2 min).
+- **Projection for the claim run:** about 10 h, range 9–12 h, plus any GPU waits. This covers both orders, three arms, the control extension, retention and the whole-system checks. Under the 1.5-day threshold.
+
+**Dry run of the claim-run code** (`G2H_RUN=smoke G2H_SMOKE=1 cycles_g2h.py 16 run 1 1`: tiny budgets on development systems only, order 1; 06:16–07:22). **Every phase ran without error.**
+- **Reused networks:** a Stage 2a network's encodings for two and three variables are bitwise identical to Stage 2a's. Every weight is unchanged except the appended role.
+- **Balanced dreams:** the continued network's 4th-domain dreams hold 3,395 history examples (group 0) and its newest-domain examples (group 1), with batches split half and half. In the 5th domain, group 0 adds its 4th-domain solutions (four variables).
+- **Rehearsal-matched control:** each new-domain dream replays exactly as many of its own earlier made-up examples per dimension as the continued network's group 0.
+  - 4th domain: 3,395 two-variable examples.
+  - 5th domain: 3,395 two-variable examples, plus 11 four-variable ones from its extension.
+- **The extension** generates new made-up four-variable examples as many as the mirrored dream's group 1. A batch of 48 such fantasies takes 4–6.5 min on 16 workers: the size prior gives many rejected draws.
+  - The projection rises by about 0.6 h, to **about 10.5 h (9.5–12.5 h), plus any GPU waits**.
+- The dry run once trained on the CPU, when no GPU was free at that instant; it allows this. The claim run never does: it waits and re-checks every minute.
+
+**Check-in with the owner before the claim run** (owner's instruction).
