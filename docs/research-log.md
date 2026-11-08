@@ -6752,3 +6752,88 @@ The generator code is fixed before any draw.
 - The first test (uniform search, 40 reaction-network test systems) took 34 min against about 8 min projected: about 4× slower. At this pace the run would take about 1.5–2 days. It speeds up when the other jobs finish.
 - **Time limits:** the slowest system took 1,689 s of elapsed time. The limit is 3,600 s per equation, measured in elapsed time, so it does not bind at this load. Hits are reported per arm.
 - Owner notified. The run continues.
+
+### Stage 2a′′: results (8 November, 16:40; counts only for test systems)
+
+**Run** (`cycles_g2h.py 24 run 1`, both orders, nice 19):
+- 07:36 to 16:12, 8.6 h. The first 2 hours ran under another user's heavy CPU load.
+- **Time-limit hits: 0** in every arm. Failed systems 0. Skipped training steps 0. No GPU waits.
+- **Validity:** at 30 tasks the fresh network solves 27–54% of new-form test equations. **No domain is saturated**, so every point is valid.
+
+**Learning curves.** Test equations solved of 160 (new-form in parentheses); complete systems were 0–5 of 40 throughout.
+
+| Domain, order (position; new-form) | Arm | 0 tasks | 10 | 30 | 100 |
+|---|---|---|---|---|---|
+| Reaction networks, 1 (4th; 158) | Continued | 46 (44) | 52 (50) | 52 (50) | 59 (57) |
+| | Control | 23 (22) | 52 (50) | 60 (58) | 64 (62) |
+| | Fresh | 2 (2) | 19 (19) | 61 (59) | 60 (58) |
+| Nonlinear flows, 1 (5th; 102) | Continued | 52 (22) | 57 (24) | 54 (23) | 77 (44) |
+| | Control | 48 (23) | 65 (34) | 66 (33) | 83 (44) |
+| | Fresh | 2 (1) | 63 (21) | 88 (36) | 95 (39) |
+| Nonlinear flows, 2 (4th; 157) | Continued | 46 (43) | 58 (55) | 55 (52) | 65 (62) |
+| | Control | 40 (37) | 56 (53) | 64 (61) | 82 (79) |
+| | Fresh | 2 (1) | 63 (60) | 88 (85) | 95 (92) |
+| Reaction networks, 2 (5th; 92) | Continued | 71 (31) | 68 (31) | 79 (36) | 79 (37) |
+| | Control | 37 (9) | 54 (15) | 77 (36) | 86 (41) |
+| | Fresh | 2 (1) | 19 (5) | 61 (25) | 60 (23) |
+
+**Continued network against the rehearsal-matched control** (new-form; only continued / only control):
+
+| Domain, order (position) | Zero-shot | **10 tasks: bar (B)** | 30 tasks | 100 tasks |
+|---|---|---|---|---|
+| Reaction networks, 1 (4th) | +13.9, 23 / 1, p = 3 × 10⁻⁶ | **+0.0, 9 / 9, p = 1: not met** | −5.1, 5 / 13, p = 0.10 | −3.2, p = 0.38 |
+| Nonlinear flows, 1 (5th) | −1.0, 5 / 6, p = 1 | **−9.8, 2 / 12, p = 0.013: not met (control ahead)** | −9.8, p = 0.013 | 0.0, p = 1 |
+| Nonlinear flows, 2 (4th) | +3.8, 10 / 4, p = 0.18 | **+1.3, 5 / 3, p = 0.73: not met** | −5.7, p = 0.064 | −10.8, 9 / 26, p = 0.006 |
+| Reaction networks, 2 (5th) | +23.9, 23 / 1, p = 3 × 10⁻⁶ | **+17.4, 16 / 0, p = 3 × 10⁻⁵: met** | 0.0, p = 1 | −4.3, p = 0.52 |
+
+- **Bar (B) in both orders:** reaction networks not met (order 2 only); nonlinear flows not met. **The gate to Stage 2b does not open.**
+- **(C), continued against fresh, new-form:**
+  - Reaction networks: +19.6 (order 1) and +28.3 (order 2) at 10 tasks, p ≤ 4 × 10⁻⁸. At 30 tasks −5.7 (order 1) and +12.0 (order 2, p = 0.019). At 100 tasks −0.6 and +15.2 (p = 0.0005).
+  - Flows: +2.9 and −3.2 at 10 tasks. At 30 tasks −12.7 (p = 0.007) and −21.0 (p = 1 × 10⁻⁶). At 100 tasks +4.9 and −19.1 (p = 2 × 10⁻⁵).
+- **(D) Order** (equations new-form in both orders):
+  - Reaction networks are solved far better 5th (after flows) than 4th, at every point: 31 against 11 at zero-shot, p ≤ 0.0015 throughout.
+  - Flows show no difference, except order 1 at 100 tasks (44 against 33, p = 0.043).
+- **(E) Retention: MET.**
+  - Order 1: mechanics, circuits and ecology 40 → 40 systems. Reaction networks after flows: 0 → 0 systems, and equations 59 → 77.
+  - Order 2: ecology and circuits 40 → 40; mechanics 40 → 38 (2 lost, at the limit). Flows after reaction networks: 0 → 2 systems, equations 65 → 79.
+- **Whole systems exact:** at most 4 of 40 for any arm and point (the fresh network on flows at 100 tasks). At 10 tasks, 0 for every arm. Every complete system checked was exact, except 2 of the control's reaction networks at 30 tasks (order 2).
+- **Provenance base rate:** every new-form equation has a true term in earlier solutions. Term overlap does not separate wins.
+
+**The shortlist's cut rate, per arm, domain, order and point** (owner's request). This is the share of expansions with a missing true term at which a true term was outside the 768 attended terms; the search vocabulary has 4,683 terms.
+
+| Domain, order | Arm | 0 tasks | **10** | 30 | 100 |
+|---|---|---|---|---|---|
+| Reaction networks, 1 | Continued | 66.3% | **41.3%** | 58.9% | 43.1% |
+| | Control | 53.4% | **50.9%** | 55.1% | 53.6% |
+| | Fresh | (uniform) | **60.9%** | 45.2% | 52.2% |
+| Nonlinear flows, 1 | Continued | 57.9% | **27.8%** | 41.4% | 29.4% |
+| | Control | 62.2% | **42.8%** | 50.6% | 28.5% |
+| | Fresh | (uniform) | **28.2%** | 35.1% | 37.3% |
+| Nonlinear flows, 2 | Continued | 63.4% | **27.8%** | 38.2% | 51.5% |
+| | Control | 35.1% | **59.4%** | 36.9% | 34.8% |
+| | Fresh | (uniform) | **28.2%** | 35.1% | 37.3% |
+| Reaction networks, 2 | Continued | 59.0% | **45.3%** | 31.9% | 23.9% |
+| | Control | 64.4% | **58.5%** | 47.4% | 19.4% |
+| | Fresh | (uniform) | **60.9%** | 45.2% | 52.2% |
+
+The fresh network's rows are the same in both orders (it does not depend on the order).
+
+**Could shortlist cuts explain bar (B)'s failures?** No. Three checks at the deciding point, 10 tasks:
+1. **The continued network was cut less often than the control in all four cases:** 41 against 51%, 28 against 43%, 28 against 59%, 45 against 59%. To explain its failure the cuts would have had to hurt it more.
+2. **No advantage where the shortlist played no part.** On the new-form equations where neither arm ever had a true term cut, the three failing cases still show no advantage for the continued network: −1.9 points (3 / 4), −4.2 (1 / 2), −1.9 (1 / 2).
+3. **Cuts lower every arm's counts.** Equations that were never cut are mostly solved; equations with a cut rarely are. Examples: the continued network 44 of 61 against 6 of 97 (reaction networks, order 1); the control 50 of 53 against 3 of 104 (flows, order 2). A wider shortlist would probably raise all curves. Nothing indicates it would change the comparison.
+
+- **The one met case (reaction networks, order 2):**
+  - The control's higher cut rate (58.5 against 45.3%) may have added to the gap.
+  - On equations neither arm ever had cut, the continued network is still ahead: +31.2 points, 5 / 0, p = 0.062.
+- **Limitation:** this assessment is observational. Never-cut equations are an easier subset. An interventional check (the 10-task tests rerun with all 4,683 terms attended) would settle it in about 1–1.5 h.
+
+**What the made-up-systems control explains.**
+- **Explained:** nearly all transfer once a domain's own tasks arrive.
+  - Under fair rehearsal and balanced dreams, the control equals or beats the continued network from 10 tasks on in three of four cases, and at 30 and 100 tasks in all four.
+  - This holds in domains a fresh network cannot saturate.
+- **Not explained:**
+  1. **A large head start on reaction networks before any task:** +13.9 and +23.9 points.
+  2. **Its persistence to 10 tasks when reaction networks follow flows:** +17.4 points. Both arms had then seen four-variable systems, real for one and made-up for the other.
+- **Flows show neither.**
+- **Negative transfer:** the networks with earlier training learn flows more slowly than a fresh network, even with balanced dreams. At 30–100 tasks the continued network is 13–21 points behind it, and the control behind too.

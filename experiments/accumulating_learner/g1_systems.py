@@ -161,6 +161,9 @@ if __name__ == "__main__":
         res = json.loads(path.read_text())
         letter = path.stem.rsplit("_", 1)[1]
         dom = {"A": "mechanics", "B": "circuits", "C": "ecology"}.get(letter, letter)   # Stage 2a files end in the domain
+        for d2 in ("reactions_L1", "reactions_L2", "reactions_L3", "flows_L1", "flows_L2", "flows_L3"):
+            if path.stem.endswith("_" + d2):                     # Stage 2a'' domain names hold an underscore
+                dom = d2
         recs = {r["id"]: r for r in json.loads((SYS / f"test_{dom}.json").read_text())}
         jobs = [(recs[r["id"]], [e["solution"] for e in r["equations"]]) for r in res
                 if r["status"] == "done" and all(e["solution"] for e in r["equations"])]
