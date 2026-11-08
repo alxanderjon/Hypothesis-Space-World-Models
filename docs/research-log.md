@@ -6490,7 +6490,7 @@ These fill in the pre-registered "(D)" and "also reported" items (section 7). No
 | Chemistry (51) | 34 vs 41, 1 / 8, p = 0.039 | 37 vs 38, p = 1 | 39 vs 34, 6 / 1, p = 0.12 | 42 vs 41, p = 1 |
 | Quadratic flows (45) | 41 vs 38, p = 0.55 | 45 vs 40, 5 / 0, p = 0.062 | 40 vs 39, p = 1 | 42 vs 38, 4 / 0, p = 0.12 |
 
-- Each domain's zero-shot is better at the 5th position than at the 4th for chemistry. That fits the extra three-variable experience gained from quadratic flows.
+- Chemistry's zero-shot is better at the 5th position than at the 4th. That fits the extra three-variable experience gained from quadratic flows. Quadratic flows show no significant difference.
 
 **Combined: continued network against the made-up-systems control** (new-form; only continued / only control):
 
@@ -6515,7 +6515,7 @@ These fill in the pre-registered "(D)" and "also reported" items (section 7). No
 Term overlap does not single out the wins (provenance base rates near 100%). The edge comes from how known terms are combined and weighted.
 
 **Why the edge disappears: the continued network adapts slowly.**
-- Its new-domain dreams are about 80% rehearsal of earlier domains. Example: order 2's first chemistry dream has 5,494 examples, of which about 4,400 come from earlier domains. The control's dream is entirely the new domain: 1,088 examples.
+- Its new-domain dreams are about 80% rehearsal of earlier domains. Example: order 2's first chemistry dream has 5,494 examples, of which about 4,500 come from earlier domains (history and quadratic flows; batches are drawn in proportion to example counts). The control's dream is entirely the new domain: 1,088 examples.
 - Both arms use 500 steps, so the control sees each new-domain example about five times as often.
 - The control's lack of rehearsal cuts the other way once: it forgot its general skill in quadratic flows, order 1, after its first dream.
 - So at 10 tasks the comparison mixes what was learned before (real vs made-up) with how fast each arm learns the new domain.
