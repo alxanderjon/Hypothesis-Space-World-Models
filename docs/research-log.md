@@ -7142,3 +7142,16 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 - **Retire the "transfer first" gate**, in favour of the decoy and removal controls.
 - **Keep** the made-up-systems control (with the same machinery fitted to its own data) and the new-form rule for every claim.
 - **Cost, rough:** A and B about 0.5 day each to build and 0.5 day to pilot; C about 1.5–2 days to build; D about 1 day; E about 0.5 day. Claim runs (about 1 day each at the wider shortlist) only where a pilot shows a gain. Check-in before each claim run.
+
+### Owner: order 2 runs as pre-registered; the DreamCoder assessment sent before the claim-run report (9 November)
+
+**Owner.** *"Let order 2 finish as pre-registered. Don't wait for it to send the DreamCoder assessment: send that now, in plain language, covering what DreamCoder has that we're missing (abstraction, dreams drawn from the learned library, the learned prior, curriculum, why it works from 5–10 examples) and a staged redesign proposal. The claim-run report can follow when order 2 is done."*
+
+- **Context (claim run 2, order 1 only; the full report follows order 2):** bar (B) not met in order 1 for either domain, so the gate stays closed whatever order 2 shows.
+  - Reaction networks (all 160 test equations new-form): continued 58, control 48 at 10 tasks (+6.2 points, 15 against 5, p = 0.041); before any task 39 against 17 (+13.8 points).
+  - Flows (95 of 160 new-form after reaction networks): continued 26, control 22 at 10 tasks (+4.2 points, 6 against 2, p = 0.29); before any task 23 against 13 (+10.5 points).
+  - The fifth domain shows the slowdown again despite the wider shortlist: on flows at 100 tasks the continued network solved 36 of 95 new-form equations, the fresh network 55 (4 against 23, p = 0.0003). On reaction networks (the fourth domain) it kept level with the fresh network (87 against 92 of 160 at 100 tasks, p = 0.59).
+- **Sent:** a plain-language version of the section above, with one addition prompted by the fifth-domain slowdown.
+  - Knowledge held only in the network's weights has to survive every later round of training, and each added domain makes the network slower to learn the next.
+  - A grammar and a library hold what was learned outside the network, where later training cannot erase it. That would also allow the move network to be refreshed (retrained from a new start on replays and dreams) without losing what was learned.
+  - That refresh is listed as an option to test after stage A if the slowdown persists in order 2; it is not a stage of its own yet.
