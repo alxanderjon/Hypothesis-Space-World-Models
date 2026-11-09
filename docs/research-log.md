@@ -6975,3 +6975,18 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 - **Mechanism (likely):** the experienced network's scorer was trained on earlier domains. It ranks many of the new domain's true terms below the top 768, so training's attention never sees them, and they are learned only through the scorer's own loss. A wider attended set lets them in.
 - **The cost:** a wider shortlist also lowers the fresh network (88 → 80 at 30 tasks), and each search step costs more (tests take about 2–3× as long).
 - **Next, as pre-registered:** fix 6 is confirmed on reaction networks (4th, after order 1's history; development systems) before the check-in.
+
+### The direct shortlist check: complete (9 November, 04:35; counts only)
+
+**Setup.** Order 2's tests were rerun with the limit at 4 h per equation (suffix "cap4h"); order 1's ran under the normal limit. Every rerun is now free of time-limit hits.
+
+| Case (new-form) | Bar (B) at 10 tasks, shortlist 768 (the run) | Bar (B) at 10 tasks, every term attended | Every term vs shortlist: gained / lost |
+|---|---|---|---|
+| Reaction networks, order 1 (158) | +0.0, 9 / 9: not met | +5.7, 15 / 6, p = 0.078: not met | continued 4 / 4; control 4 / 13 (p = 0.049) |
+| Nonlinear flows, order 1 (102) | −9.8, 2 / 12: not met | −1.0, 8 / 9: not met | continued 4 / 3; control 0 / 8 (p = 0.008) |
+| Nonlinear flows, order 2 (157) | +1.3, 5 / 3: not met | −3.8, 3 / 9, p = 0.15: not met | continued 1 / 9 (p = 0.021); control 3 / 3 |
+| Reaction networks, order 2 (92) | +17.4, 16 / 0: **met** | +15.2, 16 / 2, p = 0.0013: **met** | continued 2 / 7; control 2 / 5 |
+
+- **No bar (B) verdict changes when every term is attended, so the gate to Stage 2b stays closed.** The shortlist's cuts at search time do not explain bar (B)'s failures.
+  - The shortlist helped the control in two cases (order 1) and the continued network in one (flows, order 2).
+- **This is not in conflict with the pilot.** The check changes only what networks trained with 768 terms attend to when tested. The pilot's 2,048-term shortlist changes training as well, from the first new-domain dream. That is where it matters for learning speed.
