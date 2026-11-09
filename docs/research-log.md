@@ -7241,3 +7241,37 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - While the pilot runs, it stops the pilot's process group if free space falls below 5 GB.
 - **The bits check is now a standing measure** for every later stage (B, C1–C3, the refresh test, D, E). It is the mean description length of the development systems' true new-form equations under each arm's grammar, before the new domain and after each review round, against the uniform prior.
 - **Stage B** is designed while A runs. It goes ahead under A's decision rule: unless the grammar makes the continued or fresh network significantly worse at 30 tasks. Its pilot design is sent for approval with A's results.
+
+### Stage B: dreams from each lineage's grammar, and its pilot's design (9 November; pre-registered; pilot design to be sent with Stage A's results)
+
+**What changes.** Every review round's 100 fantasies are drawn from the lineage's grammar at that point (`dream_g2b.py`, `stageB_pilot.py`).
+- **Before Stage B:** each term was drawn half from single-term usage and half from the size prior, with 1–4 terms per equation.
+- **With Stage B:** each fantasy system is drawn whole, either from the grammar or, with probability ½, from the open language as before (exploration).
+  - From the grammar: its number of terms per equation (1–6) and its terms, read relative to each equation.
+  - From the open language: the size prior, with 1–4 terms per equation.
+  - The branch is fixed per fantasy before any retry, so the share does not drift with acceptance.
+- **Unchanged:** coefficients, internal constants, initial states, the pre-screen and acceptance.
+- **The grammar** is the one the review round trains with:
+  - the continued network: its history's verified solutions plus its new-domain ones;
+  - the control: its made-up systems' structures plus its own new-domain solutions;
+  - the fresh network: its own new-domain solutions only.
+- So the dreams of the experienced network now carry its real experience, and the control's carry its made-up experience. This tests the owner's hypothesis that uniform dreams explain why the control keeps up.
+
+**Pilot (development systems only):**
+- **Recipe:** Stage A's pilot recipe with this one change. Same testbeds, arms (b_o<o>, bc_<o>, bfresh_<o>), shortlist, budgets and time limit.
+- **Reuse:** the first wakes on tasks 1–10 are Stage A's, since they use the same network, grammar, tasks, budget and seed.
+- **Baselines:** Stage A's lineages, paired system by system.
+- **Measures** (new-form development equations):
+  1. each arm with grammar dreams against Stage A at 10 and 30 tasks (paired sign test);
+  2. continued against control at 10 tasks (bar (B)'s quantity on development systems) and at 30;
+  3. continued against fresh at 30 tasks;
+  4. the bits check: each arm's grammar after 10 and 30 tasks, against the uniform prior;
+  5. dream diagnostics: acceptance per branch, rejected draws, mean terms per equation, and the realized share of examples from each branch;
+  6. time-limit hits per arm.
+- **Decision rules:**
+  - B goes forward into C unless grammar dreams make the continued or fresh network significantly worse at 30 tasks than Stage A (sign test p < 0.05) in either domain. If they do, diagnose and check in.
+  - A claim run for A+B is proposed only if the continued network beats the control by at least 10 points with p < 0.05 at 10 tasks in both domains (development).
+- **Cost:** about 4 hours with 30 workers, after Stage A's pilot.
+- **Smoke test** (tiny budgets, reaction networks, all three arms): passed end to end, and its outputs were deleted.
+  - In four variables the open-language branch often needs many draws: in two tiny review rounds, none of its draws passed within 200 tries.
+  - That is why acceptance and the realized example share per branch are reported.
