@@ -6990,3 +6990,35 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 - **No bar (B) verdict changes when every term is attended, so the gate to Stage 2b stays closed.** The shortlist's cuts at search time do not explain bar (B)'s failures.
   - The shortlist helped the control in two cases (order 1) and the continued network in one (flows, order 2).
 - **This is not in conflict with the pilot.** The check changes only what networks trained with 768 terms attend to when tested. The pilot's 2,048-term shortlist changes training as well, from the first new-domain dream. That is where it matters for learning speed.
+
+### The slowdown pilot: confirmation on reaction networks, and conclusions (9 November, 06:40; development systems only)
+
+**Confirmation: reaction networks** (4th, after order 1's history; 40 development systems, 155 new-form equations).
+
+| | 10 tasks: experienced / fresh | 30 tasks: experienced / fresh | Gap at 30 (fresh − experienced) |
+|---|---|---|---|
+| Baseline, shortlist 768 | 38 / 18 | 40 / 56 | **+10.3**, 8 / 24, p = 0.007 |
+| Control, shortlist 768 | 38 / 18 | 50 / 56 | +3.9, p = 0.26 |
+| **Fix 6, shortlist 2,048 (both networks)** | **57 / 17** | **60 / 35** | **−16.1**, 28 / 3, p = 5 × 10⁻⁶ |
+
+- The slowdown reproduces on reaction networks: the experienced network leads at 10 tasks and falls behind by 30.
+- **With the wider shortlist it does not fall behind:**
+  - at 10 tasks it leads by 25.8 points (40 / 0, p = 2 × 10⁻¹²);
+  - at 30 tasks it still leads, by 16.1 points.
+- **The cost to the fresh network is larger here:** 56 → 35 at 30 tasks with the wider shortlist.
+
+**Pilot conclusions.**
+1. **The slowdown is loss of plasticity, not review time.** In the focus phase, trained exactly like the fresh network, the experienced network still stalls.
+2. **The standard plasticity fixes from the literature do not remove it here** (shrink-and-perturb, L2 Init, ReDo), and neither do longer dreams.
+3. **A wider shortlist (2,048 attended terms, in training and search) removes it in both domains.**
+   - The experienced network keeps a significant head start at 10 tasks.
+   - It keeps pace with (flows) or stays ahead of (reaction networks) a fresh network with the same shortlist at 30 tasks.
+   - **Likely mechanism:** the plasticity that is lost sits in what the network attends to. Its scorer, trained on earlier domains, keeps the new domain's true terms out of the top 768, so training's attention rarely sees them.
+4. **Costs and open points:**
+   - The wider shortlist lowers the fresh network's own learning: new-form at 30 tasks, flows 88 → 80 and reaction networks 56 → 35.
+   - Tests take about 2–3× as long.
+   - Retention and the control under the wider shortlist were not measured in the pilot.
+   - In absolute terms, at 30 tasks the experienced network with 2,048 terms (flows 76, reaction networks 60) is above the best fresh network on reaction networks (768 terms: 56) but below it on flows (88).
+5. **The direct shortlist check is consistent with this.** Attending every term only at test time, in networks trained with 768, changes no bar (B) verdict. What matters is the attended set during training.
+
+**Check-in with the owner before any claim run.**
