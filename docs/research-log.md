@@ -7155,3 +7155,79 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - Knowledge held only in the network's weights has to survive every later round of training, and each added domain makes the network slower to learn the next.
   - A grammar and a library hold what was learned outside the network, where later training cannot erase it. That would also allow the move network to be refreshed (retrained from a new start on replays and dreams) without losing what was learned.
   - That refresh is listed as an option to test after stage A if the slowdown persists in order 2; it is not a stage of its own yet.
+
+### Owner: the staged redesign approved; Stage A built; its pilot's design (9 November; pilot awaiting approval)
+
+**Owner.** *"Approved: start with Stage A, then B, C, D, E, one change at a time, with a development pilot before each and a claim run only where a pilot shows a clear gain. Retire the "transfer first" gate; use the decoy and removal checks instead. Treat A mainly as infrastructure for B and C, so keep its pilot quick. For Stage C's cross-equation patterns, plan three parts, each tested on its own: 1. Let the network attend across all equations of a system, not just within one (e.g. one summary token per equation, to limit cost). 2. Paired moves that add the same rate to two equations at once, with opposite signs. 3. Shared constants across equations in the fitter. After C, test refreshing the network from a new start using the library, grammar and replays. Let order 2 finish as planned. Send the pilot design for Stage A before running it."*
+
+**The plan as approved.**
+- **Order, one change at a time:**
+  - A, the learned grammar (infrastructure; a quick pilot);
+  - B, dreams from each lineage's grammar;
+  - C, library learning by compression, with a decoy library and a removal check. Its cross-equation patterns come in three parts, each tested on its own:
+    - C1: attention across all equations of a system (one summary token per equation);
+    - C2: paired moves that add the same rate to two equations with opposite signs;
+    - C3: constants shared across equations in the fitter;
+  - after C: refreshing the network from a new start using the library, the grammar and the replays;
+  - D, curriculum;
+  - E, fewer bursts.
+- **Pilots and claims:** a development pilot before each stage; a claim run only where a pilot shows a clear gain.
+- **The "transfer first" gate is retired.** Abstraction is tested directly against a decoy library, a removal check, and the made-up-systems control with its own library.
+- **Unchanged:**
+  - accumulation claims rest on new-form equations and must beat the made-up-systems control (with the same machinery fitted to its own data);
+  - no hand-added pieces;
+  - no domain labels when a system is searched.
+
+**Stage A as built.** New modules, so the claim run in progress (which re-imports its own modules for every review round) is untouched: `grammar_g2.py`, `movenet_g2a.py` and `stageA_pilot.py`.
+
+- **Term shapes:**
+  - Each vocabulary term is read relative to its equation: the equation's own variable becomes x1, and the others become x2–x4 in whichever order gives the smallest canonical key.
+  - There are 1,572 shapes over the 2-, 3- and 4-variable vocabularies (1,140, about 1,486 and about 1,552 per dimension).
+  - A shape is the same key in every dimension, so counts from two-variable histories carry over to four-variable domains.
+  - A few dozen terms with a constant inside a logarithm keep variable-order-dependent canonical forms, so shape counts are kept per own variable.
+- **A component** holds shape counts over a set of equations (and counts of terms per equation). Its probability of a concrete term is (n_s/m_s + α/V)/(N + α): a Dirichlet-smoothed count with a uniform base.
+  - **The smoothing α comes from a fixed grid (1 to 10⁴):**
+    - for the earlier component, chosen by predicting each earlier domain from the other earlier domains (leave one domain out);
+    - for the newest component and for made-up experience, chosen by leaving one equation out;
+    - with fewer than 20 equations, α = 10.
+  - **The histories:**
+    - order 1 gives α = 1,000, so 34% of the mass goes to unseen kinds of term; order 2 gives α = 300 (13%). The histories hold 900 and 894 equations but only 24 distinct shapes.
+    - Leaving one equation out instead would give α = 1 (0.1% for unseen kinds), which is far too confident for a new domain. That is why the domain is held out.
+  - **The controls' made-up experience:** about 9,700 made-up equations (reconstructed from their example files), about 1,000 distinct shapes, α = 1,000 (5% for unseen kinds). It is a much broader prior than the real history's.
+- **The grammar** is the equal mixture of the components that have counts in the system's dimension:
+  - "earlier" (everything before the newest domain) and "newest" (the newest domain's verified solutions), the same half-and-half rule as the balanced review rounds;
+  - an empty grammar is exactly uniform (checked: the log ratio is 0 everywhere).
+- **The network corrects the grammar instead of replacing it** (`movenet_g2a`). Every term's add score is the network's output plus L = log P_grammar + log V, which is 0 for the uniform prior:
+  - the shortlist is chosen by score + L;
+  - an attended term's logit is the head's logit + L;
+  - the rest slot carries the grammar's mass outside the attended set, spread over the rest's terms in proportion to the grammar;
+  - training uses the same sums;
+  - networks trained before Stage A (the history networks, until their first Stage A review round) keep their own scores, and for them the grammar only spreads the rest slot's probability.
+- **Checks:**
+  - With no grammar, the loss equals movenet_g2's (0.59448 against 0.59448 on two-variable examples; 1.31338 against 1.31338 on four-variable ones).
+  - With the order-1 history grammar, the untrained network's loss on reaction-network replay examples falls from 1.31 to 0.78.
+
+**Stage A pilot design (pre-registered; development systems only; awaiting the owner's approval).**
+- **Recipe:** the slowdown pilot's f6 recipe, with one change, the grammar, for every arm. The f6 recipe is:
+  - the 2,048-term shortlist in training and search, and balanced review rounds;
+  - wakes on training tasks 1–10 and 11–30, with a 500-step review round and 100 fantasies after each;
+  - development tests (40 systems per domain) after each review round;
+  - budget 300, thorough cap 60, time limit 3,600 s per system.
+- **Testbeds:** nonlinear flows after order 2's history; reaction networks after order 1's history.
+- **Arms:**
+  - continued: the history's verified solutions plus its new-domain solutions;
+  - rehearsal-matched control: its made-up systems' structures plus its own new-domain solutions, with review rounds matched as in the claim run;
+  - fresh: its own new-domain solutions only. Its grammar is empty at the first wake, so the claim run's uniform first wake is reused.
+- **Baselines without the grammar:** the slowdown pilot's f6 lineages (p6_o2 and p6fresh_2 on flows; q6_o1 and q6fresh_1 on reaction networks). No control was run without the grammar at this shortlist on development systems; claim run 2's gap gives context.
+- **Measures** (new-form development equations; counts only):
+  1. continued and fresh, with against without the grammar, at 10 and 30 tasks (paired sign test);
+  2. continued against control with the grammar, at 10 tasks (bar (B)'s quantity on development systems) and at 30;
+  3. continued against fresh at 30 tasks (the slowdown);
+  4. a diagnostic with no search: the mean description length (bits) of the development systems' true new-form equations under each arm's grammar before the new domain and after 10 and 30 tasks, against the uniform prior's. This shows directly whether real experience gives a better prior than made-up experience;
+  5. root expansions where a missing true term lies outside the attended set, time-limit hits per arm, and compute.
+- **Decision rules:**
+  - Stage A goes forward into B unless the grammar makes the continued or fresh network significantly worse at 30 tasks (sign test p < 0.05) in either domain. If it does, diagnose and check in before B.
+  - A claim run for A on its own is proposed only if, with the grammar, the continued network beats the control by at least 10 points with p < 0.05 at 10 tasks in both domains (bar (B) on development systems).
+- **Cost:** six arm-domains, about 4.5 hours with 30 workers. The continued network and the control rerun their first 10 tasks; the fresh first wake is reused. It starts when claim run 2 ends (about 02:00 UTC on 10 November), to stay within the CPU share.
+- **Smoke test** (tiny budgets, two tasks per wake, three development systems per test, reaction networks): the whole path ran for all three arms. That covered grammar files saved with each network (the history networks marked as not trained with it), review rounds trained with the grammar, searches with it, and the report. The fresh network found nothing in its two tiny wakes, so its grammar stayed empty (uniform), as designed. The smoke outputs were deleted afterwards.
+  - **Disclosed:** checking the report code printed one real number, the no-search diagnostic before the new domain on the reaction networks' development systems: mean description length of the 155 true new-form equations, uniform prior 43.6 bits; the continued network's history grammar 25.9; the control's made-up grammar 26.7. It is development data, not test data, and the design above was written before it was seen.
