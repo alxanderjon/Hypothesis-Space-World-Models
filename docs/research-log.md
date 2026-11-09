@@ -7022,3 +7022,19 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 5. **The direct shortlist check is consistent with this.** Attending every term only at test time, in networks trained with 768, changes no bar (B) verdict. What matters is the attended set during training.
 
 **Check-in with the owner before any claim run.**
+
+### Owner's decision: the claim run with the 2,048-term shortlist, and a DreamCoder assessment (9 November)
+
+**Owner.** *"Remove the 20 GB cap on outputs. Delete files only when they're no longer useful. Keep the 5 GB free-disk crash guard. Run the claim run with the 2,048-term shortlist as proposed. In parallel, assess our design against DreamCoder in plain language: 1. Abstraction: in DreamCoder, the growing library is what produces transfer and keeps the search space small as it scales. We gated abstraction behind showing transfer first, which may be backwards. Should abstraction come earlier? 2. Dreams: DreamCoder samples dreams from its current library and learned weights, so dreams reflect accumulated experience. Ours are uniform draws from a fixed language, which may explain why the made-up-systems control matches the experienced network. 3. The learned prior: DreamCoder uses a probabilistic grammar whose weights and library are updated from solved tasks (Bayesian prior), plus a recognition network (our move network) and compression-based library learning. Our prior is essentially uniform and never updates. How would we add a learned prior? 4. Curriculum: DreamCoder solves easy tasks first and builds on them. Ours are independent random draws. 5. Why DreamCoder succeeds from 5–10 examples, and what we'd need for the same. Propose a redesign that adds the missing pieces, staged one change at a time, and send it with the claim-run results before running anything new."*
+
+**Disk rule from now on:** no cap on outputs; files are deleted only when no longer useful; writing stops if free space falls below 5 GB.
+
+**The claim run (Stage 2a′′ with the wider shortlist), as proposed.**
+- **Shortlist:** 2,048 attended terms in training and search, for every arm (continued, rehearsal-matched control, fresh).
+- **Test systems:** fresh, 40 per domain at level 1 (seeds "g2h-test2-{domain}-k"), with new-form classification per order and (a′′) on their true structures.
+- **Unchanged:** the bars, the gate, the budget, the dream sizes and the time limit (3,600 s per equation).
+  - Measured with the wider shortlist in the pilot, the slowest equation took 687 s, so the limit stays.
+- **Reused:** the histories and control bases.
+  - The fresh networks' uniform first wakes are identical, so they are reused.
+  - Everything else is rerun in `outputs/accumulating_learner/g2h/run2`.
+- **Check-in:** if the measured pace projects over 1.5 days.
