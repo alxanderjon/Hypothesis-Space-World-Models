@@ -194,6 +194,8 @@ def train_job(args):
     import numpy as np
     import movenet_g2 as MN
     import search_g1 as SG
+    if os.environ.get("G2H_SHORTLIST"):                          # the attended set in training too (Stage 2a'' run 2)
+        MN.SHORTLIST = int(os.environ["G2H_SHORTLIST"])
     torch.manual_seed(1)
     net = MN.load_net(prev + ".pt") if prev is not None else MN.MoveNetL2()
     device = f"cuda:{gi}" if gi is not None else "cpu"
@@ -517,6 +519,8 @@ class Driver:
         return net, files
 
     def test(self, net, dom, label, budget, cap, which="test"):
+        if which == "test" and dom in domains(self.level):         # the harder domains' test set (run 2: fresh draws)
+            which = os.environ.get("G2H_TEST_SET", "test")
         return self.search(RUN / "test" / f"{label}_{dom}.json", records(which, dom), net, f"test {label} on {dom}", budget, cap)
 
     def curve(self, kind, lineage, start, dom, label, o=None, earlier_files=None):

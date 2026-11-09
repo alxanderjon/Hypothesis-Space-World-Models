@@ -8,6 +8,7 @@ count (NSUB_MARGIN x the converged count). Prints counts only. Usage: g1_systems
 
 import json
 import math
+import os
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -161,10 +162,11 @@ if __name__ == "__main__":
         res = json.loads(path.read_text())
         letter = path.stem.rsplit("_", 1)[1]
         dom = {"A": "mechanics", "B": "circuits", "C": "ecology"}.get(letter, letter)   # Stage 2a files end in the domain
+        which = "test"
         for d2 in ("reactions_L1", "reactions_L2", "reactions_L3", "flows_L1", "flows_L2", "flows_L3"):
             if path.stem.endswith("_" + d2):                     # Stage 2a'' domain names hold an underscore
-                dom = d2
-        recs = {r["id"]: r for r in json.loads((SYS / f"test_{dom}.json").read_text())}
+                dom, which = d2, os.environ.get("G2H_TEST_SET", "test")   # the harder domains' test set (claim run 2: test2)
+        recs = {r["id"]: r for r in json.loads((SYS / f"{which}_{dom}.json").read_text())}
         jobs = [(recs[r["id"]], [e["solution"] for e in r["equations"]]) for r in res
                 if r["status"] == "done" and all(e["solution"] for e in r["equations"])]
         with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:

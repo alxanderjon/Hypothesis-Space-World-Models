@@ -34,7 +34,8 @@ if __name__ == "__main__":
             cache[ks] = min(forms) if forms else ks
         return cache[ks]
 
-    path = OUT / f"shared_forms_g2h_L{level}.json"
+    extra = [w for w in sets if w not in ("dev", "test")]
+    path = OUT / (f"shared_forms_g2h_L{level}.json" if not extra else f"shared_forms_g2h_L{level}_{extra[0]}.json")
     out = json.loads(path.read_text()) if path.exists() else {}
     train = {d: [eq["keys"] for r in json.loads((OUT / f"train_{d}.json").read_text()) if r["status"] == "accepted"
                  for eq in r["structure"]] for d in ORDERS[1]}

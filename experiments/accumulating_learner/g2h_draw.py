@@ -14,7 +14,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE.parents[1] / "outputs/accumulating_learner/g1/systems"
-SIZES = {"pilot": 24, "train": 100, "dev": 40, "test": 40}
+SIZES = {"pilot": 24, "train": 100, "dev": 40, "test": 40, "test2": 40}
 KINDS = ("reactions", "flows")
 
 

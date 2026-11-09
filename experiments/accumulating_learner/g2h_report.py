@@ -11,6 +11,7 @@ Usage: g2h_report.py <level> [order ...]"""
 
 import itertools
 import json
+import os
 import math
 import sys
 from pathlib import Path
@@ -18,7 +19,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 SYS = ROOT / "outputs/accumulating_learner/g1/systems"
-RUN = ROOT / "outputs/accumulating_learner/g2h/run1"
+RUN = ROOT / "outputs/accumulating_learner/g2h" / os.environ.get("G2H_RUN", "run1")
+TEST_SET = os.environ.get("G2H_TEST_SET", "test")
 POINTS = (0, 10, 30, 100)
 HISTORY = ("mechanics", "circuits", "ecology")
 
@@ -179,13 +181,13 @@ def main():
     level = int(sys.argv[1])
     os_ = [int(x) for x in sys.argv[2:]] or [1, 2]
     O = orders(level)
-    shared = json.loads((SYS / f"shared_forms_g2h_L{level}.json").read_text())
+    shared = json.loads((SYS / (f"shared_forms_g2h_L{level}.json" if TEST_SET == "test" else f"shared_forms_g2h_L{level}_{TEST_SET}.json")).read_text())
     sysx = {}
     prov = Provenance(level)
     verdict, new_of = {}, {}
     for o in os_:
         for pos, dom in ((4, O[o][3]), (5, O[o][4])):
-            tests = [r for r in json.loads((SYS / f"test_{dom}.json").read_text()) if r["status"] == "accepted"]
+            tests = [r for r in json.loads((SYS / f"{TEST_SET}_{dom}.json").read_text()) if r["status"] == "accepted"]
             truth = {r["id"]: r["structure"] for r in tests}
             dims = {r["id"]: r["desc"]["d"] for r in tests}
             flags = shared[f"order{o}_{dom}"]
