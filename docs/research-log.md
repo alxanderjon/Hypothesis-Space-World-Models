@@ -6936,3 +6936,42 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - order 2 reaction networks: 56 (continued).
 - **What was done:** the check was stopped before the control's reaction-network rerun. All four order-2 tests will be rerun with the limit raised to 4 h per equation (`G2H_TIME_CAP=14400`), under a new suffix.
 - **Why raising the limit is sound:** the limit is a safety limit. The original shortlist tests never reached it, so raising it keeps the comparison about the attended set.
+
+### The slowdown pilot: results on nonlinear flows (9 November, 04:10; development systems only)
+
+**Testbed:** flows (level 1), 4th position after order 2's history; 40 development systems, 159 new-form equations.
+- The gap is the fresh network minus the experienced network, in new-form points.
+- Paired sign tests (only experienced / only fresh).
+- All runs under the claim run's budget; time-limit hits 0.
+- `g2h_pilot.py`; folder `outputs/accumulating_learner/g2h/pilot`.
+
+| Fix (one at a time) | 10 tasks: experienced / fresh | 30 tasks: experienced / fresh | **Gap at 30** | Sign test at 30 |
+|---|---|---|---|---|
+| Baseline (the claim run's balanced dreams) | 53 / 45 | 59 / 88 | **+18.2** | 3 / 32, p = 4 × 10⁻⁷ |
+| 1. Focus-then-consolidate: the focus phase | 54 / 45 | 52 / 88 | **+22.6** | 3 / 39, p = 6 × 10⁻⁹ |
+| 2. Shrink-and-perturb (0.4, 0.1) | 38 / 45 | 63 / 88 | **+15.7** | 1 / 26, p = 4 × 10⁻⁷ |
+| 3. L2 Init (λ = 10⁻²) | 48 / 45 | 52 / 88 | **+22.6** | 2 / 38, p = 2 × 10⁻⁹ |
+| 4. ReDo (τ = 0.1) | 53 / 45 | 57 / 88 | **+19.5** | 1 / 32, p = 8 × 10⁻⁹ |
+| 5. 1,000-step dreams (both networks) | 46 / 30 | 55 / 75 | **+12.6** | 4 / 24, p = 0.0002 |
+| 6. **2,048-term shortlist** (both networks) | **52 / 36** | **76 / 80** | **+2.5** | 11 / 15, p = 0.56 |
+| Control, balanced baseline | 54 / 45 | 68 / 88 | +12.6 | 11 / 31, p = 0.003 |
+| Control, focus phase | 55 / 45 | 72 / 88 | +10.1 | 6 / 22, p = 0.004 |
+
+**Fix 1, the owner's question: loss of plasticity, not review time.**
+- In the focus phase the experienced network trains exactly as the fresh network does: only the new domain, same examples and steps. It keeps its head start at 10 tasks (54 against 45), then stalls: 52 at 30 tasks against the fresh network's 88.
+- The control, trained on made-up systems, loses less plasticity: 72 at 30 tasks.
+- **Consolidation** (1,000 steps, all domains shuffled together):
+  - Retention: the continued network keeps every history system (development: ecology, circuits and mechanics 10 of 10 before and after). The control keeps 9, 10 and 9 of 10 (8, 10 and 10 before).
+  - The new domain: consolidation keeps the continued network's flows (52 → 49, p = 0.55). It **erases most of the control's new learning: 72 → 46** (2 / 28, p = 9 × 10⁻⁷). The review is 95% earlier examples, which pull the network back.
+
+**Fixes 2–5 do not close the gap.**
+- Shrink-and-perturb learns faster from 10 to 30 tasks (+25 equations against +6), but only after giving up the head start (38 at 10 tasks).
+- L2 Init and ReDo change little. ReDo does reset many dormant units: 137, 178 and 271 of 512 in the main transformer's feed-forward layers before the first new-domain dream, and 42, 88 and 164 before the second.
+- Longer dreams lower both networks; the gap shrinks only because the fresh network loses more.
+
+**Fix 6, a 2,048-term shortlist in training and search, closes the gap.**
+- The experienced network keeps a significant head start at 10 tasks: +10.1 points, 28 / 12, p = 0.017.
+- It learns as fast as the fresh network up to 30 tasks: 76 against 80, p = 0.56, from 59 with the 768-term shortlist.
+- **Mechanism (likely):** the experienced network's scorer was trained on earlier domains. It ranks many of the new domain's true terms below the top 768, so training's attention never sees them, and they are learned only through the scorer's own loss. A wider attended set lets them in.
+- **The cost:** a wider shortlist also lowers the fresh network (88 → 80 at 30 tasks), and each search step costs more (tests take about 2–3× as long).
+- **Next, as pre-registered:** fix 6 is confirmed on reaction networks (4th, after order 1's history; development systems) before the check-in.
