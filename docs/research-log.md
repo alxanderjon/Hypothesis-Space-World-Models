@@ -7038,3 +7038,107 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - The fresh networks' uniform first wakes are identical, so they are reused.
   - Everything else is rerun in `outputs/accumulating_learner/g2h/run2`.
 - **Check-in:** if the measured pace projects over 1.5 days.
+
+### DreamCoder comparison and a staged redesign (9 November; proposal, awaiting the owner's approval; nothing run)
+
+**What DreamCoder does** (Ellis et al., PLDI 2021 / arXiv 2006.08381).
+- **The library sets the prior.** A growing library (a programming language) gives every program a prior probability. Programs that are short in the library are likely.
+- **Wake:** each task has 5–15 input–output examples. Programs are searched in order of probability under a recognition network conditioned on the task, and the best few are kept.
+- **Abstraction sleep:** the solutions are refactored, and the fragments that best compress them (a Bayesian, description-length objective) are added to the library.
+- **Dream sleep:** the recognition network trains on a 50/50 mix of:
+  - replays: tasks with their found programs;
+  - fantasies: programs sampled from the current library, run on real inputs, then solved by the same search.
+- **Implicit curriculum:** tasks are revisited every cycle. Harder ones get solved later, as the library makes their programs shorter.
+- **Ablations:**
+  - removing either library learning or the recognition network lowers held-out performance;
+  - deeper libraries go with more tasks solved (r = 0.79);
+  - domains have about 100–200 training tasks.
+
+**Side by side.**
+
+| DreamCoder | Ours |
+|---|---|
+| A library that grows (learned language) | A fixed language L1 (terms of at most 7 nodes and 2 constants) |
+| A generative prior: library plus weights, updated from solved tasks | None. The search's base prior is uniform over the vocabulary, and the mass outside the attended set is spread evenly |
+| Recognition network Q(program given task) | The move network: the same role |
+| Dreams sampled from the current library and weights | Half from single-term frequencies in our solutions, half from a fixed size prior; the control: the size prior only |
+| Unsolved tasks revisited every cycle | Each new-domain task searched once |
+| Whole-task programs | One equation at a time; no structure across equations |
+
+**1. Abstraction: should it come earlier? Yes.**
+- **What we have now:** the only thing that carries over between domains is the move network's sense of which terms of a fixed vocabulary tend to be useful.
+  - Made-up systems teach that equally well, since they are drawn from the same vocabulary.
+  - A new domain's own first tasks teach it quickly.
+  - That is what Stages 2a and 2a′′ found: a head start that the control and the fresh network erase within 10–30 tasks.
+- **So gating abstraction behind transfer was backwards.** In our setting, abstraction is the main way real experience could carry structure that made-up systems cannot. The gate's purpose, no new machinery without evidence, is better served by testing abstraction directly against:
+  - the made-up-systems control with its own library;
+  - a decoy library of random fragments of matched size;
+  - removal of library pieces, with provenance.
+- **Abstraction here means three kinds of reusable piece:**
+  1. composite terms beyond 7 nodes built from recurring parts, such as a saturating rate x/(K + x) reused inside products;
+  2. templates: groups of terms that recur together in one equation, added in one move;
+  3. motifs across equations: a rate that enters two equations with opposite signs (a conversion), or x′ = v. Our per-equation search cannot see these, yet in reaction networks they are the dominant structure.
+
+**2. Dreams: partly right.**
+- The continued network's dreams are not purely uniform: half follow how often each term appeared in our solutions. But only single-term frequencies are used.
+- Nothing in our dreams reflects how terms combine, how many terms an equation has, typical constants, or which equations share a rate.
+- So the two arms' dreams are close to each other and carry little accumulated structure. That is a plausible reason the control matches the experienced network.
+- DreamCoder's dreams come from its current library and weights, so they look more like real tasks as experience grows.
+
+**3. The learned prior.**
+- **What we have:** the recognition half (the move network), but not the generative half. Nothing outside the network accumulates "what structures look like", and the base prior never updates.
+- The shortlist finding showed the cost: what the network does not attend to gets only an even share of probability.
+- **How to add it:** a probabilistic grammar of equation structures, learned from verified solutions with Bayesian smoothing. It gives:
+  - the probability of each term given its role (own variable, other variables);
+  - the probability of the number of terms per equation;
+  - pairwise co-occurrence within an equation;
+  - for motifs, the chance that a term recurs in another equation with the opposite sign.
+- **Smoothing:** counts with symmetric Dirichlet pseudo-counts, so unseen terms keep probability. The posterior predictive is the prior.
+- **Uses:**
+  1. the search's base prior, combined with the network's scores (the network corrects it per system);
+  2. spreading the mass outside the attended set, instead of evenly;
+  3. the dream generator;
+  4. the description length that library learning compresses.
+- **Fairness:** the control's grammar is fitted to its own made-up systems' true structures and its own solutions.
+
+**4. Curriculum.**
+- **What we have:** each new-domain task is searched once, in random order, so hard tasks never benefit from what is learned later.
+- **Fix:**
+  - after each dream, re-search the earlier unsolved tasks with a small budget each;
+  - order tasks easy-first by an easiness estimate (the network's confidence, or the learned grammar's probability of short structures);
+  - use our difficulty ladder (level 1 → 2 → 3) as stages.
+
+**5. Why DreamCoder succeeds from 5–15 examples, and what we would need.**
+- **Why it works:**
+  - programs are discrete and checked exactly;
+  - the library makes the right program short, so it ranks high among the few consistent ones;
+  - the recognition network narrows the search;
+  - the description-length prior prefers the simplest consistent program.
+- **What we already have:** exactness checks (10⁻⁹ on held-back data) from 8 bursts, about 30 rate points per equation, which is comparably few data.
+- **What we lack: a prior that makes the right structure short.**
+  - Our search affords about 300 candidate structures per equation, because each needs continuous constants fitted. That is far fewer than DreamCoder enumerates.
+  - With 4,683 terms in four variables, the right 3–4 rarely come up without help.
+- **What we would need:**
+  - library pieces that package whole recurring structures, including where their constants go;
+  - the learned grammar;
+  - learned starting values for constants (typical half-saturation constants, for example), so each candidate costs less and the right one comes early.
+- Then a test with fewer bursts (2–4).
+
+**The redesign, one change at a time.**
+
+| Stage | Change (applied to every arm under the same rules) | Test | Main risk |
+|---|---|---|---|
+| A | A learned generative prior: the smoothed grammar above, as the search's base prior and for the mass outside the attended set | Development pilot: experienced, control and fresh at 10 and 30 tasks, flows and reaction networks; claim run if it helps | Only term statistics again: a small effect |
+| B | Dreams sampled from each lineage's learned grammar (a share kept from the size prior for exploration) | As A | Dreams too narrow |
+| C | Library learning by compression: composite terms, templates and cross-equation motifs, as single moves and grammar symbols | As A, plus a decoy library and a removal check | Build effort; fitting cost of large pieces |
+| D | Curriculum: re-search unsolved tasks after each dream; easy-first order | As A | Compute |
+| E | Fewer data: 2–4 bursts per system | Identification rate against bursts, with and without stages A–D | — |
+
+- **Order:**
+  - A comes first: the library's compression needs a prior to score description length, and dreams need a generative model.
+  - B tests the owner's dream hypothesis directly.
+  - C adds the library; dreams then include library pieces automatically.
+  - D and E follow.
+- **Retire the "transfer first" gate**, in favour of the decoy and removal controls.
+- **Keep** the made-up-systems control (with the same machinery fitted to its own data) and the new-form rule for every claim.
+- **Cost, rough:** A and B about 0.5 day each to build and 0.5 day to pilot; C about 1.5–2 days to build; D about 1 day; E about 0.5 day. Claim runs (about 1 day each at the wider shortlist) only where a pilot shows a gain. Check-in before each claim run.
