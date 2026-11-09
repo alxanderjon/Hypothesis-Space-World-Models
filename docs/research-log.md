@@ -7231,3 +7231,13 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 - **Cost:** six arm-domains, about 4.5 hours with 30 workers. The continued network and the control rerun their first 10 tasks; the fresh first wake is reused. It starts when claim run 2 ends (about 02:00 UTC on 10 November), to stay within the CPU share.
 - **Smoke test** (tiny budgets, two tasks per wake, three development systems per test, reaction networks): the whole path ran for all three arms. That covered grammar files saved with each network (the history networks marked as not trained with it), review rounds trained with the grammar, searches with it, and the report. The fresh network found nothing in its two tiny wakes, so its grammar stayed empty (uniform), as designed. The smoke outputs were deleted afterwards.
   - **Disclosed:** checking the report code printed one real number, the no-search diagnostic before the new domain on the reaction networks' development systems: mean description length of the 155 true new-form equations, uniform prior 43.6 bits; the continued network's history grammar 25.9; the control's made-up grammar 26.7. It is development data, not test data, and the design above was written before it was seen.
+
+### Owner: Stage A pilot approved; the bits check in every later stage (9 November)
+
+**Owner.** *"Approved: run the Stage A pilot when claim run 2 ends. Proceed to designing Stage B per the decision rules, and include the bits check (how many bits each grammar needs to describe the true new-form equations) in every later stage, since it measures directly whether real experience gives a better prior than made-up experience."*
+
+- **The Stage A pilot starts automatically when claim run 2's driver exits** (`stageA_pilot.py 30 flows reactions`, nice 19, one thread per worker).
+  - The launcher checks that at least 5 GB of disk is free before starting.
+  - While the pilot runs, it stops the pilot's process group if free space falls below 5 GB.
+- **The bits check is now a standing measure** for every later stage (B, C1–C3, the refresh test, D, E). It is the mean description length of the development systems' true new-form equations under each arm's grammar, before the new domain and after each review round, against the uniform prior.
+- **Stage B** is designed while A runs. It goes ahead under A's decision rule: unless the grammar makes the continued or fresh network significantly worse at 30 tasks. Its pilot design is sent for approval with A's results.
