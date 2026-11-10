@@ -7623,3 +7623,23 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - version ns added 75 structures at even weights and about 20 exploring structures.
   - With the rules off, the search already tries 70–100 low-rated terms per equation, at random, through its existing 15% random exploration. That randomness is spread over about 4,000 terms, so a given term is rarely reached. The rule adds a tenth in simplest-first order.
 - **The pilot restarts with this rule.**
+- **First decision-relevant result** (20:06 UTC): the continued network on flows under version n solves 56 against f6's 52 at 10 tasks (7–3, p = 0.34), and **54 against 76 at 30 tasks (2–24, p = 1e-5)**. Under the pre-registered rule, version n is ineligible.
+- **But the single f6 baseline is an outlier.** Every development run of this arm (continued network, flows after order 2's history) at 30 tasks:
+
+  | Run | New-form solved at 30 tasks (of 159) |
+  |---|---|
+  | 768-term shortlist, baseline | 59 |
+  | Shrink-and-perturb | 63 |
+  | L2 Init | 52 |
+  | ReDo | 57 |
+  | 1,000-step reviews | 55 |
+  | 2,048-term shortlist (f6) | 76 |
+  | f6 + grammar (Stage A) | 67 |
+  | f6 + never blocked | 54 |
+
+  The fresh network varies too: 88, 80 and 67 in its three runs.
+  - So the run-to-run spread at 30 tasks on flows is about 10–20 equations, and f6's 76 is the highest of eight runs.
+  - The paired sign test treats equations as independent, but two runs differ as wholes (one learned network against another). Its p-values between single runs (here 1e-5) do not measure a version's effect; the placebo showed the same, more mildly.
+- **Proposed to the owner** (the pilot continues unchanged meanwhile): replicate the f6 baseline with seeds 2 and 3 for the continued and fresh networks on flows at 10 and 30 tasks (4 runs, about 5 h).
+  - Judge "worse than f6" against the baseline's three runs, not one.
+  - Replicate the winning version twice before declaring it (about 2.5 h).
