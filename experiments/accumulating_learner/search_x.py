@@ -2,12 +2,14 @@
 with two general exploration rules, the same for every network and system.
 
 search_g1.EquationSearchL1 with:
-  - never blocked (rho): at every visit of a node in the network-guided search, with probability `rho` the search tries
-    the next untried term among those the prior rates below even (below 1 / the number of legal adds), in the
-    language's order (the vocabulary's order: fewest nodes, then fewest constants, the order in which the uniform search
-    breaks ties); otherwise it chooses as before. Like the search's existing random exploration share (eps), this is a
-    share of choices, not of prior mass: a share of prior mass is not a share of choices in PUCT once the network's
-    children fit well (research log, 10 November). Learned preferences order everything else, so an unfamiliar term can
+  - never blocked (rho): each step of the network-guided search is, with probability `rho`, an exploring step: it
+    descends as usual, but the new structure it creates is the node where it would expand plus the next untried term
+    among those the prior rates below even there (below 1 / the number of legal adds), in the language's order (the
+    vocabulary's order: fewest nodes, then fewest constants, the order in which the uniform search breaks ties); the new
+    child is linked into the tree, so it is revisited if it fits well. So `rho` of the structures go to unfamiliar terms,
+    each tried in the context the network judged best (a share of steps, not of prior mass: a share of prior mass is not
+    a share of choices in PUCT once the network's children fit well, and a share drawn at every node of a path compounds
+    with its depth; research log, 10 November). Learned preferences order everything else, so an unfamiliar term can
     be delayed but not blocked.
   - exploration share (share): the first `share` of the equation's structure budget is searched with even weights (the
     uniform prior); then the network's prior takes over: every node's prior is recomputed when it is next visited, and
@@ -43,8 +45,10 @@ class ExploringSearch(SG.EquationSearchL1):
         self.phase = "even" if self.switch_at > 0 else "network"
         self.low_tried, self.low_depth, self.root_low = set(), 0, None
         self.xrng = np.random.default_rng(int(rng.integers(1 << 31))) if self.rho else None   # the never-blocked draws
+        self._exploring = False
         super().__init__(i, ctx, budget, SG.uniform_prior if self.phase == "even" else prior_fn, fitter, rng, **kw)
         self.eff["even_structures"] = self.eff["structures"] if self.phase == "even" else 0
+        self.eff["exploring_structures"] = 0
 
     def step(self):
         if self.phase == "even" and self.eff["structures"] >= self.switch_at:
@@ -53,9 +57,33 @@ class ExploringSearch(SG.EquationSearchL1):
                 node["prior"] = None
                 node.pop("base_P", None)
         n0 = self.eff["structures"]
+        self._exploring = bool(self.phase == "network" and self.rho and not self.prune and self.xrng.random() < self.rho)
         super().step()
+        self._exploring = False
         if self.phase == "even":
             self.eff["even_structures"] += self.eff["structures"] - n0
+
+    def evaluate(self, S, parent):
+        """In an exploring step, the step's new structure is the parent plus its next untried unfamiliar term."""
+        if self._exploring and parent is not None and parent.get("low") is not None:
+            self._exploring = False
+            V, low, tried = self.vocab.V, parent["low"], set(parent["tried"])
+            if len(parent["idx"]) < SG.MAX_TERMS:
+                for j in range(parent["low_ptr"], len(low)):
+                    m = int(low[j])
+                    if m in tried:
+                        continue
+                    alt = SG.apply_move(parent["idx"], m, V)
+                    if alt in self.table:
+                        continue
+                    for mm in [mm for mm in parent["tried"] if parent["child_of"].get(mm) == S and S not in self.table]:
+                        parent["tried"].remove(mm)                   # the move this step chose stays untried
+                        del parent["child_of"][mm]
+                    parent["tried"].append(m)
+                    parent["child_of"][m] = alt
+                    self.eff["exploring_structures"] += 1
+                    return super().evaluate(alt, parent)
+        return super().evaluate(S, parent)
 
     def _expand(self, node):
         super()._expand(node)
@@ -85,14 +113,6 @@ class ExploringSearch(SG.EquationSearchL1):
             ptr += 1
         node["low_ptr"] = ptr
         self.low_depth = max(self.low_depth, ptr)
-        if not self.rho:
-            return
-        if ptr < len(low) and self.xrng.random() < self.rho:     # this visit tries the next unfamiliar term
-            P = node["base_P"].copy()
-            P[int(low[ptr])] = 1e9
-            node["P"] = P
-        else:
-            node["P"] = node["base_P"]
 
 
 def search_system_x(bursts, prior_fn, budget=1000, thorough_cap=200, time_cap=float("inf"), seed=1, ctx=None, probes=None,

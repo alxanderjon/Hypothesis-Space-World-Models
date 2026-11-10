@@ -7611,3 +7611,8 @@ The fresh network's rows are the same in both orders (it does not depend on the 
     - distinct low-rated terms tried: 92–111, against 67–105 with the rules off;
     - equations solved: unchanged (1 of 4 and 0 of 4).
 - **The pilot restarts with this rule.**
+- **Pilot stopped a second time, at 18:19 UTC on 10 November,** after the continued network's flows curve under version n.
+  - Against f6, new-form development equations: 41 against 52 at 10 tasks (2–13, p = 0.0074); 47 against 76 at 30 (1–30, p = 3e-8).
+  - **Cause, again the implementation:** a 1/10 draw at every node visited along each search path compounds with the path's depth. About 30–40% of the structures went to unfamiliar terms (a median of 105 per equation), starving the network's own choices and its wakes' solutions (7 against 10, and 27 against 33).
+  - **Fix:** the draw is once per search step. With probability 1/10 the step is an exploring step: it descends as usual, and the new structure it creates is the expansion node plus that node's next untried low-rated term, simplest first. The new child is linked into the tree, so it is revisited if it fits well. So exactly 1/10 of the structures go to unfamiliar terms, each tried in the context the network judged best.
+  - The stopped run's outputs were deleted, and its logs were kept as `stageX_*_stopped2.log`. The fix is checked before restarting.
