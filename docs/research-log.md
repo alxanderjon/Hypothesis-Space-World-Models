@@ -7275,3 +7275,69 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 - **Smoke test** (tiny budgets, reaction networks, all three arms): passed end to end, and its outputs were deleted.
   - In four variables the open-language branch often needs many draws: in two tiny review rounds, none of its draws passed within 200 tries.
   - That is why acceptance and the realized example share per branch are reported.
+
+### Stage 2a′′ claim run 2 (2,048-term shortlist, fresh test systems): results (10 November)
+
+**Setup as pre-registered** (9 November): the 2,048-term shortlist in training and search for every arm; 40 fresh test systems per harder domain (`test2`); bars, gate, budgets and time limit unchanged. It ran from 07:28 UTC on 9 November to 01:45 UTC on 10 November (18.3 hours). All 82 test and wake searches finished with no time-limit hit and no failure. The report is `g2h_report.py 1` (G2H_RUN=run2, G2H_TEST_SET=test2), saved as `outputs/accumulating_learner/g2h/run2/report.txt`.
+
+**New-form test equations solved** (continued / control / fresh). The reaction networks' test systems are all new-form in order 1. In order 2, after flows, 90 of 160 are. Flows: 95 of 160 new-form in order 1 (after reaction networks), 158 of 160 in order 2.
+
+| Order, domain (position) | 0 tasks | 10 tasks | 30 tasks | 100 tasks |
+|---|---|---|---|---|
+| 1, reaction networks (4th), of 160 | 39 / 17 / 0 | 58 / 48 / 16 | 67 / 55 / 62 | 87 / 64 / 92 |
+| 1, flows (5th), of 95 | 23 / 13 / 0 | 26 / 22 / 19 | 27 / 27 / 33 | 36 / 35 / 55 |
+| 2, flows (4th), of 158 | 37 / 32 / 1 | 62 / 49 / 47 | 56 / 57 / 80 | 73 / 69 / 111 |
+| 2, reaction networks (5th), of 90 | 32 / 7 / 0 | 32 / 24 / 5 | 46 / 31 / 21 | 59 / 35 / 39 |
+
+**Continued against the control, new-form** (points; only continued against only control; p):
+
+| Order, domain | 0 tasks | 10 tasks: bar (B) | 30 tasks | 100 tasks |
+|---|---|---|---|---|
+| 1, reaction networks | +13.8 (24–2, 1e-5) | +6.2 (15–5, p = 0.041): **not met** | +7.5 (14–2, 0.004) | +14.4 (25–2, 6e-6) |
+| 1, flows | +10.5 (11–1, 0.006) | +4.2 (6–2, p = 0.29): **not met** | 0.0 (3–3) | +1.1 (8–7) |
+| 2, flows | +3.2 (10–5, 0.3) | +8.2 (16–3, p = 0.0044): **not met** | −0.6 (4–5) | +2.5 (12–8, 0.5) |
+| 2, reaction networks | +27.8 (25–0, 6e-8) | +8.9 (14–6, p = 0.12): **not met** | +16.7 (18–3, 0.0015) | +26.7 (26–2, 3e-6) |
+
+- **Bar (B) is met in no domain and no order, so the gate to Stage 2b stays closed.** The gate was retired by the owner on 9 November in favour of the redesign's direct tests, and is applied here only as pre-registered.
+- **Validity:** after 30 tasks the fresh network solves 39%, 35%, 51% and 23% of the new-form test equations (all at most 70%).
+
+**(C) Continued against the fresh network, new-form:**
+- **Reaction networks:** ahead or level.
+  - Order 1: +26.2 at 10 tasks; level at 30 (+3.1, p = 0.46) and 100 (−3.1, p = 0.59).
+  - Order 2: ahead at every point (+30.0, +27.8 (p = 5e-6), +22.2 (p = 0.002)).
+- **Flows:** behind from 30 tasks in both orders.
+  - Order 1: −6.3 (p = 0.18) at 30 tasks, −20.0 (4–23, p = 0.0003) at 100.
+  - Order 2: −15.2 (8–32, p = 0.0002) at 30, −24.1 (4–42, p = 5e-9) at 100.
+  - The fresh network also solves more whole flows systems at 100 tasks: 10, against 1 for both other arms in both orders.
+- **The slowdown is domain-specific, not a fifth-domain effect.** This corrects the reading given during the run. Flows are learned more slowly than by the fresh network in both positions (4th in order 2, 5th in order 1). Reaction networks show no slowdown in either position. The control matches the continued network on flows from 30 tasks, so on flows both earlier-trained networks learn more slowly than a fresh one, whatever their earlier training was.
+- In the slowdown pilot (development systems), the 2,048-term shortlist had closed the flows gap at 30 tasks in order 2 (76 against 80). On fresh test systems it did not (56 against 80).
+
+**(D) Order** (equations new-form in both orders):
+- **Reaction networks** do better after flows (order 2) than straight after the history: 32 against 11 at 0 tasks (p = 2e-5), 46 against 35 at 30 (p = 0.019); not significant at 10 or 100.
+- **Flows** start better after reaction networks (order 1: 23 against 13 at 0 tasks, p = 0.002), and the difference is gone from 10 tasks on.
+
+**(E) Retention:** met everywhere.
+- Order 1: mechanics, circuits and ecology 40 of 40 systems before and after; reaction networks 4 → 6 after learning flows (0 lost; equations 87 → 97).
+- Order 2: ecology and circuits 40 of 40; mechanics 40 → 38 (2 lost, the bar's limit); flows 1 → 5 after learning reaction networks (1 lost; equations 75 → 94).
+- Ecology after order 2 is still 80 of 80 equations solved, but only 26 are recovered with the true structure (51 before); the others are other plausibly exact structures.
+
+**Whole systems exact:** all 55 test systems with every equation solved passed the external test (one-step ≤ 10⁻¹² of the scale on 1,000 held-out states, plus the multi-step envelope). The rebuilt systems were identical in every case and there were no errors. The most was order 2's continued network on reaction networks at 100 tasks: 13 of 40.
+
+**Shortlist cut rates** (the share of expansions with a missing true term where one lay outside the attended set; full per-arm and per-point figures in the report):
+- **Order 1, reaction networks:** 37.5%, 36.5%, 50.9% and 11.5% for the continued network at 0, 10, 30 and 100 tasks; 29–35% for the control until 100 tasks.
+- **Order 2, reaction networks:** 0–7% for the continued network; 24–47% for the control.
+- **Flows:** 5–41% across arms.
+
+**Could the cuts explain bar (B)'s failures?** Not in the continued network's disfavour.
+- **Order 1, reaction networks:** on the 68 new-form equations where neither arm ever had a true term cut, the edge is +14.7 points (12–2, p = 0.013). Both arms solve almost none of the equations that were cut (continued 2 of 73, control 5 of 86), and the discordant equations' cut shares are alike in both arms. So the cuts dilute the edge by removing equations from both arms equally. They do not hand the control its wins.
+- **Order 2, flows:** the continued network's 16 sole wins had 28.9% of the control's expansions cut, against 0.2% of its own. There, cuts favour the continued network.
+- **Order 2, reaction networks:** +14.3 points on the 49 never-cut equations (p = 0.14).
+- **Shortlist cuts are what Stage A's grammar addresses:** probability outside the attended set is spread by the grammar instead of evenly.
+
+**Compute:** each test took 3–7 CPU hours (2–3 times the 768-term shortlist's). Every review round ran on a free GPU (GPU 0 or 1), in 2–3 minutes.
+
+**What it means for the goal.**
+- **Real experience helps with reaction networks.** The continued network beats the made-up-systems control at 30 and 100 tasks in both orders (by up to 27 points), and beats or matches the fresh network. It learns the most whole systems exactly (13 of 40 at 100 tasks in order 2).
+- **But by the pre-registered measure (bar (B), 10 tasks) the control explains most of the early transfer.** Its made-up experience gives nearly the same head start once it has seen 10 tasks.
+- **On flows, earlier training of either kind slows learning against a fresh network.**
+- This supports the redesign: explicit, experience-specific memory (grammar, library) instead of term preferences that made-up systems reproduce, and the refresh test for the slowdown. Stage A's pilot started at 01:45 UTC on 10 November; Stage B's design is pre-registered.
