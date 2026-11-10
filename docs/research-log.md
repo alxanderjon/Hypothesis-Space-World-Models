@@ -7415,3 +7415,106 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 - **Pilot:** flows only (where the rule fired), with all three arms at 10 and 30 tasks (continued and control reuse Stage A's first wakes; fresh reuses the uniform first wake). About 2.5–3 hours at the current machine load.
 - **Decision rule:** A′ goes into B unless the continued or fresh network is significantly worse at 30 tasks than without the grammar. Given the noise finding, a trigger is confirmed by one rerun of that arm before it counts.
 - **Stage B is then run on A′** (dreams from the same grammars, search as in A′), with its pre-registered design otherwise unchanged.
+
+### Owner: skip the A′ pilot, Stage B on A′; reruns to confirm p between 0.01 and 0.05; diagnose the flows slowdown (10 November)
+
+**Owner.** *"Skip the A′ pilot and go to Stage B on top of A′. Given the noise finding (two chance-only runs at p = 0.021), from now on any decision rule or claim with p between about 0.01 and 0.05 must be confirmed by a rerun with a different seed before it counts. Tell me how much that adds to the cost of claim runs. Also, from existing logs only, diagnose the flows slowdown: what terms do networks with earlier training rank highly that are wrong for flows, and which true flow terms do they rank low, compared with the fresh network? Report in plain language alongside the Stage B pilot design, before running B."*
+
+- **Standing rule from now on:**
+  - A decision rule or claim resting on p < 0.01 counts as it stands.
+  - One resting on 0.01 ≤ p ≤ 0.05 counts only after a rerun of the arms concerned confirms it: different seeds for that cycle's fantasies, training and search, and the same systems, with the same direction at p < 0.05.
+  - p > 0.05 is not significant.
+- **Stage B is built on A′:**
+  - the grammar is used in the search only for the rest slot's probability;
+  - networks are trained as before Stage A;
+  - the fantasies are drawn from each lineage's grammar.
+  - The A′ pilot is skipped.
+
+#### What the rerun rule adds to a claim run (measured on claim run 2's phases, 30 workers, 2,048-term shortlist)
+
+- **A confirming rerun repeats both sides of the comparison with new seeds,** on the same systems and from the same starting networks. The new seeds are for the cycle's fantasies, training and search; only the new-domain cycle's randomness is resampled, which is the noise the placebo showed.
+- **Costs:**
+
+  | Rerun | Hours |
+  |---|---|
+  | A 10-task comparison, continued + control (first wake, review round, test) | 0.7–0.8 |
+  | Adding the 0-task tests | +0.4–0.5 |
+  | A 30-task comparison | about 1.5 |
+  | A whole cell, both arms, 0 to 100 tasks | 3.0–3.4 |
+  | A fresh network's curve | 0.4 (10 tasks) to 1.8 (100 tasks) |
+  | The whole claim run (claim run 2 took 18.3 h) | 18.3 |
+
+- **Claim run 2 as a worked example:**
+  - Comparisons whose outcome would have hung on 0.01 ≤ p ≤ 0.05: (C) in order 2 flows at 10 tasks (p = 0.04), and (D) on reaction networks at 30 tasks (p = 0.019).
+  - Bar (B) in order 1 reaction networks had p = 0.041, but failed on size (+6.2 < +10), so it needs no rerun.
+  - Cost: about 0.8 h + 1.6 h, so about 2.4 h, +13%.
+- **Typical cost:** one to three borderline comparisons per claim run, so +1 to +5 hours (+5% to +30%).
+- **Worst case** (most comparisons borderline): about a full rerun (+100%).
+- Rerunning from the history instead of from the cell's starting networks would cost 7.5–9 h per order.
+- **Reruns are pre-registered as automatic parts of each approved pilot or claim run** (no extra check-in), with their cost reported.
+
+#### The flows slowdown, diagnosed from saved networks (10 November; no training, no search)
+
+**Method.** Rankings are not in the logs, so they were recomputed.
+- **What was scored:** claim run 2's saved networks were run forward (scoring only) on the 40 development flows systems (160 equations). At the start of each equation's search they ranked every term of the vocabulary by the search's probability of adding it.
+- **Networks:**
+  - the continued network and the control before flows, after 10 and after 30 flows tasks, in both orders;
+  - the fresh network after 10 and 30 tasks.
+- **Also counted:** whether each lineage's own training wakes ever found the terms concerned, from the wake logs (training tasks).
+- **Kinds of term**, written relative to the equation: u is its own variable; v and w are other variables; K is a constant.
+
+**Findings.**
+1. **The slowdown is one kind of term: the "bump" 1/(K + x²),** a constant-bearing term flows use and no earlier domain does. It is in about 29% of flows training equations.
+   - Median rank among about 4,000 terms after 30 flows tasks:
+
+     | Network | Bump in another variable, 1/(K + v²) (35 true terms) | Bump in its own variable, 1/(K + u²) (12) |
+     |---|---|---|
+     | Fresh | 17 | 16 |
+     | Continued, order 2 | 671 | 1,190 |
+     | Continued, order 1 | 1,325 | 1,358 |
+     | Control, order 2 | 2,105 | 2,086 |
+
+   - After 10 tasks it is already 8 for the fresh network against 836–991 for the others. These ranks often fall outside the 2,048-term shortlist.
+2. **It is self-reinforcing.**
+   - The fresh network's first wake is uniform, so it tries simple terms evenly and found a bump solution at once. It then found 10 in tasks 11–30 and 39 in tasks 31–100, of 11, 22 and 82 training equations whose true structure has one.
+   - Every network with earlier training, real or made-up, in both orders, found 0, 0 and at most 2 bump solutions in the same tasks.
+   - A term a network ranks low is never tried, never appears in its verified solutions, and so is never learned. The review rounds cannot correct a blind spot the network's own search never fills.
+3. **Wrong terms the earlier-trained networks rank too high** (share of equations where a wrong term of that kind is among the 10 top-ranked, at 30 tasks):
+
+   | Wrong term | Earlier-trained | Fresh |
+   |---|---|---|
+   | Product of two other variables, v·w | 74–80% (continued) | 33% |
+   | Cube of its own variable, u³ (order-2 lineages, whose history ends with mechanics) | 64–67% | 3% |
+   | Sines from the pendulum | 6–12% | 2–7% |
+   | A constant (order 1 continued, order 2 control) | 78–85% | 57% |
+
+4. **Not the cause:**
+   - The polynomial true terms (v, u·v, v², u², u³, 1) are ranked high, roughly 1 to 40, by every network.
+   - The saturating x/(K + x²) terms are ranked low by every network including the fresh one (median 570–2,600). That is a shared weakness.
+
+**What it means.**
+- **The slowdown is a failure to explore,** not a loss of capacity: confident earlier preferences keep the search away from a kind of term the new domain needs, and the learner never finds out.
+- **The grammar inherits the blind spot.** It is fitted to verified solutions, so Stage A′ and B leave it in place; the same goes for the refresh after C, which retrains on the same replays.
+- **The fresh network's advantage comes from its uniform first wake.** A direct test would give every lineage part of its first new-domain wake under the uniform prior, before its own preferences take over. This is not run; it is a candidate for Stage D (curriculum and re-search).
+
+### Stage B on A′: the pilot's design (10 November; pre-registered; supersedes the design above where they differ)
+
+- **Recipe:** the slowdown pilot's f6 recipe, with two things added:
+  - Stage A′: each lineage's grammar is fitted after every wake and used in the search only to share out the rest slot's probability; networks are trained exactly as in f6;
+  - Stage B: every review round's 100 fantasies are drawn from that grammar, each whole from the grammar or, with probability ½, from the open language.
+- **Testbeds:** flows after order 2's history; reaction networks after order 1's.
+- **Arms:** continued `b_o<o>`, rehearsal-matched control `bc_<o>`, fresh `bfresh_<o>`; tests at 10 and 30 tasks on the 40 development systems.
+- **Reuse:** the first wakes are Stage A's (identical), and the fresh first wake is the uniform one.
+- **Baselines:** the f6 lineages (no grammar at all) for continued and fresh; Stage A for context.
+- **Measures:**
+  1. A′+B against f6 per arm, at 10 and 30 tasks;
+  2. continued against control at 10 tasks (bar (B)'s quantity on development) and at 30;
+  3. continued against fresh at 30;
+  4. the bits check;
+  5. dream diagnostics: acceptance, examples and terms per branch;
+  6. cut rates and time-limit hits.
+- **Also reported:** the bump term's rank and how many bump solutions each lineage's wakes find, since the slowdown diagnosis predicts that grammar dreams alone will not fix it.
+- **Decision rules** (with the rerun rule):
+  - B goes into C unless the continued or fresh network is worse at 30 tasks than without the grammar. p < 0.01 counts at once. 0.01 ≤ p ≤ 0.05 triggers an automatic two-sided rerun with seed 2 (the A′+B arm and a no-grammar f6 arm), and counts only if confirmed.
+  - A claim run for A′+B only if the continued network beats the control by at least 10 points at 10 tasks in both domains, at p < 0.01 or confirmed by a rerun.
+- **Cost:** about 4.5–5.5 hours with 30 workers at the current load. A two-sided rerun adds about 2.2 hours per arm and domain.

@@ -123,7 +123,8 @@ class PilotA(P.Pilot):
             return json.loads(path.read_text())
         C.log(f"{label}: searching {len(recs)} systems with prior {Path(prior).name} (budget {budget}, thorough cap {cap})")
         t0 = time.time()
-        res = list(self.pool.map(search_job_g, [(r, prior, 1, budget, cap) for r in recs]))
+        seed = getattr(self, "search_seed", 1)                  # reruns confirming borderline p use another seed
+        res = list(self.pool.map(search_job_g, [(r, prior, seed, budget, cap) for r in recs]))
         path.write_text(json.dumps(res, default=float))
         truth = {r["id"]: r["structure"] for r in recs}
         eqs = [(r, e) for r in res if r["status"] == "done" for e in r["equations"]]
