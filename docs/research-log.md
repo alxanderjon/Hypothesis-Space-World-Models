@@ -7518,3 +7518,7 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - B goes into C unless the continued or fresh network is worse at 30 tasks than without the grammar. p < 0.01 counts at once. 0.01 ≤ p ≤ 0.05 triggers an automatic two-sided rerun with seed 2 (the A′+B arm and a no-grammar f6 arm), and counts only if confirmed.
   - A claim run for A′+B only if the continued network beats the control by at least 10 points at 10 tasks in both domains, at p < 0.01 or confirmed by a rerun.
 - **Cost:** about 4.5–5.5 hours with 30 workers at the current load. A two-sided rerun adds about 2.2 hours per arm and domain.
+- **Smoke test of Stage B on A′** (tiny budgets, reaction networks): passed end to end, and its outputs were deleted. It covered:
+  - all three arms;
+  - a rerun with seed 2 (`reactions:r2:fresh`);
+  - the no-grammar side of a two-sided rerun (`reactions:f6r2:fresh`): f6's fantasies, f6 training, an empty grammar saved, so the rest slot is spread evenly.

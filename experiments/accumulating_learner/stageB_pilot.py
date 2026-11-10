@@ -13,10 +13,13 @@ training tasks 1-10 and 11-30, development tests after each review round) with S
 Arms b<tag>_o<o> (continued), bc<tag>_<o> (rehearsal-matched control: its made-up systems' structures as its earlier
 experience), bfresh<tag>_<o> (fresh); tag "" for the pilot, "r2" for a rerun with other seeds (owner, 10 November: any
 decision with 0.01 <= p <= 0.05 is confirmed by a rerun before it counts; the rerun's fantasies and training differ
-through its lineage names, its searches use seed 2, and its first wakes are searched again). The pilot's first wakes
+through its lineage names, its searches use seed 2, and its first wakes are searched again). The no-grammar side of a
+two-sided rerun ("f6r2": lineages n<tag>_o<o>, nc<tag>_<o>, nfresh<tag>_<o>) is the f6 recipe exactly: an empty grammar
+(the rest slot spread evenly) and fantasies from single-term usage and the size prior. The pilot's first wakes
 on tasks 1-10 are Stage A's (the same starting network, the grammar only in the rest slot, the same tasks, budget and
 seed), reused. Baselines: the slowdown pilot's f6 lineages (no grammar); Stage A's lineages for context.
-Usage: stageB_pilot.py <workers> <step ...> (flows, reactions, flows:r2[:continued,control,fresh], ..., report)"""
+Usage: stageB_pilot.py <workers> <step ...> (flows, reactions, flows:r2[:continued,control,fresh], flows:f6r2[:...],
+..., report)"""
 
 import json
 import os
@@ -72,6 +75,8 @@ class PilotB(A2.PilotA2):
         """The lineage's grammar (PilotA.grammar_for) for Stage B's names: the control (bc<tag>_<o>) has its made-up
         systems' structures as its earlier experience."""
         import grammar_g2 as GR
+        if lineage.startswith("n"):                              # the no-grammar side of a two-sided rerun
+            return GR.Grammar([])
         earlier, groups, newest = [], [], []
         for k, keys in self.replays(lineage).items():
             tid, eq = k.rsplit("|", 1)
@@ -131,7 +136,11 @@ class PilotB(A2.PilotA2):
         rep = self.add_replays(lineage, wake)
         grammar = self.grammar_for(lineage, dom, o)
         src = self.replay_sources(rep, dom)
-        src.append((self.fantasies_b(f"g2h-fantasy-{lineage}-{tag}", {4: C.NEW["fantasies"]}, grammar), 1, None))
+        if lineage.startswith("n"):                              # f6's fantasies: single-term usage and the size prior
+            src.append((self.fantasies(f"g2h-fantasy-{lineage}-{tag}", {4: C.NEW["fantasies"]},
+                                       self.usage({k: v for k, v in rep.items() if C.dom_of(k.rsplit("|", 1)[0]) == dom})), 1, None))
+        else:
+            src.append((self.fantasies_b(f"g2h-fantasy-{lineage}-{tag}", {4: C.NEW["fantasies"]}, grammar), 1, None))
         if earlier_files is not None and mode == "balanced":    # the control in the balanced schedule
             src += self.rehearsal(f"{lineage}_{tag}", earlier_files, self.counts_of(mirror).get(0, {}))
         self.train(out, src, None if prev == "uniform" else prev, steps, f"{lineage}_{tag}", {"mode": mode}, mode == "balanced")
@@ -147,7 +156,8 @@ def run(D, step):
     setup = SETUPS[which]
     dom, o = setup["dom"], setup["o"]
     D.search_seed = 2 if tag else 1
-    cont, ctrl, fresh = f"b{tag}_o{o}", f"bc{tag}_{o}", f"bfresh{tag}_{o}"
+    pre, tag = ("n", tag[2:]) if tag.startswith("f6") else ("b", tag)   # f6r2: the no-grammar side of a rerun
+    cont, ctrl, fresh = f"{pre}{tag}_o{o}", f"{pre}c{tag}_{o}", f"{pre}fresh{tag}_{o}"
     first = (lambda lab: None) if (C.SMOKE or tag) else (lambda lab: STAGEA / "wake" / f"{lab}.json")
     if "continued" in arms or "control" in arms:                 # the control's rehearsal mirrors this continued run
         hist = D.start(cont, setup["hist"], dom, o)
@@ -189,7 +199,9 @@ def report():
                     if x_ is None:
                         continue
                     line = [f"   {arm:>9}{' (rerun)' if tag else ''} at {k:>2} tasks: A'+B {R.counts(x_, new)}"]
-                    for lab_, folder, b_lab in (("without the grammar", A.PILOT, base), ("Stage A", STAGEA, stage_a)):
+                    sides = (("without the grammar", A.PILOT, base), ("Stage A", STAGEA, stage_a)) if not tag else \
+                        (("without the grammar, rerun", C.RUN, "n" + lin[1:]),)   # the two-sided rerun's other side
+                    for lab_, folder, b_lab in sides:
                         y_ = ld(folder, f"{b_lab}_t{k}dev") if b_lab else None
                         if y_ is not None:
                             a_, b_ = R.paired(x_, y_, new)
