@@ -7341,3 +7341,77 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 - **But by the pre-registered measure (bar (B), 10 tasks) the control explains most of the early transfer.** Its made-up experience gives nearly the same head start once it has seen 10 tasks.
 - **On flows, earlier training of either kind slows learning against a fresh network.**
 - This supports the redesign: explicit, experience-specific memory (grammar, library) instead of term preferences that made-up systems reproduce, and the refresh test for the slowdown. Stage A's pilot started at 01:45 UTC on 10 November; Stage B's design is pre-registered.
+
+### Stage A pilot: results, diagnosis and a proposed fix (10 November; check-in before B)
+
+**Run:** `stageA_pilot.py 30 flows reactions`, started automatically when claim run 2 ended. It ran 01:45–07:18 UTC.
+- The machine was heavily loaded by another user (about 40 cores), and one review round waited 20 minutes for a GPU.
+- No search was time-capped and none failed.
+- Report: `outputs/accumulating_learner/g2h/stageA/report.txt`.
+
+**New-form development equations solved, with the grammar against without it** (the slowdown pilot's f6 lineages; only-with against only-without; p):
+
+| Testbed, arm | 10 tasks | 30 tasks |
+|---|---|---|
+| Flows (159), continued | 51 vs 52 (5–6, p = 1) | 67 vs 76 (9–18, p = 0.12) |
+| Flows, fresh | 42 vs 36 (11–5, p = 0.21) | **67 vs 80 (8–21, p = 0.024)** |
+| Flows, control (with the grammar only) | 62 | 55 |
+| Reaction networks (155), continued | 51 vs 57 (7–13, p = 0.26) | 57 vs 60 (7–10, p = 0.63) |
+| Reaction networks, fresh | 25 vs 17 (9–1, p = 0.021)\* | 36 vs 35 (8–7, p = 1) |
+| Reaction networks, control (with the grammar only) | 42 | 53 |
+
+\* Its grammar was still empty at that point, so this is a placebo comparison; see below.
+
+- **Continued against control, with the grammar:**
+  - flows: −6.9 points at 10 tasks (6–17, p = 0.035; the control is ahead), +7.5 at 30 (18–6, p = 0.023);
+  - reaction networks: +5.8 at 10 (13–4, p = 0.049), +2.6 at 30 (13–9, p = 0.52).
+  - None reaches bar (B)'s +10 points.
+- **Continued against fresh, with the grammar:**
+  - flows: 21–12 at 10 tasks (p = 0.16), 17–17 at 30;
+  - reaction networks: 27–1 at 10, 24–3 at 30.
+- **The pre-registered stop rule is triggered:** the fresh network on flows is significantly worse at 30 tasks with the grammar (p = 0.024). Stage B does not start; this is the diagnosis and check-in.
+
+**The bits check** (mean description length of the true new-form development equations; uniform prior 41.7 bits on flows, 43.6 on reaction networks):
+
+| Grammar | Flows | Reaction networks |
+|---|---|---|
+| Continued, before the new domain | 28.3 | 25.9 |
+| Control, before | 27.4 | 26.7 |
+| Continued, after 10 tasks | 20.1 | 22.3 |
+| Control, after 10 | 20.8 | 23.2 |
+| Fresh, after 10 | 29.4 | 43.6 (empty) |
+| Continued, after 30 | 17.5 | 18.7 |
+| Control, after 30 | 18.1 | 19.4 |
+| Fresh, after 30 | 18.4 | 19.7 |
+
+- **Real experience gives a slightly better prior than made-up experience:** 0.6–0.9 bits per equation after 10 and 30 tasks in both domains, and 0.8 bits before the new domain on reaction networks.
+- **The one exception:** before the new domain on flows, the control's broad made-up grammar is better by 0.9 bits.
+- **The new domain's own first 30 tasks teach far more,** about 8–10 bits, and the fresh network's own grammar comes within about 1 bit of the experienced one by 30 tasks.
+- This is the bar-(B) picture in prior terms: little that is experience-specific carries over.
+
+**Diagnosis.**
+1. **The grammar in the shortlist's choice pushes the right terms out of the attended set when it does not know their kind.** The shortlist cut rate (expansions with a missing true term where one lay outside the attended set) changed as follows:
+
+   | Testbed, arm (tasks) | With the grammar | Without |
+   |---|---|---|
+   | Flows, continued (10) | 26.6% | 5.0% |
+   | Flows, continued (30) | 28.8% | 0.0% |
+   | Flows, fresh (30) | 18.8% | 5.6% |
+   | Reaction networks, fresh (30) | 56.6% | 5.2% |
+
+   - The flows equations lost with the grammar are the ones with a true term the grammar rates below the uniform prior: 48% of the fresh network's lost equations against 14% of those both solved, and 56% against 2% for the continued network.
+   - On reaction networks, whose kinds of term the history covers, the grammar instead kept true terms in the attended set: the continued network's cut rate fell from 36–38% to 8–11%. The solved count did not rise, though.
+2. **The new-domain component is over-confident.**
+   - It is fitted to the equations already solved, which are mostly the easy ones, so it keeps only 2–3% of its mass for unseen kinds.
+   - Choosing its smoothing by predicting the second wake's solutions from the first's gives the same values: only 2–11% of the second wake's solved terms were of a new kind.
+   - The kinds the grammar has not seen are in the equations not yet solved, which no smoothing fitted to solved equations can see.
+3. **Run-to-run noise is as large as the trigger.** The fresh network's grammar on reaction networks was still empty at 10 tasks, so its run differed from the baseline only in training randomness (fantasy draws, seeds). Yet that comparison gave 25 against 17 (9–1, p = 0.021).
+   - The paired sign test treats equations as independent, while two runs differ as wholes.
+   - So p-values around 0.02 from one pair of runs are within the noise. The stop rule's trigger (p = 0.024) may be partly noise, but the mechanism in item 1 is clear.
+
+**Proposed fix: Stage A′** (`stageA2_pilot.py`, built and syntax-checked; not run). The grammar only shares out the rest slot's probability over the terms outside the network's shortlist.
+- The network's scores, its shortlist and its training are exactly the f6 recipe's, so the grammar can neither push a term out of the attended set nor lower an attended term's score.
+- Grammars are fitted and saved as in Stage A, for the search's rest slot, for Stage B's dreams and for the bits check.
+- **Pilot:** flows only (where the rule fired), with all three arms at 10 and 30 tasks (continued and control reuse Stage A's first wakes; fresh reuses the uniform first wake). About 2.5–3 hours at the current machine load.
+- **Decision rule:** A′ goes into B unless the continued or fresh network is significantly worse at 30 tasks than without the grammar. Given the noise finding, a trigger is confirmed by one rerun of that arm before it counts.
+- **Stage B is then run on A′** (dreams from the same grammars, search as in A′), with its pre-registered design otherwise unchanged.
