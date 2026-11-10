@@ -7616,3 +7616,10 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - **Cause, again the implementation:** a 1/10 draw at every node visited along each search path compounds with the path's depth. About 30–40% of the structures went to unfamiliar terms (a median of 105 per equation), starving the network's own choices and its wakes' solutions (7 against 10, and 27 against 33).
   - **Fix:** the draw is once per search step. With probability 1/10 the step is an exploring step: it descends as usual, and the new structure it creates is the expansion node plus that node's next untried low-rated term, simplest first. The new child is linked into the tree, so it is revisited if it fits well. So exactly 1/10 of the structures go to unfamiliar terms, each tried in the context the network judged best.
   - The stopped run's outputs were deleted, and its logs were kept as `stageX_*_stopped2.log`. The fix is checked before restarting.
+- **Check of the per-step rule** (four development flows systems, the order-2 continued network after 30 flows tasks, budget 300):
+  - exploring structures: 25–34 per equation (8–11%);
+  - simplest-first runs: 4–19 deep, against 0–1 with the rules off;
+  - equations solved: 5 of 16 in all three settings (rules off, version n, version ns);
+  - version ns added 75 structures at even weights and about 20 exploring structures.
+  - With the rules off, the search already tries 70–100 low-rated terms per equation, at random, through its existing 15% random exploration. That randomness is spread over about 4,000 terms, so a given term is rarely reached. The rule adds a tenth in simplest-first order.
+- **The pilot restarts with this rule.**
