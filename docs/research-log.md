@@ -7591,3 +7591,7 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - The time limit is raised to 14,400 s per system, so the budget, not the clock, binds.
   - The networks themselves are the ones trained with 300-structure wakes.
 - **For the quick-fit question,** every search now records its time split: ordinary fits, thorough fits, precise checks and the prior (network and evidence).
+- **Stage X built and smoke-tested** (`search_x.py`, `stageX_pilot.py`, `stageX_report.py`, `rank_terms_x.py`).
+  - With both rules off, the exploration search reproduces search_g1's exactly (checked on a development system).
+  - The smoke test covered both rules, a seed-2 rerun of the no-exploration side, the budget check, the root rankings and the report. Its outputs were deleted.
+- **The pilot started at 17:07 UTC on 10 November:** `stageX_pilot.py 30 flows:n flows:ns reactions:n reactions:ns ranks:n,ns`, with nice 19, its own process group and the 5 GB free-disk guard (282 GB free at the start).
