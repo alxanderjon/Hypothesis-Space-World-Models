@@ -7595,3 +7595,8 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - With both rules off, the exploration search reproduces search_g1's exactly (checked on a development system).
   - The smoke test covered both rules, a seed-2 rerun of the no-exploration side, the budget check, the root rankings and the report. Its outputs were deleted.
 - **The pilot started at 17:07 UTC on 10 November:** `stageX_pilot.py 30 flows:n flows:ns reactions:n reactions:ns ranks:n,ns`, with nice 19, its own process group and the 5 GB free-disk guard (282 GB free at the start).
+- **Pilot stopped at 17:09 UTC, after its first wake** (the continued network, flows, version n: 0 of 40 equations solved in 35 s, with a median of 243 low-rated terms tried per equation of 300 structures).
+  - **Cause, an implementation error:** the never-blocked share was given in full to the next untried low-rated term at every visit. In PUCT an untried move's bonus is not divided by visits, so this explorer move always won as the node's visits grew, and took about 80% of the structures instead of about 10%.
+  - **Fix:** the share now behaves as one child. The next untried low-rated term carries ρ × (add mass) / (1 + the low-rated terms already tried at that node), so its bonus decays with use like any child's.
+  - Low-rated terms tried are now counted with the rules off too, giving the baseline's count.
+  - The stopped run's outputs were deleted, and its log was kept as `stageX_driver_stopped.log`. The pilot restarts after the fix is checked.

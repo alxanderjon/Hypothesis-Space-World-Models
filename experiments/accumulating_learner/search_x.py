@@ -10,8 +10,9 @@ search_g1.EquationSearchL1 with:
     uniform prior); then the network's prior takes over: every node's prior is recomputed when it is next visited, and
     every structure already fitted is reused.
 Recorded per equation (owner, 10 November): structures searched with even weights; the distinct low-rated terms tried
-(terms rated below even at the node where they were tried) and how deep into the simplest-first order of low-rated
-terms any node got; the solution's terms that the network rated below even at the root; the time split (ordinary fits,
+by any rule (terms rated below even at the node where they were tried; counted with the rules off too, for the
+baseline) and how deep into the simplest-first order of low-rated terms any node got (the longest unbroken run from
+the simplest); the solution's terms that the network rated below even at the root; the time split (ordinary fits,
 thorough fits, precise checks, prior).
 """
 
@@ -65,24 +66,30 @@ class ExploringSearch(SG.EquationSearchL1):
             node["low"] = np.flatnonzero(pr.legal_add & (pr.p_add < add_total / n_legal)) if n_legal and add_total > 0 \
                 else np.zeros(0, dtype=np.int64)                 # vocabulary order: simplest first
             node["low_ptr"], node["add_total"] = 0, add_total
+            node["low_set"] = {int(t) for t in node["low"]}
             if node is self.root:
-                self.root_low = {int(t) for t in node["low"]}
-        if not self.rho:
-            return
+                self.root_low = set(node["low_set"])
         low = node["low"]
         if not len(low):
             return
-        tried, ptr = set(node["tried"]), node["low_ptr"]
-        while ptr < len(low) and int(low[ptr]) in tried:
-            self.low_tried.add(int(low[ptr]))
-            self.low_depth = max(self.low_depth, ptr + 1)
+        tried = [m for m in node["tried"] if m in node["low_set"]]   # low-rated adds tried here, by any rule
+        for m in tried:
+            self.low_tried.add(m)
+        ptr = node["low_ptr"]
+        done = set(tried)
+        while ptr < len(low) and int(low[ptr]) in done:
             ptr += 1
         node["low_ptr"] = ptr
+        self.low_depth = max(self.low_depth, ptr)
+        if not self.rho:
+            return
+        # The never-blocked share behaves as one child: the next untried low-rated term carries the share divided by
+        # 1 + the low-rated terms already tried here, so its bonus decays with use like any child's (PUCT).
         P = node["base_P"].copy()
         V = self.vocab.V
         P[:V] *= 1.0 - self.rho
         if ptr < len(low):
-            P[int(low[ptr])] += self.rho * node["add_total"]
+            P[int(low[ptr])] += self.rho * node["add_total"] / (1 + len(tried))
         node["P"] = P
 
 
