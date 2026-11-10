@@ -7581,3 +7581,13 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 
 **Cost:** 12 arm-domains, about 9 hours with 30 workers at light load (the Stage A pilot's 6 arm-domains took 5.5 hours under heavy load). Reruns add about 2.2 hours per arm and domain. A cheaper alternative is X-ns only (about 5 hours).
 - **Clarification (same day):** "beats f6's total" is counted over the continued and fresh networks only, since the control has no f6 run on development systems. The winner rule's sum over three arms compares the two versions with each other.
+
+### Owner: Stage X approved with both versions; the grammar's role in Stage B; two report additions (10 November)
+
+**Owner.** *"Approved: run the pilot with both versions (never blocked alone, and never blocked plus the exploration share). Agreed to drop A′'s search use of the grammar for Stage B; keep the grammar only for B's practice systems and the bits check. Two additions to the pilot report: 1. How many distinct low-rated terms the exploration actually tried per equation, and how deep into the simplest-first order it got. 2. A small budget-sensitivity check on flows: rerun the winning version at 1,000 structures per equation for the fresh and experienced networks at 30 tasks, so we can see how much the 300 budget limits discovery of unfamiliar terms. Also say whether quick fits could screen many more candidates cheaply before the thorough fit, allowing a larger effective budget at similar cost. Report in plain language, including whether the experienced network's gap to the fresh network on flows closes, before starting Stage B."*
+
+- **The budget check:** the winner's 30-task networks (experienced and fresh, flows) are tested on the 40 development systems at 1,000 structures per equation instead of 300.
+  - The thorough cap is scaled in proportion, 60 → 200.
+  - The time limit is raised to 14,400 s per system, so the budget, not the clock, binds.
+  - The networks themselves are the ones trained with 300-structure wakes.
+- **For the quick-fit question,** every search now records its time split: ordinary fits, thorough fits, precise checks and the prior (network and evidence).
