@@ -7580,3 +7580,4 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 - **Stage B then runs on the winner.** Proposed: the grammar is used only for B's dreams and the bits check, not A′'s rest-slot spread. The never-blocked rule takes that role in a general form, and A′ was never piloted.
 
 **Cost:** 12 arm-domains, about 9 hours with 30 workers at light load (the Stage A pilot's 6 arm-domains took 5.5 hours under heavy load). Reruns add about 2.2 hours per arm and domain. A cheaper alternative is X-ns only (about 5 hours).
+- **Clarification (same day):** "beats f6's total" is counted over the continued and fresh networks only, since the control has no f6 run on development systems. The winner rule's sum over three arms compares the two versions with each other.
