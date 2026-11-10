@@ -7600,3 +7600,14 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - **Fix:** the share now behaves as one child. The next untried low-rated term carries ρ × (add mass) / (1 + the low-rated terms already tried at that node), so its bonus decays with use like any child's.
   - Low-rated terms tried are now counted with the rules off too, giving the baseline's count.
   - The stopped run's outputs were deleted, and its log was kept as `stageX_driver_stopped.log`. The pilot restarts after the fix is checked.
+- **Check of the decaying-prior fix:** two development flows systems, budget 300, the continued network's starting state. That fix behaved sensibly but too weakly.
+  - At most nodes it reached only the 1–2 simplest low-rated terms (72 in one equation).
+  - PUCT spends its visits on children that already fit well, so a share of prior mass is not a share of choices.
+  - With the rules off, the search still tries 67–105 low-rated terms per equation, at random, through its existing 15% random exploration.
+- **Implemented as approved ("at least 1/10"), as a share of choices.**
+  - At every visit of a node in the network-guided search, with probability 1/10 the search tries the next untried low-rated term, simplest first. Otherwise it chooses as before. This works like the search's existing random exploration share.
+  - Checked on the same two systems:
+    - the simplest-first run reached 21–31 low-rated terms per equation at ρ = 1/10, and 14–23 with the exploration share, which also took 75 structures at even weights;
+    - distinct low-rated terms tried: 92–111, against 67–105 with the rules off;
+    - equations solved: unchanged (1 of 4 and 0 of 4).
+- **The pilot restarts with this rule.**

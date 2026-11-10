@@ -2,10 +2,13 @@
 with two general exploration rules, the same for every network and system.
 
 search_g1.EquationSearchL1 with:
-  - never blocked (rho): at every node of the network-guided search, at least `rho` of the add moves' probability goes
-    to the next untried term among those the prior rates below even (below 1 / the number of legal adds), in the
+  - never blocked (rho): at every visit of a node in the network-guided search, with probability `rho` the search tries
+    the next untried term among those the prior rates below even (below 1 / the number of legal adds), in the
     language's order (the vocabulary's order: fewest nodes, then fewest constants, the order in which the uniform search
-    breaks ties). Learned preferences order everything else, so an unfamiliar term can be delayed but not blocked.
+    breaks ties); otherwise it chooses as before. Like the search's existing random exploration share (eps), this is a
+    share of choices, not of prior mass: a share of prior mass is not a share of choices in PUCT once the network's
+    children fit well (research log, 10 November). Learned preferences order everything else, so an unfamiliar term can
+    be delayed but not blocked.
   - exploration share (share): the first `share` of the equation's structure budget is searched with even weights (the
     uniform prior); then the network's prior takes over: every node's prior is recomputed when it is next visited, and
     every structure already fitted is reused.
@@ -39,6 +42,7 @@ class ExploringSearch(SG.EquationSearchL1):
         self.switch_at = int(round(self.share * budget))
         self.phase = "even" if self.switch_at > 0 else "network"
         self.low_tried, self.low_depth, self.root_low = set(), 0, None
+        self.xrng = np.random.default_rng(int(rng.integers(1 << 31))) if self.rho else None   # the never-blocked draws
         super().__init__(i, ctx, budget, SG.uniform_prior if self.phase == "even" else prior_fn, fitter, rng, **kw)
         self.eff["even_structures"] = self.eff["structures"] if self.phase == "even" else 0
 
@@ -83,14 +87,12 @@ class ExploringSearch(SG.EquationSearchL1):
         self.low_depth = max(self.low_depth, ptr)
         if not self.rho:
             return
-        # The never-blocked share behaves as one child: the next untried low-rated term carries the share divided by
-        # 1 + the low-rated terms already tried here, so its bonus decays with use like any child's (PUCT).
-        P = node["base_P"].copy()
-        V = self.vocab.V
-        P[:V] *= 1.0 - self.rho
-        if ptr < len(low):
-            P[int(low[ptr])] += self.rho * node["add_total"] / (1 + len(tried))
-        node["P"] = P
+        if ptr < len(low) and self.xrng.random() < self.rho:     # this visit tries the next unfamiliar term
+            P = node["base_P"].copy()
+            P[int(low[ptr])] = 1e9
+            node["P"] = P
+        else:
+            node["P"] = node["base_P"]
 
 
 def search_system_x(bursts, prior_fn, budget=1000, thorough_cap=200, time_cap=float("inf"), seed=1, ctx=None, probes=None,
