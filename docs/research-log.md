@@ -7522,3 +7522,61 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - all three arms;
   - a rerun with seed 2 (`reactions:r2:fresh`);
   - the no-grammar side of a two-sided rerun (`reactions:f6r2:fresh`): f6's fantasies, f6 training, an empty grammar saved, so the rest slot is spread evenly.
+
+### Owner: an exploration fix before Stage B; breadth of domains (10 November)
+
+**Owner.** *"Test an exploration fix first, before Stage B, since B's grammar-based dreams would inherit the same blind spot. Keep it general, not bump-specific; it's a safety net for any unfamiliar system in the future, not a fix for flows: 1. In a new domain, run a share of every network's searches with even weights over all terms before its own preferences take over (as AlphaZero adds exploration noise), and consider increasing that share automatically when equations stay unsolved. 2. Follow DreamCoder's principle that no term built from the language is ever effectively ruled out: make sure terms outside the shortlist keep a meaningful chance of being tried, so learned preferences can delay an unfamiliar term but never block it. Apply the same rules to the experienced, control and fresh networks. Pilot on flows and reaction networks at 10 and 30 tasks, reporting the bump's ranking and discovery counts, under the rerun rule. Then run Stage B on top of the winning version. Separately, note for later stages: the more varied the domains learned, the more future systems fall between them, so breadth of training domains matters alongside exploration. Send the exploration pilot design before running it."*
+
+- **Note for later stages (breadth):** the more varied the training domains, the more future systems fall between them. So the breadth of training domains matters alongside exploration. Later stages and claim runs should say which domains a learner has seen, and the redesign should eventually test learners trained on more varied histories.
+
+### Stage X: exploration as a safety net, the pilot's design (10 November; pre-registered; awaiting approval)
+
+**Why.** The flows diagnosis: confident earlier preferences kept the search away from a kind of term the new domain needed, so it was never found and never learned.
+- In the search, 300 structures per equation against about 4,000 terms means a term with a low learned probability is in effect never tried. That holds even inside the 2,048-term shortlist: the bump was ranked 670–2,100.
+- Measured on claim run 2's tests, the network's searches solve equations after a median of 29 structures; 84% within 150, 93% within 225 and 98% within 270. That bounds what an exploration share can cost.
+
+**Two general mechanisms, the same for every arm** (continued, control, fresh), in every search in a new domain (wakes and tests). The budget per equation is unchanged (300 structures), so compute matches the baseline.
+1. **Never blocked** (DreamCoder's principle).
+   - At every node of the network-guided search, at least ρ = 1/10 of the add moves' probability goes to the terms the network rates below even weights (below 1/number of legal adds). These include every term outside the shortlist and the low-rated terms inside it.
+   - This share is given to the next untried such term in the language's own order: fewest nodes, then fewest constants (the order the uniform search uses).
+   - So learned preferences decide what comes first, but each node keeps trying unfamiliar terms, simplest first. A term can be delayed, not blocked.
+2. **An exploration share with even weights** (as AlphaZero mixes exploration noise into its prior).
+   - The first share s of each equation's structures is searched with even weights over all moves: the uniform prior, simplest terms first. Then the network's preferences take over, and every structure already fitted is reused.
+   - **The share adapts to how much stays unsolved:** s = ¼ in a lineage's first wake of a new domain. After each wake, s = half the share of that wake's equations left unsolved, kept between 1/10 and ¼. Tests use the lineage's current s.
+   - The cap ¼ is AlphaZero's noise weight. It puts at most about 7% of the currently solved equations' budgets at risk.
+   - The fresh network's first wake stays fully even (it has no preferences yet).
+
+**Versions piloted:**
+- X-n: never blocked only;
+- X-ns: never blocked plus the adaptive exploration share.
+
+**Recipe and testbeds:**
+- The f6 recipe (the 2,048-term shortlist in training and search, balanced review rounds, no grammar), plus the version's search rules.
+- Flows after order 2's history, and reaction networks after order 1's.
+- Tests at 10 and 30 tasks on the 40 development systems.
+- The continued and control networks rerun their first wakes. The fresh network's first wake, which is uniform under both versions, is reused.
+
+**Baselines:** the f6 lineages (no exploration rules) for the continued and fresh networks. No control was run without exploration on development systems; it is not needed for the decision.
+
+**Measures** (new-form development equations; counts only):
+1. each arm and version against f6 at 10 and 30 tasks;
+2. continued against control at 10 and 30 tasks;
+3. continued against fresh at 30 tasks (the slowdown);
+4. **the bump**:
+   - its median rank by each lineage's networks after 10 and 30 tasks (root scoring as in the diagnosis);
+   - how many bump-containing solutions each lineage's wakes found;
+   - the saturating x/(K + x²) the same way;
+5. general exploration measures (not bump-specific):
+   - kinds of term each lineage found for the first time in each wake;
+   - solutions that contain a term the network rated below even weights at the root;
+   - the share of structures spent with even weights;
+6. the bits check: grammars fitted to each lineage's verified solutions, as in Stage A;
+7. time-limit hits and compute.
+
+**The winner, and the decision rules** (with the rerun rule):
+- **Eligible:** a version is eligible unless the continued or fresh network is worse than f6 at 30 tasks in either domain. p < 0.01 counts; 0.01 ≤ p ≤ 0.05 is decided by an automatic two-sided rerun with seed 2.
+- **The winner** is the eligible version with the most new-form development equations solved at 30 tasks, summed over the three arms and both domains. On a tie, the simpler X-n wins.
+- **If neither version is eligible, or neither beats f6's total, check in before Stage B.** For that total, the control's f6 figure is taken from the version-free claim-run recipe's control; failing that, it is compared over continued and fresh only.
+- **Stage B then runs on the winner.** Proposed: the grammar is used only for B's dreams and the bits check, not A′'s rest-slot spread. The never-blocked rule takes that role in a general form, and A′ was never piloted.
+
+**Cost:** 12 arm-domains, about 9 hours with 30 workers at light load (the Stage A pilot's 6 arm-domains took 5.5 hours under heavy load). Reruns add about 2.2 hours per arm and domain. A cheaper alternative is X-ns only (about 5 hours).
