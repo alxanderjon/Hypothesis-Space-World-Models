@@ -7643,3 +7643,74 @@ The fresh network's rows are the same in both orders (it does not depend on the 
 - **Proposed to the owner** (the pilot continues unchanged meanwhile): replicate the f6 baseline with seeds 2 and 3 for the continued and fresh networks on flows at 10 and 30 tasks (4 runs, about 5 h).
   - Judge "worse than f6" against the baseline's three runs, not one.
   - Replicate the winning version twice before declaring it (about 2.5 h).
+
+### Stage X pilot: results (11 November)
+
+**Run:** 18:58 UTC on 10 November to 03:35 UTC on 11 November.
+- No search was time-capped or failed.
+- Review rounds waited up to 8 minutes for GPUs under other users' load, and always ran on a free or shareable GPU.
+- Report: `outputs/accumulating_learner/g2h/stageX/report.txt`.
+
+**New-form development equations solved** (flows of 159; reaction networks of 155; continued / control / fresh):
+
+| Version | Flows, 10 tasks | Flows, 30 tasks | Reaction networks, 10 tasks | Reaction networks, 30 tasks |
+|---|---|---|---|---|
+| f6 (no exploration) | 52 / – / 36 | 76 / – / 80 | 57 / – / 17 | 60 / – / 35 |
+| n (never blocked) | 56 / 59 / 42 | 54 / 82 / 91 | 57 / 46 / 23 | 63 / 62 / 48 |
+| ns (never blocked + even-weights share) | 45 / 57 / 28 | 55 / 60 / 64 | 39 / 33 / 26 | 46 / 41 / 37 |
+
+- **Against f6 at 30 tasks** (only version against only f6; p):
+
+  | Version, arm | Flows | Reaction networks |
+  |---|---|---|
+  | n, continued | 2–24 (p = 1e-5), worse | 8–5 (p = 0.58) |
+  | n, fresh | 19–8 (p = 0.052), better | 21–8 (p = 0.024), better |
+  | ns, continued | 5–26 (p = 0.0002), worse | 7–21 (p = 0.013), worse |
+  | ns, fresh | 2–18 (p = 0.0004), worse | 7–5 |
+
+- **Version ns is worse than version n for every arm in both testbeds,** except the continued network on flows (55 against 54). The even-weights share costs the network's own budget more than it finds.
+- **Continued against fresh on flows at 30 tasks (the slowdown):**
+  - f6: 76 against 80 (p = 0.56);
+  - n: 54 against 91 (3–40, p = 3e-9);
+  - ns: 55 against 64 (p = 0.14).
+  - **The gap does not close; under n it widens,** because the fresh network gains and the experienced one does not.
+- **Continued against control on flows under n:** −1.9 points at 10 tasks; **−17.6 at 30 (2–30, p = 2.5e-7)**. With exploration, the made-up-trained control learns flows far better than the real-history network.
+  - On reaction networks: +7.1 at 10 tasks (17–6, p = 0.035); +0.6 at 30.
+- **The bump on flows** (root median rank among about 4,000 terms, after 10 → 30 tasks, and bump solutions in the wakes to 30 tasks):
+
+  | Version, arm | Root rank, 10 → 30 tasks | Bump solutions in the wakes |
+  |---|---|---|
+  | n, continued | 1,921 → 2,069 | 0 |
+  | n, control | 1,009 → 54 | 4 (it learned the bump) |
+  | n, fresh | 15 → 21 | 10 |
+  | ns, continued | 2,139 → 2,061 | 0 |
+  | ns, control | 2,093 → 1,225 | 0 |
+  | ns, fresh | 61 → 43 | 5 |
+
+  For comparison, f6's continued network found 1 bump solution and its fresh network 8.
+- **Exploration counts (version n):**
+  - 83–93 distinct low-rated terms tried per equation (median); with the rules off the search's own 15% random exploration already tries 70–100.
+  - Simplest-first depth: median 6 per node, at most 20–27.
+  - The largest low-rated term tried had 7 nodes.
+  - Equations solved with a term the network rated below even at the root: 15–41 per test.
+- **Kinds of term found for the first time** (flows, tasks to 10 | to 30):
+
+  | Version | Continued | Control | Fresh |
+  |---|---|---|---|
+  | f6 | 2 \| 2 | – | 5 \| 6 |
+  | n | 5 \| 1 | 13 \| 4 | 5 \| 7 |
+
+- **Bits check** (flows, 30 tasks; uniform prior 41.7):
+  - f6: continued 16.2, fresh 17.5;
+  - n: continued 19.5, control 16.7, fresh 16.4.
+  - Reaction networks (uniform 43.6): f6 continued 19.6, fresh 24.2; n continued 18.6, control 18.4, fresh 21.6.
+- **Time split per equation** (version n tests): about 85–100 s.
+  - The prior (network scoring and evidence) takes 86–87% of the time; ordinary fits take 4%, thorough fits 9% and precise checks 9%.
+  - Under ns, thorough fits and precise checks take 16–20% each: its even-weights share reaches more near-exact fits.
+- **The pre-registered winner rule:**
+  - Both versions are ineligible: the continued network on flows is worse than f6 at 30 tasks with p < 0.01 (n: p = 1e-5; ns: p = 0.0002, and its fresh network p = 0.0004).
+  - Totals at 30 tasks, three arms and both testbeds: n 400, ns 303. Continued plus fresh: n 256 against f6's 251, ns 202.
+  - The rerun rule's pending case (ns, reaction networks, continued, p = 0.013) cannot change ns's ineligibility, so it was not run.
+  - **By the rule: check in before Stage B.**
+- **Caution, as reported during the run:** f6's continued flows result (76) is the highest of eight development runs of that arm (52–76; the others 52–67). So "worse than f6" for the continued network on flows may largely be run-to-run spread. The proposed baseline replicates (seeds 2 and 3) are awaiting the owner's decision.
+- **The budget check** (version n, the better version, at 1,000 structures) and a no-search check of where the bump sits in each network's low-rated queue are running.
