@@ -7745,3 +7745,78 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - The prior step (network scoring plus the evidence for every term) takes 76–90% of the search time, at 0.24–0.39 s per structure.
   - An ordinary fit takes 0.010–0.024 s per structure, 15–25 times less. Thorough fits and precise checks take 5–18%.
   - **So yes:** quick fits could screen many more candidates per network evaluation. For example, at each expansion, quick-fit the network's next few choices and the next few unfamiliar terms together and keep the best, with thorough fits still capped. That gives perhaps 5–10 times the structures at similar cost. It is a change to the search, not run.
+
+### Owner: baseline replicates; hold the safety net and Stage B; assess compositional term building (11 November)
+
+**Owner.** *"Approve the baseline replicates. Hold off on the stronger safety net and on Stage B. We haven't yet implemented DreamCoder's core, and this pilot suggests why the gap widens: DreamCoder builds programs step by step from primitives under a learned grammar, so an unfamiliar term made of familiar parts (like 1/(K + x²)) is only a few likely choices away. Our search picks from a flat list of about 4,000 whole terms, where an unfamiliar term can sit thousands of places deep. In plain language, assess replacing the flat term list with compositional term building: the search constructs each term from operations and arguments, guided by the network and a grammar over operations, as in DreamCoder. Explain what changes in the search, the network and the fitter, the cost, and how library learning (Stage C) would then add learned pieces as new operations. Send that, with a staged plan, before running anything beyond the replicates."*
+
+- **The replicates started at 05:24 UTC on 11 November:** `stageX_pilot.py 30 flows:f6:r2:continued,fresh flows:f6:r3:continued,fresh` (seeds 2 and 3; nice 19; own process group; 5 GB guard; 171 GB free).
+
+#### Compositional term building: assessment and staged plan (11 November; nothing run)
+
+**What we have.** L1's terms are built from a small grammar (`language_g1.enumerate_trees`):
+- the variables x1…x4 and a constant;
+- the unary operations sin, exp and log (no exp or log inside another);
+- powers (2, 3, ½, or a fitted exponent);
+- add, multiply and divide.
+- A term has at most 7 nodes and 2 constants.
+
+All such trees were enumerated once, offline, and canonicalized. This gives 66,109 terms in four variables, of which 4,683 keep their form when the variables are rescaled; that set is the search's vocabulary. So the building blocks already exist, but the search sees only the finished list: one choice among about 4,000 whole terms, ranked by the network. The pilot showed what that costs:
+- every network rates about 3,800 terms below even;
+- the bump sits about 2,000 deep in the simplest-first order.
+
+**DreamCoder's way.**
+- A program is built step by step. At each open slot a production is chosen with a probability that depends on the slot's parent and position (a "contextual" grammar).
+- The grammar's weights come from solved tasks. A recognition network predicts task-specific weights, and programs are enumerated in decreasing probability.
+- An unfamiliar program made of familiar parts is a few likely choices away.
+- The bump, as a tree, is divide(constant, add(constant, power(x, 2))): 7 choices among about a dozen options each.
+  - The parts are familiar: the history's verified solutions include x/(K + x)-type terms (divide with an add(constant, ·) denominator) and many squares.
+  - Its probability is a product of mostly likely choices. The one less common step is a square inside that denominator.
+
+**What would change.**
+- **The search, in two levels.**
+  - The equation search (which terms are in an equation, with fitted values guiding it) stays.
+  - The "add a term" move draws from a term generator instead of the list. The generator proposes terms in decreasing probability, built from operations and arguments, and the search widens each node's set of children progressively: the next most probable untried term each time.
+  - The shortlist, the rest slot and the never-blocked queue all disappear, because the probability order is the queue.
+  - Every buildable term has a nonzero probability (smoothing), so none is blocked; the budget only sets how deep the search goes.
+  - The size limit becomes soft (probability, not a hard 7-node cap). That lets library pieces and larger terms in later.
+- **The grammar** is over operations, not whole-term shapes: how likely each operation is, given its parent operation and argument position.
+  - It is learned from each lineage's verified solutions with Bayesian smoothing (Stage A's machinery applied to operations).
+  - It is the generator's base, the source of Stage B's dreams, and the bits check's measure.
+  - The control gets the same machinery fitted to its own made-up systems.
+- **The network** becomes DreamCoder's recognition model.
+  - From the system's data and the current partial equation, it predicts the grammar's weights for this equation: how likely each operation is in each context.
+  - It is trained to make the building steps of verified (and dreamed) terms likely.
+  - The current per-term scorer, which reads each complete term's fit to the data, can stay as a second check on generated candidates.
+- **The fitter** changes little. It already handles any canonical term (term information and constants' starting values by role), and can add a term's data columns on demand (`Bank.add`). What is new:
+  - columns and compiled code are computed when a term is first generated, and cached across systems;
+  - the rescaling rule (a term must keep its form when the variables are rescaled) is checked when a term is completed, and terms that fail are skipped;
+  - duplicates are removed by canonical form, which is cached.
+- **To check the new search fairly,** it is first restricted to L1's limits (7 nodes, 2 constants) and compared with the flat-list search on the same space.
+- **Library learning (Stage C) then adds learned pieces as new operations.**
+  - A piece that shortens the description of the verified solutions under the operation grammar becomes one production with its own probability: for example "saturate(x) = x/(K + x)", or "bump(x) = 1/(K + x²)" once found. The generator then proposes it in one choice instead of five to seven.
+  - The pieces are chosen by compression (DreamCoder's description-length criterion), with the approved decoy library and removal check.
+  - The cross-equation parts C1–C3 fit the same picture as system-level productions: attention across equations, paired moves that add one rate with opposite signs, and shared constants.
+
+**Staged plan (one change at a time; replicate seeds per the noise finding).**
+- **K0, a no-search check (minutes).**
+  - Fit the operation grammar to each lineage's verified solutions.
+  - Compute where the development systems' true terms, the bump especially, would rank among all terms by that grammar, against their ranks now (network, shape grammar, simplest-first).
+  - This tests the core claim before anything is built: it should put the bump in the top tens to low hundreds for the experienced lineage.
+- **K1, compositional order in the existing search** (about 0.5 day to build):
+  - the never-blocked queue and the rest slot ordered by the operation grammar's probability instead of simplest-first;
+  - the flat list kept.
+  - Pilot: flows and reaction networks, 10 and 30 tasks, three arms, with 2–3 seeds per arm.
+- **K2, the generator replacing the flat list** (about 4–6 days to build and validate):
+  - best-first generation under the operation grammar, the recognition network predicting its weights, and progressive widening;
+  - the fitter's columns on demand, with caching.
+  - First reproduce the flat-list search on L1's space, then pilot.
+- **Then:**
+  - Stage B: dreams sampled from the operation grammar, so they inherit composable terms, not the shape grammar's blind spot;
+  - Stage C: library pieces as new operations, with decoy and removal checks, then C1–C3;
+  - D (curriculum) and E (fewer bursts) as planned.
+- **Compute:** K1 costs about the same as now. For K2, the generator should be no slower per structure than scoring about 4,000 terms with the network, which is now 76–90% of the search time, provided it generates hundreds of candidates per step, not thousands.
+- **Risks:**
+  - The recognition network predicts a structured output, which is harder to train than a per-term score.
+  - Longer terms mean more constants and harder fits (the earlier multi-piece fitting limit).
+  - The rescaling rule rejects many generated terms (only 4,683 of 66,109 pass in four variables), which wastes generation unless the grammar learns where constants go.

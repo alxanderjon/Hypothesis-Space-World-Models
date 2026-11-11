@@ -9,8 +9,8 @@ review round) with every search in the new domain (wakes and tests, every arm) r
               half the share of the latest wake's equations left unsolved, kept between 1/10 and 1/4 (tests use the
               lineage's current share);
   version f6  neither (the no-exploration side of a two-sided rerun; identical to search_g1's search).
-Arms x<v><tag>_o<o> (continued), xc<v><tag>_<o> (rehearsal-matched control), xfresh<v><tag>_<o> (fresh); tag "r2" is a
-rerun with seed 2 (the rerun rule). The fresh network's first wake is claim run 1's uniform one (unchanged by either
+Arms x<v><tag>_o<o> (continued), xc<v><tag>_<o> (rehearsal-matched control), xfresh<v><tag>_<o> (fresh); tag "r2" or
+"r3" is a rerun or replicate with seed 2 or 3 (the rerun rule; the baseline replicates, owner 11 November). The fresh network's first wake is claim run 1's uniform one (unchanged by either
 rule), reused in the pilot. Steps: <testbed>:<version>[:r2[:arm,...]]; budget:<version> (the winner's 30-task
 experienced and fresh flows networks tested at 1,000 structures per equation, thorough cap 200; run with
 G2H_TIME_CAP=14400); ranks:<version>[,<version>] (root rankings on the development flows systems); report.
@@ -150,7 +150,7 @@ def run(D, step):
     arms = parts[3].split(",") if len(parts) > 3 else ["continued", "control", "fresh"]
     setup = SETUPS[which]
     dom, o = setup["dom"], setup["o"]
-    D.search_seed = 2 if tag else 1
+    D.search_seed = int(tag[1:]) if tag else 1                  # r2, r3: reruns and replicates with seed 2, 3
     cont, ctrl, fresh = names(version, tag, o)
     if "continued" in arms or "control" in arms:                 # the control's rehearsal mirrors this continued run
         hist = P.copy_net(P.RUN1 / "nets" / setup["hist"], C.RUN / "nets" / setup["hist"])
