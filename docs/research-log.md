@@ -7929,3 +7929,35 @@ All true terms rank at a median of about 8 under every prior: most are simple po
   - The operation grammar is extended with these pieces as single operations, and each term's probability is that of its best parse.
   - Judged on all unfamiliar true terms in both domains (with the bump and the saturating term as cases), and on all true terms. Also the operation-level bits check.
 - **Planned (not run):** a replication of claim run 2's strongest finding, order 2's reaction networks at 100 tasks (continued 59 against control 35 of 90 new-form, +26.7 points), with additional seeds. The design and cost are sent at the K0b check-in.
+
+### K0b: design as built, and how it will be read (11 November; set before the run)
+
+**What is built** (`library_ops.py`, `k0b_check.py`; no search, no training; development systems only; counts only).
+- **Pieces.** A piece is part of a verified solution's tree with up to two of its parts replaced by gaps, for example (K + □)^□. The grammar uses it as one operation whose gaps are its arguments.
+- **Library learning by compression**, as in DreamCoder:
+  - Start with no pieces. Add the piece that most shortens the description of the lineage's own solutions (bits of the library plus bits of the solutions written with it), while it shortens it. At most 20 pieces.
+  - A candidate must occur in at least 2 distinct solution terms. At each step the 30 most promising candidates are scored exactly.
+  - The description length integrates the grammar's parameters out, so a piece pays for any new contexts it opens.
+- **Two forms of grammar, each learning its own library:**
+  - "Contextual" is K0's operation grammar: a choice depends on its parent operation and argument position.
+  - "Context-free" is the form of DreamCoder's own prior: a choice depends only on whether it fills an exponent or an expression. Under this form a piece learned inside a product is just as likely at the top of a term.
+- **Scoring.** A term's probability is that of its best parse, at each node the more probable of its own operation and any matching piece.
+  - Smoothing is chosen by held-out likelihood as in K0.
+  - When one history domain at a time is held out, the library is learned again without that domain, so the held-out domain is new to the library too.
+- **Check.** Without pieces, the contextual form reproduces K0's grammar exactly; the smoke test confirmed this at every lineage point.
+- **Runs per arm** (the seeds rule): every Stage X run of each arm.
+  - Flows: continued 5 (versions n and ns, and f6 seeds 1–3; seed 1 is the slowdown pilot's p6 baseline), control 2 (n, ns), fresh 5.
+  - Reaction networks: continued 3, control 2, fresh 3.
+  - The fresh runs share claim run 1's uniform first wake (except flows f6 seeds 2 and 3), so they are not independent at 10 tasks.
+- **Term sets:**
+  - all true terms of the new-form equations;
+  - those unfamiliar to the lineage (K0's definition);
+  - those new to both prior experiences: kinds absent from both the history's solutions and the made-up structures, the same set for every arm;
+  - the bump and the saturating term, as cases.
+
+**Reading, set before the run.**
+1. **A form's library helps** if it lowers the median rank of unfamiliar true terms for every arm at every point where the arm has a library, in both domains (median over runs), and lowers the bits. Anything else is reported as mixed.
+2. **Real experience gives a better library than made-up practice** if the continued arm, with its library, beats the control on both of these:
+   - it ranks the terms new to both prior experiences better;
+   - it needs fewer bits.
+   This must hold before the domain, and in every run pairing after 10 and 30 tasks.
