@@ -7841,3 +7841,24 @@ All such trees were enumerated once, offline, and canonicalized. This gives 66,1
     - the lineage's network at the root (scoring only), before the new domain and after 10 and 30 tasks.
   - **Reported** for all true new-form terms; for the unfamiliar ones (kinds not in the lineage's solutions so far); and for the bump and the saturating term on flows.
   - **The bits check at the operation level:** mean description length of the true new-form development equations under each lineage's operation grammar.
+
+### The f6 baseline replicates: results (11 November)
+
+**Run:** 05:24–09:22 UTC: seeds 2 and 3, continued and fresh, flows after order 2's history, 10 and 30 tasks. No search was time-capped or failed.
+
+**New-form development equations solved** (of 159):
+
+| Arm, point | f6 seed 1 / 2 / 3 | Mean (range) | Version n | Version ns |
+|---|---|---|---|---|
+| Continued, 10 tasks | 52 / 54 / 44 | 50.0 (44–54) | 56 | 45 |
+| Continued, 30 tasks | 76 / 49 / 51 | 58.7 (49–76) | 54 | 55 |
+| Fresh, 10 tasks | 36 / 37 / 32 | 35.0 (32–37) | 42 | 28 |
+| Fresh, 30 tasks | 80 / 57 / 68 | 68.3 (57–80) | 91 | 64 |
+
+- **Seed 1 was an outlier.** With nothing changed but the seed, the continued network ranges 49–76 at 30 tasks. Judged against the three runs, neither version makes the continued network worse; both are inside the range. The pre-registered verdict ("worse than f6, p = 1e-5") came from one outlying baseline run.
+- **The bump is a rare discovery for every recipe.**
+  - Bump solutions in the wakes to 30 tasks: continued network, f6 seeds 1–3, 1 / 0 / 0, and 0 under both versions; fresh network, f6 seeds 1–3, 9 / 0 / 0, then 11 under n and 6 under ns.
+  - Only seed 1's uniform first wake found a bump solution. The fresh network then learned it.
+  - Version n's and ns's fresh lineages reused that same lucky first wake, so the fresh network's 91 under n started with the discovery.
+- **The flows slowdown therefore depends on luck.** Continued minus fresh at 30 tasks under f6 is −4, −8 and −17 for seeds 1–3. It is largest when the fresh network makes that early discovery.
+- **For claims:** single runs of an arm at 30 tasks on flows differ by up to about 25 equations. Comparisons need several seeds per arm, judged run against run, not equation by equation.
