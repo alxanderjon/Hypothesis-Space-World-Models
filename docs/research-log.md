@@ -7917,3 +7917,15 @@ All true terms rank at a median of about 8 under every prior: most are simple po
    - Ordering unfamiliar terms by the operation grammar should help with unfamiliar terms generally.
    - It is not expected to reach the bump for the continued network in 300 structures: about 440 deep in its order, against the never-blocked rule's 6–27 per node.
    - Reaching it needs the generator's cheap screening of many candidates per step, the data's evidence at the node, or library pieces.
+
+### Owner: K0b, then K1; seeds per arm; replicate claim run 2's strongest result (11 November)
+
+**Owner.** *"Approve K0b first, then K1 using the same-network test followed by learning curves for the winning ordering (2 seeds per arm). For K0b: judge it on all unfamiliar true terms in both domains, not just the bump, and apply the same compression machinery to the control's and fresh network's own solutions. Given the replicate results, every comparison from now on needs at least 2–3 seeds per arm. Also plan a replication of the claim-run-2 reaction-network result (order 2, experienced vs control at 100 tasks) with additional seeds, so we know whether our strongest positive finding survives the noise. Check in after K0b."*
+
+- **Standing rule from now on:** every comparison has at least 2–3 seeds per arm, judged run against run, with per-equation tests only within the same network.
+- **K0b** (no search, no training):
+  - DreamCoder-style library learning by compression: pieces with gaps (subtrees with some subtrees replaced by holes), added greedily while they shorten the description of the lineage's own verified solutions (or the control's made-up structures).
+  - The same machinery is used for all three arms.
+  - The operation grammar is extended with these pieces as single operations, and each term's probability is that of its best parse.
+  - Judged on all unfamiliar true terms in both domains (with the bump and the saturating term as cases), and on all true terms. Also the operation-level bits check.
+- **Planned (not run):** a replication of claim run 2's strongest finding, order 2's reaction networks at 100 tasks (continued 59 against control 35 of 90 new-form, +26.7 points), with additional seeds. The design and cost are sent at the K0b check-in.
