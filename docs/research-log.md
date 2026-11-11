@@ -8099,3 +8099,32 @@ All true terms rank at a median of about 8 under every prior: most are simple po
   1. **Removing the harm.** The all-parses fit removes the harm if, in every arm–point cell where K0b's one-parse library ranked unfamiliar true terms worse than the grammar without a library, the all-parses library ranks them no worse than that grammar (median over runs).
   2. **K0b's readings** 1 and 2 are applied to the all-parses fit.
   3. **Which fit ordering C uses.** C uses the fit of the context-free grammar with its library that ranks unfamiliar true terms better in more arm–point cells. This counts both domains, and only cells where the arm has a library. Ties are broken by mean bits.
+
+### K0b's all-parses check: results (11 November)
+
+**Run:** `k0b2_check.py 16`, about 2 minutes (report `outputs/accumulating_learner/g2h/stageX/k0b2/report.txt`).
+- **Reproducibility.** The libraries, learned again with ties broken in a fixed order, are identical to K0b's at all 46 lineage points. The one-parse ranks are identical too, so K0b's numbers stand.
+- **The fit barely moves.** The all-parses fit converged in a median of 2–3 iterations (at most 61) and hardly changed the counts. A piece's parse needs fewer choices than spelling the same part out with plain operations, so it keeps almost all the weight.
+- **Unfamiliar true terms, one parse → all parses** (median over runs):
+
+| Arm, point | Contextual | Context-free |
+|---|---|---|
+| Flows, continued before | 224 → 229 | 28 → 28 |
+| Flows, control before | 72 → 72 | 99 → 90 |
+| Reaction networks, continued before | 87 → 92 | 107 → 113 |
+| Reaction networks, control before | 79 → 79 | 128 → 114 |
+| Reaction networks, continued at 10 tasks | 188 → 221 | 39 → 39 |
+
+- Bits move by at most 0.7 per equation, mostly by 0.0–0.2.
+
+**Against the reading set before the run.**
+1. **Harm removed: no.** In none of the 10 arm–point cells where the one-parse library hurt is the all-parses library no worse than the grammar without one.
+2. **K0b's readings 1 and 2 for the all-parses fit: not met**, the same pattern as with one parse.
+3. **Ordering C's fit: all parses.**
+   - The two fits tie on cells: all parses better in 3, one parse in 3, equal in 5.
+   - The tie-break by mean bits over the 14 arm–point cells with a library favours all parses by 0.016 bits per equation (33.18 against 33.20).
+   - The two are practically the same grammar. Averaged over lineage points instead of cells, the difference is 0.013 bits the other way.
+
+**Meaning.** The starvation is not an artefact of the fit. It is the price of the pieces under this grammar: a piece wins every parse it matches, so the plain operations lose weight. Remedies would change the model rather than the fit, and were not pursued:
+- score a term by the sum over its derivations;
+- keep a share of weight on the plain operations by construction.

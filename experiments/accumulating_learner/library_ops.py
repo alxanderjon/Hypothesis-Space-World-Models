@@ -29,6 +29,12 @@ so the bits are conservative). The held-out likelihood that chooses alpha scores
 too; when it leaves out one domain at a time, the library is learned again without that domain, so the held-out domain
 is new to the library as well as to the counts. With no library both forms' parse is the tree itself; the "ctx" form is
 then grammar_ops' grammar exactly.
+
+counting="all" (K0b's all-parses check, owner 11 November) fits a library grammar's counts over every parse of each
+solution, weighted by its probability (inside-outside, iterated from the one-parse counts until the likelihood stops
+improving, alpha ALPHA_LEARN while fitting), instead of the one parse with the largest pieces first; the held-out
+choice of alpha then subtracts a held-out equation's expected counts. Ties in library learning are broken in a fixed
+order (dicts, not sets of strings, whose order varies with Python's per-process hashing).
 """
 
 import itertools
@@ -41,6 +47,7 @@ import language_g1 as LG
 
 MAX_HOLES, MAX_PIECES, MIN_USES, PRESELECT = 2, 20, 2, 30
 ALPHA_LEARN = 1.0
+EM_MAX, EM_TOL = 200, 1e-7                                       # all-parses fit: iterations, nats per term occurrence
 ALPHAS, ALPHA_DEFAULT, MIN_LOO, MAX_N = (0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0), 1.0, 20, 6    # as grammar_ops
 HOLE = ("?",)
 _TREES, _SIZE, _ABS = {}, {}, {}
@@ -119,7 +126,7 @@ def abstractions(t):
     replaced by holes, keeping at least two nodes of its own."""
     if t in _ABS:
         return _ABS[t]
-    out = {t}
+    out = {t: None}                                              # ordered: ties break the same way in every process
     ps = list(positions(t))
     for n in range(1, MAX_HOLES + 1):
         for combo in itertools.combinations(ps, n):
@@ -128,7 +135,7 @@ def abstractions(t):
             u = t
             for p in combo:
                 u = replace(u, p, HOLE)
-            out.add(u)
+            out[u] = None
     _ABS[t] = tuple(a for a in out if size(a) - holes(a) >= 2)
     return _ABS[t]
 
@@ -244,7 +251,7 @@ def learn(terms, tokens, form="ctx"):
     w = [terms[t] for t in trees]
     uses = defaultdict(set)
     for i, t in enumerate(trees):
-        for s in set(subtrees(t)):
+        for s in dict.fromkeys(subtrees(t)):
             if size(s) >= 3:
                 for a in abstractions(s):
                     uses[a].add(i)
@@ -303,22 +310,27 @@ def learn(terms, tokens, form="ctx"):
 class LibComponent:
     """grammar_ops.OpComponent over the parses with a library, in either form; terms scored by their best parse."""
 
-    def __init__(self, equations, library, tokens, alpha=None, groups=None, form="ctx"):
+    def __init__(self, equations, library, tokens, alpha=None, groups=None, form="ctx", counting="one"):
         self.library = ordered(library)
         self.tokens, self.form = list(tokens), form
+        self.counting = counting if self.library else "one"     # without pieces every term has one parse
         self.V = len(tokens) + len(library)
         self.key = context(form, self.library)
         self.root = self.key("ROOT", 0)
         self.eqs = [(int(own), list(keys)) for own, keys in equations]
-        self._trip, self._best, self._matches = {}, {}, {}
+        self._trip, self._best, self._matches, self._exp = {}, {}, {}, {}
         self.c, self.tot = defaultdict(Counter), Counter()
         self.nterms = np.zeros(MAX_N + 1)
         for own, keys in self.eqs:
-            for k in keys:
-                for ck, ch in self.triples(k, own):
-                    self.c[ck][ch] += 1
-                    self.tot[ck] += 1
             self.nterms[min(len(keys), MAX_N)] += 1
+        if self.counting == "all":
+            self.em_iterations = self._fit_all()
+        else:
+            for own, keys in self.eqs:
+                for k in keys:
+                    for ck, ch in self.triples(k, own):
+                        self.c[ck][ch] += 1
+                        self.tot[ck] += 1
         self.alpha = self._choose(groups) if alpha is None else float(alpha)
 
     def triples(self, key, own):
@@ -331,6 +343,74 @@ class LibComponent:
         if t not in self._matches:
             self._matches[t] = [(name, m) for name, piece in self.library for m in [match(piece, t)] if m is not None]
         return self._matches[t]
+
+    def term_counts(self, key, own):
+        """The term's counts {(context, symbol): n}: its one parse, or its expected counts over all parses."""
+        if self.counting == "all":
+            return self._exp[(key, own)]
+        out = Counter()
+        for ck, ch in self.triples(key, own):
+            out[(ck, ch)] += 1
+        return out
+
+    def _expected(self, t, lpf):
+        """(expected counts of the tree's choices over all its parses, log of its total probability) under lpf."""
+        ins = {}
+
+        def options(u, ck):
+            out = [(u[0], lpf(ck, u[0]) + sum(inside(c, self.key(u[0], j)) for j, c in enumerate(u[1:])),
+                    [(c, self.key(u[0], j)) for j, c in enumerate(u[1:])])]
+            for name, m in self.matches(u):
+                out.append((name, lpf(ck, name) + sum(inside(s, self.key(name, h)) for h, s in enumerate(m)),
+                            [(s, self.key(name, h)) for h, s in enumerate(m)]))
+            return out
+
+        def inside(u, ck):
+            if (u, ck) not in ins:
+                ins[(u, ck)] = float(np.logaddexp.reduce([v for _, v, _ in options(u, ck)]))
+            return ins[(u, ck)]
+        out = Counter()
+
+        def down(u, ck, weight):
+            total = inside(u, ck)
+            for sym, v, kids in options(u, ck):
+                p = weight * math.exp(v - total)
+                if p > 1e-15:
+                    out[(ck, sym)] += p
+                    for c, cc in kids:
+                        down(c, cc, p)
+        down(t, self.root, 1.0)
+        return out, inside(t, self.root)
+
+    def _fit_all(self):
+        """Counts over all parses (inside-outside), from the one-parse counts; returns the iterations used."""
+        terms = Counter((k, own) for own, keys in self.eqs for k in keys)
+        c = Counter()
+        for (k, own), w in terms.items():
+            for ck, ch in self.triples(k, own):
+                c[(ck, ch)] += w
+        prev, n_occ, it = -math.inf, sum(terms.values()), 0
+        for it in range(1, EM_MAX + 1):
+            cc, tt = defaultdict(dict), Counter()
+            for (ck, ch), v in c.items():
+                cc[ck][ch] = v
+                tt[ck] += v
+            lpf = lambda ck, ch: math.log((cc[ck].get(ch, 0.0) + ALPHA_LEARN / self.V) / (tt[ck] + ALPHA_LEARN))
+            new, ll, exp_t = Counter(), 0.0, {}
+            for (k, own), w in terms.items():
+                e, lt = self._expected(tree(k, own), lpf)
+                exp_t[(k, own)] = e
+                ll += w * lt
+                for x, v in e.items():
+                    new[x] += w * v
+            c, self._exp = new, exp_t
+            if ll - prev < EM_TOL * n_occ:
+                break
+            prev = ll
+        for (ck, ch), v in c.items():
+            self.c[ck][ch] = v
+            self.tot[ck] += v
+        return it
 
     def lp(self, ck, ch, alpha, minus=None):
         cnt, tot = self.c.get(ck, {}).get(ch, 0), self.tot.get(ck, 0)
@@ -366,7 +446,8 @@ class LibComponent:
         if by_domain and self.library:                           # each held-out domain new to the library too
             rest = {g: [e for h, es in parts.items() if h != g for e in es] for g in parts}
             fits = {g: LibComponent(r, learn(Counter(tree(k, own) for own, keys in r for k in keys), self.tokens,
-                                              self.form)[0], self.tokens, alpha=ALPHA_DEFAULT, form=self.form)
+                                              self.form)[0], self.tokens, alpha=ALPHA_DEFAULT, form=self.form,
+                                    counting=self.counting)
                     for g, r in rest.items()}
             best, best_ll = ALPHA_DEFAULT, -math.inf
             for a in ALPHAS:
@@ -382,9 +463,9 @@ class LibComponent:
             cc, tt = Counter(), Counter()
             for own, keys in eqs:
                 for k in keys:
-                    for ck, ch in self.triples(k, own):
-                        cc[(ck, ch)] += 1
-                        tt[ck] += 1
+                    for (ck, ch), v in self.term_counts(k, own).items():
+                        cc[(ck, ch)] += v
+                        tt[ck] += v
             held[g] = (cc, tt)
         best, best_ll = ALPHA_DEFAULT, -math.inf
         for a in ALPHAS:
@@ -408,9 +489,10 @@ class LibGrammar:
         self.tokens = list(tokens)
 
     @classmethod
-    def fit(cls, earlier, newest, tokens, library=(), earlier_groups=None, form="ctx"):
+    def fit(cls, earlier, newest, tokens, library=(), earlier_groups=None, form="ctx", counting="one"):
         """earlier, newest: [(own, keys)]; library: [(name, piece)] (shared by the components)."""
-        comp = lambda eqs, g: LibComponent(eqs, list(library), tokens, groups=g, form=form) if eqs else None
+        comp = lambda eqs, g: (LibComponent(eqs, list(library), tokens, groups=g, form=form, counting=counting)
+                               if eqs else None)
         return cls([comp(earlier, earlier_groups), comp(newest, None)], tokens)
 
     def logp_term(self, key, own):
