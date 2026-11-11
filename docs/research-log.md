@@ -7714,3 +7714,34 @@ The fresh network's rows are the same in both orders (it does not depend on the 
   - **By the rule: check in before Stage B.**
 - **Caution, as reported during the run:** f6's continued flows result (76) is the highest of eight development runs of that arm (52–76; the others 52–67). So "worse than f6" for the continued network on flows may largely be run-to-run spread. The proposed baseline replicates (seeds 2 and 3) are awaiting the owner's decision.
 - **The budget check** (version n, the better version, at 1,000 structures) and a no-search check of where the bump sits in each network's low-rated queue are running.
+- **Why the never-blocked rule never reached the bump** (root scoring of the version-n networks on the development flows systems; no search):
+  - Every network, the fresh one included, rates about 3,800 of its about 4,000 legal terms below even. So the low-rated queue is nearly the whole vocabulary.
+  - In the language's simplest-first order, the true bump terms sit at queue positions 1,950–2,530 (10th–90th percentile; median about 2,200) for every network. The saturating x/(K + x²) terms sit at about 2,850.
+  - The rule's runs reach a median of 6 per node (at most 27).
+  - So ordering by simplicity cannot give a term of the bump's size a meaningful chance within 300 structures, for any network.
+  - **Where the bump discoveries came from instead:**
+    - the fresh network learned the bump from its uniform first wake, and after 30 tasks rates only 4 of 47 true bump terms below even;
+    - the control's 4 bump solutions under n most likely came from the search's existing 15% random exploration. It found none under ns or in claim run 2, but after those 4 it learned the term (root rank 1,009 → 54).
+- **The data's evidence alone at the root** (each term's partial R² for the whole derivative; no network) ranks:
+  - true bump terms at median 736 of about 3,840 (25th–75th percentile 187–1,502; 11% in the top 50, 30% in the top 300);
+  - saturating terms at median 955;
+  - other true terms at median 1,906.
+  - So evidence at the root alone is not enough either. Deeper in a search, the residual isolates the missing terms, so the evidence there should be sharper; that is untested.
+- **The budget check** (version n, flows, the 30-task networks, 1,000 against 300 structures per equation; thorough cap 200; no time-limit hits):
+
+  | | 1,000 structures | 300 structures |
+  |---|---|---|
+  | Continued: new-form solved | 60 (6–0, p = 0.031) | 54 |
+  | Continued: bump solutions | 0 | 0 |
+  | Continued: simplest-first depth, median (max) | 14 (43) | 6 (27) |
+  | Continued: seconds per equation | 359 | 133 |
+  | Fresh: new-form solved | 112 (21–0, p = 1e-6) | 91 |
+  | Fresh: bump solutions | 38 | 29 |
+  | Fresh: whole systems | 9 | 3 |
+  | Fresh: seconds per equation | 332 | 80 |
+
+  - The 300 budget limits the fresh network a lot. For the experienced network the extra budget helps elsewhere, but it still never reaches the bump.
+- **The quick-fit question** (the measured time split):
+  - The prior step (network scoring plus the evidence for every term) takes 76–90% of the search time, at 0.24–0.39 s per structure.
+  - An ordinary fit takes 0.010–0.024 s per structure, 15–25 times less. Thorough fits and precise checks take 5–18%.
+  - **So yes:** quick fits could screen many more candidates per network evaluation. For example, at each expansion, quick-fit the network's next few choices and the next few unfamiliar terms together and keep the best, with thorough fits still capped. That gives perhaps 5–10 times the structures at similar cost. It is a change to the search, not run.
