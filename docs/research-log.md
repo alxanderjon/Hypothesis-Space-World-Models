@@ -8039,3 +8039,47 @@ All true terms rank at a median of about 8 under every prior: most are simple po
 **Limits of the version tested** (not tried after seeing the results; candidates for a check, if wanted):
 - Each solution is parsed one way, the largest pieces first. This starves the plain operations of counts, which is the likely reason the library hurts the control and some unfamiliar terms. Counting over all parses (an inside–outside fit) would soften that.
 - General pieces lose their uses to more specific pieces that contain them.
+
+### Proposed, awaiting approval: the replication of claim run 2's reaction-network result, and K1 (11 November)
+
+**Replication** of order 2's reaction networks at 100 tasks.
+- **The finding:** continued 59 against control 35 of 90 new-form test equations (+26.7 points). Most of the gap was already there before any reaction task: 32 against 7 at 0 tasks. At 0 tasks the control's network cut a missing true term from its 2,048-term shortlist in 46% of expansions.
+- **Design:**
+  - The reaction phase is run again for the continued network and its control, with seeds 2 and 3: a new search seed and new lineage names, so fantasies and training batches are new draws too.
+  - Same starting networks (o2_flows_L1_d100; c2x_flows_L1100) and the same test systems (test2). Tests at 0, 10, 30 and 100 tasks.
+  - The claim-run recipe is unchanged; the control's rehearsal mirrors its own seed's continued run.
+  - Code: a new module subclassing the driver; nothing in cycles_g2h changes.
+- **Reading:**
+  - **Survives** if at 100 tasks every continued run beats every control run on new-form test equations (9 of 9 pairings) and the mean gap is at least +10 points.
+  - **Fails** if the mean gap is under +10 points or a control run matches a continued run.
+  - Otherwise **mixed**.
+- **Limits:**
+  - Three runs per arm cannot reach a strong significance level: complete separation has a chance of 1 in 20. Five per arm would allow p < 0.01.
+  - It covers the reaction phase's run-to-run noise only. It does not cover the flows phase that produced the starting networks, or the draw of test systems.
+- **Cost:** claim run 2 took 3.0 h for this phase at 30 workers.
+  - Two extra seeds: about 6 h (7–8 h at 24 workers under the current load).
+  - Four extra seeds: about 12 h.
+  - A full order-2 replicate (flows, then reaction networks) would be about 6.6 h per seed.
+
+**K1: the grammar's order inside today's search.**
+- **Orderings** (budget 300, the 2,048 shortlist, f6 rules otherwise):
+  - **A:** the network alone.
+  - **B:** the network mixed half and half with K0's operation grammar, fitted on the network's own lineage (its history's solutions or made-up structures, plus its wakes so far).
+  - **C:** the same with the context-free grammar and its library.
+- **Same-network test** (development systems; no training), on 16 existing 30-task networks:
+  - Flows: continued and fresh f6 seeds 1–3; controls n and ns.
+  - Reaction networks: continued and fresh f6 seed 1 and versions n and ns; controls n and ns.
+  - Every network is searched with A, B and C under one new seed. The 8 f6 networks' earlier tests, under other seeds, give the A-versus-A noise.
+- **Winner rule** (set before). An ordering wins if all of these hold:
+  - it beats A on new-form equations solved in at least 14 of 16 networks, and in at least 6 of 8 in each domain;
+  - its median gain is larger than the median A-versus-A difference;
+  - shared-form equations fall by no more than that difference.
+
+  If both B and C pass, the larger median gain wins. If neither passes, no learning curves are run, and I check in.
+- **Then learning curves** for the winner: continued, control and fresh, both domains, 2 seeds each, at 10 and 30 tasks.
+  - Wakes and tests use the winning ordering; training is unchanged.
+  - The baselines also need 2 seeds per arm: 6 new f6 lineages (reaction networks continued and fresh seed 2; f6 controls seeds 1–2 in both domains).
+- **Cost** (about 12 min per development test and 45–60 min per lineage curve, at 30 workers):
+  - same-network test: 48 tests, about 9–10 h (32 tests, about 6–7 h, without C);
+  - curves: 18 lineages, about 14–18 h;
+  - about 2 h of training on a shared GPU.
