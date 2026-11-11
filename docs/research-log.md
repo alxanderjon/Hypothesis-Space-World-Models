@@ -8083,3 +8083,19 @@ All true terms rank at a median of about 8 under every prior: most are simple po
   - same-network test: 48 tests, about 9–10 h (32 tests, about 6–7 h, without C);
   - curves: 18 lineages, about 14–18 h;
   - about 2 h of training on a shared GPU.
+
+### Owner: skip the replication; the all-parses check, then K1 with ordering C; outline early tests of K2's screening (11 November)
+
+**Owner.** *"Skip the claim-run-2 replication for now; we'll test accumulation again with multiple seeds once the new library design is in place. Run the 15-minute all-parses check of K0b first, then K1 as designed, including ordering C. Since K0b shows that genuinely new steps can only come from search, also outline how K2's cheap screening of many candidates per network step could be tested early, possibly inside K1's setup. Check in with K1's same-network results before running any learning curves."*
+
+**The all-parses check: design and reading (set before the run).**
+- **The change.** Each library grammar's weights are fitted by counting every parse of each solution, weighted by its probability. This is an inside–outside fit, iterated to convergence, with alpha 1 while fitting. K0b instead counted one parse, the largest pieces first.
+  - Unchanged: the pieces, the scoring of a term by its best parse, and the held-out choice of smoothing.
+  - The grammars without a library have a single parse and do not change.
+- **A determinism fix.** Library learning broke ties among equally promising candidates in an order that varied from process to process (Python's per-process hashing). Ties are now broken in a fixed order.
+  - Both fits are re-run on identical libraries.
+  - The one-parse re-run is compared with K0b's reported numbers.
+- **Reading:**
+  1. **Removing the harm.** The all-parses fit removes the harm if, in every arm–point cell where K0b's one-parse library ranked unfamiliar true terms worse than the grammar without a library, the all-parses library ranks them no worse than that grammar (median over runs).
+  2. **K0b's readings** 1 and 2 are applied to the all-parses fit.
+  3. **Which fit ordering C uses.** C uses the fit of the context-free grammar with its library that ranks unfamiliar true terms better in more arm–point cells. This counts both domains, and only cells where the arm has a library. Ties are broken by mean bits.
