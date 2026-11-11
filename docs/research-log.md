@@ -7862,3 +7862,58 @@ All such trees were enumerated once, offline, and canonicalized. This gives 66,1
   - Version n's and ns's fresh lineages reused that same lucky first wake, so the fresh network's 91 under n started with the discovery.
 - **The flows slowdown therefore depends on luck.** Continued minus fresh at 30 tasks under f6 is −4, −8 and −17 for seeds 1–3. It is largest when the fresh network makes that early discovery.
 - **For claims:** single runs of an arm at 30 tasks on flows differ by up to about 25 equations. Comparisons need several seeds per arm, judged run against run, not equation by equation.
+
+### K0: the operation grammar's ranks and bits (11 November; no search, no training)
+
+**Run:** `k0_check.py 16`, 09:22–09:27 UTC (report `outputs/accumulating_learner/g2h/stageX/k0/report.txt`).
+- Lineages are Stage X version n's: continued, control and fresh.
+- Ranks are medians among the system's vocabulary (about 3,841 terms on flows, about 4,671 on reaction networks).
+- "Unfamiliar" means a true term whose kind is not among the lineage's verified solutions (or made-up structures) so far.
+
+**Flows** (159 new-form development equations, 557 true terms; operation grammar / shape grammar / network / simplest-first):
+
+| Lineage, point | Unfamiliar true terms | Bump (47) | Saturating (55) |
+|---|---|---|---|
+| Continued, before the domain | 19 / 113 / 755 / 23 (239 terms) | 860 / 2,282 / 2,987 / 2,248 | 1,180 / 2,929 / 3,199 / 2,898 |
+| Continued, 10 tasks | 1,182 / 2,626 / 1,892 / 2,600 (102 terms) | 1,063 / 2,282 / 1,951 / 2,248 | 1,505 / 2,929 / 1,781 / 2,898 |
+| Continued, 30 tasks | 730 / 2,628 / 2,908 / 2,600 (102 terms) | 442 / 2,285 / 2,907 / 2,248 | 780 / 2,932 / 2,978 / 2,898 |
+| Control, before | 58 / 2,016 / 482 / 22 (61 terms) | 941 / 1,275 / 1,382 / 2,248 | 2,349 / 1,128 / 703 / 2,898 |
+| Control, 30 tasks (after finding 4 bump solutions) | – | 100 / 30 / 54 / 2,248 | – |
+| Fresh, 10 tasks (after its first wake's bump) | – | 30 / 7 / 15 / 2,248 | – |
+| Fresh, 30 tasks | – | 30 / 9 / 21 / 2,248 | – |
+
+All true terms rank at a median of about 8 under every prior: most are simple polynomials.
+
+**Reaction networks** (155 new-form, 571 true terms; operation / shape / network / simplest-first):
+
+| Lineage, point | Unfamiliar true terms | 1/(K + x²) terms (39) |
+|---|---|---|
+| Continued, before the domain | 130 / 414 / 739 / 385 | 691 / 2,847 / 3,567 / 2,829 |
+| Continued, 30 tasks | 718 / 2,858 / 1,808 / 2,836 | 716 / 2,851 / 1,444 / 2,829 |
+| Control, before | 61 / 2,349 / 77 / 24 | – |
+| Control, 10 tasks | 13 / 2,349 / 33 / 24 | – |
+
+**The bits check at the operation level** (mean bits per true new-form equation):
+
+| Lineage | Flows: before / 10 / 30 tasks | Reaction networks: before / 10 / 30 tasks |
+|---|---|---|
+| Uniform | 66.9 | 75.1 |
+| Continued | 33.2 / 32.5 / 28.0 | 35.3 / 31.8 / 30.5 |
+| Control | 33.4 / 30.5 / 24.5 | 37.4 / 33.5 / 31.3 |
+| Fresh | uniform / 35.4 / 24.0 | uniform / uniform / 33.2 |
+
+**Reading.**
+1. **The operation grammar ranks unfamiliar terms far better than the flat list's network or the shape grammar.**
+   - Before a new domain, the continued network's unfamiliar true terms rank at a median of 19 against 755 on flows, and 130 against 739 on reaction networks.
+   - That is the compositional effect the owner described: a term of familiar parts is near the front.
+2. **But for the bump the gain is a factor of 2–7, not to the top 100.**
+   - The continued lineage ranks it at 440–1,060, against about 2,000–3,000 by its network.
+   - One step is rare in its history, a square inside the sum of a reciprocal (its sums were "constant + variable"). A pair-level grammar cannot see the whole saturating-denominator pattern, which is what library pieces (Stage C) supply.
+   - The fresh network and the control rank the bump high only after their own searches found it.
+3. **Real experience against made-up practice at the operation level:**
+   - Reaction networks: real experience is better by 2.1 bits per equation before the domain, 1.7 at 10 tasks and 0.8 at 30.
+   - Flows: equal before the domain (33.2 against 33.4). By 30 tasks the control (24.5) and the fresh network (24.0) are ahead (28.0), because only they found the flows-specific terms.
+4. **For K1:**
+   - Ordering unfamiliar terms by the operation grammar should help with unfamiliar terms generally.
+   - It is not expected to reach the bump for the continued network in 300 structures: about 440 deep in its order, against the never-blocked rule's 6–27 per node.
+   - Reaching it needs the generator's cheap screening of many candidates per step, the data's evidence at the node, or library pieces.
