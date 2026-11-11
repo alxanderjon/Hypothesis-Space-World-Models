@@ -8128,3 +8128,19 @@ All true terms rank at a median of about 8 under every prior: most are simple po
 **Meaning.** The starvation is not an artefact of the fit. It is the price of the pieces under this grammar: a piece wins every parse it matches, so the plain operations lose weight. Remedies would change the model rather than the fit, and were not pursued:
 - score a term by the sum over its derivations;
 - keep a share of weight on the plain operations by construction.
+
+### K1's same-network test: launched (11 November, 18:07 UTC)
+
+- **Code.** `k1_check.py`: orderings A, B and C as approved.
+  - C uses the all-parses fit, by the pre-set tie-break.
+  - The mixed prior gives the term to add (and the added term of a swap) the network's probability times ½ plus the grammar's times ½, renormalized over terms not in the structure. Removals stay the network's.
+  - Unit check: probabilities sum to one, and every term keeps at least half its network probability.
+  - Smoke test (6 tests on 2 systems): no failures, no time caps.
+- **Run.** 48 tests (16 networks × 3 orderings), search seed 4, budget 300 and thorough cap 60, time cap 3,600 s per system. 28 workers at nice 15. A watchdog stops the run if free disk falls below 5 GB. Outputs are in `outputs/accumulating_learner/g2h/k1/`.
+- **The A-versus-A noise** comes from the 8 f6 networks' earlier development tests (seeds 1–3; same budget, shortlist and rules).
+- **Winner rule** as set before. A new ordering wins if all of these hold:
+  - it beats A on new-form equations in at least 14 of 16 networks, and in at least 6 of 8 per domain;
+  - its median gain exceeds the median A-versus-A difference;
+  - shared-form equations fall by no more than that difference.
+
+  If both B and C pass, the larger median gain wins; if neither does, no learning curves are run. Either way, I check in before any curves.
