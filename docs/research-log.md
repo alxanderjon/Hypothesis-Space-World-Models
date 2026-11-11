@@ -7961,3 +7961,81 @@ All true terms rank at a median of about 8 under every prior: most are simple po
    - it ranks the terms new to both prior experiences better;
    - it needs fewer bits.
    This must hold before the domain, and in every run pairing after 10 and 30 tasks.
+
+### K0b: results (11 November; no search, no training)
+
+**Run:** `k0b_check.py 16`, 15:47–15:59 UTC at nice 19 (report `outputs/accumulating_learner/g2h/stageX/k0b/report.txt`; libraries in `libraries_{flows,reactions}.json`).
+- Lineage points: 27 on flows, 19 on reaction networks.
+- Ranks are within each development system's vocabulary (about 3,841 terms on flows, 4,671 on reaction networks). Each cell is the median over runs of each run's median.
+
+**What the libraries contain** (learned from training-side solutions only):
+- **Continued network** (history: 894 equations, 43 distinct terms):
+  - contextual: (K + □)^□, u·□, K·□, (u)^□, u·(K + □)^□, ...
+  - context-free: exp(K·u), (u)^□, □·(K + □)^-1, □·(K + □)^K, sin(K·v), ...
+- **Control** (made-up systems: 9,730 equations, 1,113 distinct terms):
+  - contextual: K·□, K·(□)^□, (□)^-1, □·(□)^-1, ...
+  - context-free: sin(K·□), exp(K·□), log(K·□), (u)^□·(v)^□, (K + □)^-1, ...
+- **Fresh network** after 30 flows tasks: 1/(K + □²), from its own wakes.
+
+**Flows, unfamiliar true terms** (network / K0 grammar / + library / context-free / + library / simplest-first):
+
+| Arm, point | Ranks |
+|---|---|
+| Continued, before (239 terms) | 755 / 19 / 224 / 17 / 28 / 23 |
+| Continued, 10 tasks (5 runs) | 1,861 / 970 / 906 / 1,036 / 449 / 2,600 |
+| Continued, 30 tasks | 1,607 / 730 / 580 / 1,014 / 486 / 2,600 |
+| Control, before (61) | 482 / 58 / 72 / 11 / 99 / 22 |
+| Fresh, 30 tasks | 1,250 / 192 / 76 / 598 / 598 / 2,752 |
+
+**Flows, the bump** (47 terms): continued before 860 → 1,189 (contextual) and 595 → 1,067 (context-free); continued at 30 tasks 442 → 813 and 648 → 1,122; control before 941 → 1,610 and 988 → 667; fresh at 30 tasks 34 → 12 and 324 → 464.
+
+**Flows, the saturating term** (55 terms): continued before 1,180 → 271 and 1,165 → 372; control before 2,349 → 1,395 and 2,717 → 949; continued at 30 tasks 780 → 287 and 1,172 → 377.
+
+**Reaction networks, unfamiliar true terms** (same columns):
+
+| Arm, point | Ranks |
+|---|---|
+| Continued, before (193) | 739 / 130 / 87 / 655 / 107 / 385 |
+| Continued, 10 tasks (3 runs) | 695 / 238 / 188 / 734 / 39 / 390 |
+| Continued, 30 tasks | 3,520 / 721 / 463 / 590 / 265 / 2,830 |
+| Control, before (31) | 77 / 61 / 79 / 14 / 128 / 24 |
+| Control, 10 tasks | 32 / 33 / 41 / 18 / 25 / 24 |
+| Fresh, 30 tasks | 1,539 / 452 / 896 / 515 / 1,183 / 2,825 |
+
+**Reaction networks, 1/(K + x²) terms** (39): continued before 691 → 2,844 and 654 → 1,935.
+
+**All true terms:** the median stays about 5–12 everywhere, except the control before reaction networks (53 → 74, and 11 → 121).
+
+**Bits per new-form equation** (K0 grammar / + library / context-free / + library):
+
+| Arm, point | Flows (uniform 66.9) | Reaction networks (uniform 75.1) |
+|---|---|---|
+| Continued, before | 33.2 / 38.3 / 33.9 / 30.9 | 35.3 / 38.0 / 38.5 / 38.7 |
+| Continued, 10 tasks | 32.0 / 30.4 / 33.4 / 30.0 | 31.9 / 35.1 / 37.4 / 32.6 |
+| Continued, 30 tasks | 28.0 / 25.5 / 32.7 / 28.0 | 30.9 / 30.3 / 35.9 / 34.3 |
+| Control, before | 33.4 / 31.1 / 37.1 / 32.4 | 37.4 / 34.9 / 41.6 / 39.6 |
+| Control, 10 tasks | 29.4 / 26.6 / 35.1 / 28.7 | 34.1 / 31.4 / 38.6 / 34.6 |
+| Control, 30 tasks | 24.5 / 22.4 / 33.3 / 26.3 | 30.3 / 25.9 / 36.5 / 32.0 |
+| Fresh, 30 tasks | 24.2 / 22.5 / 30.7 / 30.8 | 35.5 / 42.0 / 37.4 / 45.8 |
+
+**Against the reading set before the run.**
+1. **"A form's library helps": not met for either form; mixed.**
+   - **Helps:** the continued network once it has new-domain solutions (both forms, both domains, 10 and 30 tasks); reaction networks before the domain; the saturating term everywhere.
+   - **Hurts:** the control at every point; the contextual form for the continued network on flows before the domain (19 → 224); the fresh network on reaction networks at 30 tasks.
+   - **The bump is never brought closer** for the continued network.
+2. **"Real experience gives a better library": not met.**
+   - Context-free form with its library: real experience ranks the terms new to both prior experiences better in every run pairing at every point in both domains (before: flows 10 vs 99, reaction networks 9 vs 128). But the control needs fewer bits after 10 and 30 flows tasks (continued fewer in 0 of 10 and 1 of 10 pairings) and after 30 reaction tasks (2 of 6).
+   - Contextual form with its library: the control is ahead on both measures at most points.
+   - **Not part of the reading set in advance:** without any library, the context-free form has real experience ahead on bits in every pairing on flows at 10 and 30 tasks, on reaction networks at 10 (5 of 6 at 30), and before the domain in both domains.
+
+**Diagnosis of the bump** (history grammars, the bump 1/(K + u²) for one equation among all 4,683 terms; training-side data only):
+- **Contextual form.** Without a library the bump costs 20.2 bits (rank 660). The expensive step is a power inside a sum, 10.6 bits: it never occurs in the history.
+  - With the library it costs 25.9 bits (rank 1,430). The piece (K + □)^□ is used at the top of a term, where the history never had it (only inside products): 15.2 bits. The square in its gap, also unseen there, costs 9.6 bits.
+  - The saturating term u/(K + u²) uses u·(K + □)^□, which the history does have at the top: 23.0 → 17.6 bits, rank 1,052 → 385.
+- **Context-free form.** The bump costs 21.6 → 21.2 bits. Larger pieces (□·(K + □)^-1, □·(K + □)^K) absorbed every use of the general piece (K + □)^□, so it has only smoothing weight.
+  - The saturating term goes from 26.2 → 12.1 bits, rank 1,296 → 153.
+- **In short:** pieces remove the cost of a familiar frame around an unfamiliar term. They cannot supply the unfamiliar step itself (here the square inside the sum), which still costs about 10 bits under every grammar tried.
+
+**Limits of the version tested** (not tried after seeing the results; candidates for a check, if wanted):
+- Each solution is parsed one way, the largest pieces first. This starves the plain operations of counts, which is the likely reason the library hurts the control and some unfamiliar terms. Counting over all parses (an inside–outside fit) would soften that.
+- General pieces lose their uses to more specific pieces that contain them.
