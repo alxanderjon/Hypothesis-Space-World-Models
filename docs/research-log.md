@@ -7820,3 +7820,24 @@ All such trees were enumerated once, offline, and canonicalized. This gives 66,1
   - The recognition network predicts a structured output, which is harder to train than a per-term score.
   - Longer terms mean more constants and harder fits (the earlier multi-piece fitting limit).
   - The rescaling rule rejects many generated terms (only 4,683 of 66,109 pass in four variables), which wastes generation unless the grammar learns where constants go.
+
+### Owner: K0 approved (11 November)
+
+**Owner.** *"Approved: start with K0 once the replicates are in. Run K0 for the experienced, control and fresh networks on both new domains, reporting where the true development terms (especially the bump) would rank under each network's operation grammar versus now, and the bits check at the operation level, so we can see whether real experience gives a better compositional prior than made-up practice. Check in after K0, and again after K1, before starting the K2 build."*
+
+- **K0's design** (no search, no training; development systems only; counts only):
+  - **The operation grammar:** each term's canonical tree is read relative to its equation (its own variable; any other variable; a constant; numbers; add and multiply as nested pairs; powers; sin, exp, log, Abs). A term's probability is the product over its nodes of P(child | parent, argument position), as in DreamCoder's contextual grammar.
+  - **Smoothing:** each context's counts get Dirichlet smoothing with a uniform base over the tokens, and α is chosen as in Stage A: leave one domain out for earlier experience, else leave one equation out.
+  - **Components:** earlier and newest, mixed half and half.
+  - **Fitted to each lineage's verified solutions,** with Stage X version n's lineages, since they have all three arms in both domains:
+    - the continued network: its history plus its new-domain wakes;
+    - the control: its made-up systems' structures plus its wakes;
+    - the fresh network: its wakes only.
+    - Each at three points: before the new domain, after 10 tasks and after 30.
+  - **Compared rankings,** among the about 4,000 terms of the system's vocabulary, of each development system's true new-form terms:
+    - the operation grammar;
+    - Stage A's shape grammar on the same solutions;
+    - the language's simplest-first order;
+    - the lineage's network at the root (scoring only), before the new domain and after 10 and 30 tasks.
+  - **Reported** for all true new-form terms; for the unfamiliar ones (kinds not in the lineage's solutions so far); and for the bump and the saturating term on flows.
+  - **The bits check at the operation level:** mean description length of the true new-form development equations under each lineage's operation grammar.
