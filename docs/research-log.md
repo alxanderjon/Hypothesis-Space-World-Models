@@ -8828,3 +8828,54 @@ From now on my runs stop themselves, and stop writing, only when free disk falls
 - on the final test it solves at least 2 more of the 20 held-out systems of levels 6 and 7 (the combinations) than the network arm, and than each of the four controls.
 
 Anything else is reported as it is.
+
+### The curriculum pilot: stopped by the 2 GB disk guard; partial results (12 November)
+
+**What happened.**
+- The launcher's watchdog stopped the pilot at 22:44:55 UTC, when free disk fell to 2,033 MB. The pilot itself had written 44 MB; other users' jobs filled the disk.
+- **Finished (7 of 12 lineages):** library seeds 1 and 2, fresh library seed 2, made-up library seeds 1 and 2, retry-only seeds 1 and 2.
+- **Not finished:**
+  - network seeds 1 and 2, both at level 7 after mastering level 6;
+  - fresh library seed 1, in its final test;
+  - shuffled library seed 1 (block 5) and seed 2 (block 3).
+
+**Held-out systems solved after each round** (of 10; ✗ = not mastered in 3 rounds, lineage stopped):
+
+| Lineage | L1 | L2 | L3 | L5 | L6 | L7 |
+|---|---|---|---|---|---|---|
+| Library s1 | 10 | 10 | 9 | 5, 9 | 2, 1, 3 ✗ | – |
+| Library s2 | 10 | 10 | 10 | 10 | 2, 3, 3 ✗ | – |
+| Network s1 | 10 | 10 | 9 | 9 | **8** | (running) |
+| Network s2 | 10 | 10 | 10 | 9 | **8** | (running) |
+| Fresh library s1 | 10 | 10 | 9 | 10 | 4, 4, 4 ✗ | – |
+| Fresh library s2 | 10 | 10 | 10 | 10 | 6, 6, 6 ✗ | – |
+| Made-up library s1 | 10 | 10 | 10 | 6, 2, 5 ✗ | – | – |
+| Made-up library s2 | 10 | 10 | 4, 4, 4 ✗ | – | – | – |
+
+- **Retry-only** (all 60 training systems mixed, library): training systems solved over its 3 rounds were 16, then 59, then 60 of 60 (seed 1); 29, then 51, then 56 (seed 2).
+
+**Final test** (60 held-out systems at 300 structures per equation):
+
+| Lineage | L1, L2, L3, L5, L6, L7 | Total |
+|---|---|---|
+| Library s1 | 10, 10, 9, 10, 3, 0 | 42 |
+| Library s2 | 10, 10, 8, 9, 3, 2 | 42 |
+| Fresh library s2 | 10, 10, 10, 9, 6, 7 | 52 |
+| Made-up library s1 | 10, 1, 5, 5, 3, 2 | 26 |
+| Made-up library s2 | 10, 7, 4, 4, 1, 0 | 26 |
+| Retry-only s1 | 10, 10, 8, 10, 3, 4 | 45 |
+| Retry-only s2 | 10, 10, 10, 9, 7, 4 | 50 |
+
+- Structures tried before each solution, median: 15–24 in training for the library lineages (84 for retry-only seed 2, which includes the large retries); 6–38 in the final tests.
+- **"Solved exactly" is functional.** Found structures often differ from the generating ones while fitting exactly, for example x/(K + x) = 1 − K/(K + x). Only 11–20 of the solved final-test systems match the generating structure term for term.
+
+**Against the rule set before the run: does not pass.** The library arm did not master all six levels in either seed; it stopped at level 6. This holds whatever the unfinished lineages would have shown.
+
+**Reading.**
+1. **The network, which reads the data, beat the form-only library in the actual search.**
+   - At level 6 (x/(K + x)), the network mastered the level in one round in both seeds (8/10). The library reached only 1–3/10 after three rounds with growing budgets.
+   - The quick check's rank of about 20 for the new piece did not carry over. The search still has to separate it from many look-alike combinations, and to fit its constant, within 300 structures.
+   - The library here learned from the lineage's own solutions, which are often equivalent rewritings rather than the generating terms. In the quick check it learned from the true structures.
+2. **Real curriculum experience beats made-up practice for the library.** The made-up library stalled at level 3 or 5 and solved 26/60, against 42/60.
+3. **Accumulated counts dilute the current level's pieces.** The fresh library, learning only from level 6's own solutions, did better at level 6 (4–6/10) than the accumulated one (1–3/10).
+4. **Retries with growing budgets work without a designed order.** Retry-only solved 56–60 of 60 training systems and 45–50/60 held-out. That is more than the curriculum library's 42, which stopped at level 6 and so never learned from level 7.
