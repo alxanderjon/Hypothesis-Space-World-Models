@@ -8286,3 +8286,20 @@ Reaction networks (about 4,671 terms):
 - A data-driven channel helps mainly near completion, and on some domains.
 - Spending half the search's weight on it everywhere would dilute the networks' strong completions, as K1's grammar did.
 - A completion-stage screen, used only where the current structure already explains most of the data, is the natural variant to check next.
+
+### Owner: the late-search quick check, then the Stage C and K2 design (12 November)
+
+**Owner.** *"Do the quick check of the late-search variant (minutes, no search). Then, whatever it shows, move to designing Stage C and K2, including the cross-equation parts, since reaction networks' similar product terms won't be resolved by search-ordering tweaks. Send the quick-check result and the design together, with a minutes-scale check planned for each new piece before any longer test."*
+
+**The late-search quick check: design and reading (set before the run).**
+- **The variant.** The data's score is mixed into the network's choice of term only at nodes where the current structure already explains most of the data. The gate is the fit's unexplained share (its residual over the target's size) being at most g.
+- **The check.** The evidence probe's nodes (root, one term short, two terms short) on the development systems' new-form equations. At each node:
+  - the fit's unexplained share;
+  - the missing term's rank by the evidence;
+  - wherever the share is at most 0.5, also its rank by three networks per domain (continued and fresh f6 seed 1; control n) and by the mixture of each network with the evidence. The mixture is half the network and half spread over the 64 terms with the most evidence, in proportion to their explained share.
+- **Gates tried:** g = 0.5, 0.3, 0.1, 0.03.
+- **Reading.** The variant passes if one gate satisfies all of these in both domains:
+  1. it opens at at least 25% of the nodes one term short;
+  2. at the nodes where it is open, the median evidence rank is at most 64 for unfamiliar missing terms (median over the three lineages) and for the bump;
+  3. there, the mixture ranks unfamiliar missing terms better than the network does (median over the three networks);
+  4. there, the mixture keeps familiar missing terms within a median rank of 5 (the networks' is 1–2).
