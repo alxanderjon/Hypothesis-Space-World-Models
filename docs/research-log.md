@@ -8303,3 +8303,36 @@ Reaction networks (about 4,671 terms):
   2. at the nodes where it is open, the median evidence rank is at most 64 for unfamiliar missing terms (median over the three lineages) and for the bump;
   3. there, the mixture ranks unfamiliar missing terms better than the network does (median over the three networks);
   4. there, the mixture keeps familiar missing terms within a median rank of 5 (the networks' is 1–2).
+
+### The late-search quick check: results (12 November; no search, no training)
+
+**Run:** `probe_late.py 24`, about 10 minutes (report `outputs/accumulating_learner/g2h/late/report.txt`).
+- 3 networks per domain: continued and fresh f6 seed 1, control n.
+- These three happen to be lineages that already know the bump, so for them the bump is familiar.
+
+**Where the gate opens** (share of nodes one term short / two short / root):
+
+| Gate | Flows | Reaction networks |
+|---|---|---|
+| 0.5 | 94% / 76% / 0% | 98% / 86% / 0% |
+| 0.3 | 87% / 56% / 0% | 94% / 71% / 0% |
+| 0.1 | 61% / 19% / 0% | 72% / 32% / 0% |
+| 0.03 | 31% / 5% / 0% | 45% / 8% / 0% |
+
+**At the open nodes, the missing unfamiliar term's median rank** (evidence / network / network + evidence):
+
+| Gate | Flows | Reaction networks |
+|---|---|---|
+| 0.5 | 231 / 133 / 146 | 225 / 534 / 476 |
+| 0.1 | 165 / 96 / 131 | 241 / 410 / 142 |
+| 0.03 | 90 / 62 / 64 | 244 / 125 / 106 |
+
+- Familiar missing terms stay at rank 1 under both the network and the mixture at every gate.
+
+**Against the reading set before the run: does not pass.** No gate meets the four conditions in either domain.
+
+**Why.** The gate opens at the wrong nodes.
+- The data's score finds a missing term when that term carries much of the remaining signal. At those nodes the current structure explains little, so the gate stays shut.
+- In the evidence probe, unfamiliar terms one term short ranked 20 on flows (all such nodes).
+- Where the structure already explains most of the data, the missing term is a small part of what is left, and its evidence rank falls to 90–250.
+- A gate on the evidence's own confidence (one term explaining a large share of the residual) would be a different idea, needing its own quick check. Not pursued.
