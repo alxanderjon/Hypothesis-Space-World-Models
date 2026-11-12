@@ -8439,3 +8439,40 @@ Reaction networks (about 4,671 terms):
 - The choice-level data weights over each lineage's parses with its learned contextual library at 30 tasks (pieces as choices, a piece's gaps as contexts).
 - **Against:** the same weights with no library, and with a decoy library. Decoy pieces are random parts of random language terms, with the same sizes and gap counts as the learned pieces (fixed seed).
 - **Passes if** the learned library ranks missing unfamiliar terms better (lower median) than both no library and the decoy, at both node kinds and in both domains.
+
+### The six quick checks: results (12 November; no search, no training)
+
+**Run:** `k2_checks.py 24 nodes headroom pairs constants` (29 minutes), then `report` (report `outputs/accumulating_learner/g2h/k2checks/report.txt`). Figures are medians over the 8 lineages per domain.
+
+1. **Build and check: PASSES.**
+   - Missing unfamiliar terms land in the screened top 10 of the network's own top N far more often than in the network's own top 10:
+
+| Node | Top 64 | Top 256 | Top 1,024 | Network's own top 10 |
+|---|---|---|---|---|
+| Flows, one term short | 18% | 35% | 44% | 8% |
+| Flows, two short | 2% | 8% | 13% | 0% |
+| Reaction networks, one term short | 17% | 21% | 22% | 5% |
+| Reaction networks, two short | 5% | 7% | 7% | 0% |
+
+   - K0's grammar as the source also passes at 256 and 1,024 candidates. The choice-level data weights as the source do not (0–3%).
+   - **Descriptive, not part of the rule.** Screening alone loses familiar completions: familiar missing terms in the screened top 10 of 1,024 are 45% on flows one term short and 24% on reaction networks, against 90–92% in the network's top 10.
+   - The union "network's top 5 or screened top 10 of 1,024" keeps familiar terms at 84% in both domains, while catching unfamiliar ones at 45% (flows) and 22% (reaction networks), against the network's 8% and 5%. Two terms short: 13% and 8%, against 0%.
+2. **(i) Headroom: FAILS.**
+   - Weights half from the lineage's grammar and half from the system's other true terms rank held-out unfamiliar terms at a median of 150 on flows and 214 on reaction networks (K0's grammar alone: 577 and 717). The rule needed 64 or better.
+   - **(ii) Choice-level data signal: FAILS.** It ranks missing unfamiliar terms at 1,466–2,494, against the evidence at 20–622 and the networks at 256–1,492. Spreading term scores onto building choices destroys the data's signal.
+4. **Proposals across equations (C1): PASSES by the rule, with no gain over the network.**
+   - On reaction networks, 65% of missing terms appear in another equation's true structure, and the proposals' median rank is 4 (rule: at most 10).
+   - But the network alone ranks the same missing terms at 2 (flows: 40% shared; 4 against 1).
+   - Unfamiliar terms rank 296 with proposals, against about 292 by the network.
+   - **Descriptive:** among the 22–24% of missing terms the network ranks below 10, proposals rescue 2% on flows and 5% on reaction networks, and lose 3% and 1%.
+5. **Paired moves (C2): FAILS.**
+   - On reaction networks (264 shared terms), the joint score ranks the shared missing term at a median of 1,169, against 638 by each equation alone (flows: 650 against 74).
+   - **Descriptive:** a shared term is usually obvious in one equation (median rank 1) and buried in the other (median rank about 1,900). The sum lands in between, worse than either equation alone in 3% of cases and better than both in 9%.
+6. **Shared constants (C3): FAILS.**
+   - **(i)** Equations sharing a parameter with another equation: reaction networks 99%, ecology 67%, mechanics, circuits and flows 0%.
+   - **(ii)** Tying keeps exactness in 161 of 213 development pairs (76%; the rule needed 95%).
+   - **A bug, found and fixed after the first run.** My first tied fit used the description's factors directly. That ignores the learner's rescaling of each variable (coordinates x/σ, targets dx/dt/σ), and it gave 0%. The corrected tie uses the learner's own scales, and that 76% is the result that counts. Code: `k2_checks.py`, `job_constants`.
+   - The 52 remaining failures are genuinely inexact (tied residuals 0.0005–0.2; separate fits 1e-11 or better). Probably the coefficient of a plain term is often a sum of several rates, for example a decay and a reaction on the same variable. A simple tie cannot express that.
+3. **The library with data-set weights (Stage C): PASSES by the rule, inside a weak scorer.**
+   - The learned library ranks missing unfamiliar terms at 601 on flows and 916–944 on reaction networks. No library gives 2,450 and 1,466–1,471; the decoy gives 1,990–1,993 and 1,667–1,676.
+   - The scorer itself failed check 2(ii), and these ranks remain far behind the network (256 and 292) and the evidence (20 and 86).
