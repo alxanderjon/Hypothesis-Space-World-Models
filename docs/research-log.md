@@ -8239,3 +8239,50 @@ All true terms rank at a median of about 8 under every prior: most are simple po
   - the terms new to both prior experiences;
   - each lineage's unfamiliar terms (median over the lineages).
 - No search and no training; counts only.
+
+### The evidence probe: results (12 November; no search, no training)
+
+**Run:** `probe_evidence.py 24`, 03:40–04:00 UTC (report `outputs/accumulating_learner/g2h/probe/report.txt`).
+- 1,671 probes on flows and 1,713 on reaction networks.
+- Cost: evidence 0.03 s per node against 1.06 s per network call, so screening every term by the data costs about 1/30 of a network step.
+
+**Median rank of the missing true term** (evidence / networks, the median over 8 networks of each network's median / K0 grammar / context-free grammar with library).
+
+Flows (about 3,841 terms):
+
+| Term set | One term short | Two short | Root |
+|---|---|---|---|
+| All true terms (557) | 62 (45% top 10) / 1 / 6 / 6 | 1,311 / 3 / 7 / 6 | 1,717 / 6 / 8 / 8 |
+| Unfamiliar to the lineage (74 per lineage) | **20** / 256 / 577 / 542 | 306 / 719 / 578 / 543 | 853 / 1,224 / 579 / 544 |
+| Bump (47) | **12** (70% top 64) / 140 / 122 / 760 | 153 / 538 / 122 / 762 | 736 / 1,126 / 124 / 763 |
+| Saturating (55) | 14 / 66 / 357 / 429 | 460 / 429 / 358 / 430 | 955 / 970 / 359 / 432 |
+| New to both prior experiences (61) | 25 / 1 / 5 / 10 | 1,113 / 4 / 5 / 11 | 1,778 / 8 / 6 / 12 |
+
+Reaction networks (about 4,671 terms):
+
+| Term set | One term short | Two short | Root |
+|---|---|---|---|
+| All true terms (571) | 618 (23% top 10) / 2 / 8 / 8 | 1,730 / 3 / 8 / 8 | 1,643 / 5 / 9 / 10 |
+| Unfamiliar to the lineage (100 per lineage) | 86 / 292 / 717 / 442 | 622 / 1,492 / 718 / 443 | 1,310 / 2,663 / 720 / 445 |
+| Bump (39) | 143 (33% top 64) / 770 / 716 / 2,688 | 431 / 1,690 / 716 / 2,689 | 1,183 / 3,542 / 718 / 2,691 |
+| New to both prior experiences (31) | 408 (35% top 10) / 2 / 6 / 12 | 678 / 6 / 6 / 12 | 2,313 / 15 / 8 / 14 |
+
+**D's condition (set before the run): NOT MET, so D does not run.**
+- Flows passes all three: bump 12, terms new to both 25, unfamiliar terms 20.
+- Reaction networks fail all three: 143, 408 and 86.
+
+**Reading.**
+1. **The networks are near perfect at completing a structure when the missing term is familiar** (median rank 1–2). They rank unfamiliar missing terms deep: 256 on flows, 292 on reaction networks.
+2. **On flows, the data's own score finds the missing unfamiliar term once the rest of the structure is in place.**
+   - It ranks the bump at 12 and unfamiliar terms at 20, far ahead of the networks (140; 256) and the grammars (122–760).
+   - This is exactly the gap a data-driven screen would fill.
+3. **The signal vanishes as more of the structure is missing.**
+   - Two terms short, the flows bump falls to 153 and unfamiliar terms to 306; at the root, to 736.
+   - The other missing terms dominate the residual.
+4. **On reaction networks the data's signal is weak even one term short** (all terms 618, bump 143). Their equations have several correlated product terms, so one term's share of the residual is not distinctive.
+5. **The grammars rank the same unfamiliar terms at 442–717 on both domains, whatever the node.** They do not look at the data, which explains K1.
+
+**What the probe suggests** (not run; each idea would first need its own quick check, by the new rule):
+- A data-driven channel helps mainly near completion, and on some domains.
+- Spending half the search's weight on it everywhere would dilute the networks' strong completions, as K1's grammar did.
+- A completion-stage screen, used only where the current structure already explains most of the data, is the natural variant to check next.
