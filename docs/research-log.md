@@ -8144,3 +8144,70 @@ All true terms rank at a median of about 8 under every prior: most are simple po
   - shared-form equations fall by no more than that difference.
 
   If both B and C pass, the larger median gain wins; if neither does, no learning curves are run. Either way, I check in before any curves.
+
+### K1's same-network test: results (12 November; finished 02:56 UTC)
+
+**Run.** 48 of 48 tests, with no failures and no time caps (report `outputs/accumulating_learner/g2h/k1/report.txt`).
+- Restarted once at 18:20 UTC to queue every test's systems at once; the first finished test was kept.
+- Reniced to 19 at about 20:45 UTC, while machine load was 60–68 on 48 cores.
+
+**New-form development equations solved, A / B / C** (A = the network alone; B = mixed with K0's grammar; C = mixed with the context-free grammar and its library). In brackets, A run with the network's own earlier seed:
+
+| Network | Flows (of 159) | Reaction networks (of 155) |
+|---|---|---|
+| Continued, f6 seed 1 | 76 / 62 / 58 (76) | 69 / 65 / 62 (60) |
+| Continued, f6 seed 2 | 50 / 47 / 47 (49) | – |
+| Continued, f6 seed 3 | 53 / 53 / 53 (51) | – |
+| Continued, version n | – | 64 / 66 / 61 |
+| Continued, version ns | – | 55 / 44 / 43 |
+| Fresh, f6 seed 1 | 79 / 79 / 72 (80) | 40 / 33 / 31 (35) |
+| Fresh, f6 seed 2 | 57 / 54 / 53 (57) | – |
+| Fresh, f6 seed 3 | 66 / 61 / 61 (68) | – |
+| Fresh, version n | – | 50 / 46 / 43 |
+| Fresh, version ns | – | 41 / 34 / 33 |
+| Control, version n | 82 / 82 / 79 | 67 / 66 / 65 |
+| Control, version ns | 63 / 63 / 59 | 55 / 48 / 43 |
+
+**Totals over the 16 networks, A / B / C:**
+
+| Measure | A | B | C |
+|---|---|---|---|
+| New-form equations solved | 967 | 903 | 863 |
+| True structures | 893 | 824 | 817 |
+| Bump solutions | 70 | 53 | 45 |
+| Solutions using a kind of term new to the network's lineage | 108 | 91 | 88 |
+
+- The bump is found mostly by the networks that already had it: flows continued f6 seed 1 found it 16 / 3 / 4 times, fresh f6 seed 1 21 / 21 / 18, control n 19 / 18 / 16.
+- **A against A** (seed 4 against the network's own seed, 8 f6 networks): differences 0, 1, 2, 1, 0, 2, 9, 5 new-form equations (median 1.5); shared-form differences all 0.
+
+**Against the winner rule set before the run:**
+- **B:** beats A in 1 of 16 networks (flows 0 of 8, reaction networks 1 of 8); median gain −3.5 (continued −3.5, control −0.5, fresh −4.5). Does not pass.
+- **C:** beats A in 0 of 16; median gain −6.0 (continued −5.0, control −3.5, fresh −7.0). Does not pass.
+- **Within single networks:** the losses reach p = 0.0013 (B, flows continued f6 seed 1) and p = 4e-05 (C, same network); also p = 0.0074 and 0.00049 on reaction networks continued ns.
+- **Winner: none.** By the rule, no learning curves are run.
+
+**Reading.**
+- Giving half the weight of the choice of term to a grammar of forms costs equations in nearly every network, and the costlier the grammar, the more is lost (C more than B).
+- It does not help with unfamiliar steps either: fewer bump solutions and fewer solutions with a kind of term new to the lineage.
+- The grammar is not conditioned on the system's data. The half of the weight it takes goes to terms that are plausible as forms but do not fit, and it is taken away from the network's data-informed choices within the 300-structure budget.
+- This agrees with K0b's diagnosis: an unfamiliar step cannot come from a prior over forms; it has to come from the data, through search.
+
+### How K2's cheap screening could be tested early (outline; not run; 12 November)
+
+- **What exists already.**
+  - At every search step the search computes, for each of the roughly 4,000 terms, how much of the remaining residual it would explain if added to the current structure with its best constants from the bank's grid (`search_g1.evidence`: each term's best partial R²). That screens every term at once, for about the cost of one network call.
+  - The network sees it only as one input feature among many, and has learned to override it for unfamiliar terms.
+  - An ordinary fit of a whole candidate structure is 15–25 times cheaper than a network call (Stage X timings).
+- **Step 1: a probe, no search (minutes).**
+  - Take the development systems at three kinds of node: the node one term short of each true structure (the true structure minus one term, fitted), the root, and nodes two terms short.
+  - At each node, rank the missing true term by the evidence, by each lineage's network, and by each grammar. Report unfamiliar terms and the bump especially.
+  - This says directly whether the data puts a genuinely new step near the front once the familiar terms are in place. K1 suggests that is where any gain must come from.
+- **Step 2: inside K1's setup** (same 16 networks, seed, budget and systems; test only).
+  - Ordering D: the network mixed half and half with a distribution from the evidence, spread over the top 64 terms by explained share.
+  - Same-network comparison against A, with the same winner rule.
+  - About 16 tests (3–4 h); no training.
+  - Because the evidence is the data's own judgement, D tests the opposite of what B and C tested.
+- **Step 3: K2's screen proper.**
+  - At each expansion, quick-fit the top M candidate structures (the current structure plus one of the top terms by prior and by evidence, or a swap), with M from 16 to 64 per network call (one to three network calls of time).
+  - Expand the best fits first.
+  - Compare at equal wall time and at equal network calls. This is where the effective budget could grow 5–10 times.

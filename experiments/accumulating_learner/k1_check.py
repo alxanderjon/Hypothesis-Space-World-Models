@@ -154,17 +154,20 @@ def main():
         todo = [t for t in todo if t[1] == "continued" and t[2] == "f6 seed 1"]
     C.log(f"K1 same-network test started: {len(todo)} tests; seed {SEED}; budget {BUDGET}; shortlist "
           f"{os.environ['G2H_SHORTLIST']}; time cap {C.TIME_CAP:.0f}s; workers {workers}")
+    recs = {w: C.records("dev", d)[:2] if SMOKE else C.records("dev", d) for w, d in DOMS.items()}
     with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as pool:
-        for which, arm, run, net, lin, o in todo:
+        queued = []                                              # every test's systems queued at once, in test order,
+        for which, arm, run, net, lin, o in todo:                # so no worker waits for a test's slowest system
             path = OUT / f"{lin}_{o}_s{SEED}_{DOMS[which]}.json"
-            if path.exists():
-                continue
-            recs = C.records("dev", DOMS[which])[:2] if SMOKE else C.records("dev", DOMS[which])
-            t0 = time.time()
-            res = list(pool.map(job, [(r, net, table_of(which, arm, run, o), SEED, *BUDGET) for r in recs]))
+            if not path.exists():
+                tab = table_of(which, arm, run, o)
+                queued.append(((which, arm, run, o), path, [pool.submit(job, (r, net, tab, SEED, *BUDGET)) for r in recs[which]]))
+        t0 = time.time()
+        for (which, arm, run, o), path, futs in queued:
+            res = [f.result() for f in futs]
             path.write_text(json.dumps(res, default=float))
             eqs = [e for r in res if r["status"] == "done" for e in r["equations"]]
-            msg = (f"{which} {arm} {run} ordering {o}: done in {time.time() - t0:.0f}s; failed "
+            msg = (f"{which} {arm} {run} ordering {o}: done at {time.time() - t0:.0f}s; failed "
                    f"{sum(r['status'] != 'done' for r in res)}; time-capped {sum(e['time_capped'] for e in eqs)}")
             if not SMOKE:
                 msg += f"; equations solved {sum(e['first_exact'] is not None for e in eqs)} of {len(eqs)}"
