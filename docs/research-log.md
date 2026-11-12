@@ -8519,3 +8519,113 @@ Reaction networks (about 4,671 terms):
 - Check 1's descriptive figures already pointed to this cost: familiar missing terms fell to 45% (flows) and 24% (reaction networks) in the screened top 10, and to 1–5% two terms short.
 
 **Lesson for quick checks.** A quick check of a change to the search's choices must measure the cost at the nodes the search actually visits, not only the benefit near the truth. Those nodes can be sampled cheaply from one short run of the unchanged search.
+
+### Owner: change of direction; DreamCoder's physics experiment compared with ours; a mastery curriculum (12 November)
+
+**Owner.** *"Change of direction: we've been asking for too much too fast. Before designing anything, compare our setup with DreamCoder's physics experiment, since DreamCoder worked on physics and we're missing something essential. Read the paper's physics section and supplementary details, and compare point by point, in plain language ... Then design a curriculum where the learner masters one piece at a time ... Start with a minutes-scale quick check ... Send the comparison, the curriculum design and the quick-check plan before running anything longer. Hold the two quick checks you proposed (dreams from the library, whole reactions) until after this."*
+
+**Sources read:**
+- Ellis et al., DreamCoder: main text (arXiv 2006.08381);
+- the supplement bundled at cs.cornell.edu/~ellisk/documents/dreamcoder_with_supplement.pdf: section S2.1.7 "Learning a language for physical laws", Table S1, and the hyperparameter table in S4;
+- the released physics script, ellisk42/ec `bin/scientificLaws.py`.
+
+**Point by point.**
+1. **Task format.**
+   - **DreamCoder:** each task is one formula with a scalar or vector output, for example kinetic energy ½m|v|² or Coulomb's law.
+     - Each equation was converted to a regression task by sampling 10 random input/output examples (the released script's default is 20).
+     - Inputs are drawn independently at random over a wide range, and the outputs are the formula's exact values.
+     - There is no time, no derivative estimation and no coupling between equations.
+   - **Ours:** each task is a system of 2–4 coupled equations (about 14 terms for 4 variables, 3–4 per equation).
+     - The data are 8 short bursts of 13 time points along trajectories, so the states are strongly correlated. About 30 derivative points per equation remain after edges and the validation split.
+     - Derivatives are estimated, and exactness is judged on held-back bursts.
+2. **Search breadth and constants.**
+   - **DreamCoder:** up to 4 hours of enumeration per unsolved task per cycle, on 64 CPUs.
+     - Each candidate is checked by evaluating it on the examples, which is very cheap: its 24-hour enumeration baseline tested up to 400 million programs.
+     - No constants were fitted: "Physical constants were expressed in Planck units, which generally drops certain special coefficients (e.g., the gravitational constant G = 1)". The primitives include only 0, 1 and π, and the script's free real constant is commented out.
+   - **Ours:** 300 candidate structures per equation.
+     - Each check fits the coefficients and up to 2 constants inside terms, with thorough refits, at 5–10 minutes per system.
+     - That is roughly five orders of magnitude fewer candidates per task, each far costlier.
+3. **Recurrence.**
+   - **DreamCoder:** 60 laws with heavy overlap. Examples:
+     - the inverse square in 6 laws (three Coulomb and three gravitation variants);
+     - norms and dot products in kinetic energy, work, power and velocity magnitude;
+     - sums in net force, series resistors, parallel capacitors and centre of mass;
+     - 2π periods in 3 laws;
+     - near-duplicate families: three capacitor-energy forms, two Hooke's laws, two torque and two Lorentz-force forms.
+   - **Ours:** a piece recurs about as often inside a domain (the flows bump is 47 of 557 true development terms, 8%; the saturating term 10%). But it always appears inside a 4-equation system with about 13 other terms, never alone. A new domain's pieces come without simpler stepping stones.
+4. **Ordering.**
+   - **DreamCoder:** no designed curriculum. "At each wake cycle, rather than sample a random minibatch of tasks, we gave the agent all tasks it had not solved in the past two wake cycles. This had the effect of the agent solving the easiest tasks first, and then reallocating its compute time to a smaller set of harder, unsolved tasks." The main text contrasts this with teacher-ordered curricula.
+   - **Ours:** domains in a fixed order, and each domain's tasks seen once in a fixed order (wakes on tasks 1–10, 11–30 and 31–100). Unsolved tasks are never retried, nothing is graded by difficulty, and every new domain starts at full complexity.
+5. **Primitives and library.**
+   - **DreamCoder:** starts from 0, 1, π, power, +, ×, ÷, −, map, fold, zip, cons, car, cdr and nil, with no vectors, norms or dot products. It learned vector algebra (inner products, vector sums, norms), then the inverse-square schema behind Newton's and Coulomb's laws, solving 93% of the laws after 8 cycles.
+   - **Ours:** a fixed flat list of about 4,000 whole terms (up to 7 nodes, 2 constants). No library grows during learning (K0b's library was only a diagnostic); the network learns preferences over the fixed list.
+6. **Iterations, time and compute.**
+   - **DreamCoder:** 8 wake/sleep cycles (the script allows 10), a 4-hour search limit per task, 64 CPUs. The released physics script uses a dummy feature extractor, so no neural recognition model was trained for physics.
+   - **Ours:** three wake rounds per domain at 300 structures per equation, the network trained for 500 steps after each round. A claim run took about 18 hours on 30 workers.
+
+**Differences most likely essential:**
+1. **Breadth of search on cheap, unambiguous checks.**
+   - DreamCoder can reach a program several choices deep by sheer enumeration, then shortens it with the library.
+   - Our 300 costly checks cannot reach anything the network does not already favour. That is exactly the failure behind Stage X, K1 and ordering E.
+2. **Tasks that make each candidate easy to judge.**
+   - One formula, independent random inputs and no constants to fit.
+   - Our trajectories make similar terms look alike (the reaction networks' product terms), and constant fitting makes every check slow.
+3. **Easy-first with retries, and pieces met alone before they are combined.**
+   - Simple laws are solved first, their parts become library pieces, and the harder laws then become short.
+   - Our domains start at full complexity, each new piece is buried among many others, and unsolved tasks are never retried.
+4. **Not essential for physics:**
+   - a neural recognition model (none was used);
+   - a designed curriculum (the easy-first effect came from retrying unsolved tasks).
+
+**The curriculum design (proposed, not built).**
+- **Levels.** Each level adds exactly one new piece, combined with pieces already mastered.
+
+| Level | Adds |
+|---|---|
+| 1 | Plain variables (x, y) |
+| 2 | Products (x·y) |
+| 3 | Squares (x²) |
+| 4 | Cubes (x³) |
+| 5 | A reciprocal of a constant plus a variable, 1/(K + x): the first constant inside a term |
+| 6 | The product of 2 and 5, x/(K + x) |
+| 7 | The bump, 1/(K + x²): the reciprocal of 5 around the square of 3 |
+| 8 | The saturating term x/(K + x²), combining 6 and 7 |
+| 9 onward | A new operation each (exp, then sin), first alone, then combined |
+
+- **System sizes.** Levels 1–8 use 2 variables and 1–2 terms per equation; later levels grow to 3 variables and 3 terms. Every system of a level contains its new piece at least once, and its other terms come from earlier levels.
+- **Data.** Systems come from the existing made-up-system machinery (simulation and acceptance checks), with structures drawn only from the level's allowed pieces: 20 training and 20 held-out systems per level. Constants enter only at level 5, after the purely discrete pieces are mastered (DreamCoder fitted none).
+- **A round at a level.**
+  - Wake on every training system not yet solved (DreamCoder's rule), with the budget growing on each retry: 300, then 1,000, then 3,000 structures per equation, so compute moves to the hard systems.
+  - Train the network on the verified solutions plus dreams built from the level's pieces.
+  - Test on the held-out systems.
+- **Mastery and stopping.** Advance when at least 80% of the level's held-out systems are solved exactly (every equation). Allow at most 3 rounds; if a level is not mastered by then, stop and report.
+- **Controls,** at least 2–3 seeds per arm, same budgets and rounds:
+  1. **Shuffled order:** the same systems of all levels in one random order, with no mastery gating.
+  2. **Fresh at each level:** a new network at every level, trained only on that level's systems.
+  3. **Made-up systems:** before each level, a network trained on made-up systems matched in amount (random structures of the same sizes from the whole language).
+- **Measures.**
+  - Zero-shot on each level before training on it: exact solves on its held-out systems, and the new piece's rank at the root and one term short.
+  - Rounds to mastery, and structures per solved equation.
+- **The accumulation claim** rests on later levels: zero-shot solves and new-piece ranks above both the fresh and the made-up control, and mastery in fewer rounds. The shuffled control shows whether the order matters.
+
+**The quick check (planned, not run; no search).**
+- **Question.** After brief training on the levels up to L, does level L+1's new piece rank much higher than for a fresh network?
+- **Transitions:**
+  - levels 1–2 → 3 (squares);
+  - levels 1–5 → 6 (x/(K + x));
+  - levels 1–6 → 7 (the bump).
+- **Training data.** Systems of the levels so far, with supervised examples from their true structures (as the made-up control's examples are built). A network trained from scratch for 500 steps, 2 seeds.
+- **Made-up arm.** The same amount of made-up systems, random structures of the same sizes from the whole language.
+- **Ranking.** On 40 held-out systems of level L+1, the new piece's true terms at the root and one term short, ranked by:
+  - the curriculum network;
+  - the made-up network;
+  - an untrained network;
+  - the simplest-first order.
+- **Pass rule.** In at least 2 of the 3 transitions, in both seeds, both of these hold:
+  - the curriculum network's median rank one term short is at most half that of the untrained network and of the simplest-first order;
+  - it is lower than the made-up network's.
+- **Cost.**
+  - generating about 1,000 small systems: about 10 minutes on 24 workers;
+  - 12 trainings of 500 steps: about 2–3 minutes each on a shared GPU;
+  - ranking: about 5 minutes.
+  - About 45 minutes in all.
