@@ -8336,3 +8336,54 @@ Reaction networks (about 4,671 terms):
 - In the evidence probe, unfamiliar terms one term short ranked 20 on flows (all such nodes).
 - Where the structure already explains most of the data, the missing term is a small part of what is left, and its evidence rank falls to 90–250.
 - A gate on the evidence's own confidence (one term explaining a large share of the residual) would be a different idea, needing its own quick check. Not pursued.
+
+### Design: K2 and Stage C, with the cross-equation parts; a quick check for each piece (12 November; proposed, not run)
+
+**Where things stand.**
+- The network completes familiar structures almost perfectly (missing familiar term at rank 1–2) but cannot reach unfamiliar terms.
+- Grammars that ignore the data cost equations (K1).
+- The data's own score finds a missing term only when that term carries much of the remaining signal, so a fixed rule for when to trust it fails (the late-search check).
+- Reaction networks add a separate problem: several similar product terms per equation, which one equation's data cannot tell apart.
+
+**The pieces.** These are DreamCoder's three parts (a library grown by compression, a recognition network that sets the grammar's weights from each task's data, and a search that builds candidates from parts and checks each against the data), plus the cross-equation parts. Each gets a minutes-scale check without search or training first; only pieces that pass get a longer test.
+
+1. **K2-a, build and check.**
+   - **What it is.** The search builds candidate terms from parts (operations and arguments), not from the fixed list, and checks many completed candidates against the data at every step. A full sweep of all terms costs about 1/30 of a network step.
+   - The first version reproduces today's language exactly. Today's network stays one source of candidates, so familiar completions keep their strength.
+   - **Quick check.** At the probe's nodes, take the top 64, 256 and 1,024 candidates from each source: the network, K0's grammar, and the data-set weights of check 2(ii). Screen them by the data, and record how often the missing term is in the screened top 10.
+   - **Passes if** some source with at most 1,024 candidates puts missing unfamiliar terms in the top 10 more often than the network's own top 10 does, in both domains, at the nodes one and two terms short.
+2. **K2-b, the recognition network.**
+   - **What it is.** A network reads each system's data and the current structure and sets the weights of the building choices for that system. Example: "a reciprocal of a sum is likely here, and inside it a constant plus a square."
+   - It is trained on the building choices of verified solutions and of dreamed systems drawn from the current library (Stage B's idea, which is how DreamCoder trains its recognition model).
+   - **Quick check (i), headroom.** Set the weights from the system's other true terms, one term held out, plus the lineage's experience. Where do held-out unfamiliar terms rank?
+     - Passes if the median is within the top 64 in both domains.
+     - If even this ceiling cannot reach them, training will not.
+   - **Quick check (ii), does the data carry choice-level signal?** Spread the data's term scores onto the building choices each term contains, and rank the missing term by its choices. This is a stand-in for the recognition network with no training.
+     - Passes if it ranks missing unfamiliar terms better than both the plain data score and the network, at the nodes one and two terms short, in both domains.
+3. **Stage C, the growing library.**
+   - **What it is.** Pieces learned by compression become single building choices, with weights set from the data by the recognition network. This fixes K0b's flaw, where a piece's weight depended only on how often it had appeared in the past.
+   - Controls as agreed: a decoy library, a removal check, and the made-up-systems control with its own library.
+   - **Quick check.** K0b's rank and bits check, redone with the data-set weights of check 2(ii), against a decoy library with pieces of the same sizes.
+   - **Passes if** the learned library ranks unfamiliar true terms better than both no library and the decoy, in both domains.
+4. **C1, attention across a system's equations.**
+   - **What it is.** The recognition network sees all of a system's equations (one summary per equation), so a rate found in one equation raises its weight in the others.
+   - **Quick check** (counts only). On the development systems:
+     - how often the missing term (one term short) appears in another equation of the same system;
+     - its rank if the terms K1's searches (ordering A) found in the other equations are proposed first.
+   - **Passes if**, on reaction networks, at least half of missing terms appear in another equation and this proposal puts them within a median rank of 10.
+5. **C2, paired moves.**
+   - **What it is.** Add the same term to two equations at once, judged by how much of both equations' remaining error it explains.
+   - **Quick check.** At nodes where a term shared by two equations is missing from both, rank it by the joint score against the one-equation score. For reference, one term short on reaction networks the one-equation score ranked the bump at 143 and all terms at 618.
+   - **Passes if** the joint score puts shared missing terms within a median rank of 64 on reaction networks where the one-equation score does not.
+6. **C3, shared constants across equations.**
+   - **What it is.** The fitter fits one constant for a term that appears in two equations.
+   - **Quick check:**
+     - on training systems' true equations, how often a constant repeats across equations;
+     - fits only, with no search: the development systems' true structures fitted with the constants tied and separately, comparing how often each fit reaches the exactness tolerance.
+   - **Passes if** constants repeat in at least a quarter of some domain's equations, and tied fits reach exactness at least as often as separate ones.
+
+**Order and cost.**
+- **Quick checks first**, in the order 1, 2, 4, 5, 6, 3: about 1–2 hours of CPU in all, no search and no training.
+- **Longer tests only for pieces that pass**, kept short unless the check strongly supports them, with at least 2–3 seeds per arm.
+- **The accumulation test** (experienced against the made-up control and the fresh network, on new-form equations) comes after the pieces are in place. It uses the same machinery for every arm: own library, own recognition training, decoy library and removal check.
+- **Unchanged rules:** no hand-added pieces; the learner is never told the domain.
