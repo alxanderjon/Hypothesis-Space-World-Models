@@ -8664,3 +8664,30 @@ Reaction networks (about 4,671 terms):
 - **Pass rule.** At least 2 of the 3 transitions, in both seeds and at all three points, must meet both of these:
   - the curriculum network's median rank of the new piece is at most half both the untrained network's and the simplest-first order's;
   - it is below the made-up network's.
+
+### The curriculum quick check: results (12 November; no search)
+
+**Run:** `curriculum_check.py 24 gen train rank report`, 15 minutes (report `outputs/accumulating_learner/g2h/curriculum/report.txt`).
+- Generation: 1,520 systems, all accepted.
+- Training examples: 688–695 (levels 1–2), 1,718–1,725 (levels 1–5), 2,058–2,066 (levels 1–6).
+- Made-up arms were matched exactly in number of examples.
+- 14 networks trained on the two free GPUs in 8 minutes.
+
+**Median rank of the next level's new piece** (of the 2-variable language's terms). Each cell gives curriculum (seeds 1, 2) / made-up (1, 2) / untrained (1, 2) / simplest-first.
+
+| Point | Squares, after levels 1–2 | x/(K + x), after levels 1–5 | The bump 1/(K + x²), after levels 1–6 |
+|---|---|---|---|
+| Empty start | 26, 124 / 12, 23 / 496, 403 / 6 (85 cases) | 700, 496 / 277, 407 / 925, 467 / 89 (51 cases) | **56, 76** / 257, 222 / 775, 821 / 511 (51 cases) |
+| One term short | 5, 8 / 1, 1 / 453, 368 / 4 (85 cases) | 413, 106 / 45, 55 / 923, 438 / 88 (51 cases) | **51, 62** / 69, 99 / 779, 826 / 510 (51 cases) |
+| Two terms short | 26, 135 / 14, 23 / 490, 411 / 4 (46 cases) | 771, 486 / 233, 385 / 930, 469 / 90 (20 cases) | **55, 74** / 211, 213 / 796, 800 / 561 (27 cases) |
+
+**Against the rule set before the run: FAILS.** Only 1 of the 3 transitions (the bump) meets it, against the 2 required.
+
+**Reading.**
+1. **The bump: met in both seeds at all three points.**
+   - After mastering squares and 1/(K + x), the curriculum network ranks the bump at 51–76 everywhere.
+   - The made-up network ranks it 69–257 (2.7–4.6 times worse at the empty start), simplest-first about 510–560, and the untrained network about 800.
+   - Mastered pieces do combine into the unfamiliar term that blocked flows, and ahead of generic practice.
+2. **Squares: no.** A small new term is already near the front of the simplest-first order (4–6). The made-up network, which met squares among its random terms, ranks it 1–23. The curriculum network, which never saw a square, ranks it 5–135.
+3. **x/(K + x): no.** Products and 1/(K + x) were both mastered, yet the curriculum network ranks their product 106–771, behind the made-up network (45–407) and simplest-first (about 90). Putting a mastered reciprocal inside a product is not picked up the way putting a mastered square inside a reciprocal is.
+4. **Caution about the control.** The made-up network has seen random terms from the whole language, so for any piece it has a head start of coverage. The curriculum networks have seen only their levels' pieces. Beating the made-up network therefore means combination, not coverage. That is why the bump's result is meaningful, and also why simple new pieces favour the control.
