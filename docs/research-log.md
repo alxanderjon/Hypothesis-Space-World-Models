@@ -8730,3 +8730,36 @@ From now on my runs stop themselves, and stop writing, only when free disk falls
 **"Transfers"** (set now):
 - **Network:** in both seeds and at all three points, its median rank of the new term is at most half the untrained network's and half the simplest-first order's, and below the made-up network's.
 - **Library:** in both seeds and at all three points, its median rank is at most half the simplest-first order's, and below the made-up library's.
+
+### The follow-up curriculum check: results (12 November; no search)
+
+**Run:** `curriculum_check2.py 24 gen train grammars rank report`, 4 minutes (report `outputs/accumulating_learner/g2h/curriculum2/report.txt`).
+
+**Median rank of the new term** (of about 1,100 terms of the 2-variable language), seed 1 and seed 2 at the empty start / one term short / two short. Methods:
+- **Curriculum net / Made-up net:** the networks trained on the mastered levels and on matched made-up systems.
+- **Library (cur.) / Library (made):** the context-free library grammar learned from those systems' true structures, no network.
+- **Counting:** counting alone, without pieces.
+- **Simplest:** the simplest-first order.
+
+| | Curriculum net | Made-up net | Library (cur.) | Library (made) | Counting | Simplest |
+|---|---|---|---|---|---|---|
+| A1 1/(K + x²), after 1–5 | 111, 628 / 102, 240 / 95, 716 | 214, 268 / 62, 78 / 275, 359 | 11, 11 / 9, 9 / 10, 10 | 866, 808 / 866, 806 / 815, 762 | 26–28 | 512–564 |
+| A2 1/(K + x³), after 1–5 | 104, 826 / 108, 247 / 104, 832 | 171, 404 / 39, 102 / 180, 486 | 13–15 | 840–883 | 29–31 | 565–567 |
+| A3 1/(K + x·y), after 1–5 | 87, 446 / 89, 122 / 87, 544 | 239, 190 / 52, 45 / 281, 235 | 18–21 | 914–979 | 36–37 | 675–677 |
+| B1 x/(K + x), after 1–5 | 646, 406 / 422, 138 / 732, 479 | 202, 283 / 39, 60 / 234, 386 | 19–20 | 138–854 | 34–35 | 88–90 |
+| B2 x/(K + x²), after 1–7 | 263, 37 / 38, 23 / 122, 34 | 276, 438 / 58, 213 / 177, 330 | 25–27 | 305–687 | 46–48 | 728–787 |
+| B3 y/(K + x), after 1–5 | 710, 368 / 454, 123 / 833, 512 | 195, 222 / 34, 46 / 314, 381 | 18–21 | 149–915 | 33–35 | 91–93 |
+
+**Against the definition set before the run:**
+- **Network:** a piece inside a frame transfers in 0 of 3 combinations, a frame times a variable in 1 of 3 (B2).
+- **Library:** both kinds transfer in 3 of 3.
+
+**Reading.**
+1. **The library transfers every combination of mastered pieces, of both kinds.** Ranks are 9–27 in both seeds at every point, against 138–979 for the made-up library and 88–787 for simplest-first.
+   - Counting alone already gives 26–48. Compression roughly halves that (A1: 27 to 10).
+   - The library looks only at form. Because the curriculum's levels use few operations, every composition of them becomes likely.
+2. **The network's transfer is fragile and depends on the seed.** Seed 1 and seed 2 differ by up to 8 times (A2 at the empty start: 104 against 826).
+   - The bump, which passed after levels 1–6 in the first check (51–76), does not pass after levels 1–5 (seed 2: 628 at the empty start).
+   - Only x/(K + x²) after levels 1–7 transfers.
+   - The made-up network beats the curriculum network in most cells one term short (for example A1: 62 and 78 against 102 and 240), because it has seen every operation.
+3. **Taken with K1:** the same kind of form-only grammar hurt the search on flows and reaction networks, where it ranked unfamiliar terms at 440–760. In a narrow curriculum it ranks them at 9–27. A grammar of forms helps when the experience it was learned from is focused on a few pieces, as DreamCoder's physics laws were.
