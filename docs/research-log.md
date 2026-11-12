@@ -8629,3 +8629,38 @@ Reaction networks (about 4,671 terms):
   - 12 trainings of 500 steps: about 2–3 minutes each on a shared GPU;
   - ranking: about 5 minutes.
   - About 45 minutes in all.
+
+### Owner: the curriculum quick check approved, with two additions (12 November)
+
+**Owner.** *"Approved: build the level generator and run the quick check, with two additions: 1. Measure the new piece's rank not only one term short, but also from the empty start and two terms short, per our standing rule that quick checks must cover the points the real search visits. 2. For the full curriculum design, add a retry-only control: all levels' systems mixed together, with DreamCoder's retry rule and growing budgets, but no designed order. The comparison suggests easy-first came from retries, so we should test whether the designed ordering adds anything beyond that. Report the quick check in plain language before building anything longer."*
+
+**Full curriculum design, a fourth control: retry-only.** All levels' systems mixed together, with DreamCoder's rule (every unsolved system retried each round, budgets growing 300, 1,000, 3,000) but no designed order. This tests whether the designed order adds anything beyond retries.
+
+**The quick check, as it will run (set before the run).**
+- **Level generator** (`curriculum_check.py`). The made-up-system machinery (dream_g2: coefficients, internal constants, initial states, the pre-screen and the full build's acceptance), with each equation's terms drawn only from the level's allowed pieces.
+  - Two variables.
+  - Every system contains the level's new piece in at least one equation.
+  - Training systems have 1–2 terms per equation. Held-out systems of the tested level have 2–3 terms per equation, so that nodes two terms short exist.
+- **Pieces,** as terms of the 2-variable language (own variable or the other one):
+
+| Level | Piece |
+|---|---|
+| 1 | x |
+| 2 | x·y |
+| 3 | x² |
+| 4 | x³ |
+| 5 | 1/(K + x) |
+| 6 | x/(K + x) |
+| 7 | 1/(K + x²) |
+| 8 | x/(K + x²) |
+
+- **Transitions:** levels 1–2 → 3, levels 1–5 → 6, levels 1–6 → 7.
+- **Arms:**
+  - curriculum: 50 training systems per level so far, as supervised examples from their true structures;
+  - made-up: random structures of the same sizes from the whole 2-variable language, matched in number of examples;
+  - each network trained from scratch for 500 steps, seeds 1 and 2, on a free GPU (sharing rule otherwise);
+  - references: an untrained network of the same architecture (seeds 1 and 2), and the simplest-first order.
+- **Ranking.** On 40 held-out systems of the next level, every true occurrence of its new piece, ranked among the addable terms at three points: the empty start, one term short, and two terms short.
+- **Pass rule.** At least 2 of the 3 transitions, in both seeds and at all three points, must meet both of these:
+  - the curriculum network's median rank of the new piece is at most half both the untrained network's and the simplest-first order's;
+  - it is below the made-up network's.
