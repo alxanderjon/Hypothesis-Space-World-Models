@@ -8493,3 +8493,29 @@ Reaction networks (about 4,671 terms):
 - **Reaction networks run only if flows passes.** Six 30-task networks: continued and fresh, f6 seed 1 and versions n and ns. Same rule.
 
 **Recorded for a later quick check (not built).** The shared-constant failure suggests taking a whole reaction as the building block: one rate entering several equations with fixed signs, instead of single terms in single equations. The coefficient of a plain term would then be a sum of the reactions' rates, which is where simple ties failed. Before any build it gets its own minutes-scale check without search. For example: how well do whole-reaction candidates, scored by their joint evidence across the equations they enter, rank the true reactions at nodes where one reaction is missing?
+
+### Build-and-check (ordering E) on flows: results (12 November, 06:39–08:31 UTC)
+
+**New-form development equations solved, A (network alone, K1) against E** (seed 4; report `outputs/accumulating_learner/g2h/k1/report_E_flows.txt`):
+
+| Network | A | E | Change | Only E / only A | p |
+|---|---|---|---|---|---|
+| Continued, f6 seed 1 | 76 | 58 | −18 | 6 / 24 | 0.0014 |
+| Continued, f6 seed 2 | 50 | 39 | −11 | 9 / 20 | 0.061 |
+| Continued, f6 seed 3 | 53 | 47 | −6 | 9 / 15 | 0.31 |
+| Fresh, f6 seed 1 | 79 | 64 | −15 | 5 / 20 | 0.0041 |
+| Fresh, f6 seed 2 | 57 | 48 | −9 | 8 / 17 | 0.11 |
+| Fresh, f6 seed 3 | 66 | 55 | −11 | 6 / 17 | 0.035 |
+
+- Shared-form equations: 6 with A and 6 with E. No failures and no time caps.
+- Searches took longer: median 538–926 s per system, against 353–666 s with A.
+
+**Against the rule set before the run: does not pass.** E is better in 0 of 6 networks, median change −11. By the rule, the reaction networks were not run.
+
+**Why the quick check let it through.**
+- Check 1 measured only the benefit: whether a missing term is caught at nodes one or two terms short of the truth.
+- In a search, most nodes are far from the truth. There the data's 10 best-fitting candidates are mostly wrong (true terms rank about 1,700 by evidence at the root).
+- Giving them half the weight at every node spends budget on wrong candidates and halves the weight of the network's own near-perfect completions.
+- Check 1's descriptive figures already pointed to this cost: familiar missing terms fell to 45% (flows) and 24% (reaction networks) in the screened top 10, and to 1–5% two terms short.
+
+**Lesson for quick checks.** A quick check of a change to the search's choices must measure the cost at the nodes the search actually visits, not only the benefit near the truth. Those nodes can be sampled cheaply from one short run of the unchanged search.
