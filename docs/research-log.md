@@ -8763,3 +8763,34 @@ From now on my runs stop themselves, and stop writing, only when free disk falls
    - Only x/(K + x²) after levels 1–7 transfers.
    - The made-up network beats the curriculum network in most cells one term short (for example A1: 62 and 78 against 102 and 240), because it has seen every operation.
 3. **Taken with K1:** the same kind of form-only grammar hurt the search on flows and reaction networks, where it ranked unfamiliar terms at 440–760. In a narrow curriculum it ranks them at 9–27. A grammar of forms helps when the experience it was learned from is focused on a few pieces, as DreamCoder's physics laws were.
+
+### Correction: DreamCoder's physics run and its recognition network (12 November)
+
+**What was wrong.** The comparison entry above, and my report to the owner, said the released physics script "trains no neural recognition model". It does train one: with the released defaults a recognition network is trained every cycle, but it is given no information about the task.
+
+**Sources.** `ellisk42/ec` master, commit cb0e63f (16 March 2022), fetched raw.
+- `bin/scientificLaws.py` 410–413: `**commandlineArguments(` / `compressor="ocaml",` / `featureExtractor=DummyFeatureExtractor,` / `iterations=10,`. These are defaults that command-line flags can override. `useRecognitionModel` is not passed.
+- `dreamcoder/dreamcoder.py` 716: `useRecognitionModel=True,` (the default in `commandlineArguments`).
+- `dreamcoder/dreamcoder.py` 190–193: the model is switched off only `if useRecognitionModel and featureExtractor is None:`, which is not the case here.
+- `dreamcoder/dreamcoder.py` 433: `if useRecognitionModel:` (trains the model each cycle); 574–575 build `RecognitionModel(featureExtractorObjects[i], ...)`.
+- `dreamcoder/recognition.py` 1421–1429: `class DummyFeatureExtractor(nn.Module):` with `self.outputDimensionality = 1`, and `def featuresOfTask(self, t): return variable([0.]).float()`. Every task gets the same feature, 0.
+- `dreamcoder/recognition.py` 651–656: the network's first layer takes `featureExtractor.outputDimensionality` inputs, so with a constant input its output cannot depend on the task.
+- `dreamcoder/dreamcoder.py` 808–812: a `-g/--no-recognition` flag exists. The paper does not give the command used for physics.
+
+**So:** under the released defaults, the physics run trains a recognition network on replays and dreams (`helmholtzRatio=0.5`) that cannot see any task's data. It learns one set of weights for all tasks, not a recognition model in the paper's sense.
+
+**The paper and supplement** (dreamcoder_with_supplement.pdf):
+- S2.1.7 (physics, p. 33) never mentions a recognition model.
+- S2.1.8 (recursive functions, p. 33) says: "We did not use the recognition model for this experiment".
+- S4.7 (p. 61) gives recognition architectures only for list processing, text editing and regular expressions (GRU), and for LOGO graphics, tower building and symbolic regression (CNN). None is given for physics.
+
+**Ablations.** The with-and-without-recognition ablations do not include physics:
+- Fig. 6A (p. 13) is "Held-out test set accuracy, across 20 iterations of wake/sleep learning for six domains".
+- Fig. S1B (p. 24) and Fig. S11 (p. 36; "Pink: Abstraction only (no recognition model)") show the same comparison.
+- The physics script has no held-out tasks (`bin/scientificLaws.py` 409: `testingTasks=[],`).
+- Which six domains the panels show is not in the extracted text (the labels are in the figures). That physics is excluded is inferred from the held-out-test requirement and from S4.7's list.
+
+**Effect on the comparison.** Point 4 of "differences most likely essential" should read as follows:
+- The physics setup had no recognition model reading each task's data: none is described, and the released code's is blind to the task.
+- No ablation measures the network's role in physics.
+- So DreamCoder's physics result cannot show that a recognition model is unnecessary, only that the result was obtained without a data-reading one.
