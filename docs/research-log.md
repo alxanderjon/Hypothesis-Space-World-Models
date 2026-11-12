@@ -8476,3 +8476,20 @@ Reaction networks (about 4,671 terms):
 3. **The library with data-set weights (Stage C): PASSES by the rule, inside a weak scorer.**
    - The learned library ranks missing unfamiliar terms at 601 on flows and 916–944 on reaction networks. No library gives 2,450 and 1,466–1,471; the decoy gives 1,990–1,993 and 1,667–1,676.
    - The scorer itself failed check 2(ii), and these ranks remain far behind the network (256 and 292) and the evidence (20 and 86).
+
+### Owner: the flows same-network test of build-and-check; reaction networks if it passes; an idea recorded (12 November)
+
+**Owner.** *"Yes, run the flows same-network test as designed, with the pass rule written into the log first. If it passes, run the same six-test check on reaction networks. Separately, note for a later quick check: the shared-constant failure suggests treating a whole reaction (one rate that enters several equations with fixed signs) as the building block, instead of single terms in single equations. Don't build it yet; just record it."*
+
+**The test: design and pass rule (set before the run).**
+- **Ordering E, build-and-check inside today's search.** At every node, the choice of the term to add (and the added term of a swap) gives half its weight to the network's own distribution. The other half is spread evenly over the 10 terms with the most evidence (the data's score, best partial R²) among the network's top 1,024 addable terms. Removals stay the network's.
+- Everything else as in K1: development systems, budget 300, thorough cap 60, the 2,048-term shortlist, search seed 4, test only, no training.
+- **Comparison.** K1's ordering-A runs (the network alone, seed 4) on the same networks, already done. A against A with different seeds differs by a median of 1.5 new-form equations.
+- **Flows:** the six f6 30-task networks, continued and fresh, seeds 1–3.
+- **Passes if** all three hold:
+  - E solves more new-form equations than A in at least 5 of the 6 networks;
+  - E's median gain is above 1.5 equations;
+  - shared-form equations solved, summed over the six networks, are no fewer with E than with A.
+- **Reaction networks run only if flows passes.** Six 30-task networks: continued and fresh, f6 seed 1 and versions n and ns. Same rule.
+
+**Recorded for a later quick check (not built).** The shared-constant failure suggests taking a whole reaction as the building block: one rate entering several equations with fixed signs, instead of single terms in single equations. The coefficient of a plain term would then be a sum of the reactions' rates, which is where simple ties failed. Before any build it gets its own minutes-scale check without search. For example: how well do whole-reaction candidates, scored by their joint evidence across the equations they enter, rank the true reactions at nodes where one reaction is missing?
