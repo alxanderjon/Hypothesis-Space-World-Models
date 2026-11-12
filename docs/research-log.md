@@ -8794,3 +8794,37 @@ From now on my runs stop themselves, and stop writing, only when free disk falls
 - The physics setup had no recognition model reading each task's data: none is described, and the released code's is blind to the task.
 - No ablation measures the network's role in physics.
 - So DreamCoder's physics result cannot show that a recognition model is unnecessary, only that the result was obtained without a data-reading one.
+
+### Owner: a short curriculum pilot, the library ordering the search's candidates (12 November; design and pass rule set before the run)
+
+**Owner.** *"Run a short pilot: the curriculum's first levels with the library ordering the search's candidates and the data checking them. Keep it as short as possible and write the pass rule into the log first. Arms (at least 2 seeds each): 1. Library alone ... 2. Network alone: as now. 3. Library plus network: the network adjusts the library's weights for each system from its data (DreamCoder's recognition model) ... Controls: the same systems in shuffled order, a fresh start at each level, the made-up library, and the retry-only control ... If arm 3 needs substantial building, run arms 1 and 2 with the controls first and propose arm 3 as the next step. Keep the two held checks waiting."*
+
+**Arm 3 is deferred, as allowed.** A recognition model that reads each system's data and sets the library's weights needs a new network output, a new training target and a search that builds terms from the library. That is substantial building. It will be proposed after this pilot.
+
+**Design** (`curriculum_pilot.py`):
+- **Levels** 1 (x), 2 (x·y), 3 (x²), 5 (1/(K + x)), 6 (x/(K + x)), 7 (1/(K + x²)). Level 4 (cubes) is skipped to keep the pilot short; the bump does not need it.
+- **Systems** from the curriculum generator: two variables, 1–2 terms per equation. Per level and seed: 10 training and 10 held-out systems.
+- **Seeds** 1 and 2 (different systems and search seeds).
+- **Within a level:**
+  - round 1 searches every training system at 300 structures per equation (thorough cap 60);
+  - rounds 2 and 3 retry the unsolved ones at 1,000 (cap 200) and 3,000 (cap 600);
+  - after each round the arm learns, then is tested on the level's 10 held-out systems at 300.
+- **Mastery:** at least 8 of 10 held-out systems solved exactly (every equation). If a level is not mastered after 3 rounds, the lineage stops there.
+- **Before any experience,** every arm searches with the language's size prior (the empty grammar).
+- **The arms:**
+  1. **Library:** after each round, pieces by compression and weights by counting (context-free, one parse) from the lineage's own verified solutions so far. The search's candidate terms are ordered by this grammar alone, and the data checks each structure by fitting, as always.
+  2. **Network:** the network as now. After each round it is trained further for 500 steps on examples from its verified solutions plus 50 dreams drawn half from its own usage and half from the size prior (on a free GPU).
+- **Controls,** for the library arm:
+  - **shuffled:** the same 60 training systems in one random order, in 6 blocks of 10, each block given the same 3 rounds;
+  - **fresh:** the curriculum order, but at each level the library comes only from that level's own solutions;
+  - **made-up:** the curriculum order, with the library learned from made-up systems' true structures (10 systems per earlier level) plus the level's own solutions;
+  - **retry-only:** all 60 training systems mixed, with DreamCoder's rule (every unsolved system retried each round, 3 rounds at 300, 1,000 and 3,000) and no designed order.
+- **Final test** for every lineage: all 60 held-out systems at 300.
+
+**Measures.** Systems solved exactly per level (in the final test, and after each round for the curriculum-order lineages), rounds to mastery, structures tried before each solution, and total structures spent.
+
+**Pass rule.** The library arm passes if both hold in both seeds:
+- it masters all six levels;
+- on the final test it solves at least 2 more of the 20 held-out systems of levels 6 and 7 (the combinations) than the network arm, and than each of the four controls.
+
+Anything else is reported as it is.
