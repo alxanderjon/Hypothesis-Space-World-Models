@@ -8697,3 +8697,36 @@ Reaction networks (about 4,671 terms):
 **Owner.** *"no stop yourself at 2GB"*
 
 From now on my runs stop themselves, and stop writing, only when free disk falls below **2 GB**, replacing the 5 GB guard of 9 November. `curriculum_check.py` is updated, and later launchers will use 2 GB.
+
+### Owner: more combinations of each kind, and a no-network library comparison (12 November; set before the run)
+
+**Owner.** *"Yes, run the 15-minute check with more combinations of each kind (piece inside a frame, and frame multiplied by a variable). Also add a no-network comparison: rank the new pieces using a DreamCoder-style library and weights learned from the curriculum levels' true structures (compression plus counting, no network), alongside the curriculum network, the made-up network and simplest-first. Report in plain language which kinds of combination transfer under the network and which under the library."*
+
+**Combinations** (2-variable language; x = the equation's own variable or the other one, consistently within a term):
+
+| Kind | New term | Mastered levels |
+|---|---|---|
+| A1 | 1/(K + x²): square inside the reciprocal frame | 1–5 |
+| A2 | 1/(K + x³): cube inside the frame | 1–5 |
+| A3 | 1/(K + x·y): product inside the frame | 1–5 |
+| B1 | x/(K + x): the frame times its own variable | 1–5 |
+| B2 | x/(K + x²): the bump frame times its variable | 1–7 |
+| B3 | y/(K + x): the frame times the other variable | 1–5 |
+
+- Kind A puts a piece inside a frame; kind B multiplies a frame by a variable.
+- Levels 1–5 are the existing ones (x, x·y, x², x³, 1/(K + x)). Levels 1–7 add the existing 6 (x/(K + x)) and a new training level 7 (the bump), 50 systems per seed, generated as before.
+
+**Held-out systems.** 40 per combination, 2–3 terms per equation. The new term is forced into one equation, and the other terms come only from the mastered levels.
+
+**Methods,** in seeds 1 and 2:
+- the curriculum network trained on the mastered levels (the existing networks for levels 1–5, new ones for 1–7), the made-up network matched in examples, and an untrained network;
+- **the library, no network:** DreamCoder's context-free form (library_ops, form "uni"). Pieces are learned by compression from the mastered levels' true structures, and weights by counting, one parse each. Terms are scored by their best parse.
+- **its made-up counterpart:** the same machinery on the made-up network's own training systems;
+- **counting alone** (no pieces), to show what compression adds;
+- the simplest-first order.
+
+**Points:** the empty start, one term short, and two terms short.
+
+**"Transfers"** (set now):
+- **Network:** in both seeds and at all three points, its median rank of the new term is at most half the untrained network's and half the simplest-first order's, and below the made-up network's.
+- **Library:** in both seeds and at all three points, its median rank is at most half the simplest-first order's, and below the made-up library's.
