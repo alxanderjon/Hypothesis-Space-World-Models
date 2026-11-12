@@ -8691,3 +8691,9 @@ Reaction networks (about 4,671 terms):
 2. **Squares: no.** A small new term is already near the front of the simplest-first order (4–6). The made-up network, which met squares among its random terms, ranks it 1–23. The curriculum network, which never saw a square, ranks it 5–135.
 3. **x/(K + x): no.** Products and 1/(K + x) were both mastered, yet the curriculum network ranks their product 106–771, behind the made-up network (45–407) and simplest-first (about 90). Putting a mastered reciprocal inside a product is not picked up the way putting a mastered square inside a reciprocal is.
 4. **Caution about the control.** The made-up network has seen random terms from the whole language, so for any piece it has a head start of coverage. The curriculum networks have seen only their levels' pieces. Beating the made-up network therefore means combination, not coverage. That is why the bump's result is meaningful, and also why simple new pieces favour the control.
+
+### Owner: the disk guard is 2 GB (12 November)
+
+**Owner.** *"no stop yourself at 2GB"*
+
+From now on my runs stop themselves, and stop writing, only when free disk falls below **2 GB**, replacing the 5 GB guard of 9 November. `curriculum_check.py` is updated, and later launchers will use 2 GB.

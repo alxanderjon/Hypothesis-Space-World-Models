@@ -381,8 +381,8 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for step in [s for s in ARGS[2:] if s != "smoke"]:
         free = shutil.disk_usage("/home").free / 2 ** 30
-        if free < 5:
-            raise SystemExit(f"not running {step}: free disk {free:.1f} GB < 5 GB (owner's crash guard)")
+        if free < 2:
+            raise SystemExit(f"not running {step}: free disk {free:.1f} GB < 2 GB (owner's crash guard)")
         {"gen": lambda: step_gen(workers), "train": step_train, "rank": lambda: step_rank(workers), "report": step_report}[step]()
 
 
