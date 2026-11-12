@@ -8387,3 +8387,55 @@ Reaction networks (about 4,671 terms):
 - **Longer tests only for pieces that pass**, kept short unless the check strongly supports them, with at least 2–3 seeds per arm.
 - **The accumulation test** (experienced against the made-up control and the fresh network, on new-form equations) comes after the pieces are in place. It uses the same machinery for every arm: own library, own recognition training, decoy library and removal check.
 - **Unchanged rules:** no hand-added pieces; the learner is never told the domain.
+
+### Owner: run the six quick checks; their exact pass rules, set before any of them runs (12 November)
+
+**Owner.** *"Yes, run the six checks in that order, with each pass rule written into the log before it runs. Report each result in a short plain-language paragraph: what was tested, the number that decided it, and pass or fail. Then propose which passing pieces to test further, with the shortest test that can tell us something."*
+
+**Common ground.**
+- **Systems and nodes.** Development systems' new-form equations, at the evidence probe's nodes: one term short and two terms short of each true structure, fitted as the search fits a structure.
+- **Lineages.** K1's 8 networks per domain. "Unfamiliar" is per lineage (K0's definition), and figures are medians over the 8 lineages of each lineage's median.
+- **Ranks** are among the terms that can be added, ties going to the simpler term.
+- **No search and no training.** Code: `k2_checks.py`.
+
+**The choice-level data weights,** used in checks 1, 2(ii) and 3.
+- The building choices are grammar_ops' (parent, argument position, child).
+- Each choice gets the largest evidence (best partial R² for the node's residual) of any addable term containing it.
+- Choices are normalized within their context, with a floor of 1e-4.
+- A term's score is the sum of the log weights of its choices.
+
+**Check 1 (build and check).**
+- **Sources:** each lineage's own network, its K0 grammar, and the choice-level data weights.
+- **Hit:** for a candidate count N of 64, 256 or 1,024, the missing term is in the source's top N, and fewer than 10 of those N candidates have more evidence than it.
+- **Passes if** one source with one N has a higher hit rate on missing unfamiliar terms than the network's own top 10 (the term within the network's first 10). This must hold in all four cells: both domains, one and two terms short.
+
+**Check 2(i) (headroom).**
+- Weights are half the lineage's K0 grammar and half a contextual grammar fitted on the system's other true terms (every equation's true terms except the held-out occurrence; alpha 1).
+- The held-out term is ranked among the terms not already in its equation.
+- **Passes if** the median rank of held-out unfamiliar terms is at most 64 in both domains.
+
+**Check 2(ii) (data signal at the level of choices).**
+- **Passes if** the choice-level data weights rank missing unfamiliar terms better (lower median) than both the evidence and the networks (median over the 8 networks), at both node kinds and in both domains.
+
+**Check 4 (C1, proposals across equations).** Nodes one term short only.
+- **Proposals:** the terms that lineage's network found (K1, ordering A) in the system's other equations, ordered by how many other equations contain them (ties simpler first), followed by the network's order. If the missing term is not proposed, its rank is the number of addable proposals plus its network rank, a cautious upper bound.
+- **Passes if,** on reaction networks, at least 50% of missing terms appear (as the same term) in another equation's true structure, and the proposal's median rank is at most 10.
+
+**Check 5 (C2, paired moves).**
+- **Cases:** every term shared, as the same term, by two equations of a system (at least one of them new-form).
+- At the two nodes where it is missing from both equations, the term is ranked three ways: by each equation's own evidence (one-equation rank), and by the sum of the two (joint rank). Addable means not in either node.
+- **Passes if,** on reaction networks, the median joint rank is at most 64 and the median one-equation rank is above 64.
+
+**Check 6 (C3, shared constants).**
+- **Part (i):** training systems of every domain. The share of equations with a parameter (from the system's description) that also appears in another equation, separately for coefficients and for constants inside a term.
+- **Part (ii), fits only:**
+  - Development systems' pairs of plain-product terms whose coefficient is the same parameter in two equations (with the description's sign and factor).
+  - Both true structures are fitted separately (the search's fit), then jointly with that coefficient tied.
+  - Tying "preserves exactness" when the tied relative residual is at most max(2 × the separate one, 1e-9).
+  - Counted among the pairs whose separate fits are exact-level (relative residual at most 1e-6).
+- **Passes if** at least 25% of some domain's equations share a constant, and tying preserves exactness in at least 95% of those pairs.
+
+**Check 3 (Stage C, the library with data-set weights).**
+- The choice-level data weights over each lineage's parses with its learned contextual library at 30 tasks (pieces as choices, a piece's gaps as contexts).
+- **Against:** the same weights with no library, and with a decoy library. Decoy pieces are random parts of random language terms, with the same sizes and gap counts as the learned pieces (fixed seed).
+- **Passes if** the learned library ranks missing unfamiliar terms better (lower median) than both no library and the decoy, at both node kinds and in both domains.
