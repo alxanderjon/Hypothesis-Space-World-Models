@@ -8211,3 +8211,31 @@ All true terms rank at a median of about 8 under every prior: most are simple po
   - At each expansion, quick-fit the top M candidate structures (the current structure plus one of the top terms by prior and by evidence, or a swap), with M from 16 to 64 per network call (one to three network calls of time).
   - Expand the best fits first.
   - Compare at equal wall time and at equal network calls. This is where the effective budget could grow 5–10 times.
+
+### Owner: quick checks first; the evidence probe now; D only if it passes (12 November)
+
+**Owner.** *"New rule: every idea gets a minutes-scale check without search first (like the probe), and only ideas that pass it get hours-scale tests. Keep pilots short unless a quick check strongly supports them. Run the probe now and report before doing anything else. Run ordering D only if the probe shows the data puts unfamiliar terms, including the bump, near the front. Confirm in plain language that D and the cheap screening complement, rather than replace, the DreamCoder direction: growing the library (Stage C) and building terms from parts with a network that adjusts grammar weights from each system's data (K2, DreamCoder's recognition model). Note that K1's grammar ignored the data, which DreamCoder's search doesn't do."*
+
+- **Standing rule from now on.** Every idea first gets a minutes-scale check without search. Only ideas that pass get hours-scale tests, and pilots stay short unless a quick check strongly supports them.
+
+**The evidence probe: design and reading (set before the run).**
+- **Nodes.** Development systems, new-form equations, each true term in turn:
+  - the node one term short (the true structure minus that term, fitted as the search fits a structure);
+  - the node two terms short (minus that term and the next true term);
+  - the root.
+- **What is ranked at each node.** The missing term's rank among the terms that can be added, by three measures:
+  - **evidence:** the data's own score, each term's best partial R² for the residual (search_g1.evidence);
+  - **network:** each of K1's 16 networks (8 per domain);
+  - **grammar:** the K0 grammar and the context-free grammar with library of each network's lineage.
+- **Term sets:**
+  - all true terms;
+  - terms new to both prior experiences;
+  - terms unfamiliar to each lineage (median over the lineages);
+  - the bump (1/(K + x²)) and the saturating term.
+
+  Each is reported as the median rank and the shares in the top 64 and top 10.
+- **D's condition.** D runs only if, at the node one term short, in both domains, each of these median evidence ranks is at most 64 (inside D's window of the 64 terms with the most evidence):
+  - the bump;
+  - the terms new to both prior experiences;
+  - each lineage's unfamiliar terms (median over the lineages).
+- No search and no training; counts only.
