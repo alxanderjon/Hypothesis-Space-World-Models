@@ -9062,3 +9062,68 @@ Anything else is reported as it is.
 1. **Levels 6–7:** more of the 20 held-out systems of levels 6 and 7 are solved in the final test than by the pilot's network alone (seed 1: 15, seed 2: 16).
 2. **Levels 1–5:** the final-test total at levels 1, 2, 3 and 5 (of 40) is at least the network alone's minus 1 (seed 1: 38, seed 2: 36).
    - The 1 is the noise between reruns: the network arm's two runs differ in held-out solves at levels 1–5 by 1 (seed 1: 38 against 39) and 0 (seed 2).
+
+### The blend test and shuffled seed 2: stopped by the disk guard; checkpoints added; outputs moved to /SSD (13 November)
+
+**What happened.** At 19:56–19:57 UTC, other users' files filled the root disk (`/`, which then held this project's outputs) to below 2 GB free. The guard stopped both runs:
+- the top-100 blend test (both seeds, during level 6);
+- the rerun of the pilot's shuffled lineage of seed 2 (in block 4 of 6).
+
+Neither run reached its final test, so the blend test has no result yet.
+
+**Interim (not the pass rule).** Held-out systems solved (of 10) in the test at the end of the round that mastered each level, at 300 structures per equation, the blend against the pilot's network alone. Every level so far was mastered in one round by both.
+
+| | L1 | L2 | L3 | L5 | L6 |
+|---|---|---|---|---|---|
+| seed 1, blend | 10 | 10 | 10 | 10 | 10 |
+| seed 1, network alone | 10 | 10 | 10 | 9 | 10 |
+| seed 2, blend | 10 | 10 | 10 | 10 | 8 |
+| seed 2, network alone | 10 | 10 | 10 | 9 | 9 |
+
+These are tests during training. The pass rule is judged on the final test only.
+
+**Owner.** *"Yes: once the disk is back above 2 GB, add a checkpoint after every level, then rerun the two blend lineages at normal priority, then shuffled seed 2. Also check whether /SSD (or another filesystem) is writable and has space. If so, move this project's run outputs and checkpoints there, keeping the disk guard on whichever disk you write to. Tell me which disk you're using."*
+
+**Checkpoints** (`curriculum_pilot.Lineage.save_state` and `load_state`; `curriculum_blend.BlendLineage` inherits them).
+- **When:** after every completed level (curriculum order) or block (shuffled order).
+- **What is saved:** the lineage's full state:
+  - its records;
+  - its verified solutions and their levels;
+  - the network's replay examples;
+  - its count of learning steps;
+  - its current network and search prior;
+  - for the blend, its cache of equivalence-fixed solutions.
+- **Safe writes:** the file is written under a temporary name, then renamed, so an interrupted save never leaves a broken checkpoint.
+- **Restart:** the lineage skips its completed levels and resumes at the next one. A level that was in progress is redone from its start.
+- **Same choices as an uninterrupted run:** every random choice is set by the lineage's seed and its learning-step count, and the replay examples are saved. These choices are the search seeds, the dreams, the shuffled order and the network's training seed. So a resumed lineage makes the same choices, up to the usual noise between reruns.
+- **Cleanup:** the checkpoint is deleted once the lineage's result is written.
+- **Limit:** the retry-only lineage has a single block, so its only checkpoint comes just before its final test. No retry lineage is being rerun.
+
+**Disk.**
+- **Before the move:** the root disk (3.6 TB, shared) had 5.8 GB free when checked, and it has repeatedly fallen to almost 0. `/SSD` (a separate 916 GB disk, ext4, shared, writable) had 62 GB free.
+- **The copy:** this project's outputs (`outputs/accumulating_learner`, 26.8 GB in 13,126 files, ignored by git) were copied to `/SSD/alex/Hypothesis-Space-World-Models/outputs/accumulating_learner`. A guard would have stopped the copy below 2 GB free on /SSD.
+- **The check:** the copy has the same number of files, and rsync found no file differing in size or modification time.
+- **The switch:** the original was then replaced by a link to the copy, so every path in the code is unchanged.
+- **After the move:** root disk 54 GB free, /SSD 37 GB free.
+- **The stopped runs' files** (the blend's networks and libraries, shuffled seed 2's library tables, and their logs) were kept under `stopped_runs/2026-11-13/` in each run's folder, so the reruns start clean.
+
+**The guard is now on /SSD.**
+- **What it measures:** the scripts' start check (`shutil.disk_usage(OUT.resolve())`) and the launchers' once-a-minute watchdog (`df` on the resolved outputs path) both measure the disk that the outputs path resolves to (/SSD).
+- **Other writes:** the launchers also put the runs' logs and temporary files (`TMPDIR=/SSD/alex/tmp`) on /SSD. The root disk receives nothing from the runs except Python's compiled-code cache at start.
+- **What a stop costs:** with the checkpoints, a guard stop now loses at most one level, and a restart resumes.
+- **Stopping:** the watchdog stops only the run's own process group.
+
+**Smoke test of the checkpoints** (20:41–20:53 UTC). The blend test ran in smoke mode: levels 1–2, 2 systems per level, small budgets.
+- **Procedure:** started; its own process group was killed as soon as a checkpoint existed; then started again.
+- **At the kill** (200 s in): seed 2 had saved its checkpoint after level 1; seed 1 was still in level 1.
+- **Seed 2** resumed at level 2 ("resumed from its checkpoint after 1 completed levels"). Its result holds both levels.
+- **Seed 1** started over cleanly.
+- **End state:** both finished (final test 4 of 4 each). Both checkpoint files were removed when the results were written, and no process of the killed run was left.
+- The smoke outputs were then deleted.
+
+**Relaunch** (20:53 UTC, normal priority; every process checked at nice 0).
+- **The blend test,** both seeds from the start: 20 workers. The network trains on GPUs 0 and 6, both idle when checked (0% use; 1 and 620 MiB used).
+- **Shuffled seed 2** from the start: 12 workers, no GPU (a library lineage). It started 30 s after the blend.
+- **Disk:** both write only to /SSD (37 GB free at the start).
+- **Why at once rather than one after the other:** the blend test can use at most about 20 workers at a time (10 systems per lineage in each round), so the shuffled lineage's 12 do not take workers from it. The total of 32 stays within the 24–36 worker limit on the shared host.
+- **Speed:** the host is heavily loaded by other users (load about 215 on 48 cores), so both runs will be slower than the pilot.

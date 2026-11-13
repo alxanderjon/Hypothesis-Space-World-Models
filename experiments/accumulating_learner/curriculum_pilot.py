@@ -249,11 +249,46 @@ class Lineage:
         self.prior = ("net", out)
         return dict(info, replay=len(replay), fantasies=len(fant), gpu=gi)
 
+    # -- checkpoints (owner, 13 November): the full state after every completed level or block --
+    def state_path(self):
+        return OUT / "lineages" / f"{self.name}.state.pkl"
+
+    def extra_state(self):
+        return {}
+
+    def set_extra_state(self, extra):
+        pass
+
+    def save_state(self, done, stopped=False):
+        st = {"done": done, "stopped": stopped, "rec": self.rec, "sols": self.sols, "level_of": self.level_of,
+              "examples": self.examples, "n_learn": self.n_learn, "net": self.net, "prior": self.prior,
+              "extra": self.extra_state()}
+        p = self.state_path()
+        tmp = p.with_name(p.name + ".tmp")
+        tmp.write_bytes(pickle.dumps(st))
+        tmp.replace(p)
+
+    def load_state(self):
+        p = self.state_path()
+        if not p.exists():
+            return 0, False
+        st = pickle.loads(p.read_bytes())
+        self.rec, self.sols, self.level_of, self.examples = st["rec"], st["sols"], st["level_of"], st["examples"]
+        self.n_learn, self.net, self.prior = st["n_learn"], st["net"], st["prior"]
+        self.set_extra_state(st["extra"])
+        log(f"{self.name}: resumed from its checkpoint after {st['done']} completed "
+            f"{'levels' if self.kind in ('lib', 'net', 'lib-fresh', 'lib-madeup') else 'blocks'}"
+            + (" (stopped at a level not mastered)" if st["stopped"] else ""))
+        return st["done"], st["stopped"]
+
     # -- the schedules --
     def run(self):
         t0 = time.time()
+        done, stopped = self.load_state()
         if self.kind in ("lib", "net", "lib-fresh", "lib-madeup"):
             for j, lv in enumerate(LEVELS):
+                if j < done or stopped:
+                    continue
                 unsolved, mastered, rounds = list(self.systems[lv]["train"]), False, []
                 for r, (budget, cap) in enumerate(BUDGETS):
                     res = self.wake(unsolved, budget, cap)
@@ -270,7 +305,9 @@ class Lineage:
                 self.rec["levels"].append({"level": lv, "mastered": mastered, "rounds": rounds})
                 if not mastered:
                     log(f"{self.name}: level {lv} not mastered in {len(BUDGETS)} rounds; the lineage stops here")
+                    self.save_state(j + 1, stopped=True)
                     break
+                self.save_state(j + 1)
         else:
             pool_ = [r for lv in LEVELS for r in self.systems[lv]["train"]]
             if self.kind == "lib-shuffled":
@@ -279,6 +316,8 @@ class Lineage:
             else:
                 blocks = [pool_]
             for b, block in enumerate(blocks):
+                if b < done:
+                    continue
                 unsolved, rounds = list(block), []
                 for r, (budget, cap) in enumerate(BUDGETS):
                     if not unsolved:
@@ -289,11 +328,14 @@ class Lineage:
                     rounds.append({"round": r + 1, "budget": budget, "wake": res, "learn": info})
                     log(f"{self.name} block {b + 1} round {r + 1}: solved {sum(y['solved'] for y in res)} of {len(res)} tried")
                 self.rec["blocks"].append({"block": b + 1, "rounds": rounds})
+                self.save_state(b + 1)
         held = [r for lv in LEVELS for r in self.systems[lv]["test"]]
         final = self.search(held, *TEST_BUDGET)
         self.rec["final"] = final
         self.rec["seconds"] = time.time() - t0
         (OUT / "lineages" / f"{self.name}.json").write_text(json.dumps(self.rec, default=float))
+        if self.state_path().exists():
+            self.state_path().unlink()
         log(f"{self.name}: done in {time.time() - t0:.0f}s; final held-out solved {sum(y['solved'] for y in final)} of {len(final)}")
 
 
@@ -410,9 +452,9 @@ def main():
     workers = int(ARGS[1])
     OUT.mkdir(parents=True, exist_ok=True)
     for step in [s for s in ARGS[2:] if s != "smoke"]:
-        free = shutil.disk_usage("/home").free / 2 ** 30
+        free = shutil.disk_usage(OUT.resolve()).free / 2 ** 30
         if free < 2:
-            raise SystemExit(f"not running {step}: free disk {free:.1f} GB < 2 GB (owner's crash guard)")
+            raise SystemExit(f"not running {step}: free disk {free:.1f} GB < 2 GB on {OUT.resolve()} (owner's crash guard)")
         {"gen": lambda: step_gen(workers), "run": lambda: step_run(workers), "report": step_report}[step]()
 
 

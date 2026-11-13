@@ -124,6 +124,12 @@ class BlendLineage(CP.Lineage):
         futs = [self.pool.submit(search_job, (r, self.prior, self.seed, budget, cap)) for r in recs]
         return [f.result() for f in futs]
 
+    def extra_state(self):
+        return {"canon": self.canon}
+
+    def set_extra_state(self, extra):
+        self.canon = extra.get("canon", {})
+
     def learn(self, level=None, j=0):
         info = super().learn(level, j)                           # the network, exactly as in the network arm
         todo = {}
@@ -210,9 +216,9 @@ def main():
     workers = int(ARGS[1])
     OUT.mkdir(parents=True, exist_ok=True)
     for step in [s for s in ARGS[2:] if s != "smoke"]:
-        free = shutil.disk_usage("/home").free / 2 ** 30
+        free = shutil.disk_usage(OUT.resolve()).free / 2 ** 30
         if free < 2:
-            raise SystemExit(f"not running {step}: free disk {free:.1f} GB < 2 GB (owner's crash guard)")
+            raise SystemExit(f"not running {step}: free disk {free:.1f} GB < 2 GB on {OUT.resolve()} (owner's crash guard)")
         {"run": lambda: step_run(workers), "report": step_report}[step]()
 
 
