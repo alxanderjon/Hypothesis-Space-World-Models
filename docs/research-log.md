@@ -9129,3 +9129,91 @@ These are tests during training. The pass rule is judged on the final test only.
 - **Disk:** both write only to /SSD (37 GB free at the start).
 - **Why at once rather than one after the other:** the blend test can use at most about 20 workers at a time (10 systems per lineage in each round), so the shuffled lineage's 12 do not take workers from it. The total of 32 stays within the 24–36 worker limit on the shared host.
 - **Speed:** the host is heavily loaded by other users (load about 215 on 48 cores), so both runs will be slower than the pilot.
+
+### Literature: MuZero and its follow-ups, and which ideas fit our search (13 November; review only, nothing run)
+
+**Owner.** *"Don't change the current runs. Separately, do a short literature review of MuZero and its follow-ups (Sampled MuZero, Gumbel MuZero, MuZero Reanalyse, EfficientZero) and tell me in plain language which ideas fit our search. In particular: 1. A learned cheap predictor of how well a candidate structure would fit, so the search can consider many more candidates and only fit the best ones exactly (addresses search breadth). 2. Planning over a sample of the ~4,000 possible terms (Sampled MuZero). 3. Searching well with few tries (Gumbel MuZero), given our 300-structure budget. 4. Reanalyse: re-running old searches with the newest network for better training data. 5. A value network predicting whether a partial equation can still become exact. We keep the exactness check as the final judge; we don't replace it with a learned model. For each idea, propose a minutes-scale quick check. Don't run anything until the current runs finish."*
+
+**Our search in MuZero's terms** (from reading `search_g1.EquationSearchL1`).
+- **Closer to AlphaZero than to MuZero.** The fitter plays the part of the real game rules. Every structure the search tries is fitted, and the fit alone judges exactness. Nothing below changes that.
+- **The choice rule:**
+  - PUCT (c = 1.5) over three kinds of move: add, remove or swap one term.
+  - 15% of choices are a uniformly random untried move.
+  - Every untried move is given its parent's value minus 0.05.
+- **Values:**
+  - A tried structure's value is log10(1/relative error)/14, minus 0.02 per term.
+  - A partial equation explaining 99% of the variance scores about 0.07; an exact one scores 1.
+  - Next to the prior's bonus (1.5 × prior × √visits), such differences barely move the choices. Until something is nearly exact, the search mostly follows the network's preferences.
+- **Learning:**
+  - The network is trained on its verified solutions and on dreams. Failed searches are not used, and neither is what any search learns about the other candidates it fitted.
+  - In the curriculum pilot, a level's unsolved training systems are never searched again once the level is mastered. This left 3 of 60 (seed 1) and 13 of 60 (seed 2) of the network lineages' training systems unsolved.
+
+**The papers** (full texts read; numbers as reported).
+- **MuZero** (Schrittwieser et al., Nature 2020; arXiv 1911.08265).
+  - **Method:** learns a model (representation, dynamics, prediction) and plans by MCTS inside it. Policy targets are the search's visit counts; value targets are n-step returns.
+  - **Budget:** 800 simulations per move in board games, 50 in Atari.
+  - **MuZero Reanalyze:** "reanalyzes old trajectories by re-running the MCTS using the latest network parameters to provide fresh targets". It reached a 731% median human-normalized score on 57 Atari games at 200M frames.
+- **Sampled MuZero** (Hubert et al., ICML 2021).
+  - **Method:** for action spaces too large to enumerate, sample K actions from a proposal β at each node. The search uses a prior proportional to (β̂/β)·π in the PUCT formula, where β̂ is the samples' empirical distribution; the rest of MuZero is unchanged.
+  - **Go** (362 actions): K = 50 "closely approaching" full search.
+  - **Ms. Pac-Man** (18 actions): K = 3 approaches full search.
+  - **humanoid.run** (21-dimensional continuous): K = 3 is enough, and more than 10 doesn't help.
+- **Gumbel MuZero** (Danihelka et al., ICLR 2022).
+  - **The problem:** "Alpha Zero can fail to improve its policy network, if not visiting all actions at the root".
+  - **At the root:** m actions are sampled without replacement (Gumbel-top-k; m = 16 in Go). Sequential Halving then runs over them with the score g + logits + σ(q̂), where σ(q̂) = (c_visit + max N)·c_scale·q̂, with c_visit = 50 and c_scale = 1 in Go and chess, 0.1 in Atari.
+  - **Policy target:** softmax(logits + σ(completed Q)), where unvisited actions get a mixed value estimate. It is trained over all actions.
+  - **Below the root:** deterministic selection.
+  - **Results:** in 9×9 Go it learns with 2 simulations, while MuZero "fails to learn from 16 or less simulations". In Atari, MuZero fails at 4 or fewer.
+- **Reanalyse / MuZero Unplugged** (Schrittwieser et al., NeurIPS 2021).
+  - **Method:** re-runs the search on stored data with the current model to compute new policy and value targets.
+  - **Reanalyse fraction:** the share of targets from stored data, from 0% (online) to 100% (fully offline).
+  - **Results:** state of the art on RL Unplugged and on Atari at 200M frames. It also learns from demonstrations.
+- **EfficientZero** (Ye et al., NeurIPS 2021): MuZero for little data.
+  - **Three changes:** a self-supervised consistency loss (the model's predicted next state must match the encoding of the real next observation), a value prefix, and an off-policy correction (shorter horizons for older data; root values recomputed with the current network).
+  - **Atari 100k:** 194.3% mean and 109.0% median human-normalized score from two hours of play.
+  - **Ablation:** removing the consistency loss gives the largest drop (mean 1.943 → 0.881, median 1.090 → 0.340).
+- **EfficientZero V2** (Wang et al., ICML 2024): sampling-based Gumbel search with 32 simulations (16 on Atari 100k), and search-based value targets for stale data.
+- **Related equation and proof search.**
+  - **TPSR** (Shojaee et al., NeurIPS 2023) plans by MCTS over a pretrained transformer's equation generation, rewarding fit accuracy and simplicity.
+  - **Kamienny et al.** (ICML 2023) run MCTS with a pretrained mutation model refined online from its own successful searches.
+  - **HyperTree Proof Search** (Lample et al., NeurIPS 2022) trains a critic that estimates whether a goal can still be proved. Its targets are 1 for solved goals, 0 for invalid ones, and the search's estimate otherwise.
+
+**Proposed quick checks** (none run; each pass rule is to be fixed with the owner and written here before its run).
+
+**Common setup** (as in arm 3's quick check):
+- **Networks and libraries:** the two pilot network lineages (seeds 1 and 2): the network after level 5, and the library from the lineage's own solutions at levels 1, 2, 3 and 5.
+- **Held-out systems:** the follow-up check's combination systems.
+- **Points:** empty start, one short and two short.
+- **Terms:** new terms, and familiar terms (the cost at nodes the search visits).
+- **Training data:** anything learned is trained only on the lineage's own verified solutions and its own fits on its training systems.
+
+1. **Learned fit predictor** (MuZero's learned model, used only as a screen).
+   - **Labels:** fit about 50 candidates at each point along the lineage's verified training solutions.
+   - **Model:** a tiny model, trained on a GPU, takes cheap inputs (network and library probabilities, one-term evidence, term size). It predicts each candidate's fit quality after the exact refit, and candidates are ranked by that prediction combined with the prior.
+   - **Proposed pass rule:**
+     - new terms ranked better than every existing ordering (network, library, evidence, top-100 blend) at one and two short, and no worse at the empty start, in both seeds;
+     - familiar terms within 2× the network's rank;
+     - scoring a candidate costs under 1% of one exact fit.
+2. **Sampled exploration** (Sampled MuZero).
+   - **The change:** draw the 15% exploration moves from a proposal instead of uniformly. Proposals tried: the library, a flattened network, and the blend.
+   - **Measure:** the chance that a given number of exploration draws (about 45 at the empty start) includes a needed term, computed exactly from probabilities, with no fits.
+   - **Proposed pass rule:** a proposal gains at least 20 percentage points over uniform on new terms at all three points, in both seeds.
+   - **Later:** grammar-sampled candidates with the (β̂/β)·π correction, once the library grows terms beyond the fixed vocabulary.
+3. **Gumbel root rule.**
+   - **Procedure:** draw 16 candidates without replacement (Gumbel-top-k) from the network and from the blend. Fit each once (16 fits) and keep 2 by g + logits + σ(q). Repeat over 20 draws.
+   - **Compared with:** the prior's top 2, and the 2 best fits among the same 16.
+   - **Proposed pass rule:** a needed new term is in the final 2 more often than in the prior's top 2, at two short and at the empty start, in both seeds; familiar terms lose at most 5 points.
+4. **Reanalyse.**
+   - **Systems:** the training systems left unsolved at mastered levels (pilot network lineages, 3 + 13; the blend lineages' once they finish).
+   - **Measure:** the needed terms' ranks under the network that failed on them against the lineage's latest network, at the three points, with no fits and no search.
+   - **Proposed pass rule:** better ranks at two-thirds or more of the points in both seeds, and at least half brought within the search's usual reach (calibrated from the ranks at which solved systems' terms sat).
+   - **Hygiene:** only training systems would ever be re-searched.
+5. **Value of a partial equation.**
+   - **Nodes:** on held-out systems, on-path partial equations (the true structure minus one or two terms) and off-path ones (one term replaced by the network's favourite wrong term). The fitter checks that each off-path one cannot reach exact without a removal.
+   - **Scored by:** today's fit quality, the best one-term evidence, and a tiny value model trained on the lineage's solved training systems.
+   - **Proposed pass rule:** the value model ranks on-path above off-path with AUC at least 0.75 and at least 0.10 above fit quality on new-term systems, in both seeds, and no lower on familiar ones.
+
+**Suggested order** once the current runs finish:
+- 4 and 2 first: no fitting, about 15 minutes each.
+- Then 3, 1 and 5: each fits 16–80 structures per point, about 20–40 minutes at today's load, with a small slice timed first.
+- If 3 and 4 pass, their shared next step is to train the network on everything a search fits (Gumbel's targets, refreshed by Reanalyse), not only on its solutions.
