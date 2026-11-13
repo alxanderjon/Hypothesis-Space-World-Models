@@ -9006,3 +9006,36 @@ Anything else is reported as it is.
 - **Priority.** My runs and checks run at normal priority (nice 0). Thread caps and the total worker count stay as before; other users' processes are never touched.
   - This corrects my practice of nice 10–19 (nice 19 under heavy load). Under another user's roughly 190-process load, that practice starved arm 3's check: about 0.1–0.5% CPU per worker, almost no progress in 6.5 hours.
 - **Restarted.** The nice-19 arm 3 job was stopped (my own process group) and relaunched at nice 0. Shuffled seed 2 follows at nice 0 when it finishes.
+
+### Arm 3's quick check: results (13 November, 16:34–16:49 UTC at normal priority; no search, no training)
+
+**Run:** `arm3_check.py` (report `outputs/accumulating_learner/g2h/arm3/report.txt`).
+- The network lineages' solutions were rewritten with the extended fix: 27 of 117 (seed 1) and 10 of 104 (seed 2).
+- Libraries were built from levels 1, 2, 3 and 5 (77 and 71 equations), and the networks taken after level 5.
+- 3,256 ranked cases: 984 new-term cases and 2,272 familiar-term cases.
+
+**Median rank** (of about 1,100), at the empty start / one term short / two terms short:
+
+| Method | New terms, seed 1 | New terms, seed 2 | Familiar, seed 1 | Familiar, seed 2 |
+|---|---|---|---|---|
+| Network | 204 / 39 / 178 | 207 / 57 / 200 | 3 / 1 / 3 | 3 / 1 / 4 |
+| Library | 15 / 14 / 15 | 24 / 23 / 24 | 4 / 3 / 4 | 4 / 4 / 4 |
+| Choice-level (adjusted library) | 15 / 13 / 15 | 27 / 24 / 29 | 3 / 2 / 3 | 3 / 2 / 3 |
+| Product | 17 / 12 / 16 | 26 / 19 / 26 | 3 / 1 / 3 | 3 / 1 / 3 |
+| Top-100 blend | 17 / 12 / 16 | 25 / 18 / 24 | 3 / 1 / 3 | 3 / 1 / 3 |
+| Top-1,000 blend | 17 / 12 / 16 | 26 / 19 / 26 | 3 / 1 / 3 | 3 / 1 / 3 |
+
+**Against the rule set before the run: no version passes.**
+- The rule asked for new terms ranked below *both* the library and the network at every point.
+- One term short, the term-level blends beat the library: 12 against 14 (seed 1), 18–19 against 23 (seed 2).
+- At the empty start and two short they are 1–2 places behind it.
+- The choice-level version is slightly behind the library in seed 2.
+- On familiar terms every combined version keeps the network's ranks (1–3); the library alone is at 3–4.
+
+**Reading.**
+- The combinations reach the better of the two parents on each kind of term. New terms come in at about the library's rank, roughly 10 times better than the network alone, while familiar terms stay at the network's rank.
+- They do not improve on the library for new terms, which is what the rule required.
+- So by the pre-set rule arm 3 is not shown to be promising.
+- What it does show: blending keeps both strengths without losing either. The pilot had suggested this was the missing piece, since the network's data-reading won the search and the library's ranking of new terms did not survive a search without the data.
+- Whether that is worth a short search test is the owner's decision. The fixed-point ranks cannot settle it; ordering E showed they can mislead.
+- **Shuffled seed 2** relaunched at 16:50 UTC at normal priority.
