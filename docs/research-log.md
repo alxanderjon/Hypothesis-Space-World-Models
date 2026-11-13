@@ -8900,3 +8900,19 @@ Anything else is reported as it is.
   - **Re-rank:** on the follow-up check's held-out systems, rank the new term of each combination whose parts lie within those levels (the bump, 1/(K + x·y), x/(K + x), y/(K + x)) at the empty start and one and two terms short.
 - **The fix works if** the canonical library ranks the new terms better (lower median) than the raw library in at least 3 of the 4 combinations, in both seeds, at one term short, and within twice the true-structure library's ranks.
 - **Also reported:** how many solutions the rewriting changes, and which rewrites occur.
+
+**The fix as set rewrites almost nothing; an extension, decided after seeing which rewrites occur and before any re-ranking.**
+- The pre-set fix (drop and merge) changed 1 of 96 solved equations (seed 1) and 2 of 88 (seed 2).
+- The splits in the counts are mostly not algebraic identities. They are forms that coincide on the observed data, because the curriculum's variables keep one sign along their trajectories:
+  - x·|x| where x² was meant (seed 1's solutions use x1·|x1| 13 times and x2·|x2| 13 times);
+  - |x| for x;
+  - unusual exact equivalents at level 6, such as x1²/(K + x1) beside |x1|.
+- Once found first, such a form is counted by the library and then favoured at later levels.
+- **The extension.** Add a third step, simplify: replace a term by a simpler term (earlier in the simplest-first order) when the fit stays exact on that system's own data. Candidates are the 5 terms with the most evidence at the node without it, at least 0.99 of the residual.
+  - This rewrites a form only where this system's data cannot tell the two apart. Where a variable changes sign, x·|x| and x² differ and the fit would not stay exact.
+- **What is ranked:**
+  - raw solutions;
+  - the pre-set fix ("canonical");
+  - the extended fix ("canonical+");
+  - the true-structure library.
+- The rule set before the run applies to the pre-set fix. The extended fix is judged by the same rule and reported as a change made after seeing the rewrite counts.
