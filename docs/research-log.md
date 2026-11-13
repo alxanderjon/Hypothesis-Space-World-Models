@@ -8916,3 +8916,21 @@ Anything else is reported as it is.
   - the extended fix ("canonical+");
   - the true-structure library.
 - The rule set before the run applies to the pre-set fix. The extended fix is judged by the same rule and reported as a change made after seeing the rewrite counts.
+
+**Equivalent forms as one piece: results (13 November; no search; `canon_check.py`, report `outputs/accumulating_learner/g2h/canon/report.txt`).**
+- **Rewrites:**
+  - the pre-set fix changed 1 of 96 solved equations (seed 1) and 2 of 88 (seed 2);
+  - the extended fix changed 37 and 27, almost all by simplify steps (44 and 29), for example x·|x| to x² and |x| to x.
+- **Median rank of the new term at one term short** (the other points are within ±2). Columns: raw / pre-set fix / extended fix / true structures, then the same for seed 2:
+
+| New term | Seed 1 | Seed 2 |
+|---|---|---|
+| Bump 1/(K + x²) | 166 / 166 / 13 / 9 | 30 / 30 / 11 / 9 |
+| 1/(K + x·y) | 22 / 22 / 18 / 16 | 18 / 18 / 15 / 16 |
+| x/(K + x) | 22 / 22 / 17 / 15 | 17 / 17 / 14 / 15 |
+| y/(K + x) | 21 / 21 / 17 / 14 | 17 / 17 / 14 / 14 |
+
+- **Against the rule set before the run:**
+  - the **pre-set fix fails** (better than raw in 0 of 4 combinations);
+  - the **extended fix**, judged by the same rule as a change made after seeing the rewrite counts, **passes**: better than raw in 4 of 4 in both seeds, and within twice the true-structure library everywhere.
+- **Reading.** The library's counts were split mainly by forms that coincide on the observed data, not by algebraic identities. Rewriting each solution into its simplest exact form on its own data brings the library close to one learned from the true structures. The bump for seed 1 moves from rank 166 to 13. The extended fix is the version to use in later library tests.
