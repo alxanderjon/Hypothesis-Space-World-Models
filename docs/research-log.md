@@ -8887,3 +8887,16 @@ Anything else is reported as it is.
 - **The five unfinished lineages are rerun from the start** (free disk 55 GB): network seeds 1 and 2, shuffled seeds 1 and 2, fresh library seed 1.
   - Same systems, code and settings as the pilot. The pilot saves no partial state, so each lineage starts again.
   - Reruns are not bitwise identical to the interrupted runs.
+
+**Equivalent forms as one piece: the fix and its check (set before the run).**
+- **The fix** (`canon_check.py`). Before the library counts a verified solution, the solution is rewritten into its canonical equivalent form, using the system's own data. Two steps are repeated until neither applies:
+  1. **Drop:** remove a term if the structure without it still fits exactly (the search's exactness test).
+  2. **Merge:** replace a pair of terms by a single term t if the rest plus t fits exactly. Candidates for t are the 5 terms with the most evidence (at least 0.99 of the residual) at the node without the pair, tried simplest first.
+
+  For example, {1, 1/(K + x)} with tied coefficients becomes {x/(K + x)}. Canonical forms are thus the fewest-term exact forms. The library is otherwise unchanged (context-free, compression plus counting, `curriculum_pilot.grammar_table`).
+- **The check.**
+  - **Rebuild:** for the curriculum-order library lineages (seeds 1 and 2), rebuild the library from their verified solutions at levels 1, 2, 3 and 5, both raw and canonical.
+  - **Reference:** a library from the true structures of the same levels (the curriculum check's systems).
+  - **Re-rank:** on the follow-up check's held-out systems, rank the new term of each combination whose parts lie within those levels (the bump, 1/(K + x·y), x/(K + x), y/(K + x)) at the empty start and one and two terms short.
+- **The fix works if** the canonical library ranks the new terms better (lower median) than the raw library in at least 3 of the 4 combinations, in both seeds, at one term short, and within twice the true-structure library's ranks.
+- **Also reported:** how many solutions the rewriting changes, and which rewrites occur.
