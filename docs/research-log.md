@@ -8934,3 +8934,27 @@ Anything else is reported as it is.
   - the **pre-set fix fails** (better than raw in 0 of 4 combinations);
   - the **extended fix**, judged by the same rule as a change made after seeing the rewrite counts, **passes**: better than raw in 4 of 4 in both seeds, and within twice the true-structure library everywhere.
 - **Reading.** The library's counts were split mainly by forms that coincide on the observed data, not by algebraic identities. Rewriting each solution into its simplest exact form on its own data brings the library close to one learned from the true structures. The bump for seed 1 moves from rank 166 to 13. The extended fix is the version to use in later library tests.
+
+**Arm 3's quick check: design and pass rule (set before the run; no search, no training).**
+- **The question.** Would a network that adjusts the library's weights for each system from its data rank true terms better than the library alone and the network alone, at the points the search visits?
+- **Stand-in for arm 3, no training ("adjusted library"):**
+  1. At each node, take the network's distribution over addable terms.
+  2. Spread it onto the library's building choices. Each choice (slot type, symbol) in the context-free form gets the network's probability mass of the terms whose parse uses it, normalized within its slot type, with a floor of 1e-6.
+  3. Average its log with the library's own log weight, and renormalize within the slot type.
+  4. Score each term as the sum of its parse's log weights.
+  - The library supplies the composition; the network's reading of the data adjusts its weights.
+- **Simpler reference ("product"):** the library's log probability of the term plus the network's.
+- **Inputs:**
+  - **Lineages:** the pilot's network lineages, seeds 1 and 2.
+  - **Network:** the one after level 5.
+  - **Library:** the extended-fix library from the lineage's own solutions at levels 1, 2, 3 and 5.
+  - **Systems:** the follow-up check's held-out systems for the bump, 1/(K + x·y), x/(K + x) and y/(K + x).
+- **Term sets:**
+  - the new term;
+  - familiar terms (pieces of levels 1, 2, 3 and 5);
+  - cubes, which the pilot never trained on, are left out.
+- **Points:** the empty start, one term short, and two terms short.
+- **Pass rule.** The adjusted library passes if both hold in both seeds and at all three points:
+  - its median rank of the new terms is below both the library's and the network's;
+  - its median rank of familiar terms is at most twice the network's.
+  - The product is judged and reported by the same rule.
