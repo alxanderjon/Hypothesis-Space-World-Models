@@ -8998,3 +8998,11 @@ Anything else is reported as it is.
 - In the actual search the network, which reads the data, beats the form-only library at every hard level. It finds solutions after a median of 3–4 structures, against 11–22.
 - The library's strength in ranking unfamiliar combinations (the follow-up check) does not survive the search without the data. This is the case for arm 3: keep the network's data-reading and add the library's composition.
 - **Status of arm 3's quick check.** It has not run yet. Twice it was stopped at the tool's background time limit while starved of CPU: another user runs about 191 processes at normal priority (about 53 cores' worth on 48 cores), and my jobs run at nice 19 under the heavy-load rule. It is relaunched detached, at nice 19.
+
+### Owner: normal priority (13 November)
+
+**Owner.** *"Run the arm 3 check at normal priority (nice 0), per my earlier rule: don't slow down for other users' load, and never interfere with their processes. Apply the same to future short checks. Once arm 3's check is done, rerun shuffled seed 2 at the same priority so the curriculum-vs-shuffled comparison has both seeds. Report arm 3's four versions in plain language when finished."*
+
+- **Priority.** My runs and checks run at normal priority (nice 0). Thread caps and the total worker count stay as before; other users' processes are never touched.
+  - This corrects my practice of nice 10–19 (nice 19 under heavy load). Under another user's roughly 190-process load, that practice starved arm 3's check: about 0.1–0.5% CPU per worker, almost no progress in 6.5 hours.
+- **Restarted.** The nice-19 arm 3 job was stopped (my own process group) and relaunched at nice 0. Shuffled seed 2 follows at nice 0 when it finishes.
