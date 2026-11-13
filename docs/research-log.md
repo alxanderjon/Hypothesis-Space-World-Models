@@ -9039,3 +9039,26 @@ Anything else is reported as it is.
 - What it does show: blending keeps both strengths without losing either. The pilot had suggested this was the missing piece, since the network's data-reading won the search and the library's ranking of new terms did not survive a search without the data.
 - Whether that is worth a short search test is the owner's decision. The fixed-point ranks cannot settle it; ordering E showed they can mislead.
 - **Shuffled seed 2** relaunched at 16:50 UTC at normal priority.
+
+### Owner: arm 3's quick-check rule overridden; a short search test of the top-100 blend (13 November; set before the run)
+
+**Owner.** *"Override the arm 3 quick-check rule, and log it as an override with this reason: the rule required beating the library on new terms everywhere, but arm 3's purpose was to keep both strengths, which the term-level blends do, and unlike ordering E, the cost to familiar terms was measured and is zero. Run a short search test: the pilot's network lineages with the top-100 blend, 2 seeds, same budgets, compared with the pilot's network-alone results. Pass rule, written into the log first: more held-out systems solved at levels 6–7 in both seeds, and no loss at levels 1–5 beyond the noise between reruns. Keep it short, at normal priority."*
+
+**Override (owner).** Arm 3's quick check did not pass its pre-set rule. The owner overrides that verdict. **Reason:** the rule required beating the library on new terms everywhere, but arm 3's purpose was to keep both strengths, which the term-level blends do. Unlike ordering E, the cost to familiar terms was measured and is zero.
+
+**Design** (`curriculum_blend.py`; normal priority; the pilot's systems, seeds 1 and 2).
+- **The arm:** the pilot's network lineage in curriculum order. Same levels 1, 2, 3, 5, 6 and 7, same budgets (300, then retries at 1,000 and 3,000), same mastery rule (8 of 10 held-out, at most 3 rounds, stop if not mastered).
+- **Learning after each round:**
+  - the network is trained exactly as in the network arm (verified solutions plus 50 dreams, 500 steps, continued);
+  - the library is rebuilt from the lineage's verified solutions after the extended equivalence fix (each rewritten into its simplest exact form on its own data), in the context-free form, by compression plus counting.
+- **The search prior (the top-100 blend):**
+  - the library's 100 most probable addable terms get 95% of the probability of the term to add, shared in proportion to the geometric mean of the library's and the network's probabilities;
+  - the other 5% is spread over all other addable terms in proportion to the library's probabilities, so nothing is blocked;
+  - removals stay the network's;
+  - before any experience, the language's size prior, as in every pilot arm.
+- **Final test:** all 60 held-out systems at 300 structures per equation.
+
+**Pass rule.** It passes if both hold in both seeds:
+1. **Levels 6–7:** more of the 20 held-out systems of levels 6 and 7 are solved in the final test than by the pilot's network alone (seed 1: 15, seed 2: 16).
+2. **Levels 1–5:** the final-test total at levels 1, 2, 3 and 5 (of 40) is at least the network alone's minus 1 (seed 1: 38, seed 2: 36).
+   - The 1 is the noise between reruns: the network arm's two runs differ in held-out solves at levels 1–5 by 1 (seed 1: 38 against 39) and 0 (seed 2).
