@@ -9082,6 +9082,8 @@ Neither run reached its final test, so the blend test has no result yet.
 
 These are tests during training. The pass rule is judged on the final test only.
 
+**Correction.** My chat report of the stop compared the blend's round tests with the network alone's *final-test* counts at level 6 (8 in both seeds), not its round tests (10 in seed 1, 9 in seed 2). The table above uses round tests for both. So far the blend is 1 higher at level 5 in both seeds. At level 6 it is equal in seed 1 and 1 lower in seed 2: no clear difference yet.
+
 **Owner.** *"Yes: once the disk is back above 2 GB, add a checkpoint after every level, then rerun the two blend lineages at normal priority, then shuffled seed 2. Also check whether /SSD (or another filesystem) is writable and has space. If so, move this project's run outputs and checkpoints there, keeping the disk guard on whichever disk you write to. Tell me which disk you're using."*
 
 **Checkpoints** (`curriculum_pilot.Lineage.save_state` and `load_state`; `curriculum_blend.BlendLineage` inherits them).
