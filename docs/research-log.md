@@ -8970,3 +8970,31 @@ Anything else is reported as it is.
 - **Reading.** All four versions are reported: choice-level, product, and the blend at N = 100 and N = 1,000.
   - Arm 3 counts as promising if any of them passes.
   - A failure of the choice-level stand-in alone is not a failure of arm 3.
+
+### The curriculum pilot: final results with the network arm (13 November; 11 of 12 lineages; shuffled seed 2 still running)
+
+**Final test: held-out systems solved exactly per level** (of 10; seed 1 / seed 2):
+
+| Lineage | L1 | L2 | L3 | L5 | L6 | L7 | Total (of 60) |
+|---|---|---|---|---|---|---|---|
+| **Network** | 10 / 10 | 10 / 10 | 10 / 10 | 8 / 6 | **8 / 7** | **7 / 9** | **53 / 52** |
+| Library | 10 / 10 | 10 / 10 | 9 / 8 | 10 / 9 | 3 / 3 | 0 / 2 | 42 / 42 |
+| Fresh library | 10 / 10 | 10 / 10 | 7 / 10 | 9 / 9 | 4 / 6 | 3 / 7 | 43 / 52 |
+| Shuffled library | 10 / – | 10 / – | 10 / – | 10 / – | 3 / – | 5 / – | 48 / – |
+| Made-up library | 10 / 10 | 1 / 7 | 5 / 4 | 5 / 4 | 3 / 1 | 2 / 0 | 26 / 26 |
+| Retry-only library | 10 / 10 | 10 / 10 | 8 / 10 | 10 / 9 | 3 / 7 | 4 / 4 | 45 / 50 |
+
+- **Levels 6–7, the combinations** (of 20): network 15 and 16; library 3 and 5; fresh 7 and 13; shuffled 8; made-up 5 and 1; retry-only 7 and 11.
+- **Rounds to mastery:**
+  - the network mastered every level in 1 round in both seeds, except level 7 in seed 1 (not mastered in 3 rounds);
+  - the library stopped at level 6 in both seeds, as did the fresh library;
+  - the made-up library stopped at level 5 (seed 1) and level 3 (seed 2).
+- **Structures tried before each solution (median):** network 4 and 3; library 18 and 11; fresh 15 and 16; shuffled 19; made-up 21 and 22; retry-only 13 and 51.
+- **Total structures spent:** similar across lineages, 86,000–140,000.
+
+**Pass rule: does not pass** (unchanged). The library arm did not master all levels and is far behind the network on levels 6–7.
+
+**Reading.**
+- In the actual search the network, which reads the data, beats the form-only library at every hard level. It finds solutions after a median of 3–4 structures, against 11–22.
+- The library's strength in ranking unfamiliar combinations (the follow-up check) does not survive the search without the data. This is the case for arm 3: keep the network's data-reading and add the library's composition.
+- **Status of arm 3's quick check.** It has not run yet. Twice it was stopped at the tool's background time limit while starved of CPU: another user runs about 191 processes at normal priority (about 53 cores' worth on 48 cores), and my jobs run at nice 19 under the heavy-load rule. It is relaunched detached, at nice 19.
