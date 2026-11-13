@@ -8879,3 +8879,11 @@ Anything else is reported as it is.
 2. **Real curriculum experience beats made-up practice for the library.** The made-up library stalled at level 3 or 5 and solved 26/60, against 42/60.
 3. **Accumulated counts dilute the current level's pieces.** The fresh library, learning only from level 6's own solutions, did better at level 6 (4–6/10) than the accumulated one (1–3/10).
 4. **Retries with growing budgets work without a designed order.** Retry-only solved 56–60 of 60 training systems and 45–50/60 held-out. That is more than the curriculum library's 42, which stopped at level 6 and so never learned from level 7.
+
+### Owner: finish the pilot; count equivalent forms as one piece; then a quick check for arm 3 (13 November)
+
+**Owner.** *"Disk space is available again. Run the unfinished lineages (network ×2, shuffled ×2, fresh seed 1), then report the network arm's final test next to the others. Before any further library test: make the library count algebraically equivalent forms as the same piece (e.g. x/(K + x) and 1 − K/(K + x)), so rewritten solutions don't split its counts. Check that fix in minutes by rebuilding the library from the pilot's solutions and re-ranking. Then do the minutes-scale check for arm 3 (network adjusting the library's weights per system from its data) before building it fully. Keep the two held checks waiting."*
+
+- **The five unfinished lineages are rerun from the start** (free disk 55 GB): network seeds 1 and 2, shuffled seeds 1 and 2, fresh library seed 1.
+  - Same systems, code and settings as the pilot. The pilot saves no partial state, so each lineage starts again.
+  - Reruns are not bitwise identical to the interrupted runs.
