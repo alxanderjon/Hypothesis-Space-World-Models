@@ -8958,3 +8958,15 @@ Anything else is reported as it is.
   - its median rank of the new terms is below both the library's and the network's;
   - its median rank of familiar terms is at most twice the network's.
   - The product is judged and reported by the same rule.
+
+**Arm 3's quick check: a term-level blend added (owner, 13 November; set before the run).**
+
+**Owner.** *"For the arm 3 quick check: spreading term scores onto building choices failed in check 2(ii) because it discarded the signal, so the stand-in may underestimate arm 3. Also run a term-level blend: the library proposes its top candidate terms (e.g. top 100 or 1,000), and the network scores those whole terms, blended with the library's weights. Report both versions, and don't treat a failure of the choice-level stand-in alone as a failure of arm 3."*
+
+- **Term-level blend.** At each node the library proposes its N most probable addable terms (N = 100 and N = 1,000).
+  - Those terms are ranked by half the library's log probability plus half the network's.
+  - All other terms follow, in the library's order.
+- **Rule.** The same pass rule as before: new terms ranked below both the library and the network, familiar terms within twice the network's rank, in both seeds and at all three points.
+- **Reading.** All four versions are reported: choice-level, product, and the blend at N = 100 and N = 1,000.
+  - Arm 3 counts as promising if any of them passes.
+  - A failure of the choice-level stand-in alone is not a failure of arm 3.
