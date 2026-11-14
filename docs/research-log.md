@@ -9427,3 +9427,16 @@ These are tests during training. The pass rule is judged on the final test only.
   - **The searched blend ranks new terms lower than arm 3 reported** for its "blend100": 110 / 50 / 108 and 112 / 38 / 111 here, against 12–26 there. On these held-out sets the library alone is better (15 / 14 / 15 and 24 / 23 / 24).
   - **Why:** the searched blend (`curriculum_blend.BlendPrior`, used here exactly) lets the 5% share of the other terms rank above top-100 terms that the network gives almost no probability. Arm 3's stand-in instead placed all of the library's top 100 ahead of every other term.
   - **Scope:** the blend search test still passed on the pilot's own systems. There the library is rebuilt every round from the current level's solutions. Arm 3's figures for "blend100" do not describe the searched blend.
+
+**Check 5 (the value of a partial equation): results** (14 November, 06:08–06:26 UTC, 18 workers; the first 20 held-out systems per set; 78 training systems).
+- **AUC of on-path against off-path partial equations** (0.5 is chance), seed 1 / seed 2:
+  - **New-term equations** (727 and 709 nodes): fit quality 0.58 / 0.50; best one-term evidence 0.56 / 0.65; **learned value 0.48 / 0.53**.
+  - **Familiar-only equations** (307 and 311 nodes): fit quality 0.45 / 0.40; best one-term evidence **0.82 / 0.83**; learned value 0.55 / 0.59.
+- **Training data:**
+  - 161 and 122 training nodes, with 99 and 70 of them on-path.
+  - Partners dropped because they can stand in for a true term: 109 and 24 in training, 19 and 33 held-out.
+- **Verdict: does not pass.** On new-term equations the learned value is at chance and not 0.10 above fit quality. The familiar-only part of the rule holds.
+- **What it shows:**
+  - Today's fit quality is below chance on familiar equations: an off-path partner, holding the network's favourite wrong term, usually fits better than the on-path partial equation. This agrees with check 3.
+  - A simple untrained signal, the best one-term evidence (how much the single best addition would explain), separates them well on familiar equations (0.82–0.83). On new-term equations it is weaker (0.56–0.65).
+  - The small learned value did not pick this up from 122–161 training nodes.
