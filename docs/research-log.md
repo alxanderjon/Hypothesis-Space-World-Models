@@ -9392,3 +9392,21 @@ These are tests during training. The pass rule is judged on the final test only.
 - **What it shows:**
   - Below the root, the exploration share is too small to reach a needed term that is not already near the front, whichever proposal draws it. One or two short, 10 draws are about 4.5 additions.
   - At the empty start, drawing 45 exploration moves from the library would reach the new terms in 80–100% of cases, against 5% today. That is a root-only effect, and the network's top ranks already cover much of it.
+
+**Check 3 (the Gumbel root rule): results** (14 November, 03:17–04:33 UTC, 18 workers; 20 held-out systems per lineage; 58,212 fits at 0.66 s each).
+- **Measure:** how often the needed term is among the 2 finalists. Columns: the prior's own top 2 / the 16 sampled / the 2 best fits among them / finalists at c_scale 0.1 / finalists at c_scale 1. Each cell gives empty start / one short / two short.
+- **Blend prior, new terms:**
+  - seed 1: 0/0/0; 10/20/21; 4/20/2; **3/19/4**; 5/20/1 (%);
+  - seed 2: 0/5/0; 3/17/1; 1/16/1; **0/16/0**; 1/16/1.
+- **Blend prior, familiar terms:**
+  - seed 1: 54/86/40; 80/93/80; 21/93/13; **46/92/33**; 28/93/16;
+  - seed 2: 45/82/34; 68/90/63; 12/89/14; **41/88/29**; 21/88/18.
+- **The network prior** gives the same picture. Its finalists at c_scale 0.1 hold familiar terms in 48/89/36 and 38/82/30, against the top 2's 52/88/43 and 42/78/37.
+- **Verdict: does not pass** (primary: blend, c_scale 0.1).
+  - **New terms:** not more often among the finalists in seed 2 (0% against 0% at the empty start and two short).
+  - **Familiar terms:** fall by more than 5 points in seed 1 (46% against 54% at the empty start, 33% against 40% two short).
+- **What it shows:**
+  - At partial equations, the fit after adding one term is a poor guide to whether the term is true. The 2 best-fitting of 16 candidates contain a familiar true term in 12–21% of cases at the empty start, against 45–54% for the prior's top 2. Two short, the figures are 13–14% against 34–40%.
+  - The more weight Gumbel's score gives the fits (c_scale 1), the worse it does.
+  - Only one short, where the right term makes the fit exact, does fitting 16 sampled candidates beat the top 2 (familiar 88–93% against 82–86%). That is the effect of trying more candidates, not of the rule.
+  - This confirms ordering E's result from 12 November.
