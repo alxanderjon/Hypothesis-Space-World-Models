@@ -9730,3 +9730,15 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
 - **What it shows:**
   - With noise-free data, explaining 99–99.9% of the remaining residual is far from exact (exact here means about 1e-12). A single term often explains that much even two terms short, so this trigger cannot tell one-short nodes apart.
   - The evidence ranks the needed term in its top 30 only about half the time. Terms with a constant inside depend on the fit's grid of constants.
+
+### Owner: check 1 passes by override; check B parked; step 2 with the confidence-weighted blend (14 November)
+
+**Owner.** *"Check 1 is a pass: log it as an override, since its misses were 1–2 ranks, within noise. Park check B. Run step 2, the short search test on reaction networks and flows, using the confidence-weighted blend in place of the plain blend. Arms: confidence-weighted blend, network alone, made-up control (with its own library), and a fresh network, 2 seeds each, checkpoints at 10 and 30 tasks, Reanalyse built in, same pass rule as before with the confidence blend substituted. Write the pass rule into the log first, run at normal priority on /SSD, and report in plain language when done, including Reanalyse's yield per arm."*
+
+- **Override (owner):** quick check 1 (the confidence-weighted blend) is counted as a **pass**, although it did not meet its pre-set rule.
+  - **Reason:** its misses were 1–2 ranks in each part, within noise:
+    - reaction networks 4th, two short: 47 against a limit of 46;
+    - reaction networks 5th, empty start: 18 against 16;
+    - one familiar cell: 2 against 1.
+- **Check B (exact completion) is parked.**
+- **Step 2's design and pass rule follow in the next entry, written before the run.**
