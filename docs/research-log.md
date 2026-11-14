@@ -9361,3 +9361,23 @@ These are tests during training. The pass rule is judged on the final test only.
   - one short: 2 → 2 (seed 1), 10 → 3 (seed 2).
 - **Verdict: does not pass** (part (a)).
 - **What it shows:** the final networks would put most of these systems' missing terms near the front. About three-quarters of the cases would now be within the search's usual reach, against about half when the systems were tried. But only half the cases improve strictly. About a third were already first, and some got worse.
+
+**The curriculum pilot's shuffled seed 2: result** (rerun from the start 13 November 20:53 to 14 November 02:53 UTC at normal priority; the pilot is now complete).
+- **Final test:** 50 of 60 held-out systems solved (seed 1: 48). Per level: L1 10, L2 10, L3 10, L5 10, L6 6, L7 4.
+- **All of the pilot's arms** (final test, seed 1 / seed 2), with the blend test added:
+
+| Arm | Seed 1 | Seed 2 | Levels 6–7 (of 20) |
+|---|---|---|---|
+| top-100 blend (blend test) | 58 | 57 | 18 / 17 |
+| network alone | 53 | 52 | 15 / 16 |
+| library, shuffled order | 48 | 50 | 8 / 10 |
+| library, retry-only | 45 | 50 | 7 / 11 |
+| library, fresh start each level | 43 | 52 | 7 / 13 |
+| library, curriculum order | 42 | 42 | 3 / 5 |
+| made-up library | 26 | 26 | 5 / 1 |
+
+- **Curriculum order against shuffled order (library arm):** shuffled is ahead in both seeds (48 and 50 against 42 and 42).
+  - The library in curriculum order stops at level 6, which it cannot master in either seed, so it never trains on level 7.
+  - The shuffled lineage sees every training system.
+  - For the library alone, the designed order does not help.
+- **The pilot's pre-set rule for the library arm** (master all levels, and beat the network and every control by 2 or more at levels 6–7): **does not pass**, as reported on 13 November.
