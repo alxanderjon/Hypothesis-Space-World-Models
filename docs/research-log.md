@@ -9243,3 +9243,100 @@ These are tests during training. The pass rule is judged on the final test only.
   - **Wall time:** 3.5 h and 4.1 h at a host load of about 215 on 48 cores. This is not comparable with the network alone's runs, which were made at another time and load. The blend also adds an equivalence fix and a library rebuild every round.
 - **Next to the pilot's other arms** (final test, seed 1 / seed 2): blend 58 / 57; network alone 53 / 52; library alone 42 / 42; fresh start each level 43 / 52; retry-only 45 / 50; made-up library 26 / 26; shuffled order 48 / pending (seed 2 still running).
 - **What it means:** the library proposing the candidates and the network rescoring them keeps the network's speed on familiar pieces and adds the library's reach on new ones. The evidence is two seeds of curriculum systems, and seed 2's levels 6–7 margin is within rerun noise. A third seed (new systems, both arms) would confirm the gain before anything is built on it. It is proposed, not run.
+
+### Owner: a third seed of the blend test, and the MuZero-family quick checks alongside it (14 November; design and pass rules set before the runs)
+
+**Owner.** *"Yes, run the third seed on new systems, with the blend, the network alone and a fresh start side by side, at normal priority. Write the pass rule into the log first. Also run the MuZero-family quick checks now, alongside it. If the third seed confirms the blend, propose the shortest test of the blend on the harder fields (reaction networks and flows), against the network alone, the made-up control and a fresh network, with at least 2–3 seeds per arm."*
+
+**Seed 3** (`curriculum_seed3.py`; `g2h/cseed3/`; normal priority).
+- **Systems:** new ones, generated exactly as the pilot's but from seed 3's names: levels 1, 2, 3, 5, 6 and 7, with 10 training and 10 held-out systems per level. Before any run, their data are checked to be unlike every earlier system set: seeds 1–2 of the pilot, both curriculum checks, and the combination sets.
+- **Arms,** run side by side in one process:
+  - **the blend:** the top-100 blend lineage, as in the blend test;
+  - **the network alone:** the pilot's network lineage;
+  - **the fresh start:** the pilot's "fresh start each level" arm, a library rebuilt at each level from only that level's solutions. It is the fresh-start row of the pilot's tables, so seeds 1–3 can be compared.
+- **Same as the pilot:** budgets, mastery rule and final test (all 60 held-out systems at 300 structures per equation).
+- **Pass rule** (confirming the blend). The same two parts as for seeds 1 and 2, applied to seed 3:
+  1. **Levels 6–7:** the blend solves more of the 20 held-out systems than the network alone.
+  2. **Levels 1–5:** the blend's total (of 40) is at least the network alone's minus 1.
+  - If both hold, the blend is confirmed: it then leads at levels 6–7 in all three seeds.
+  - Reported, but not part of the rule: the fresh start's results, and the three-seed totals.
+
+**The MuZero-family quick checks** (`muzero_checks.py`; `g2h/muzero/`; normal priority; no search). These are the checks proposed in "Literature: MuZero and its follow-ups ...", with their pass rules now fixed. **Common setup** (arm 3's quick check):
+- **Networks and libraries:** the two pilot network lineages (seeds 1 and 2): the network after level 5, and the library from the lineage's own solutions at levels 1, 2, 3 and 5 (extended equivalence fix).
+- **Held-out systems:** the follow-up check's combination systems (A1, A3, B1, B3).
+  - If timing requires, a fixed subsample (the first systems of each set). It is chosen from a timing slice before any outcome is seen, and logged.
+- **Points:** empty start, one short, two short.
+- **Terms:** new and familiar (levels 1, 2, 3, 5).
+- **The blend:** exactly as searched. The library's top 100 legal additions share 95% in proportion to √(P_lib·P_net); the rest share 5% in proportion to P_lib.
+- **Training data:** anything learned is trained only on the lineage's own training systems (its verified solutions and its own fits), never on held-out structures.
+- **GPU:** small models are trained on a free GPU.
+- **Order:** checks 4 and 2 (no fitting), then 3, 1 and 5.
+
+**Check 4: Reanalyse.**
+- **Lineages:** the pilot's network lineages and the blend test's lineages.
+- **Systems:** their training systems left unsolved at levels they mastered.
+- **Compared:** the needed terms' ranks under the prior used in the last round that tried the system, against the lineage's final prior (final network; for the blend, final network and library). Ranks are taken along each system's true structure (measurement only).
+- **Reach:** the 90th percentile of the one-short ranks, under the prior that solved them, of the true terms of the training systems the lineage solved at the same levels.
+- **Pass,** in both seeds (each seed pools its network and blend lineages):
+  - (a) the final prior ranks the needed term strictly better at two-thirds or more of the cases (term and point);
+  - (b) at one short, at least half of the cases are within reach under the final prior, and more than under the searching prior.
+
+**Check 2: sampled exploration.**
+- **Measure:** for each needed term, the probability that the search's exploration draws (without repeats among legal moves) include it within m draws.
+  - **m:** 45 at the empty start (15% of 300 descents begin there with an exploration draw), and 10 at one and two short.
+  - **Today, uniform:** exactly m / (number of legal moves).
+  - **Proposals β:** the library, the network flattened (temperature 2), and the blend. The add move gets the prior's add share (all of it at the empty start, 0.45 otherwise) spread over β. The probability is estimated from 2,000 draws.
+- **Pass:** for some β, the mean probability for new terms is at least 20 percentage points above uniform at all three points, in both seeds.
+- **Reported:** familiar terms, and the share of β's mass on the network's top 20. The exploration share stays 15% of the budget, so the main search's tries are unchanged.
+
+**Check 3: the Gumbel root rule.**
+- **Procedure at each point, 20 draws:**
+  - draw 16 candidate additions without repeats by Gumbel-top-k from the prior;
+  - fit each structure once with the search's own evaluation (fits memoized);
+  - rescale the 16 values (fit quality minus the size penalty) to [0, 1];
+  - keep the 2 finalists by g + log-probability + (50 + 1)·c_scale·q̂.
+- **Primary:** the blend prior with c_scale = 0.1. Also reported: c_scale = 1, and the network prior.
+- **Compared with:** the prior's own top 2, and the 2 best fits among the same 16.
+- **Pass,** in both seeds:
+  - new terms are among the finalists more often than in the prior's top 2, at two short and at the empty start;
+  - familiar terms are among the finalists at a rate no more than 5 percentage points below their rate in the prior's top 2, at all three points.
+  - One short is reported, not ruled on: the needed term makes the fit exact, so there it reduces to coverage.
+
+**Check 1: a learned fit predictor.**
+- **Training labels:** at the points along each lineage's verified solutions on its training systems at levels 1, 2, 3 and 5, fit S ∪ {t} for:
+  - the union of the network's top 30 and the evidence's top 30 candidates;
+  - the solution's missing terms.
+  - The label is the fit quality v, as the search computes it.
+- **Predictor:** a small two-layer network. Inputs:
+  - the evidence gain;
+  - the analytic estimate v(S) + log10(1/√(1 − gain))/14;
+  - v(S) and |S|;
+  - term size and number of constants;
+  - network and library log-probabilities.
+- **Ordering:** log P_blend(t) + w·v̂. The single weight w is chosen on the training points only.
+- **On held-out points:** every legal addition is scored from cheap inputs, without fits.
+- **Pass,** in both seeds:
+  - new terms ranked better (median) than by the network, the library, the evidence and the blend, at one and two short;
+  - no worse than the blend at the empty start;
+  - familiar terms within 2× the network's rank;
+  - scoring a candidate costs under 1% of one exact fit.
+- **Reported:** the same ordering with the analytic estimate in place of the learned one. If it does as well, the learning is not what helps.
+
+**Check 5: the value of a partial equation.**
+- **Nodes:**
+  - **On-path:** the true structure minus one or two terms.
+  - **Off-path partners:** for each term a of an on-path node S, (S − {a}) ∪ {w}, where w is the network's highest-ranked wrong addition at S − {a}.
+  - **Dropped (counted):** a partner whose w can stand in for a true term, i.e. (true − {b}) ∪ {w} fits exactly for some b.
+- **Scored by:**
+  - today's fit quality v(S);
+  - the best one-term evidence at S;
+  - a small learned value model. It is trained on the lineage's solved training systems at levels 1, 2, 3 and 5, with on-path nodes taken from its verified solutions and partners built the same way. Inputs: fit quality, top evidence gains, removal evidence, |S|, the network's top addition and removal probabilities, and library log-probabilities.
+- **Measure:** AUC of on-path against off-path, for equations with a new term and for familiar-only equations, per seed.
+- **Pass,** in both seeds:
+  - the learned value's AUC is at least 0.75 and at least 0.10 above fit quality's on new-term equations;
+  - on familiar-only equations it is no lower than fit quality's.
+
+**Workers.** About 36 in total, all at nice 0:
+- shuffled seed 2: 12, until it finishes;
+- seed 3: 16;
+- the checks: the rest, re-counted before each check.
