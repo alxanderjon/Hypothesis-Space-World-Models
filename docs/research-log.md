@@ -9580,3 +9580,44 @@ These are tests during training. The pass rule is judged on the final test only.
 2. **An exact-completion check.** When an equation may be one term from done, fit a few dozen candidates and accept any that makes it exact. The quick check must:
    - define the trigger, i.e. when an equation counts as possibly one term from done;
    - measure how often the true term is among the candidates fitted, and what the trigger costs in fits at the nodes where it fires.
+
+### Harder fields, step 1: results (14 November, 07:30–09:52 UTC, 30 workers; no search, no training)
+
+**Run.**
+- **Equivalence fix:** rewrote 39 of the 354 new-field and 4th-field solutions.
+- **Libraries:** 16 were built: 11–13 pieces for the blends, 20 for the made-up controls.
+- **Rankings:** 5,703 cases on 160 development-system configurations. 66–93% of the true terms of new-form equations are familiar (their role form is in the history's solutions).
+- **Report:** `g2h/harder/report.txt`.
+
+**Verdict on the pre-set rule: does not pass.**
+- **The rule:** at 30 tasks, on all true terms of new-form equations, the blend's median must be better than both the network alone and the made-up control at one and two short. It fails in all four configurations.
+- **Network alone against blend** (empty start / one short / two short):
+  - reaction networks 4th: 4 / 1 / 4 against 5 / 1 / 5;
+  - flows 5th: 8 / 1 / 4 against 6 / 1 / 5;
+  - flows 4th: 6 / 1 / 4 against 7 / 1 / 5;
+  - reaction networks 5th: 5 / 1 / 3 against 6 / 2 / 4.
+- **Why the medians barely move:** they sit at the familiar terms' ranks, which every arm puts near the top.
+
+**New terms only** (median rank at 30 tasks, empty start / one short / two short; not part of the rule):
+
+| Configuration (new-term cases) | network alone | blend | forced blend | library alone | made-up control | fresh network |
+|---|---|---|---|---|---|---|
+| reaction networks 4th (579) | 173 / 54 / 93 | 153 / **14 / 23** | **34** / 14 / 23 | 35 / 32 / 33 | 343 / 342 / 342 | 166 / 16 / 47 |
+| flows 5th (237) | 883 / 61 / 348 | **67** / 77 / **71** | 136 / 133 / 134 | 136 / 133 / 134 | 1067 / 1066 / 1065 | 1675 / 78 / 1199 |
+| flows 4th (717) | 20 / 9 / 15 | 16 / 10 / 14 | 16 / 10 / 14 | 24 / 21 / 22 | 25 / 10 / 24 | 33 / 2 / 17 |
+| reaction networks 5th (78) | **16 / 1 / 3** | 50 / 2 / 6 | 19 / 2 / 6 | 56 / 53 / 54 | 483 / 478 / 480 | 82 / 27 / 26 |
+
+**Familiar terms** (30 tasks): blend and forced blend 2–5 / 1–2 / 2–4, the same as the network alone in every configuration.
+
+**What it shows:**
+- **The blend helps new terms where the network ranks them poorly,** and costs nothing on familiar terms:
+  - reaction networks 4th: one short 54 → 14, two short 93 → 23;
+  - flows 5th: empty start 883 → 67, two short 348 → 71, but one short 61 → 77.
+- **It hurts where the network already ranks them well:** reaction networks 5th, 16 / 1 / 3 → 50 / 2 / 6.
+- **Judged on new terms only, the same rule would pass in 1 of 4 configurations** (reaction networks 4th). So the verdict does not depend on which terms are counted.
+- **The forced blend** (the owner's extra arm):
+  - it helps at the empty start where the library ranks the new term inside its top 100: 153 → 34 and 50 → 19;
+  - it hurts where the library ranks it outside: flows 5th, 67 → 136 at every point;
+  - on familiar terms it costs nothing (the same medians as the blend).
+- **Against the made-up control,** the blend is far ahead on new terms in every configuration (for example 14 against 342 one short). The made-up library ranks real new terms in the hundreds or thousands.
+- **Step 2 is not run** (owner: "If step 1 passes, run step 2").
