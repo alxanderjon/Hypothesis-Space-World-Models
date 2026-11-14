@@ -9217,3 +9217,29 @@ These are tests during training. The pass rule is judged on the final test only.
 - 4 and 2 first: no fitting, about 15 minutes each.
 - Then 3, 1 and 5: each fits 16–80 structures per point, about 20–40 minutes at today's load, with a small slice timed first.
 - If 3 and 4 pass, their shared next step is to train the network on everything a search fits (Gumbel's targets, refreshed by Reanalyse), not only on its solutions.
+
+### The top-100 blend search test: results (13–14 November, 20:53–00:59 UTC at normal priority; network training on GPUs 0 and 6)
+
+**Verdict on the pre-set rule: PASSES in both seeds.**
+
+**Final test:** held-out systems solved (of 10 per level), at 300 structures per equation.
+
+| | L1 | L2 | L3 | L5 | L6 | L7 | L6–7 (of 20) | L1–5 (of 40) | total (of 60) |
+|---|---|---|---|---|---|---|---|---|---|
+| seed 1, blend | 10 | 10 | 10 | 10 | 10 | 8 | **18** | **40** | 58 |
+| seed 1, network alone | 10 | 10 | 10 | 8 | 8 | 7 | 15 | 38 | 53 |
+| seed 2, blend | 10 | 10 | 10 | 10 | 9 | 8 | **17** | **40** | 57 |
+| seed 2, network alone | 10 | 10 | 10 | 6 | 7 | 9 | 16 | 36 | 52 |
+
+- **Rule 1 (levels 6–7, more than the network alone):** seed 1, 18 against 15; seed 2, 17 against 16. Both meet it.
+- **Rule 2 (levels 1–5, at least the network alone's minus 1):** seed 1, 40 against 38; seed 2, 40 against 36. Both meet it.
+- **Where the gain is:** levels 5 (1/(K+x)) and 6 (x/(K+x)), the pieces the library had learned and the network ranks poorly. At level 7 the two are even: 8 against 7, and 8 against 9.
+- **Seed 2's margin at levels 6–7 is 1 system.** That is the size of the noise between reruns measured on levels 1–5. The overall margin is 5 systems in both seeds.
+- **Mastery:** the blend mastered every level, level 7 in 2 rounds in both seeds. The network alone did not master level 7 in seed 1 (3 rounds), and mastered it in 1 round in seed 2.
+- **Costs:**
+  - **Final test:** median structures to the first exact fit per equation 3 for the blend, against 3–4 for the network alone. Per solved system (its slower equation): median 5 and 8 for the blend against 7 and 4; 90th percentile 52 and 101 against 80 and 84.
+  - **Training:** median structures before a solution 7 and 7 for the blend, against 5 and 3 for the network alone.
+  - **Time limits:** hit in 1 of 520 blend equations (a seed-2 training search) and in none of the final tests.
+  - **Wall time:** 3.5 h and 4.1 h at a host load of about 215 on 48 cores. This is not comparable with the network alone's runs, which were made at another time and load. The blend also adds an equivalence fix and a library rebuild every round.
+- **Next to the pilot's other arms** (final test, seed 1 / seed 2): blend 58 / 57; network alone 53 / 52; library alone 42 / 42; fresh start each level 43 / 52; retry-only 45 / 50; made-up library 26 / 26; shuffled order 48 / pending (seed 2 still running).
+- **What it means:** the library proposing the candidates and the network rescoring them keeps the network's speed on familiar pieces and adds the library's reach on new ones. The evidence is two seeds of curriculum systems, and seed 2's levels 6–7 margin is within rerun noise. A third seed (new systems, both arms) would confirm the gain before anything is built on it. It is proposed, not run.
