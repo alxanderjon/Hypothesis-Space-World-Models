@@ -9742,3 +9742,65 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
     - one familiar cell: 2 against 1.
 - **Check B (exact completion) is parked.**
 - **Step 2's design and pass rule follow in the next entry, written before the run.**
+
+### Step 2 of the harder fields: the short search test with the confidence-weighted blend (14 November; design and pass rule set before the run)
+
+**Fields.**
+- **Reaction networks:** learned 4th, after order 1's history (mechanics, circuits, ecology).
+- **Flows:** learned 4th, after order 2's history (ecology, circuits, mechanics).
+- **Starting points:** claim run 2's history networks (o1_ecology2, o2_mechanics2, prepared with the fourth variable) and control bases (c1_ecology2, c2_mechanics2).
+
+**Arms** (each its own lineage; 2 seeds each; 16 lineages in all).
+- **Confidence blend:** the history network.
+  - **Prior:** the confidence-weighted blend of its network and its library, as in quick check 1. With u = 1 − the network's top probability, the prior is (1 − u)·p_network + u·p_plain blend; removals stay the network's.
+  - **Library:** rebuilt after every dream from its verified solutions. History replays are used raw; new-field solutions go through the extended equivalence fix.
+  - **Training:** as claim run 2's continued network.
+- **Network alone:** the history network, network prior, trained the same way.
+- **Made-up control:** the control base, under the same confidence-weighted blend of its own network and its own library.
+  - **Library:** made-up equations from its base example files, matched in number to the blend's history equations, plus its own new-field solutions after the fix.
+  - **Training:** as claim run 2's rehearsal-matched control, mirroring the network-alone lineage of the same seed.
+- **Fresh network:** no history. Its first wake is uniform; it is trained as claim run 2's fresh network.
+
+**Seeds.**
+- Each seed draws its own 30 of the 100 training tasks, in its own order. Every arm of that seed gets the same draw.
+- Training seeds come from each dream's label, so they differ between seeds. The search seed is 1, as in claim run 2.
+
+**Schedule per lineage.**
+1. Wake on tasks 1–10: 300 structures per equation, 60 thorough fits, 3,600 s limit per equation.
+2. Dream: 100 fantasies, 500 steps, balanced batches for the history arms, as in claim run 2.
+3. Library rebuild (confidence blend and made-up control).
+4. **Reanalyse.**
+5. **Test at 10 tasks.**
+6. Wake on tasks 11–30.
+7. Dream. Its data include the Reanalyse solutions.
+8. Library rebuild.
+9. Reanalyse.
+10. **Test at 30 tasks.**
+
+**Reanalyse** (the standing rule).
+- After each dream, every training task of the lineage that has an unsolved equation is searched again with the lineage's newest prior, at 100 structures per equation and 20 thorough fits.
+- New solutions join its replays, so they are used from its next dream and library rebuild on.
+
+**Tests.**
+- **Systems:** 40 new test systems per field ("test3"), drawn as claim run 2's were, with seeds "g2h-test3-{field}-k".
+- **Freshness:** their data are checked against every earlier set (train, dev, pilot, test, test2) before any run.
+- **Use:** the same systems for every arm and seed, at 300 structures per equation, after 10 and after 30 tasks.
+
+**Measures.**
+- New-form test equations solved, classified as new-form against mechanics, circuits and ecology by g2h_shared.py's rule.
+- Systems with every equation solved, and whole systems exact by `g1_systems.py`: one-step error at most 1e-12 of the scale on 1,000 held-out states, plus the multi-step envelope.
+- Time-limit hits per arm.
+
+**Pass rule** (at 30 tasks; the 10-task checkpoint is reported, not ruled). In both fields:
+1. The confidence blend solves more new-form test equations than the network alone, and more than the made-up control, in each seed.
+   - Pooled over the two seeds, the paired sign test over equations (cases that only one of the two arms solves) gives p < 0.05 against each.
+   - A p between 0.01 and 0.05 is confirmed by a rerun with another seed.
+2. In each seed, it solves no fewer new-form test equations than the fresh network.
+
+**Reanalyse's yield** (reported).
+- Per arm, seed and round: systems re-searched, equations and systems newly solved, structures spent.
+- The running total of each lineage's verified solutions that came from Reanalyse.
+- Per lineage: retried solutions against the gain in new-form test equations solved from 10 to 30 tasks, with the rank correlation across the 16 lineages.
+  - **Caveat:** better learners also solve more on retry, so a correlation does not show cause.
+
+**Running.** 30–36 workers at nice 0. GPUs: free ones first, else shareable under the claim run's rule. Everything is written on /SSD. Search results and networks are cached, so a restart resumes where it stopped.
