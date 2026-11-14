@@ -9562,3 +9562,21 @@ These are tests during training. The pass rule is judged on the final test only.
 2. **An exact-completion check.** When an equation may be one term from done, fit a few dozen candidates and accept any that makes it exact.
    - **Why it may work:** in check 3, fitting 16 sampled candidates one short found the needed term whenever it was sampled, because exactness is a yes/no signal.
    - **The open design question** is when to try it. One candidate trigger: check 5's best one-term evidence, which separated on-path from off-path partial equations with AUC 0.82–0.83 on familiar equations.
+
+**Owner's additions** (14 November). *"Adopt Reanalyse in every run from now on: after each learning round, re-search earlier unsolved training systems with the newest network or blend, small budget, same rule for every arm. Track its yield: how many old failures it solves and whether arms with more retried solutions learn faster. Note in the log that future runs aren't directly comparable to earlier ones because of this. Record two ideas for quick checks after step 1 (don't run them now): 1. Library-drawn random moves at the root of the search only (check 2: 80–100% hit rate on new terms at the empty start, though much of that overlaps the network's top choices). 2. An exact-completion check: fit a few dozen candidates when an equation may be one term from done, and accept any that make it exact. Check 3 suggested this works one term short because exactness is a yes/no signal. The quick check must define when to trigger it and measure how often the true term is among the candidates fitted."*
+
+**Reanalyse: tracking its yield** (every run from now on). Each run's report adds:
+- **Old failures solved:** per arm, seed and learning round, the systems re-searched, the systems newly solved, and the structures spent. Also the running total of the lineage's verified solutions that came from Reanalyse.
+- **Do arms with more retried solutions learn faster?**
+  - Per lineage: its number of retried solutions against its learning speed, i.e. its gain in held-out (or test) systems solved between consecutive checkpoints. Step 2's checkpoints are 10 and 30 tasks.
+  - Reported as a table, plus the rank correlation across all lineages of the run.
+  - **Caveat, stated with every such result:** better learners also solve more on retry, so a correlation alone does not show that the retried solutions cause faster learning. That would need lineages run without Reanalyse, and the standing rule excludes those.
+
+**Comparability.** From now on every run uses Reanalyse; no earlier run did. That covers the curriculum pilot, the blend test and its seed 3, and claim runs 1 and 2. Results of future runs are therefore **not directly comparable** with earlier results. Every comparison in a future run is made within that run, between its own arms, which all follow the same rule.
+
+**The two ideas, as refined by the owner** (quick checks after step 1; not run):
+1. **Library-drawn random moves at the root only.** Check 2: 80–100% of new terms reached at the empty start, against 5% uniform.
+   - **Overlap:** much of the library's mass lies on the network's top choices (67–94% of each proposal's mass was on the network's top 20). The quick check must measure what the root draws add beyond the terms the main search tries first.
+2. **An exact-completion check.** When an equation may be one term from done, fit a few dozen candidates and accept any that makes it exact. The quick check must:
+   - define the trigger, i.e. when an equation counts as possibly one term from done;
+   - measure how often the true term is among the candidates fitted, and what the trigger costs in fits at the nodes where it fires.
