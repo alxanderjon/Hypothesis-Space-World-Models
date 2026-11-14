@@ -9410,3 +9410,20 @@ These are tests during training. The pass rule is judged on the final test only.
   - The more weight Gumbel's score gives the fits (c_scale 1), the worse it does.
   - Only one short, where the right term makes the fit exact, does fitting 16 sampled candidates beat the top 2 (familiar 88–93% against 82–86%). That is the effect of trying more candidates, not of the rule.
   - This confirms ordering E's result from 12 November.
+
+**Check 1 (a learned fit predictor): results** (14 November, 04:33–06:08 UTC, 18 workers; 14,259 training fits at 1.48 s each on the lineages' own solved training systems; 2,424 held-out nodes, ranked without fits).
+- **Median rank of the needed new term** (of about 1,100), empty start / one short / two short:
+  - **Seed 1:** network 204 / 39 / 178; library 15 / 14 / 15; evidence 219 / 15 / 328; blend 110 / 50 / 108; **blend + learned fit 104 / 38 / 108**; blend + analytic fit 102 / 16 / 106.
+  - **Seed 2:** network 207 / 57 / 200; library 24 / 23 / 24; evidence 219 / 15 / 328; blend 112 / 38 / 111; **blend + learned fit 111 / 22 / 118**; blend + analytic fit 112 / 25 / 106.
+- **Familiar terms:** 3 / 1 / 3 for every blend version in both seeds (network 3 / 1 / 3–4; library 4 / 3–4 / 4).
+- **Weights chosen on training points:** learned 10 and 10; analytic 30 and 10.
+- **Cost per candidate:** far below 1% of one fit (milliseconds against 1.48 s).
+- **Verdict: does not pass.** At one and two short, the learned version does not beat the library alone or the evidence alone on new terms.
+- **What it shows:**
+  - Adding a cheap fit estimate to the blend helps one short (50 → 38 and 38 → 22, learned; 16 and 25, analytic). There the evidence already points to the right term.
+  - It does not help at the empty start or two short.
+  - The learned predictor is no better than the simple analytic estimate from the evidence, so the learning is not what helps.
+- **A correction to arm 3's quick check (13 November).**
+  - **The searched blend ranks new terms lower than arm 3 reported** for its "blend100": 110 / 50 / 108 and 112 / 38 / 111 here, against 12–26 there. On these held-out sets the library alone is better (15 / 14 / 15 and 24 / 23 / 24).
+  - **Why:** the searched blend (`curriculum_blend.BlendPrior`, used here exactly) lets the 5% share of the other terms rank above top-100 terms that the network gives almost no probability. Arm 3's stand-in instead placed all of the library's top 100 ahead of every other term.
+  - **Scope:** the blend search test still passed on the pilot's own systems. There the library is rebuilt every round from the current level's solutions. Arm 3's figures for "blend100" do not describe the searched blend.
