@@ -9348,3 +9348,16 @@ These are tests during training. The pass rule is judged on the final test only.
   - **Check 5:** the first 20 of each set (80 per lineage).
   - **Checks 1, 2 and 4:** all systems. Check 1's held-out ranking needs no fits; its training fits cover all of each lineage's solved training systems at levels 1, 2, 3 and 5.
 - **GPU:** the small models of checks 1 and 5 train on GPU 0, shared with seed 3's network training (it was the only free GPU at the check).
+
+**Check 4 (Reanalyse): results** (14 November, 02:29–02:44 UTC, 6 workers; 1,318 rankings on 230 training systems).
+- **The systems:** training systems left unsolved at levels the lineage mastered. Network alone: 3 for seed 1, 13 for seed 2. Blend: 9 for each seed. Most are at level 5.
+- **(a) Final prior strictly better:** in 50% of cases in both seeds (rule: two-thirds or more). **Not met.** The rest:
+  - **Equal:** 39% and 31%. In 32% and 29% of cases both priors already ranked the term first, so no improvement was possible.
+  - **Worse:** 11% and 19%.
+- **(b) Within reach at one short:** 78% under the final prior against 60% under the searching prior (seed 1), and 70% against 48% (seed 2). The rule needs at least 50%, and more than under the searching prior. **Met.**
+  - **Reach** is the 90th percentile of the one-short ranks at which solved systems' terms sat: network alone 13 and 4; blend 21 and 31.
+- **Median rank of the needed term,** searching prior → final prior:
+  - empty start: 28 → 3 (seed 1), 16 → 4 (seed 2);
+  - one short: 2 → 2 (seed 1), 10 → 3 (seed 2).
+- **Verdict: does not pass** (part (a)).
+- **What it shows:** the final networks would put most of these systems' missing terms near the front. About three-quarters of the cases would now be within the search's usual reach, against about half when the systems were tried. But only half the cases improve strictly. About a third were already first, and some got worse.
