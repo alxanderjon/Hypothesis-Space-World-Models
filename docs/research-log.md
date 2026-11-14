@@ -9543,3 +9543,22 @@ These are tests during training. The pass rule is judged on the final test only.
   - it is no worse than twice the network alone's at the empty start.
   - The forced blend and every other arm are reported, for new and familiar terms at all three points; they are not part of the rule.
 - **Step 2,** if step 1 passes: as proposed, with test checkpoints after both 10 and 30 tasks.
+
+### Owner: Reanalyse in every run; two ideas recorded for quick checks after step 1 (14 November)
+
+**Owner.** *"Make Reanalyse permanent: in every run from now on, after each learning round, re-search earlier unsolved training systems with the newest network or blend, small budget, same rule for every arm. Record two ideas from the MuZero checks for quick checks after step 1 (don't run them now): 1. Library-drawn random moves at the root of the search only (check 2 showed 80–100% hit rate on new terms at the empty start). 2. An exact-completion check: when an equation may be one term from done, fit a few dozen candidates and accept any that make it exact (check 3 showed this works one term short, because exactness is a yes/no signal)."*
+
+**The Reanalyse rule** (standing, from step 2 of the harder fields on).
+- **When:** after each learning round of a lineage.
+- **What:** every training system the lineage has tried and not yet solved is searched again. Systems already due for a retry in the next round are excluded, so none is searched twice for the same round.
+- **How:** with the lineage's newest prior (its network, or its blend), at 100 structures per equation and 20 thorough fits, a third of the 300-structure base budget.
+- **Use:** solutions found join the lineage's verified solutions, so they are used from its next learning round on.
+- **Who:** every arm, controls and fresh networks included.
+- **Never re-searched:** held-out and test systems.
+- **Reported per arm and round:** systems re-searched, systems newly solved, and structures spent.
+
+**Ideas recorded, not run** (quick checks to propose after step 1):
+1. **Library-drawn random moves at the root only.** At the empty start, the 45 exploration draws would come from the library instead of uniformly. In check 2 this reached new terms in 80–100% of cases, against 5% uniform. Deeper in the search, moves stay as they are.
+2. **An exact-completion check.** When an equation may be one term from done, fit a few dozen candidates and accept any that makes it exact.
+   - **Why it may work:** in check 3, fitting 16 sampled candidates one short found the needed term whenever it was sampled, because exactness is a yes/no signal.
+   - **The open design question** is when to try it. One candidate trigger: check 5's best one-term evidence, which separated on-path from off-path partial equations with AUC 0.82–0.83 on familiar equations.
