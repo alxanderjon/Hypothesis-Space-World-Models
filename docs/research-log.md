@@ -9651,3 +9651,43 @@ Both checks use no search. Their data:
   - at two-short and off-path nodes, it fires at most 20% of the time.
 
 **Also noted** (not designed): step 1 suggests a blend that trusts the library more where the network is unsure. The blend helped new terms where the network ranked them poorly and hurt where it ranked them well.
+
+### Owner: two quick checks, a confidence-weighted blend and exact completion (14 November; designs and pass rules set before the runs)
+
+**Owner.** *"Approved: two quick checks, no search, on step 1's saved data (and the curriculum combination systems where relevant). Write each pass rule into the log before running. 1. Confidence-weighted blend: lean on the library only where the network is unsure (e.g. weight the library by the network's uncertainty at each step), so the network's strong rankings stay intact and the library helps only where the network is weak. Measure ranks for new and familiar terms at all three points, against the network alone, the plain blend and the made-up control, in all four field configurations. Pass if it keeps the plain blend's gains where the network was weak, removes the loss where the network was strong (reaction networks learned 5th), and costs nothing on familiar terms. 2. Check B, exact completion one term from done, as you proposed. Hold check A. Report both in plain language, and don't start anything longer until we've discussed the results."*
+
+**Check 1: the confidence-weighted blend** (`confidence_check.py`; `g2h/confidence/`; no search).
+- **The network's uncertainty at a node:** u = 1 − (its largest probability over the legal additions).
+- **The confidence blend:** p = (1 − u)·p_network + u·p_blend, where p_blend is the plain top-100 blend.
+  - Where the network is sure, it stays the network.
+  - Where it is unsure, it moves toward the plain blend.
+  - The network's own top choices keep at least the share (1 − u) of their probability.
+- **Reported, not ruled:** the same mixture with u taken from the network's entropy (normalized by its maximum).
+- **The made-up control:** its own network and made-up library, under the same rule. The plain version from step 1 is reported too.
+- **Data:** step 1's networks and libraries at 30 tasks, the point of step 1's rule.
+  - Ranks are recomputed at the same nodes, for new and familiar terms at the empty start, one short and two short, in all four field configurations.
+  - Also reported, not ruled: the curriculum combination systems, with the pilot networks after level 5 and their libraries.
+- **Pass rule:** all three must hold.
+  1. **Gains kept.** The cells where the plain blend's new-term median was at most half the network alone's are reaction networks 4th (one and two short) and flows 5th (empty start and two short). In each, the confidence blend's new-term median is below the network alone's and at most twice the plain blend's.
+  2. **Loss removed.** Reaction networks 5th, new terms: the confidence blend's median is no worse than the network alone's at all three points (network alone: 16 / 1 / 3).
+  3. **No cost on familiar terms.** In all four configurations, at all three points, the familiar-term median is no worse than the network alone's.
+
+**Check B: exact completion one term from done** (`completion_check.py`; `g2h/completion/`; no search).
+- **The trigger:** at a node, the best one-term evidence (the share of the remaining residual that the single best addition explains) is at least τ. Two values are tested, τ = 0.99 and τ = 0.999.
+- **When it fires:** the 30 candidates with the highest evidence are fitted, and any that makes the equation exact is accepted.
+- **Nodes:**
+  - on-path: empty start, one short, two short;
+  - off-path partners: one term swapped for the network's favourite wrong term, as in check 5.
+- **Data:**
+  - **Curriculum:** the combination systems, the first 20 per set, the same as check 5. Partners use the pilot networks after level 5 (both seeds).
+  - **Harder fields:** the development systems, the first 20 per field. Partners use step 1's continued networks at 30 tasks (all four configurations).
+  - The subsamples are fixed now, before any outcome.
+- **Measures:**
+  - the firing rate per kind of node;
+  - at one-short on-path nodes where it fires, whether the needed term is among the 30 candidates;
+  - the cost: 30 fits per firing, and the share of firings at nodes that are not one short;
+  - also reported: the hits where the network ranks the needed term below 30, which is what completion adds beyond the network's own top 30.
+- **Pass rule,** for some τ, in both curriculum seeds and all four field configurations:
+  1. at one-short on-path nodes it fires at least 70% of the time;
+  2. when it fires there, the needed new term is among the 30 candidates at least 80% of the time;
+  3. at two-short on-path nodes and at off-path nodes it fires at most 20% of the time.
