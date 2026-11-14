@@ -9691,3 +9691,7 @@ Both checks use no search. Their data:
   1. at one-short on-path nodes it fires at least 70% of the time;
   2. when it fires there, the needed new term is among the 30 candidates at least 80% of the time;
   3. at two-short on-path nodes and at off-path nodes it fires at most 20% of the time.
+
+**Check B: two implementation details** (set before the run, for cost; four-variable fits take about 1.5 s at today's load).
+- **Off-path partners on the harder fields:** one per one-short on-path node, with the node's first term swapped for the network's favourite wrong term. On the curriculum systems: every term of every on-path node, as in check 5.
+- **Stand-ins:** in both settings, a partner is dropped (and counted) if its wrong term can stand in for the term it replaced, i.e. (true − {a}) ∪ {w} fits exactly. This is one fit instead of check 5's one per true term.
