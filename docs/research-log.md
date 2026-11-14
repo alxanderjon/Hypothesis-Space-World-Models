@@ -9621,3 +9621,33 @@ These are tests during training. The pass rule is judged on the final test only.
   - on familiar terms it costs nothing (the same medians as the blend).
 - **Against the made-up control,** the blend is far ahead on new terms in every configuration (for example 14 against 342 one short). The made-up library ranks real new terms in the hundreds or thousands.
 - **Step 2 is not run** (owner: "If step 1 passes, run step 2").
+
+### Proposed, awaiting approval: the two recorded ideas as quick checks (14 November; nothing run)
+
+Both checks use no search. Their data:
+- the curriculum combination systems, with the pilot networks after level 5 and their libraries;
+- the harder fields' development systems at 30 tasks, with step 1's networks and libraries;
+- both seeds (curriculum) and both orders (harder fields).
+
+**A. Library-drawn random moves at the root only** (about 15–30 minutes; no fits).
+- **The change:** at the empty start, the exploration draws (45 of the search's first 300 choices begin there) come from the library instead of uniformly. Nothing else changes.
+- **Measure:** for each needed term at the empty start, the chance that the 45 draws include it.
+  - The owner's refinement: the chance that they include it *and* it is outside the network's top 20 there. Those 20 are the terms the main search tries first.
+- **Also reported:** the share of library draws that duplicate the network's top 20.
+- **Proposed pass rule:** for new terms, that added coverage is at least 20 percentage points above uniform's, in both replicates of each setting.
+
+**B. Exact completion one term from done** (about 15–30 minutes; no fits beyond the nodes themselves).
+- **The trigger:** at a node the search reaches, the best one-term evidence (the share of the remaining residual that the single best addition explains) is at least τ. Two values are measured, τ = 0.99 and 0.999. When it fires, the 30 candidates with the highest evidence are fitted, and any that makes the equation exact is accepted.
+- **Nodes:**
+  - on-path: empty start, one short, two short;
+  - off-path partners (one term swapped for the network's favourite wrong term), as in check 5.
+- **Measures:**
+  - the firing rate per kind of node;
+  - at one-short on-path nodes where it fires, how often the needed term is among the 30 candidates;
+  - the cost, 30 fits per firing, and the share of firings at nodes that are not one short.
+- **Proposed pass rule,** for some τ, in both replicates of each setting:
+  - at one-short on-path nodes, it fires at least 70% of the time;
+  - when it fires, the needed new term is among the 30 candidates at least 80% of the time;
+  - at two-short and off-path nodes, it fires at most 20% of the time.
+
+**Also noted** (not designed): step 1 suggests a blend that trusts the library more where the network is unsure. The blend helped new terms where the network ranked them poorly and hurt where it ranked them well.
