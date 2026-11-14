@@ -9381,3 +9381,14 @@ These are tests during training. The pass rule is judged on the final test only.
   - The shuffled lineage sees every training system.
   - For the library alone, the designed order does not help.
 - **The pilot's pre-set rule for the library arm** (master all levels, and beat the network and every control by 2 or more at levels 6–7): **does not pass**, as reported on 13 November.
+
+**Check 2 (sampled exploration): results** (14 November, 02:44–03:17 UTC, 6 workers; 3,256 cases; no fits beyond the true partial structures).
+- **Measure:** the mean chance that the search's exploration draws include the needed new term, at the empty start / one short / two short.
+  - **Seed 1:** uniform (today) 5% / 0% / 1%; library 100% / 1% / 1%; flattened network 11% / 5% / 2%; blend 15% / 3% / 0%.
+  - **Seed 2:** uniform 5% / 0% / 1%; library 80% / 0% / 0%; flattened network 11% / 4% / 1%; blend 15% / 4% / 1%.
+- **Familiar terms:** for the blend, 86% / 75% / 46% (seed 1) and 81% / 72% / 40% (seed 2), against uniform's 5% / 0% / 1%.
+- **Duplication:** 67–94% of each proposal's mass lies on the network's top 20, so its draws would mostly repeat what the main search tries anyway.
+- **Verdict: does not pass.** No proposal gains 20 points on new terms at all three points.
+- **What it shows:**
+  - Below the root, the exploration share is too small to reach a needed term that is not already near the front, whichever proposal draws it. One or two short, 10 draws are about 4.5 additions.
+  - At the empty start, drawing 45 exploration moves from the library would reach the new terms in 80–100% of cases, against 5% today. That is a root-only effect, and the network's top ranks already cover much of it.
