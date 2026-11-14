@@ -9340,3 +9340,11 @@ These are tests during training. The pass rule is judged on the final test only.
 - shuffled seed 2: 12, until it finishes;
 - seed 3: 16;
 - the checks: the rest, re-counted before each check.
+
+**Quick checks: timing slice and subsamples** (14 November, 02:05 UTC; set before any outcome).
+- **The slice:** 199 fits of top network candidates on 4 held-out systems, at the current load. It took 1.4 s of fitting per fit; it records times only, no outcomes.
+- **Subsamples,** fixed now, each set taken from its start (the first systems):
+  - **Check 3:** the first 5 systems of each combination set (20 per lineage). With 20 draws of 16 candidates, the two priors together need about 100–150 fits per node.
+  - **Check 5:** the first 20 of each set (80 per lineage).
+  - **Checks 1, 2 and 4:** all systems. Check 1's held-out ranking needs no fits; its training fits cover all of each lineage's solved training systems at levels 1, 2, 3 and 5.
+- **GPU:** the small models of checks 1 and 5 train on GPU 0, shared with seed 3's network training (it was the only free GPU at the check).
