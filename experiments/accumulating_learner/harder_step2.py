@@ -208,9 +208,9 @@ class Step2(C.Driver):
     def _init_gpus(self):
         rows = self._gpu_rows()
         free = [g for g, (_, u, m, tot) in sorted(rows.items()) if u < 10 and m < 1000][:4]
-        self.slots = {g: threading.Semaphore(2) for g in free}
+        self.slots = {g: threading.Semaphore(1) for g in free}         # one training peaks near 10 GB: one per GPU
         self._tl = threading.local()
-        log(f"step 2 GPUs: {free} (free at the start: utilization under 10%, under 1,000 MiB used); at most 2 trainings each")
+        log(f"step 2 GPUs: {free} (free at the start: utilization under 10%, under 1,000 MiB used); one training at a time each")
 
     def train(self, out, sources, prev, steps, label, info, balanced):
         if not getattr(self, "slots", None):
@@ -219,7 +219,7 @@ class Step2(C.Driver):
             rows = self._gpu_rows()
             for g, sem in self.slots.items():
                 _, u, m, tot = rows[g]
-                if tot - m >= 4000 and u <= 90 and sem.acquire(blocking=False):
+                if tot - m >= 11000 and u <= 90 and sem.acquire(blocking=False):
                     self._tl.gpu = g
                     try:
                         return C.Driver.train(self, out, sources, prev, steps, label, info, balanced)
@@ -232,7 +232,7 @@ class Step2(C.Driver):
         g = getattr(getattr(self, "_tl", None), "gpu", None)
         if g is None:
             return C.Driver.gpu(self, poll)
-        return g, f"GPU {g} (step 2 slot: at most 2 of this run's trainings per GPU; at least 4 GB free at the check)"
+        return g, f"GPU {g} (step 2 slot: one of this run's trainings per GPU; at least 11 GB free at the check)"
 
     def search2(self, path, recs, spec, label, budget, cap):
         if path.exists():

@@ -9804,3 +9804,10 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
   - **Caveat:** better learners also solve more on retry, so a correlation does not show cause.
 
 **Running.** 30–36 workers at nice 0. GPUs: free ones first, else shareable under the claim run's rule. Everything is written on /SSD. Search results and networks are cached, so a restart resumes where it stopped.
+
+**Step 2: a GPU-memory stop, the fix and the restart** (14 November, 19:10 UTC).
+- **What happened:** two lineages' first dreams failed with CUDA out-of-memory on GPU 0 (fresh network, flows seed 2; confidence blend, reaction networks seed 1). Two of this run's trainings shared the GPU, and one training peaks near 10 GB.
+- **The stop:** the other 14 lineages would have met the same risk at their second dream, so the run was stopped (its own process group).
+- **The fix:** one training per GPU, started only with at least 11 GB free at an nvidia-smi check just before it. The GPUs are still those free at the start: 0, 3, 5, 7.
+- **The restart:** cached work is reused (every wake on tasks 1–10, 13 of 16 dreams, 7 Reanalyse rounds, 1 test). Interrupted searches are rerun from their start.
+- **Unchanged:** the design, the systems and the pass rule.
