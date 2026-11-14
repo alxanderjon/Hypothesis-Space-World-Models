@@ -36,6 +36,7 @@ POINTS = ("empty start", "one short", "two short")
 TOP, SHARE_TOP = 100, 0.95                                       # the top-100 blend, as searched
 OPTS = dict(a.split("=", 1) for a in sys.argv[3:] if "=" in a)
 LIMIT = int(OPTS.get("limit", 0)) or None
+TRAINLIMIT = int(OPTS.get("trainlimit", 0)) or None              # smoke tests only: training systems per lineage
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -350,7 +351,7 @@ def check2_job(args):
     ctx, fitter = system(rec)
     vocab = ctx["vocab"]
     net, tab = load_net(net_path), load_tab(tab_path, vocab)
-    rng = np.random.default_rng(stable_seed(rec["id"], lin, "exploration"))
+    rng = np.random.default_rng(stable_seed(combo, rec.get("id", rec.get("k")), lin, "exploration"))
     rows = []
     for i in range(len(rec["structure"])):
         _, cases = heldout_cases(rec, i, vocab, pats)
@@ -429,7 +430,7 @@ def report2():
 # check 3: the Gumbel root rule
 # ---------------------------------------------------------------------------------------------------------------------
 
-M_CAND, N_GUMBEL, C_VISIT = 16, 20, 50
+M_CAND, N_GUMBEL, C_VISIT = 16, int(OPTS.get("draws", 20)), 50     # draws: smoke tests only
 C_SCALES = (0.1, 1.0)
 
 
@@ -439,7 +440,7 @@ def check3_job(args):
     ctx, fitter = system(rec)
     vocab = ctx["vocab"]
     net, tab = load_net(net_path), load_tab(tab_path, vocab)
-    rng = np.random.default_rng(stable_seed(rec["id"], lin, "gumbel"))
+    rng = np.random.default_rng(stable_seed(combo, rec.get("id", rec.get("k")), lin, "gumbel"))
     rows, fits, fit_s = [], 0, 0.0
     for i in range(len(rec["structure"])):
         _, cases = heldout_cases(rec, i, vocab, pats)
@@ -670,9 +671,8 @@ def step_check1(workers):
         s = int(lin.rsplit("-s", 1)[1])
         systems = {r["id"]: r for lv, d in json.loads((PILOT / "gen" / f"systems-s{s}.json").read_text()).items() for r in d["train"]}
         sols, level = CN.solutions(lin)
-        for sid, d in sols.items():
-            if level[sid] in FAMILIAR:
-                jobs.append((lin, systems[sid], d, setup[lin][0], setup[lin][1]))
+        mine = [(lin, systems[sid], d, setup[lin][0], setup[lin][1]) for sid, d in sols.items() if level[sid] in FAMILIAR]
+        jobs += mine[::max(1, len(mine) // TRAINLIMIT)][:TRAINLIMIT] if TRAINLIMIT else mine
     t0 = time.time()
     with pool(workers) as ex:
         train = list(ex.map(check1_train_job, jobs))
@@ -866,7 +866,8 @@ def step_check5(workers):
         s = int(lin.rsplit("-s", 1)[1])
         systems = {r["id"]: r for lv, d in json.loads((PILOT / "gen" / f"systems-s{s}.json").read_text()).items() for r in d["train"]}
         sols, level = CN.solutions(lin)
-        jobs += [(lin, systems[sid], d, setup[lin][0], setup[lin][1]) for sid, d in sols.items() if level[sid] in FAMILIAR]
+        mine = [(lin, systems[sid], d, setup[lin][0], setup[lin][1]) for sid, d in sols.items() if level[sid] in FAMILIAR]
+        jobs += mine[::max(1, len(mine) // TRAINLIMIT)][:TRAINLIMIT] if TRAINLIMIT else mine
     t0 = time.time()
     with pool(workers) as ex:
         train = list(ex.map(check5_train_job, jobs))
@@ -879,6 +880,8 @@ def step_check5(workers):
     for lin in LINEAGES:
         tr = [x for r in train if r["lineage"] == lin for x in r["rows"]]
         te = [x for r in test if r["lineage"] == lin for x in r["rows"]]
+        if not tr or len({x["label"] for x in tr}) < 2:
+            raise SystemExit(f"check5: no usable training nodes for {lin} ({len(tr)})")
         X = np.array([x["x"] for x in tr], dtype=np.float32)
         y = np.array([x["label"] for x in tr], dtype=np.float32)
         predict, loss = fit_mlp(X, y, device, classify=True)
