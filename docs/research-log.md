@@ -9506,3 +9506,40 @@ These are tests during training. The pass rule is judged on the final test only.
      - A p between 0.01 and 0.05 is confirmed by a rerun with another seed.
   2. It solves no fewer than the fresh network.
 - **Cost:** 16 field-lineages, each with 30 wake searches and 40 test searches. Claim run 2's 12 field-lineages ran about 260 searches each in 18.3 hours.
+
+### Owner: step 1 of the harder fields, with the forced blend as an extra arm (14 November; design set before the run)
+
+**Owner.** *"Run step 1 first. Also include in it, as an extra arm, the blend variant that keeps the library's top terms ahead, measuring its ranks for both new and familiar terms at all three points, so we see its cost as well as its benefit. If step 1 passes, run step 2 with checkpoints at both 10 and 30 tasks. Also report shuffled seed 2's final result next to the other arms."*
+
+**Step 1 as run** (`harder_check.py`; `g2h/harder/`; no search, no training; normal priority).
+- **Configurations:** each field in both positions.
+  - Reaction networks: 4th in order 1 (after mechanics, circuits, ecology), 5th in order 2 (after ecology, circuits, mechanics, flows).
+  - Flows: 4th in order 2, 5th in order 1.
+  - Each is measured after 10 and after 30 tasks of the field, with claim run 2's networks.
+- **Arms:**
+  - **network alone:** the continued network (o1, o2);
+  - **blend:** the continued network with a library, in the searched top-100 blend;
+  - **forced blend** (the owner's extra arm): the same library's top 100 terms ahead of every other term, ordered among themselves by the geometric mean. This is arm 3's stand-in;
+  - **made-up control:** the rehearsal-matched control network (c1, c2) with its own library, in the same blend;
+  - **fresh network**.
+  - Also reported: the control network alone, and the library alone.
+- **The blend's library** comes from the continued network's own verified solutions:
+  - its history fields' replays (raw);
+  - for the 5th position, its replays from the 4th field;
+  - its wakes on the field up to that point.
+  - The new-field and 4th-field solutions are rewritten by the extended equivalence fix. The history's 2- and 3-variable solutions are left raw: fixing about 1,800 more equations would take hours.
+- **The made-up control's library** comes from:
+  - its own made-up systems: every made-up equation in its base dreams' example files (each example holds its equation's full true structure), plus for the 5th position its 4th-field extension dreams. These are subsampled with a fixed seed to the same number of equations as the blend's history.
+  - its own verified solutions on the field up to that point, after the same fix.
+- **Libraries:** context-free form, built by compression plus counting over the four-variable language, as in the curriculum blend.
+- **Systems and terms:**
+  - **Systems:** the 40 development systems per field.
+  - **New-form equations, 4th position:** as classified in claim run 2 (`mce_dev`).
+  - **New-form equations, 5th position:** classified by the same rule against mechanics, circuits, ecology and the 4th field.
+  - **Terms:** every true term of those equations. A term is **familiar** if its variable-role form appears among the history's solution terms, otherwise **new**.
+- **Points:** empty start, one short, two short.
+- **Pass rule** (unchanged from the proposal; all true terms of new-form equations), at 30 tasks, in both orders and both fields:
+  - the blend's median rank is better than the network alone's and the made-up control's at one and two short;
+  - it is no worse than twice the network alone's at the empty start.
+  - The forced blend and every other arm are reported, for new and familiar terms at all three points; they are not part of the rule.
+- **Step 2,** if step 1 passes: as proposed, with test checkpoints after both 10 and 30 tasks.
