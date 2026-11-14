@@ -9695,3 +9695,38 @@ Both checks use no search. Their data:
 **Check B: two implementation details** (set before the run, for cost; four-variable fits take about 1.5 s at today's load).
 - **Off-path partners on the harder fields:** one per one-short on-path node, with the node's first term swapped for the network's favourite wrong term. On the curriculum systems: every term of every on-path node, as in check 5.
 - **Stand-ins:** in both settings, a partner is dropped (and counted) if its wrong term can stand in for the term it replaced, i.e. (true − {a}) ∪ {w} fits exactly. This is one fit instead of check 5's one per true term.
+
+### Quick checks 1 and B: results (14 November, 15:29–15:49 UTC; no search)
+
+**Check 1, the confidence-weighted blend** (5,703 field cases, 3,256 curriculum cases). **Verdict: does not pass.** Each part misses by 1–2 ranks.
+
+New terms at 30 tasks (median rank, empty start / one short / two short):
+
+| Configuration | network alone | plain blend | confidence blend | made-up control (confidence) |
+|---|---|---|---|---|
+| reaction networks 4th (network weak) | 173 / 54 / 93 | 153 / 14 / 23 | 171 / **18** / **47** | 330 / 57 / 137 |
+| flows 5th (network weak) | 883 / 61 / 348 | 67 / 77 / 71 | **74** / **61** / **96** | 1093 / 284 / 981 |
+| flows 4th | 20 / 9 / 15 | 16 / 10 / 14 | 17 / 10 / 14 | 27 / 9 / 23 |
+| reaction networks 5th (network strong) | 16 / 1 / 3 | 50 / 2 / 6 | **18 / 1 / 3** | 13 / 2 / 3 |
+
+- **Part 1, gains kept: not met.**
+  - Reaction networks 4th, two short: 47, against a limit of 46 (twice the plain blend's 23).
+  - Its one-short gain is kept (18, against the network alone's 54).
+  - Flows 5th keeps both gains (74 and 96), and the plain blend's one-short loss disappears (61 against 77).
+- **Part 2, loss removed: not met.** Reaction networks 5th, empty start: 18 against the network alone's 16. One and two short it equals the network (1 and 3), against the plain blend's 2 and 6.
+- **Part 3, no cost on familiar terms: not met.** Reaction networks 5th, one short: 2 against 1. In every other cell the confidence blend equals the network alone.
+- **Uncertainty u:** lowest where the network is strong (reaction networks 5th, empty start: 0.07) and higher where it is weak (0.31–0.58). That is how the mixture keeps the network's strong rankings.
+- **Entropy-based version** (reported only): close to the main version, slightly worse where the network is weak.
+- **Curriculum systems** (reported only), new terms: confidence blend 114 / 58 / 115 and 144 / 42 / 134; plain blend 110 / 50 / 108 and 112 / 38 / 111; network alone 204 / 39 / 178 and 207 / 57 / 200. Familiar terms are unchanged.
+- **What it shows:** the confidence blend keeps most of the plain blend's gains where the network is weak and removes nearly all of its loss where the network is strong. It still misses the pre-set rule by 1–2 ranks in each part.
+
+**Check B, exact completion one term from done** (2,917 curriculum nodes, 3,500 field nodes). **Verdict: does not pass**, at either τ.
+- **Firing rates:**
+  - **τ = 0.99:** one short 85–91%; but also two short 83–89%, empty start 75–84%, and off-path partners 62–76%.
+  - **τ = 0.999:** one short 57–70%, two short 49–55%, empty start 27–58%, off-path 24–43%.
+  - 60–72% of firings are at nodes that are not one short.
+- **The needed new term among the 30 candidates when firing one short:** 39–74% (rule: 80% or more). Familiar terms: 18–75%.
+- **What it adds:** hits on new terms that are outside the network's own top 30. Curriculum: 18–26 per seed. Flows: 7–20. Reaction networks 4th: 11–12. Reaction networks 5th: 0.
+- **What it shows:**
+  - With noise-free data, explaining 99–99.9% of the remaining residual is far from exact (exact here means about 1e-12). A single term often explains that much even two terms short, so this trigger cannot tell one-short nodes apart.
+  - The evidence ranks the needed term in its top 30 only about half the time. Terms with a constant inside depend on the fit's grid of constants.
