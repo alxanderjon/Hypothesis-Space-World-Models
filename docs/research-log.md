@@ -9440,3 +9440,69 @@ These are tests during training. The pass rule is judged on the final test only.
   - Today's fit quality is below chance on familiar equations: an off-path partner, holding the network's favourite wrong term, usually fits better than the on-path partial equation. This agrees with check 3.
   - A simple untrained signal, the best one-term evidence (how much the single best addition would explain), separates them well on familiar equations (0.82–0.83). On new-term equations it is weaker (0.56–0.65).
   - The small learned value did not pick this up from 122–161 training nodes.
+
+### The blend test's third seed: results (14 November, 02:12–06:42 UTC at normal priority; network training on GPU 0)
+
+**Verdict on the pre-set rule: CONFIRMED.**
+- **Levels 6–7:** the blend solves 19 of 20 held-out systems, the network alone 18.
+- **Levels 1–5:** 40 and 40.
+
+**Final test:** held-out systems solved (of 10 per level).
+
+| Seed 3 | L1 | L2 | L3 | L5 | L6 | L7 | L6–7 | L1–5 | total | rounds to mastery |
+|---|---|---|---|---|---|---|---|---|---|---|
+| blend | 10 | 10 | 10 | 10 | 10 | 9 | **19** | 40 | 59 | 1 at every level |
+| network alone | 10 | 10 | 10 | 10 | 10 | 8 | 18 | 40 | 58 | 1 at every level |
+| fresh start each level | 10 | 9 | 10 | 10 | 6 | 2 | 8 | 39 | 47 | stopped at level 6 |
+
+**All three seeds** (final test, of 60; levels 6–7 of 20):
+
+| Arm | Seed 1 | Seed 2 | Seed 3 | L6–7 per seed |
+|---|---|---|---|---|
+| blend | 58 | 57 | 59 | 18 / 17 / 19 |
+| network alone | 53 | 52 | 58 | 15 / 16 / 18 |
+| fresh start each level | 43 | 52 | 47 | 7 / 13 / 8 |
+
+**What it shows:**
+- The blend leads the network alone at levels 6–7 in all three seeds, by 3, 1 and 1 systems. In seeds 2 and 3 the margin is the size of the noise between reruns.
+- Overall it leads by 5, 5 and 1 systems.
+- Seed 3's systems were easier for the network alone than seeds 1 and 2's (58 against 53 and 52), which leaves little room above it.
+- The blend is never behind the network alone at any level group, and is well ahead of the fresh start in every seed.
+
+### Proposed, awaiting approval: the blend on the harder fields (14 November; nothing run)
+
+**Owner.** *"If the third seed confirms the blend, propose the shortest test of the blend on the harder fields (reaction networks and flows), against the network alone, the made-up control and a fresh network, with at least 2–3 seeds per arm."* Seed 3 confirms the blend under its pre-set rule (above).
+
+**The blend is unchanged:** the searched top-100 blend of the curriculum test (`curriculum_blend.BlendPrior`), with the library rebuilt after every dream from the lineage's own verified solutions after the extended equivalence fix. The search's language is four-variable (4,683 terms).
+
+**Step 1: a quick check, without search** (standing rule; about 30–45 minutes; reuses claim run 2's networks and wakes, so no new search and no training).
+- **Fields and positions:** reaction networks 4th (order 1) and 5th (order 2); flows 4th (order 2) and 5th (order 1). The two orders are the two replicates.
+- **Arms,** after 10 and after 30 tasks of the new field:
+  - **network alone:** the continued network (o1, o2);
+  - **blend:** the same network with a library from its own verified solutions, from its history's replays and its wakes so far;
+  - **made-up control:** the rehearsal-matched control network (c1, c2) with a library from its own made-up systems' structures, in the same blend;
+  - **fresh network:** fresh after 10 and 30 tasks.
+- **Systems:** the 40 development systems per field. Development sets only; no test set is opened.
+- **Measure:** the rank of the true terms of new-form equations at the empty start, one short and two short. New-form means relative to the history.
+- **Proposed pass rule,** at 30 tasks, in both orders and both fields:
+  - the blend's median rank is better than the network alone's and the made-up control's at one and two short;
+  - it is no worse than twice the network alone's at the empty start.
+
+**Step 2: the short search test** (only if step 1 passes, unless the owner decides otherwise; about 6–8 hours at today's load).
+- **Fields:** each field is learned 4th, straight after its three-field history, from claim run 2's history networks and control bases. Reaction networks follow order 1's history; flows follow order 2's.
+- **Arms:** blend, network alone, made-up control (blend form with its own library), fresh network.
+- **Seeds:** 2 per arm. Each seed draws its own 30 of the 100 training tasks, in its own order, and uses its own training seed.
+- **Schedule,** as in claim run 2:
+  - wakes on tasks 1–10 and 11–30, each followed by a dream;
+  - 300 structures per equation, 60 thorough fits;
+  - the same time limit, with hits reported per arm.
+- **Test:** after 30 tasks, on 40 new test systems per field (a new draw, `test3`).
+  - The draw is checked against every earlier set: training, development, pilot, test and test2.
+  - The same test systems are used for every arm and seed, at 300 structures per equation.
+- **Measure:** new-form test equations solved, plus whole systems exact. The latter is checked as in claim run 2: one-step error at most 1e-12 of the scale on 1,000 held-out states, plus the multi-step envelope.
+- **Proposed pass rule,** in both fields:
+  1. The blend solves more new-form test equations than the network alone and than the made-up control, in each seed.
+     - Pooled over seeds, the paired sign test over equations gives p < 0.05.
+     - A p between 0.01 and 0.05 is confirmed by a rerun with another seed.
+  2. It solves no fewer than the fresh network.
+- **Cost:** 16 field-lineages, each with 30 wake searches and 40 test searches. Claim run 2's 12 field-lineages ran about 260 searches each in 18.3 hours.
