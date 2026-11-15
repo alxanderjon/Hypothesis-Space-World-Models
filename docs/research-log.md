@@ -9936,3 +9936,21 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
 **Reported** per arm and seed: held-out systems solved each round, rounds to mastery, and structures tried before each solution. The fresh network's figures show whether the history helps. Also reported: Reanalyse's yield.
 
 **Capacity** (owner: take spare capacity). Workers are set from the free cores at launch: the load was about 15, so 40 workers. The GPUs are the ones free at launch, one training each.
+
+### Ladder rung a (2 variables, 3 terms per equation): results (15 November, 08:43–11:09 UTC, 32 workers)
+
+**Verdict: DROP-OFF.** Neither learner arm masters the rung: an arm needed 2 of 3 seeds at 8 of 10 or more. Per the owner's instruction, the ladder stops here and the result is reported.
+
+**Held-out systems solved after each round** (of 10):
+
+| arm | seed 1 | seed 2 | seed 3 |
+|---|---|---|---|
+| confidence blend | 5 / **8** (mastered) | 6 / 6 / 6 | 5 / 7 / 6 |
+| network alone | 4 / 3 / 5 | 7 / 5 / 5 | 4 / 4 / 6 |
+| fresh network | 0 / 0 / 1 | 0 / 2 / 3 | 2 / 3 / 4 |
+
+- **History helps:** both learner arms are well ahead of the fresh network in every seed (5–8 against 1–4 at the end).
+- **The blend against the network alone:** the blend is ahead or level at the end in all three seeds (8 against 5, 6 against 5, 6 against 6). It is the only arm to master the rung in any seed.
+- **Search cost:** median structures before a training solution were 46–84 for the learner arms and 60–294 for the fresh network. On the curriculum's 1–2-term systems it was 3–7.
+- **Reanalyse:** it rescued 26–28 equations per learner arm across seeds, many of them old curriculum failures, and 2 for the fresh network.
+- **Where the drop is:** the learners went from 8–10 of 10 on the curriculum's last levels to 5–8 of 10 here. Going from 1–2 to 3 terms per equation is itself too big a step for 3 rounds of 10 training systems.
