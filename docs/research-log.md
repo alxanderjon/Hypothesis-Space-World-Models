@@ -9811,3 +9811,9 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
 - **The fix:** one training per GPU, started only with at least 11 GB free at an nvidia-smi check just before it. The GPUs are still those free at the start: 0, 3, 5, 7.
 - **The restart:** cached work is reused (every wake on tasks 1–10, 13 of 16 dreams, 7 Reanalyse rounds, 1 test). Interrupted searches are rerun from their start.
 - **Unchanged:** the design, the systems and the pass rule.
+
+**Owner (15 November):** *"if more space opens up allowing you to run faster take it."*
+- **Step 2:** its 32-worker pool cannot grow without a restart, which would lose hours of in-flight tests.
+- **Instead,** a helper (`step2_helper.py`) runs the run's remaining tests whose inputs are already saved, with the same priors, systems, budget and seed. It writes the same result files atomically, so the run skips any test it finds done. Tests the run's own threads have reached are skipped.
+- **When it runs:** a watcher starts the helper whenever 12 or more of the 48 cores are spare (5-minute load), with spare − 4 workers (at most 24), at nice 0 and guarded on /SSD.
+- **At 01:10 UTC** the load was about 210, so the helper is waiting.
