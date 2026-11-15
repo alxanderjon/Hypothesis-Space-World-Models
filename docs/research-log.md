@@ -9900,3 +9900,39 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
   - Each rung should use 3 seeds.
   - Arms should be compared within a seed, where they share the task draw.
   - Mastery should be judged across seeds, not on one lucky or unlucky run.
+
+### The ladder, rung a: 2 variables, 3 terms per equation (design and mastery criterion set before the run)
+
+**The one change:** every equation has exactly 3 terms (the curriculum had 1–2).
+
+**Unchanged from the curriculum:**
+- 2 variables.
+- The pieces the learner mastered, the pilot's six levels: x, x·y, x², 1/(K+x), x/(K+x), 1/(K+x²).
+- The generator: made-up dynamics restricted to these pieces, with no piece forced to be new.
+- The same budgets.
+
+**Systems.** Per seed, 10 training and 10 held-out systems with new names ("ladder-a-s{seed}-{split}-k"). Before any run they are checked against every earlier curriculum set.
+
+**Arms** (3 seeds each).
+- **Confidence-weighted blend:** continues that seed's blend lineage from the end of the curriculum (seeds 1–2: the blend test; seed 3: its third seed). It keeps its network and its verified solutions; their library is rebuilt with the extended equivalence fix. It searches with the confidence-weighted blend.
+- **Network alone:** continues that seed's network lineage (seeds 1–2: the pilot; seed 3: the third seed).
+- **Fresh network:** no history. Its first round uses the language's size prior; then a new network is trained on its own solutions.
+
+**Rounds:** up to 3, at 300 structures per equation, then retries of the unsolved at 1,000 and 3,000. After each round, in order:
+1. **Learning:** the network is trained further on all its verified solutions plus 50 dreams, for 500 steps, as in the pilot. The blend's library is rebuilt.
+2. **Reanalyse.**
+3. **Held-out test:** 10 systems at 300 structures.
+
+**Reanalyse** (the standing rule).
+- **What it covers:** after each learning round, every training system the lineage has tried and not solved, in the curriculum and on this rung. When another round follows, this rung's own unsolved systems are left out: that round retries them anyway.
+- **How:** with the newest prior, at 100 structures per equation and 20 thorough fits.
+
+**Mastery criterion.**
+- A lineage masters the rung when a held-out test solves at least 8 of 10 systems within the 3 rounds.
+- An arm masters the rung when at least 2 of its 3 seeds do.
+
+**Drop-off, stop and report:** neither learner arm masters the rung.
+
+**Reported** per arm and seed: held-out systems solved each round, rounds to mastery, and structures tried before each solution. The fresh network's figures show whether the history helps. Also reported: Reanalyse's yield.
+
+**Capacity** (owner: take spare capacity). Workers are set from the free cores at launch: the load was about 15, so 40 workers. The GPUs are the ones free at launch, one training each.
