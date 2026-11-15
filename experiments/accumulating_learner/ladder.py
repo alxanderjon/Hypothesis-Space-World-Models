@@ -30,7 +30,8 @@ G2H = C.ROOT / "outputs/accumulating_learner/g2h"
 OUT = C.RUN
 RUNGS = {"a": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "3 terms per equation", "after": None},
          "a1": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3), "change": "3 terms per equation, only x, x*y, x^2", "after": None},
-         "a2": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "the rational pieces back (after a1)", "after": "a1"}}
+         "a1w": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3), "change": "3 terms, only x, x*y, x^2; wake pool of 50", "after": None, "n_train": 50},
+         "a2": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "the rational pieces back (after a1w)", "after": "a1w"}}
 SEEDS = (1, 2, 3) if not SMOKE else (1,)
 ARMS = ("blend", "net", "fresh")
 ARM_NAMES = {"blend": "confidence blend", "net": "network alone", "fresh": "fresh network"}
@@ -176,7 +177,7 @@ def step_gen(workers, rung):
     keys = piece_keys(R["d"])
     allowed = {lv: keys[lv] for lv in R["levels"]}
     jobs = [((s, split, k), (f"ladder-{rung}-s{s}-{split}", k, allowed, R["terms"], R["d"]))
-            for s in SEEDS for split, n in (("train", N_TRAIN), ("test", N_TEST)) for k in range(n)]
+            for s in SEEDS for split, n in (("train", R.get("n_train", N_TRAIN)), ("test", N_TEST)) for k in range(n)]
     t0 = time.time()
     with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:
         res = list(ex.map(gen_job, [a for _, a in jobs]))
@@ -559,6 +560,7 @@ class Lineage:
         todo = [r["id"] for r in train]
         for k, (budget, cap) in enumerate(BUDGETS):
             rnd = k + 1
+            t_round = time.time()
             w = self.search(self.dir / f"r{rnd}_wake.json", [self.recs[s] for s in todo], budget, cap)
             self.add(w)
             todo = self.unsolved(todo)
@@ -575,7 +577,8 @@ class Lineage:
             new_sys = sum(1 for s in pool_ if s not in self.unsolved([s]))
             yld = {"re_searched": len(pool_), "new_equations": new_eq, "new_systems": new_sys,
                    "structures": sum(e["structures"] for x in ra if x["status"] == "done" for e in x["equations"])}
-            self.rec["rounds"].append({"round": rnd, "budget": budget, "wake": w, "test": t, "test_solved": ok, "reanalyse": yld})
+            self.rec["rounds"].append({"round": rnd, "budget": budget, "wake": w, "test": t, "test_solved": ok, "reanalyse": yld,
+                                       "seconds": time.time() - t_round})
             log(f"{self.rung} {self.name} round {rnd}: training solved {sum(y['solved'] for y in w)} of {len(w)} tried; held-out "
                 f"{ok} of {len(t)}; Reanalyse {len(pool_)} re-searched, {new_eq} equations and {new_sys} systems newly solved")
             if mastered:
@@ -626,7 +629,7 @@ def step_report(rung):
             m += r["mastered"]
             fe = [e["first_exact"] for x in r["rounds"] for y in x["wake"] if y["status"] == "done" for e in y["equations"] if e["first_exact"] is not None]
             ra = [x["reanalyse"] for x in r["rounds"]]
-            rows.append(f"s{s}: {' / '.join(str(x['test_solved']) for x in r['rounds'])} ({'mastered in ' + str(r['rounds_to_mastery']) if r['mastered'] else 'not mastered'}; "
+            rows.append(f"s{s}: {' / '.join(str(x['test_solved']) for x in r['rounds'])} [minutes per round {' / '.join(f'{x.get("seconds", 0) / 60:.0f}' for x in r['rounds'])}] ({'mastered in ' + str(r['rounds_to_mastery']) if r['mastered'] else 'not mastered'}; "
                         f"median structures before a training solution {np.median(fe) if fe else float('nan'):.0f}; Reanalyse "
                         f"{sum(x['new_equations'] for x in ra)} equations from {sum(x['re_searched'] for x in ra)} re-searched)")
         verdict[arm] = m >= 2 if not SMOKE else m >= 1

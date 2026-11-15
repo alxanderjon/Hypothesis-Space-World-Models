@@ -14,7 +14,8 @@ import sys
 import time
 from pathlib import Path
 
-os.environ.setdefault("G2H_RUN", "dreamcheck")
+RUNG = os.environ.get("DREAMCHECK_RUNG", "a1")                   # a1: from the curriculum; a2: from the a1w state
+os.environ.setdefault("G2H_RUN", "dreamcheck" if RUNG == "a1" else f"dreamcheck_{RUNG}")
 os.environ.setdefault("G2H_SHORTLIST", "2048")
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -23,7 +24,7 @@ import ladder as LD                                              # noqa: E402
 C, G2H, OUT = LD.C, LD.G2H, LD.OUT
 SEEDS, ARMS = (1, 2, 3), ("blend", "net")
 N_DEV, N_DREAM, N_GEN, SHARE_REAL, BASE_STEPS = 20, 1000, 50, 0.30, 500
-A1_LEVELS = (1, 2, 3)
+A1_LEVELS = (1, 2, 3) if RUNG == "a1" else (1, 2, 3, 5, 6, 7)
 CUR = {1: "cpilot/gen/systems-s1.json", 2: "cpilot/gen/systems-s2.json", 3: "cseed3/gen/systems-s3.json"}
 
 
@@ -111,7 +112,7 @@ def draw_fixed(seed, picks_per_eq):
 def starts(ex):
     """{(arm, seed): Lineage at its end-of-curriculum state} (no rung systems added)."""
     gpus = None
-    return {(a, s): LD.Lineage(a, s, "a1", ex, gpus) for a in ARMS for s in SEEDS}
+    return {(a, s): LD.Lineage(a, s, RUNG, ex, gpus) for a in ARMS for s in SEEDS}
 
 
 def step_gen(workers):
@@ -127,7 +128,7 @@ def step_gen(workers):
     t0 = time.time()
     with pool(workers) as ex:
         # development systems (a1-style), checked against every earlier set
-        dev = {s: [r for r in ex.map(LD.gen_job, [(f"dreamcheck-dev-s{s}", k, allowed, (3, 3), 2) for k in range(N_DEV)]) if r["accepted"]] for s in SEEDS}
+        dev = {s: [r for r in ex.map(LD.gen_job, [(f"dreamcheck-{RUNG}-dev-s{s}", k, allowed, (3, 3), 2) for k in range(N_DEV)]) if r["accepted"]] for s in SEEDS}
         old = LD.earlier_keys("dreamcheck") | {LD.data_key(r["bursts"]) for p in (G2H / "ladder/gen").glob("*.json")
                                                 for sp in json.loads(p.read_text()).values() for r in sp}
         clash = sum(LD.data_key(r["bursts"]) in old for s in SEEDS for r in dev[s])
@@ -140,7 +141,7 @@ def step_gen(workers):
         for s in SEEDS:
             p = OUT / "gen" / f"dreams-gen-s{s}.pkl"
             if not p.exists():
-                exs = list(ex.map(dream_job, [(f"dreamcheck-gen-s{s}", k, ("gen", allowed)) for k in range(N_DREAM)], chunksize=4))
+                exs = list(ex.map(dream_job, [(f"dreamcheck-{RUNG}-gen-s{s}", k, ("gen", allowed)) for k in range(N_DREAM)], chunksize=4))
                 p.write_bytes(pickle.dumps([e for x in exs for e in x]))
                 print(f"generator dreams s{s}: {sum(bool(x) for x in exs)} of {N_DREAM} with examples; {sum(len(x) for x in exs)} examples; {time.time() - t0:.0f}s")
         L = starts(ex)
@@ -163,7 +164,7 @@ def step_gen(workers):
                             usage[rk] = usage.get(rk, 0) + 1
             if not p.exists():
                 probs = D1.term_distribution(order, V, usage).tolist()
-                g = list(ex.map(LD.fantasy_job, [(f"dreamcheck-{name}-general", k, probs, 2) for k in range(N_GEN)]))
+                g = list(ex.map(LD.fantasy_job, [(f"dreamcheck-{RUNG}-{name}-general", k, probs, 2) for k in range(N_GEN)]))
                 p.write_bytes(pickle.dumps([e for x in g for e in x]))
             # library dreams (c): the pieces of its own solutions, weighted by its own library grammar
             p = OUT / "gen" / f"dreams-lib-{name}.pkl"
@@ -177,7 +178,7 @@ def step_gen(workers):
                 gid = {k: g for g, k in enumerate(order)}
                 pieces = sorted({rk for rk in usage if rk in gid})
                 w = [float(np.exp(T[gid[k], 0])) for k in pieces]
-                exs = list(ex.map(dream_job, [(f"dreamcheck-lib-{name}", k, ("lib", pieces, w)) for k in range(N_DREAM)], chunksize=4))
+                exs = list(ex.map(dream_job, [(f"dreamcheck-{RUNG}-lib-{name}", k, ("lib", pieces, w)) for k in range(N_DREAM)], chunksize=4))
                 p.write_bytes(pickle.dumps([e for x in exs for e in x]))
                 print(f"library dreams {name}: {len(pieces)} pieces; {sum(bool(x) for x in exs)} of {N_DREAM} with examples; "
                       f"{sum(len(x) for x in exs)} examples; {time.time() - t0:.0f}s")
@@ -271,6 +272,37 @@ def step_rank(workers):
     print(f"rank: {len(rows)} rows from {len(jobs)} jobs in {time.time() - t0:.0f}s")
 
 
+def step_report_tail():
+    """The a2 rule: badly ranked tail (share ranked worse than 10) and curriculum mean log2 rank (no ceiling medians)."""
+    import numpy as np
+    rows = json.loads((OUT / "ranks.json").read_text())
+    pts = ("empty start", "one short", "two short")
+    lines = ["== Dream quick check (" + RUNG + "): share of true terms ranked worse than 10 (empty / one short / two short); curriculum mean log2 rank"]
+    wins = {"b": 0, "c": 0}
+    bc = 0
+    for a in ARMS:
+        for s in SEEDS:
+            name, m = f"{a}-s{s}", {}
+            for v in "abc":
+                R = [x for x in rows if x["tag"] == f"{name}-{v}"]
+                dev = [x for x in R if x["kind"] == "dev"]
+                tail = [float(np.mean([x["rank"] > 10 for x in dev if x["point"] == p])) for p in pts]
+                cur = float(np.mean([np.log2(x["rank"]) for x in R if x["kind"] == "curriculum"]))
+                m[v] = (tail, cur)
+            judged = [0, 2] + ([1] if m["a"][0][1] >= 0.05 else [])
+            for v in "bc":
+                wins[v] += all(m[v][0][j] < m["a"][0][j] for j in judged) and m[v][1] <= m["a"][1] + 0.25
+            bc += all(m["b"][0][j] < m["c"][0][j] - 0.05 for j in (0, 2))
+            lines.append(f"   {name}: " + "; ".join(f"{v} tail {' / '.join(f'{x:.0%}' for x in m[v][0])}, curriculum {m[v][1]:.2f}" for v in "abc"))
+    ok = {v: wins[v] >= 5 for v in "bc"}
+    use = "c" if ok["c"] and (not ok["b"] or bc <= 3) else ("b" if ok["b"] else "neither")
+    lines.append(f"== b passes in {wins['b']} of 6 ({'PASSES' if ok['b'] else 'does not pass'}); c in {wins['c']} of 6 ({'PASSES' if ok['c'] else 'does not pass'}); "
+                 f"b clearly ahead of c in {bc} of 6 -> use {use}")
+    text = "\n".join(lines)
+    (OUT / "report.txt").write_text(text)
+    print(text)
+
+
 def step_report():
     import numpy as np
     rows = json.loads((OUT / "ranks.json").read_text())
@@ -303,7 +335,7 @@ def main():
     workers, step = int(sys.argv[1]), sys.argv[2]
     OUT.mkdir(parents=True, exist_ok=True)
     {"gen": lambda: step_gen(workers), "train": lambda: step_train(workers), "rank": lambda: step_rank(workers),
-     "report": step_report}[step]()
+     "report": step_report if RUNG == "a1" else step_report_tail}[step]()
 
 
 if __name__ == "__main__":

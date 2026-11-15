@@ -10056,3 +10056,26 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
 **Also notable.** Even the baseline networks rank a1-style true terms well (median 1–4). So a1's pieces (x, x·y, x²) may already be within reach without rung-shaped dreams. Rung a's search failures came with the rational pieces present.
 
 **Not rerun:** a1, as the owner's condition ("if b or c passes") is not met. Awaiting the owner.
+
+### Owner: rerun a1 with a 50-system wake pool; then a dream quick check on a2-style systems (15 November; designs and pass rules set before the runs)
+
+**Owner.** *"Rerun rung a1 with today's dreams but a wake pool of about 50 training systems per seed instead of 10, same rules as before (3 seeds, mastery in at least 2 of 3, fresh-network comparison, Reanalyse on). Report time per round, so we can see whether 50 wake systems is affordable. Before starting a2, redo the dream quick check on a2-style systems (3 terms per equation including the rational pieces), comparing today's dreams, generator dreams and library dreams, since that's where better dreams are most likely to matter. When writing its pass rule, avoid comparisons where every arm is already at the ceiling (e.g. rank 1 one term short); judge on the badly ranked tail and on old curriculum terms instead. Report a1's result and the a2 quick check in plain language before running a2."*
+
+**Rung a1, wide wake pool (`a1w`).**
+- **What it is:** as rung a1 (2 variables, 3 terms per equation, only x, x·y, x²), but with 50 new training systems per seed and the same 10 held-out systems per seed. The systems are new ("ladder-a1w-…") and checked against every earlier set.
+- **Rules as before:**
+  - arms: confidence blend, network alone, fresh network; 3 seeds;
+  - up to 3 rounds (300 / 1,000 / 3,000);
+  - Reanalyse at 100 structures;
+  - today's dreams (50 general per round), 500 steps per round;
+  - mastery at 8 of 10 held-out, in 2 of 3 seeds per arm; drop-off if neither learner arm masters it.
+- **Reported:** wall time per round per lineage, so the cost of the 50-system wake can be judged.
+
+**The a2 dream quick check** (`dream_check.py`, rung a2 setting; `g2h/dreamcheck_a2/`; no search).
+- **Starting state:** each learner arm's state after a1w, the state a2 would start from. It runs after a1w.
+- **Versions:** as before, a (today's dreams), b (+1,000 generator dreams) and c (+1,000 library dreams). Both b and c are now a2-shaped: 3 terms per equation. The generator draws from the pilot's six levels; the library version draws from the learner's own pieces. Real solutions are held at 30%, and steps are scaled as before.
+- **Measured on:** 20 new a2-style development systems per seed, plus curriculum held-out terms (3 systems per level per seed).
+- **Pass rule** (no ceiling comparisons). A version passes if, in at least 5 of the 6 arm-and-seed cases, both hold:
+  1. **The tail:** its share of development true terms ranked worse than 10 is lower than the baseline's, at the empty start and at two short. One short is judged only where the baseline's share there is at least 5%.
+  2. **Old terms:** its mean log2 rank of curriculum terms is no worse than the baseline's by more than 0.25.
+- **If both pass:** prefer c unless b's tail shares are lower than c's by more than 5 points at both points in a majority of cases.
