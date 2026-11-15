@@ -10000,3 +10000,8 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
   - mastery at 8 of 10 held-out in 2 of 3 seeds per arm;
   - drop-off if neither learner arm masters a rung, then stop and report.
 - **Check-ins:** after a1 is reported, a2 starts unless a1 drops off.
+
+**Rung a1 stopped by the owner** (15 November, about 16:40 UTC, while round 1 was running). It did not drop off.
+- Its launcher, run and workers were killed (its own process groups); no training job of this run was left on a GPU.
+- Rung a2 was not started.
+- The partial outputs stay in `g2h/ladder/a1/` and its systems in `g2h/ladder/gen/a1-s*.json`.
