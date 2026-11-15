@@ -9817,3 +9817,57 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
 - **Instead,** a helper (`step2_helper.py`) runs the run's remaining tests whose inputs are already saved, with the same priors, systems, budget and seed. It writes the same result files atomically, so the run skips any test it finds done. Tests the run's own threads have reached are skipped.
 - **When it runs:** a watcher starts the helper whenever 12 or more of the 48 cores are spare (5-minute load), with spare − 4 workers (at most 24), at nice 0 and guarded on /SSD.
 - **At 01:10 UTC** the load was about 210, so the helper is waiting.
+
+### Step 2 of the harder fields: results (14–15 November, 17:11–06:20 UTC; restarted once at 19:12 after the GPU-memory stop; normal priority, /SSD)
+
+**Verdict on the pre-set rule: does not pass** in either field.
+
+**New-form test equations solved** (of 158 for reaction networks, 159 for flows; seed 1 / seed 2):
+
+| | after 10 tasks | after 30 tasks | whole systems exact at 30 |
+|---|---|---|---|
+| reaction networks: confidence blend | 46 / 50 | **57 / 54** | 0 / 0 |
+| reaction networks: network alone | 45 / 67 | **59 / 92** | 1 / 5 |
+| reaction networks: made-up control | 30 / 38 | 43 / 53 | 0 / 0 |
+| reaction networks: fresh network | 20 / 17 | 50 / 43 | 1 / 0 |
+| flows: confidence blend | 68 / 54 | **74 / 68** | 1 / 1 |
+| flows: network alone | 58 / 61 | **68 / 75** | 0 / 1 |
+| flows: made-up control | 60 / 71 | 57 / 80 | 0 / 0 |
+| flows: fresh network | 44 / 38 | 68 / 61 | 0 / 0 |
+
+**The rule, at 30 tasks:**
+- **Reaction networks:**
+  - against the network alone: not ahead in either seed. Only the blend solves 8, only the network 48; p = 5e-8, in the network's favour.
+  - against the made-up control: ahead in both seeds. Only the blend 27, only the control 12; p = 0.024. This p would need a rerun, but the field already fails.
+  - no fewer than the fresh network: met.
+- **Flows:**
+  - against the network alone: ahead in seed 1, behind in seed 2. Only the blend 18, only the network 19; p = 1.
+  - against the made-up control: ahead in seed 1, behind in seed 2; p = 0.56.
+  - no fewer than the fresh network: met.
+
+**Reanalyse's yield** (per arm, both fields and seeds; still-unsolved training equations rescued, of those re-searched):
+
+| arm | after 10 tasks | after 30 tasks |
+|---|---|---|
+| confidence blend | 5 of 108 (5%) | 21 of 305 (7%) |
+| network alone | 6 of 114 (5%) | 23 of 306 (8%) |
+| made-up control | 10 of 121 (8%) | 20 of 333 (6%) |
+| fresh network | 28 of 158 (18%) | 53 of 382 (14%) |
+
+- **Whole training systems newly completed:** 1 (confidence blend, flows seed 1).
+- **Cost:** 16,000 structures per lineage (100 per equation), about 12% of all structures the lineage searched.
+- Every task with an unsolved equation was re-searched: 10 after 10 tasks, 29–30 after 30.
+- **Retried solutions in time for the second dream** (per lineage) **against the gain from 10 to 30 tasks:** rank correlation 0.41 over the 16 lineages.
+  - It is driven by the fresh networks. They have the most retried solutions (4–13) and the largest gains (+23 to +30), and they also start lowest, with the most failures to rescue and the most room to grow.
+  - As stated in advance, this does not show that the retried solutions cause the faster learning.
+
+**Time limits:** hit in 0, 3, 28 and 12 of about 2,400 equations (confidence blend, network alone, made-up control, fresh network). No search failed.
+
+**What it shows:**
+- **On the harder fields, in search, the confidence blend does not beat the network alone.**
+  - Of the four field-and-seed combinations, it is ahead in one (flows seed 1, 74 against 68) and roughly level in one (reaction networks seed 1, 57 against 59).
+  - It is behind in two: flows seed 2 (68 against 75) and reaction networks seed 2 (54 against 92).
+  - In reaction networks seed 2 the network alone also completed 5 whole systems exactly.
+- **Seed-to-seed swings are large** (network alone on reaction networks: 59 against 92). Two seeds give a noisy picture.
+- **Where it stands against the other arms:** every arm with a history beats the fresh network at 30 tasks. The blend beats the made-up control on reaction networks but not on flows.
+- **Against step 1's prediction:** step 1 ranked the blend well on reaction networks' new terms (54 → 14 one short). The search outcome does not follow that ranking.
