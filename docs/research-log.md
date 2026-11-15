@@ -9954,3 +9954,49 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
 - **Search cost:** median structures before a training solution were 46–84 for the learner arms and 60–294 for the fresh network. On the curriculum's 1–2-term systems it was 3–7.
 - **Reanalyse:** it rescued 26–28 equations per learner arm across seeds, many of them old curriculum failures, and 2 for the fresh network.
 - **Where the drop is:** the learners went from 8–10 of 10 on the curriculum's last levels to 5–8 of 10 here. Going from 1–2 to 3 terms per equation is itself too big a step for 3 rounds of 10 training systems.
+
+### Rung a: diagnosis of the unsolved held-out systems, and training amounts (15 November; no search)
+
+**Did the search ever try the correct structure?**
+- **How it was decided:** the logs record what each search found, not every structure it tried. So each unsolved held-out equation's true structure was fitted once, with the search's own evaluation.
+  - If it fits exactly, the search would have accepted it had it tried it, so it never tried it: a search problem.
+  - If it does not, the failure is in fitting or the data.
+  - Look-alikes would have been accepted as exact, and so counted as solved. They are reported separately.
+- **Results** (final round, counts only; unsolved equations whose true structure fits exactly / does not):
+
+| arm | seed 1 | seed 2 | seed 3 | look-alikes among solved systems (s1 / s2 / s3) |
+|---|---|---|---|---|
+| confidence blend | 1 / 1 | 4 / 0 | 4 / 0 | 8 / 1 / 3 |
+| network alone | 5 / 2 | 5 / 0 | 6 / 0 | 4 / 2 / 4 |
+| fresh network | 9 / 2 | 8 / 0 | 7 / 0 | 1 / 1 / 3 |
+
+- **Verdict: search.**
+  - In the learner arms, 25 of 28 unsolved equations have a true structure that fits exactly and was never tried. Only 3 fail to fit.
+  - The fresh network: 24 of 26 fit exactly and were never tried.
+
+**Training each arm got per round** (from the lineage records and the training log).
+- **Learner arms:**
+  - **Round 1:** 10 training systems searched; 2–8 solved whole (5–18 equations).
+  - **Later rounds:** the 0–8 unsolved were retried; 1–7 more systems solved.
+  - **Reanalyse:** 0–8 equations rescued per round.
+  - **Each learning round:** 500 steps on 369–495 replay examples plus 353–374 dream examples (50 made-up systems).
+- **Fresh network:** 0 systems solved in round 1, 0–2 in round 2, 2–3 in round 3. Replay was 0, 8–28, then 53–54 examples; dreams about 360 per round.
+- **Caveat:** most of the learner arms' replay comes from the curriculum's 1–2-term systems, so 3-term examples are a small share of what they train on. The search failure may come partly from that.
+
+**Next** (owner: if the diagnosis points to search, run option 1): rung a1, then rung a2.
+
+### Ladder rungs a1 and a2 (design and mastery criteria set before the run)
+
+- **Rung a1:** 2 variables, exactly 3 terms per equation, pieces only x, x·y and x² (curriculum levels 1–3).
+  - It starts, like rung a, from each learner arm's end-of-curriculum state.
+  - It has new systems ("ladder-a1-…"), checked against every earlier set.
+- **Rung a2:** the one change is that the rational pieces come back: the pilot's six levels, 3 terms per equation, as in rung a.
+  - The learner arms continue from their rung-a1 state.
+  - It has new systems ("ladder-a2-…").
+- **Rules otherwise exactly as rung a:**
+  - arms: confidence blend, network alone, fresh network; 3 seeds;
+  - 10 training and 10 held-out systems; up to 3 rounds (300 / 1,000 / 3,000 structures);
+  - Reanalyse at 100 structures;
+  - mastery at 8 of 10 held-out in 2 of 3 seeds per arm;
+  - drop-off if neither learner arm masters a rung, then stop and report.
+- **Check-ins:** after a1 is reported, a2 starts unless a1 drops off.

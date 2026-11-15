@@ -28,7 +28,9 @@ import curriculum_pilot as CP                                    # noqa: E402  (
 C = CC.C
 G2H = C.ROOT / "outputs/accumulating_learner/g2h"
 OUT = C.RUN
-RUNGS = {"a": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "3 terms per equation", "after": None}}
+RUNGS = {"a": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "3 terms per equation", "after": None},
+         "a1": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3), "change": "3 terms per equation, only x, x*y, x^2", "after": None},
+         "a2": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "the rational pieces back (after a1)", "after": "a1"}}
 SEEDS = (1, 2, 3) if not SMOKE else (1,)
 ARMS = ("blend", "net", "fresh")
 ARM_NAMES = {"blend": "confidence blend", "net": "network alone", "fresh": "fresh network"}
