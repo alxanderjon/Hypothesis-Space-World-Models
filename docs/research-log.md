@@ -10031,3 +10031,28 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
 **"Close"** (owner: prefer c if it is close to b): if both pass, c is used unless b's medians are better than c's by more than a quarter at one short or two short in a majority of the 6 arm-and-seed cases.
 
 **Reported:** examples per version, steps, and training time per round (one free GPU at the check: GPU 0).
+
+### Dream quick check: results (15 November, 16:47–21:38 UTC; no search; training on GPU 0, the only free one)
+
+**Verdict on the pre-set rule: neither b nor c passes.**
+- **Why it cannot pass:** one short, every version (the baseline included) ranks the true term first: median 1 in all 18 networks. "Better than the baseline at one short" was therefore impossible. The rule's medians sat at the ceiling.
+- **Median ranks, development systems** (empty start / one short / two short): baseline 3–4 / 1 / 2–4; generator dreams 2–3 / 1 / 1–2; library dreams 3 / 1 / 2–3.
+
+**Reading after the fact (not the rule): share of true terms ranked worse than 10.**
+
+| | baseline (a) | generator dreams (b) | library dreams (c) |
+|---|---|---|---|
+| empty start | 9–27% | 0–8% | 5–30% |
+| two short | 9–26% | 0–8% | 6–22% |
+
+- **Generator dreams** cut the badly ranked tail in all 6 arm-and-seed cases: mean log2 rank 0.63–0.87, against the baseline's 1.10–1.27.
+- **Library dreams** help the network alone a little (log2 0.99–1.08 against 1.14–1.27) but make the blend worse (1.16–1.44 against 1.10–1.24).
+- **Curriculum terms:** mixed for both.
+  - Generator dreams are worse in 2 of 6 cases (blend s1: log2 2.19 against 1.86; network s2: 1.42 against 1.17).
+  - Library dreams are worse in 2 (blend s1 and network s2, slightly).
+
+**Cost.** A rung-shaped round is about 8,500 training steps on about 12,500 examples: about 20 minutes on one GPU, against about 85 s now. Generating 1,000 dreams took 3–4 minutes.
+
+**Also notable.** Even the baseline networks rank a1-style true terms well (median 1–4). So a1's pieces (x, x·y, x²) may already be within reach without rung-shaped dreams. Rung a's search failures came with the rational pieces present.
+
+**Not rerun:** a1, as the owner's condition ("if b or c passes") is not met. Awaiting the owner.
