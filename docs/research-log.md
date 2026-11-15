@@ -9871,3 +9871,32 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
 - **Seed-to-seed swings are large** (network alone on reaction networks: 59 against 92). Two seeds give a noisy picture.
 - **Where it stands against the other arms:** every arm with a history beats the fresh network at 30 tasks. The blend beats the made-up control on reaction networks but not on flows.
 - **Against step 1's prediction:** step 1 ranked the blend well on reaction networks' new terms (54 → 14 one short). The search outcome does not follow that ranking.
+
+### Owner: build up slowly (a ladder, one change per rung), with a seed-variance diagnosis first (15 November)
+
+**Owner.** *"Step 2 showed we jumped too far: from 2-variable curriculum systems straight to 4-variable coupled systems with many unfamiliar pieces at once. Build up slowly instead, changing one thing per rung, and run a seed-variance diagnosis alongside. 1. Seed-variance diagnosis (existing logs only, no new runs): explain in plain language why the same arm got such different results between seeds in step 2 (e.g. network alone on reaction networks, 59 vs 92). In particular, check whether success depends on early lucky discoveries that then snowball. 2. The ladder. Each rung changes exactly one thing, starting from the mastered curriculum (2 variables, 1–2 terms per equation, pieces up to the bump): a. 2 variables, 3 terms per equation. b. 3 variables, 1–2 terms, same pieces. c. 3 variables, 3 terms. d. Coupling introduced alone: one shared rate entering two equations, everything else familiar. e. The harder fields' pieces, one per rung (e.g. Hill-type switches, inflow and decay patterns), built on mastered pieces. f. 4 variables, then more coupling, until the rungs reach the difficulty of the reaction-network and flow systems. g. Final exam: the existing reaction-network and flow test sets, compared with step 2's results. Each rung: a mastery criterion written into the log first, a fresh-network comparison, 2–3 seeds, Reanalyse on, use the confidence-weighted blend and the network alone as the two learner arms, and keep each rung short. If results drop off sharply at any rung, stop and report, so we can split that step into smaller pieces. Check in after each of the first two rungs, then at any drop-off. Start with the seed-variance diagnosis and send its result before the first rung finishes."*
+
+**Seed-variance diagnosis** (step 2's logs only; counts only for test systems).
+- **What differs between seeds:**
+  - Each seed draws its own 30 training tasks: the two draws share none of their first 10 tasks, and 10–12 of 30 overall.
+  - Each dream has its own training seed.
+  - The search itself is the same (seed 1).
+  - Within a seed, every arm gets the same tasks.
+- **The draw alone does not explain the swings.**
+  - Reaction networks seed 2's first 10 tasks were somewhat easier: every arm with a history solved 3–4 more of their equations in the first wake.
+  - But the same draw lifted the network alone a lot and the blend not at all: 94 against 61, and 56 against 59, at 30 tasks.
+- **Path dependence.**
+  - In 7 of 8 arm-and-field pairs, the seed ahead after 10 tasks is still ahead after 30. In most of them the gap widens. Network alone on reaction networks: 47 against 69 after 10 tasks (a gap of 22), 61 against 94 after 30 (a gap of 33).
+  - For that lineage, seed 2 also solved more training equations in both wakes (13 against 9 of 40, then 40 against 28 of 80). The extra solutions trained a better network, which then solved more.
+- **Early discoveries snowballing (part of the story).**
+  - The network alone's seed 2 found 3 term forms in its first wake that seed 1 never found.
+  - Half of the 36 test equations only seed 2 solved contain one of them, twice their share among all test equations (24%).
+- **Training randomness (the rest).**
+  - The made-up control on flows had almost the same training solutions in both seeds (12 against 13 in the first wake, 29 against 31 in the second), yet ended at 58 against 81.
+  - Its seed 1 got worse between the checkpoints (61 → 58) despite more training.
+  - The forms only seed 2 found early appear in no test equation. That swing comes from what a dream makes of similar data, not from particular discoveries.
+- **What it means for the ladder:**
+  - With short runs, results are path-dependent.
+  - Each rung should use 3 seeds.
+  - Arms should be compared within a seed, where they share the task draw.
+  - Mastery should be judged across seeds, not on one lucky or unlucky run.
