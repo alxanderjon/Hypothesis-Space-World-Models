@@ -1,0 +1,651 @@
+"""The ladder (owner, 15 November; research log "Owner: build up slowly (a ladder, one change per rung)", and each rung's
+design and mastery criterion, set before its run): rungs that each change one thing, starting from the mastered
+curriculum. Arms: the confidence-weighted blend and the network alone, each continuing that seed's lineage (from the
+curriculum, then from the previous rung), and a fresh network; 3 seeds; up to 3 rounds per rung (300, then retries at
+1,000 and 3,000 structures per equation); after each round: learning, the held-out test, then Reanalyse (the standing
+rule). Searches and networks are cached, so a restart resumes.
+Usage: ladder.py <workers> <rung> <gen|run|report>   (environment: LADDER_SMOKE=1 for the smoke test)"""
+
+import hashlib
+import json
+import math
+import os
+import pickle
+import sys
+import threading
+import time
+from collections import Counter
+from pathlib import Path
+
+SMOKE = os.environ.get("LADDER_SMOKE") == "1"
+os.environ.setdefault("G2H_RUN", "ladder_smoke" if SMOKE else "ladder")
+os.environ.setdefault("G2H_SHORTLIST", "2048")
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import curriculum_check as CC                                    # noqa: E402  (the curriculum's pieces)
+import curriculum_pilot as CP                                    # noqa: E402  (GrammarPrior)
+
+C = CC.C
+G2H = C.ROOT / "outputs/accumulating_learner/g2h"
+OUT = C.RUN
+RUNGS = {"a": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "3 terms per equation", "after": None}}
+SEEDS = (1, 2, 3) if not SMOKE else (1,)
+ARMS = ("blend", "net", "fresh")
+ARM_NAMES = {"blend": "confidence blend", "net": "network alone", "fresh": "fresh network"}
+N_TRAIN, N_TEST = (10, 10) if not SMOKE else (2, 2)
+BUDGETS = ((300, 60), (1000, 200), (3000, 600)) if not SMOKE else ((20, 4), (30, 6), (40, 8))
+TEST_BUDGET = BUDGETS[0]
+REANALYSE = (100, 20) if not SMOKE else (10, 2)
+MASTERY = 8 if not SMOKE else 1
+N_FANT, STEPS = (50, 500) if not SMOKE else (2, 10)
+DIMS = (2, 3, 4)
+TOP, SHARE_TOP = 100, 0.95
+CURRIC = {("blend", 1): ("cblend", "net-blend-s1", "cpilot/gen/systems-s1.json"),
+          ("blend", 2): ("cblend", "net-blend-s2", "cpilot/gen/systems-s2.json"),
+          ("blend", 3): ("cseed3", "net-blend-s3", "cseed3/gen/systems-s3.json"),
+          ("net", 1): ("cpilot", "net-s1", "cpilot/gen/systems-s1.json"),
+          ("net", 2): ("cpilot", "net-s2", "cpilot/gen/systems-s2.json"),
+          ("net", 3): ("cseed3", "net-s3", "cseed3/gen/systems-s3.json")}
+EARLIER = ["cpilot/gen", "curriculum/gen", "curriculum2/gen", "cseed3/gen"]
+_LOCK = threading.Lock()
+
+
+def log(msg):
+    with _LOCK:
+        C.log(msg)
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# the generator: the curriculum's (curriculum_check.draw), for d variables and no forced new piece
+# ---------------------------------------------------------------------------------------------------------------------
+
+def piece_keys(d):
+    import library_ops as L
+    import search_g1 as SG
+    pats = {lv: {CC.canon(p) for p in CC.patterns(lv)} for lv in CC.LEVELS}
+    out = {lv: [] for lv in CC.LEVELS}
+    for key in SG.vocabulary_order(d):
+        c = CC.canon(L.tree(key, 0))
+        for lv in CC.LEVELS:
+            if c in pats[lv]:
+                out[lv].append(key)
+    return out
+
+
+def draw(seed, allowed, n_terms, d):
+    import numpy as np
+    import sympy as sp
+    import torch
+    import domains_g1 as DG
+    import fitter_g1 as FG
+    import language_g1 as LG
+    rng = DG.rng_of(seed)
+    Y, X = DG.Y4, LG.variables(4)
+    params, rhs = {}, []
+    ic = [float(rng.choice([-1.0, 1.0]) * rng.uniform(0.5, 2.5)) for _ in range(d)]
+    for i in range(d):
+        n = int(rng.integers(n_terms[0], n_terms[1] + 1))
+        picks = []
+        while len(picks) < n:
+            lv = int(rng.choice(sorted(allowed)))
+            key = allowed[lv][int(rng.integers(len(allowed[lv])))]
+            if key not in picks:
+                picks.append(key)
+        actual = [i] + [j for j in range(d) if j != i]
+        e = 0
+        for t, key in enumerate(picks):
+            expr = LG.expr_of(key).xreplace({X[r]: Y[actual[r]] for r in range(d)})
+            inf = FG.info(key)
+            sub = {}
+            if inf.k:
+                Wp = torch.tensor(np.asarray(ic) * rng.uniform(0.5, 1.5, (64, d)))
+                th = FG.natural_thetas(inf, rng.random((1, inf.k)), Wp[:, actual])[0]
+                if not np.all(np.isfinite(th)):
+                    th = np.ones(inf.k)
+                for a in range(inf.k):
+                    name = f"c{i}_{t}_{a}"
+                    params[name] = float(th[a])
+                    sub[sp.Symbol(f"K{a}", real=True)] = sp.Symbol(name)
+            cname = f"a{i}_{t}"
+            params[cname] = float(rng.choice([-1.0, 1.0]) * math.exp(rng.uniform(math.log(0.1), math.log(2.0))))
+            e = e + sp.Symbol(cname) * expr.xreplace(sub)
+        rhs.append(e)
+    return {"seed": seed, "domain": "curriculum", "form": "curriculum", "d": d, "rhs": [sp.srepr(e) for e in rhs],
+            "params": params, "ic": ic, "positive": False}
+
+
+def gen_job(args):
+    prefix, k, allowed, n_terms, d = args
+    import warnings
+    warnings.filterwarnings("ignore")
+    sys.path.insert(0, str(HERE))
+    import torch
+    torch.set_num_threads(1)
+    import domains_g1 as DG
+    import dream_g2 as DR
+    reasons = []
+    for r in range(200):
+        seed = f"{prefix}-{k}" if r == 0 else f"{prefix}-{k}-r{r}"
+        desc = draw(seed, allowed, n_terms, d)
+        why = DR.prescreen(desc)
+        if why is not None:
+            reasons.append(why)
+            continue
+        try:
+            syn = DG.build(desc)
+        except Exception as ex:
+            reasons.append(type(ex).__name__)
+            continue
+        return {"k": k, "accepted": True, "tries": r + 1, "structure": [eq["keys"] for eq in syn.structure],
+                "bursts": syn.bursts(8).tolist()}
+    return {"k": k, "accepted": False, "reasons": reasons[-5:]}
+
+
+def data_key(bursts):
+    import numpy as np
+    return hashlib.sha1(np.round(np.asarray(bursts, dtype=float), 10).tobytes()).hexdigest()
+
+
+def earlier_keys(rung):
+    keys = set()
+    dirs = [G2H / d for d in EARLIER] + [OUT / "gen"]
+    for d in dirs:
+        if not d.exists():
+            continue
+        for p in sorted(d.iterdir()):
+            if p.name.startswith(f"{rung}-"):
+                continue
+            if p.suffix == ".json":
+                obj = json.loads(p.read_text())
+                recs = obj if isinstance(obj, list) else [r for v in obj.values() for sp in (v.values() if isinstance(v, dict) else [v]) for r in (sp if isinstance(sp, list) else [])]
+            elif p.suffix == ".pkl":
+                obj = pickle.loads(p.read_bytes())
+                recs = obj if isinstance(obj, list) else []
+            else:
+                continue
+            keys |= {data_key(r["bursts"]) for r in recs if isinstance(r, dict) and r.get("bursts") is not None}
+    return keys
+
+
+def step_gen(workers, rung):
+    from concurrent.futures import ProcessPoolExecutor
+    from multiprocessing import get_context
+    R = RUNGS[rung]
+    keys = piece_keys(R["d"])
+    allowed = {lv: keys[lv] for lv in R["levels"]}
+    jobs = [((s, split, k), (f"ladder-{rung}-s{s}-{split}", k, allowed, R["terms"], R["d"]))
+            for s in SEEDS for split, n in (("train", N_TRAIN), ("test", N_TEST)) for k in range(n)]
+    t0 = time.time()
+    with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:
+        res = list(ex.map(gen_job, [a for _, a in jobs]))
+    old = earlier_keys(rung)
+    (OUT / "gen").mkdir(parents=True, exist_ok=True)
+    out = {s: {"train": [], "test": []} for s in SEEDS}
+    for ((s, split, k), _), r in zip(jobs, res):
+        if r["accepted"]:
+            out[s][split].append({"id": f"{rung}-s{s}-{split}-{k}", "rung": rung, "structure": r["structure"], "bursts": r["bursts"]})
+    new = [data_key(r["bursts"]) for s in SEEDS for sp in out[s].values() for r in sp]
+    clash, dup = sum(k in old for k in new), len(new) - len(set(new))
+    print(f"gen {rung}: {sum(r['accepted'] for r in res)} of {len(jobs)} accepted in {time.time() - t0:.0f}s; per seed "
+          f"{ {s: {sp: len(v) for sp, v in out[s].items()} for s in SEEDS} }; against {len(old)} earlier systems: {clash} identical, "
+          f"{dup} repeated")
+    if clash or dup:
+        raise SystemExit("the rung's systems are not all new: not writing them")
+    for s in SEEDS:
+        (OUT / "gen" / f"{rung}-s{s}.json").write_text(json.dumps(out[s]))
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# priors and jobs
+# ---------------------------------------------------------------------------------------------------------------------
+
+class ConfidencePrior:
+    """(1 - u) * p_network + u * p_blend, u = 1 - the network's top probability over the legal additions; p_blend the
+    plain top-100 blend; removals stay the network's (quick check 1's rule). tables: {d: library table}."""
+
+    def __init__(self, base, tables):
+        self.base, self.tables = base, tables
+
+    def __getattr__(self, name):
+        return getattr(self.base, name)
+
+    def __call__(self, node, ctx):
+        import numpy as np
+        import muzero_checks as MZ
+        pr = self.base(node, ctx)
+        legal = pr.legal_add
+        d = ctx["W"].shape[1]
+        if not legal.any() or d not in self.tables:
+            return pr
+        lib = self.tables[d][ctx["vocab"].gid, ctx["i"]]
+        pn = np.where(legal, pr.p_swap_add, 0.0)
+        pn = pn / pn.sum()
+        pb = MZ.blend_dist(lib, pn, legal)
+        u = 1.0 - float(pn.max())
+        mix = (1.0 - u) * pn + u * pb
+        share = pr.p_add.sum()
+        if share > 0:
+            pr.p_add = share * mix
+        pr.p_swap_add = mix
+        return pr
+
+
+class GrammarByD:
+    def __init__(self, tables):
+        self.tables = tables
+
+    def __call__(self, node, ctx):
+        return CP.GrammarPrior(self.tables[ctx["W"].shape[1]])(node, ctx)
+
+
+def make_prior(spec):
+    """("grammar", {d: table}) | ("net", path) | ("confidence", path, {d: table})."""
+    import numpy as np
+    import movenet_g2 as MN
+    if spec[0] == "grammar":
+        return GrammarByD({int(d): np.load(p) for d, p in spec[1].items()})
+    emb = {d: np.load(f"{spec[1]}_d{d}.npy") for d in DIMS if Path(f"{spec[1]}_d{d}.npy").exists()}
+    base = MN.NetworkPrior(MN.load_net(spec[1] + ".pt").eval(), emb, shortlist=2048)
+    if spec[0] == "net":
+        return base
+    return ConfidencePrior(base, {int(d): np.load(p) for d, p in spec[2].items()})
+
+
+def search_job(args):
+    rec, spec, seed, budget, cap = args
+    import signal
+    import warnings
+    warnings.filterwarnings("ignore")
+    sys.path.insert(0, str(HERE))
+    import numpy as np
+    import torch
+    torch.set_num_threads(1)
+    import search_g1 as SG
+    out = {"id": rec["id"], "status": "done", "budget": budget}
+    t0 = time.time()
+    signal.signal(signal.SIGALRM, C._alarm)
+    signal.alarm(int(2 * C.TIME_CAP + 600))
+    try:
+        res = SG.search_system(np.array(rec["bursts"]), make_prior(spec), budget=budget, thorough_cap=cap, time_cap=C.TIME_CAP, seed=seed)
+        out["equations"] = [{"eq": e["eq"], "first_exact": e["effort"]["first_exact"], "structures": e["effort"]["structures"],
+                             "time_capped": e["effort"]["time_capped"], "solution": e["solution"]["keys"] if e.get("solution") else None}
+                            for e in res["equations"]]
+    except C._Limit:
+        out["status"] = "safety limit"
+    except Exception as ex:
+        out["status"] = "error"
+        out["error"] = f"{type(ex).__name__}: {str(ex)[:200]}"
+    finally:
+        signal.alarm(0)
+    out["solved"] = out["status"] == "done" and all(e["first_exact"] is not None for e in out["equations"])
+    out["seconds"] = time.time() - t0
+    return out
+
+
+def examples_job(args):
+    bursts, structures, seed = args
+    sys.path.insert(0, str(HERE))
+    import numpy as np
+    import torch
+    torch.set_num_threads(1)
+    import dream_g2 as DR
+    try:
+        return DR.make_examples(np.array(bursts), structures, seed)
+    except Exception:
+        return []
+
+
+def fantasy_job(args):
+    prefix, k, probs, d = args
+    import warnings
+    warnings.filterwarnings("ignore")
+    sys.path.insert(0, str(HERE))
+    import numpy as np
+    import torch
+    torch.set_num_threads(1)
+    import dream_g2 as DR
+    import search_g1 as SG
+    syn, _ = DR.accepted_fantasy(prefix, k, SG.vocabulary_order(d), np.asarray(probs), d)
+    if syn is None:
+        return []
+    try:
+        return DR.make_examples(syn.bursts(8), [eq["keys"] for eq in syn.structure], seed=10_000 + k)
+    except Exception:
+        return []
+
+
+def train_net_job(args):
+    """Further training from the previous network (or a new one); encodings saved for 2, 3 and 4 variables."""
+    paths, prev, out, gi, seed, steps = args
+    sys.path.insert(0, str(HERE))
+    import numpy as np
+    import torch
+    import movenet_g2 as MN
+    import search_g1 as SG
+    MN.SHORTLIST = int(os.environ["G2H_SHORTLIST"])
+    torch.manual_seed(seed)
+    net = MN.load_net(prev + ".pt") if prev else MN.MoveNetL2()
+    device = f"cuda:{gi}"
+    tables = {d: MN.token_table(SG.vocabulary_order(d), d) for d in DIMS}
+    ex = [e for p in paths for e in pickle.loads(Path(p).read_bytes())]
+    tl = MN.train(net, ex, tables, steps, batch=C.BATCH, lr=C.LR, device=device, seed=seed, groups=None)
+    for d in DIMS:
+        np.save(f"{out}_d{d}.npy", MN.encode_vocabulary(net, tables[d], device=device))
+    torch.save(net.cpu().state_dict(), out + ".pt")
+    return {"examples": len(ex), "last_loss": tl[-1]["loss"] if tl else None}
+
+
+def table_job(args):
+    """The library grammar (context-free form; compression plus counting) as log P over the d-variable language."""
+    equations, path, d = args
+    import numpy as np
+    import grammar_ops as GO
+    import library_ops as L
+    import search_g1 as SG
+    order = SG.vocabulary_order(d)
+    tokens = GO.alphabet(order, d=d)
+    terms = Counter(L.tree(k, own) for own, keys in equations for k in keys)
+    lib = L.learn(terms, tokens, "uni")[0] if terms else []
+    g = L.LibGrammar.fit(equations, [], tokens, lib, form="uni") if equations else L.LibGrammar([], tokens)
+    np.save(path, np.array([[g.logp_term(k, own) for own in range(d)] for k in order]))
+    return len(lib)
+
+
+def stable(*parts):
+    return int(hashlib.sha1("|".join(map(str, parts)).encode()).hexdigest()[:8], 16)
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# GPUs: those free at the start; one training at a time each; nvidia-smi before each training
+# ---------------------------------------------------------------------------------------------------------------------
+
+class GPUs:
+    def __init__(self):
+        rows = self.rows()
+        self.free = [g for g, (_, u, m, tot) in sorted(rows.items()) if u < 10 and m < 1000]
+        self.slots = {g: threading.Semaphore(1) for g in self.free}
+        log(f"ladder GPUs: {self.free} (free at the start); one training at a time each")
+
+    @staticmethod
+    def rows():
+        import subprocess
+        q = subprocess.run(["nvidia-smi", "--query-gpu=index,utilization.gpu,memory.used,memory.total",
+                            "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=30).stdout
+        return {int(r[0]): [int(x) for x in r] for r in (line.split(",") for line in q.strip().splitlines())}
+
+    def run(self, fn):
+        if not self.slots:
+            raise SystemExit("no free GPU: the network does not train on the CPU (owner's rule)")
+        while True:
+            rows = self.rows()
+            for g, sem in self.slots.items():
+                _, u, m, tot = rows[g]
+                if tot - m >= 8000 and u <= 90 and sem.acquire(blocking=False):
+                    try:
+                        return fn(g)
+                    finally:
+                        sem.release()
+            time.sleep(15)
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# a lineage on one rung
+# ---------------------------------------------------------------------------------------------------------------------
+
+class Lineage:
+    def __init__(self, arm, seed, rung, pool, gpus):
+        self.arm, self.seed, self.rung, self.pool, self.gpus = arm, seed, rung, pool, gpus
+        self.d = RUNGS[rung]["d"]
+        self.name = f"{arm}-s{seed}"
+        self.dir = OUT / rung / self.name
+        self.dir.mkdir(parents=True, exist_ok=True)
+        self.sols, self.recs, self.tried = {}, {}, []
+        self.net, self.tables, self.n_learn = None, {}, 0
+        self.canon, self.rec_files = {}, []
+        if arm != "fresh":
+            self.start()
+        self.examples_path = self.dir / "examples.pkl"
+        self.examples = pickle.loads(self.examples_path.read_bytes()) if self.examples_path.exists() else {}
+        self.rec = {"arm": arm, "seed": seed, "rung": rung, "rounds": [], "mastered": False, "start": self.start_info()}
+
+    def start_info(self):
+        return {"solved systems": len(self.sols), "tried": len(self.tried), "network": self.net, "tables": self.tables}
+
+    def start(self):
+        """The lineage's state at the end of the previous rung, or of the curriculum for the first rung."""
+        prev = RUNGS[self.rung]["after"]
+        if prev:
+            st = json.loads((OUT / prev / f"{self.name}.state.json").read_text())
+            self.sols = {k: {int(e): v for e, v in d.items()} for k, d in st["sols"].items()}
+            self.tried, self.net, self.tables = st["tried"], st["net"], {int(k): v for k, v in st["tables"].items()}
+            for f in st["record_files"]:
+                self.add_records(f)
+            return
+        base, name, sysfile = CURRIC[(self.arm, self.seed)]
+        rec = json.loads((G2H / base / "lineages" / f"{name}.json").read_text())
+        rounds = [r for L_ in rec["levels"] for r in L_["rounds"]]
+        for r in rounds:
+            for y in r["wake"]:
+                if y["id"] not in self.tried:
+                    self.tried.append(y["id"])
+                if y["status"] == "done":
+                    for e in y["equations"]:
+                        if e["first_exact"] is not None and e["solution"]:
+                            self.sols.setdefault(y["id"], {})[int(e["eq"])] = e["solution"]
+        n = len(rounds)
+        self.net = str(G2H / base / "lineages" / name / f"learn{n}")
+        if self.arm == "blend":
+            self.tables = {2: str(G2H / base / "lineages" / name / f"library{n}.npy")}
+        self.add_records(str(G2H / sysfile))
+
+    def add_records(self, path):
+        """Training records from a curriculum systems file ({level: {train, test}}) or a rung's ({train, test})."""
+        obj = json.loads(Path(path).read_text())
+        for part in ([obj] if "train" in obj else obj.values()):
+            for r in part["train"]:
+                self.recs[r["id"]] = r
+        self.rec_files.append(path)
+
+    def spec(self):
+        if self.net is None:
+            return ("grammar", self.size_tables())
+        if self.arm == "blend":
+            return ("confidence", self.net, self.tables)
+        return ("net", self.net)
+
+    def size_tables(self):
+        out = {}
+        for d in sorted({self.d, 2}):
+            p = OUT / "size" / f"size_d{d}.npy"
+            if not p.exists():
+                p.parent.mkdir(parents=True, exist_ok=True)
+                self.pool.submit(table_job, ([], str(p), d)).result()
+            out[d] = str(p)
+        return out
+
+    def search(self, path, recs, budget, cap):
+        if path.exists():
+            return json.loads(path.read_text())
+        spec = self.spec()
+        res = list(self.pool.map(search_job, [(r, spec, self.seed, budget, cap) for r in recs]))
+        path.write_text(json.dumps(res, default=float))
+        return res
+
+    def add(self, res):
+        for x in res:
+            if x["status"] != "done":
+                continue
+            for e in x["equations"]:
+                if e["first_exact"] is not None and e["solution"]:
+                    self.sols.setdefault(x["id"], {})[int(e["eq"])] = e["solution"]
+
+    def unsolved(self, ids):
+        return [s for s in ids if any(i not in self.sols.get(s, {}) for i in range(len(self.recs[s]["structure"])))]
+
+    # -- learning --
+    def learn(self):
+        import dream_g2 as DR
+        import dream_g1 as D1
+        import search_g1 as SG
+        self.n_learn += 1
+        tag = f"learn{self.n_learn}"
+        out = str(self.dir / tag)
+        # examples are rebuilt whenever a system's set of solved equations changes (e.g. an equation Reanalyse rescued)
+        new = [s for s in self.sols if self.examples.get(s, {}).get("eqs") != sorted(self.sols[s])]
+        futs = {s: self.pool.submit(examples_job, (self.recs[s]["bursts"], [self.sols[s].get(i) for i in range(len(self.recs[s]["structure"]))],
+                                                   stable(s, "examples", sorted(self.sols[s])))) for s in new}
+        for s, f in futs.items():
+            self.examples[s] = {"eqs": sorted(self.sols[s]), "ex": f.result()}
+        self.examples_path.write_bytes(pickle.dumps(self.examples))
+        if not Path(out + ".pt").exists():
+            usage = {}
+            for s, eqs in self.sols.items():
+                dd = len(self.recs[s]["structure"])
+                if dd != self.d:
+                    continue
+                for eq, keys in eqs.items():
+                    for k in keys:
+                        rk = DR.role_key(k, int(eq), dd)
+                        if rk is not None:
+                            usage[rk] = usage.get(rk, 0) + 1
+            V = json.loads((SG.G1_DIR / f"vocab_d{self.d}.json").read_text())["terms"]
+            probs = D1.term_distribution(SG.vocabulary_order(self.d), V, usage).tolist()
+            fant = [e for f in [self.pool.submit(fantasy_job, (f"ladder-{self.rung}-{self.name}-{tag}", k, probs, self.d)) for k in range(N_FANT)]
+                    for e in f.result()]
+            replay = [e for s in self.sols for e in self.examples[s]["ex"]]
+            p = self.dir / f"{tag}_examples.pkl"
+            p.write_bytes(pickle.dumps(replay + fant))
+
+            def train(g):
+                from concurrent.futures import ProcessPoolExecutor
+                from multiprocessing import get_context
+                with ProcessPoolExecutor(1, mp_context=get_context("spawn")) as one:
+                    return one.submit(train_net_job, ([str(p)], self.net, out, g, stable(self.name, self.rung, tag), STEPS)).result(), g
+            info, g = self.gpus.run(train)
+            p.unlink()
+            log(f"{self.rung} {self.name} {tag}: trained {STEPS} steps on {len(replay)} replay and {len(fant)} dream examples on GPU {g}")
+        self.net = out
+        if self.arm == "blend":
+            self.rebuild_library(tag)
+
+    def rebuild_library(self, tag):
+        import canon_check as CN
+        todo = {}
+        for s, eqs in self.sols.items():
+            for eq, keys in eqs.items():
+                if (s, eq, tuple(sorted(keys))) not in self.canon:
+                    todo.setdefault(s, {})[str(eq)] = keys
+        futs = {s: self.pool.submit(CN.canon_job, (self.recs[s], d)) for s, d in todo.items()}
+        for s, f in futs.items():
+            for eq, e in f.result()["equations"].items():
+                self.canon[(s, int(eq), tuple(sorted(e["raw"])))] = e["canon_plus"]
+        eqs = [(eq, self.canon[(s, eq, tuple(sorted(keys)))]) for s, d in self.sols.items() for eq, keys in d.items()]
+        for d in sorted({self.d, 2}):
+            p = self.dir / f"library_{tag}_d{d}.npy"
+            if not p.exists():
+                self.pool.submit(table_job, (eqs, str(p), d)).result()
+            self.tables[d] = str(p)
+
+    # -- the rung --
+    def run(self, systems):
+        train, test = systems["train"], systems["test"]
+        for r in train + test:
+            self.recs[r["id"]] = r
+        for r in train:
+            if r["id"] not in self.tried:
+                self.tried.append(r["id"])
+        todo = [r["id"] for r in train]
+        for k, (budget, cap) in enumerate(BUDGETS):
+            rnd = k + 1
+            w = self.search(self.dir / f"r{rnd}_wake.json", [self.recs[s] for s in todo], budget, cap)
+            self.add(w)
+            todo = self.unsolved(todo)
+            self.learn()
+            t = self.search(self.dir / f"r{rnd}_test.json", test, *TEST_BUDGET)
+            ok = sum(y["solved"] for y in t)
+            mastered = ok >= MASTERY
+            another = not mastered and rnd < len(BUDGETS) and bool(todo)
+            pool_ = [s for s in self.unsolved(self.tried) if not (another and s in todo)]
+            ra = self.search(self.dir / f"r{rnd}_reanalyse.json", [self.recs[s] for s in pool_], *REANALYSE) if pool_ else []
+            before = {(s, i) for s in pool_ for i in self.sols.get(s, {})}
+            self.add(ra)
+            new_eq = sum(1 for s in pool_ for i in self.sols.get(s, {}) if (s, i) not in before)
+            new_sys = sum(1 for s in pool_ if s not in self.unsolved([s]))
+            yld = {"re_searched": len(pool_), "new_equations": new_eq, "new_systems": new_sys,
+                   "structures": sum(e["structures"] for x in ra if x["status"] == "done" for e in x["equations"])}
+            self.rec["rounds"].append({"round": rnd, "budget": budget, "wake": w, "test": t, "test_solved": ok, "reanalyse": yld})
+            log(f"{self.rung} {self.name} round {rnd}: training solved {sum(y['solved'] for y in w)} of {len(w)} tried; held-out "
+                f"{ok} of {len(t)}; Reanalyse {len(pool_)} re-searched, {new_eq} equations and {new_sys} systems newly solved")
+            if mastered:
+                self.rec["mastered"] = True
+                break
+            if not todo and not mastered and rnd < len(BUDGETS):
+                continue
+        self.rec["rounds_to_mastery"] = len(self.rec["rounds"]) if self.rec["mastered"] else None
+        (OUT / self.rung / f"{self.name}.json").write_text(json.dumps(self.rec, default=float))
+        st = {"sols": self.sols, "tried": self.tried, "net": self.net, "tables": self.tables,
+              "record_files": self.rec_files + [str(OUT / "gen" / f"{self.rung}-s{self.seed}.json")]}
+        (OUT / self.rung / f"{self.name}.state.json").write_text(json.dumps(st))
+        log(f"{self.rung} {self.name}: {'mastered in ' + str(self.rec['rounds_to_mastery']) + ' rounds' if self.rec['mastered'] else 'not mastered'}")
+
+
+def step_run(workers, rung):
+    from concurrent.futures import ProcessPoolExecutor
+    from multiprocessing import get_context
+    gpus = GPUs()
+    with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as pool:
+        jobs = []
+        for s in SEEDS:
+            systems = json.loads((OUT / "gen" / f"{rung}-s{s}.json").read_text())
+            for arm in ARMS:
+                if not (OUT / rung / f"{arm}-s{s}.json").exists():
+                    jobs.append((Lineage(arm, s, rung, pool, gpus), systems))
+        log(f"ladder rung {rung} ({RUNGS[rung]['change']}): {len(jobs)} lineages; budgets {BUDGETS}; Reanalyse {REANALYSE}; workers {workers}")
+        threads = [threading.Thread(target=x.run, args=(sy,), name=x.name) for x, sy in jobs]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+    log(f"ladder rung {rung}: done")
+
+
+def step_report(rung):
+    import numpy as np
+    lines = [f"== Ladder rung {rung} ({RUNGS[rung]['change']}): held-out systems solved per round (of {N_TEST}); mastery at {MASTERY}"]
+    verdict = {}
+    for arm in ARMS:
+        m, rows = 0, []
+        for s in SEEDS:
+            p = OUT / rung / f"{arm}-s{s}.json"
+            if not p.exists():
+                rows.append(f"s{s}: -")
+                continue
+            r = json.loads(p.read_text())
+            m += r["mastered"]
+            fe = [e["first_exact"] for x in r["rounds"] for y in x["wake"] if y["status"] == "done" for e in y["equations"] if e["first_exact"] is not None]
+            ra = [x["reanalyse"] for x in r["rounds"]]
+            rows.append(f"s{s}: {' / '.join(str(x['test_solved']) for x in r['rounds'])} ({'mastered in ' + str(r['rounds_to_mastery']) if r['mastered'] else 'not mastered'}; "
+                        f"median structures before a training solution {np.median(fe) if fe else float('nan'):.0f}; Reanalyse "
+                        f"{sum(x['new_equations'] for x in ra)} equations from {sum(x['re_searched'] for x in ra)} re-searched)")
+        verdict[arm] = m >= 2 if not SMOKE else m >= 1
+        lines.append(f"   {ARM_NAMES[arm]:>16}: " + "; ".join(rows) + f" -> {'masters' if verdict[arm] else 'does not master'} the rung")
+    drop = not (verdict.get("blend") or verdict.get("net"))
+    lines.append(f"== Rung {rung}: {'DROP-OFF: neither learner arm masters it (stop and report)' if drop else 'mastered by ' + ', '.join(ARM_NAMES[a] for a in ('blend', 'net') if verdict.get(a))}")
+    text = "\n".join(lines)
+    (OUT / rung / "report.txt").write_text(text)
+    print(text)
+
+
+def main():
+    import shutil
+    workers, rung, step = int(sys.argv[1]), sys.argv[2], sys.argv[3]
+    OUT.mkdir(parents=True, exist_ok=True)
+    (OUT / rung).mkdir(parents=True, exist_ok=True)
+    free = shutil.disk_usage(OUT.resolve()).free / 2 ** 30
+    if free < 2:
+        raise SystemExit(f"not running {step}: free disk {free:.1f} GB < 2 GB on {OUT.resolve()} (owner's crash guard)")
+    {"gen": lambda: step_gen(workers, rung), "run": lambda: step_run(workers, rung), "report": lambda: step_report(rung)}[step]()
+
+
+if __name__ == "__main__":
+    main()
