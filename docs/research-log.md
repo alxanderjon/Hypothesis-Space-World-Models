@@ -10005,3 +10005,29 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
 - Its launcher, run and workers were killed (its own process groups); no training job of this run was left on a GPU.
 - Rung a2 was not started.
 - The partial outputs stay in `g2h/ladder/a1/` and its systems in `g2h/ladder/gen/a1-s*.json`.
+
+### Owner: fix the dreams and the wake pool before rerunning a1; first a quick check of three dream versions (15 November; design and pass rule set before the run)
+
+**Owner.** *"The dream analysis explains rung a: too few wake systems and too few dreams, and almost none of the dreams looked like the rung. Fix both before rerunning a1. 1. Quick check (no search, minutes): from each learner arm's end-of-curriculum state, in all 3 seeds, train one round with each of: a. the current dreams (baseline); b. rung-shaped dreams from the rung's own generator (3 terms per equation, only x, x·y, x²); c. rung-shaped dreams from the learner's own library (3-term combinations of pieces it has mastered), DreamCoder's way, since this is the version that will work on real systems without a generator. Use about 1,000–2,000 rung-shaped dreams per round, keep the existing general dreams, and keep real solutions as a fixed share of training so dreams don't drown them out. Scale training steps so each example is seen about as often as now. Compare how highly each network ranks the true terms of a1's held-out equations at the empty start, one term short and two terms short, and check curriculum terms don't get worse. Write the pass rule into the log first. 2. If b or c passes, rerun rung a1 with the better dream version (prefer c if it's close to b), a wake pool of about 50 training systems per seed instead of 10, and the same rules as before (3 seeds, mastery in at least 2 of 3, fresh-network comparison, Reanalyse on). Apply the same dream settings to every arm, including the fresh network. Report time per round, so we can see whether 50 wake systems is affordable. Report the quick check in plain language before starting the rerun."*
+
+**The quick check** (`dream_check.py`; `g2h/dreamcheck/`; no search). Starting points: each learner arm (confidence blend, network alone) at its end-of-curriculum state, seeds 1–3. One learning round with each version:
+- **a. Baseline:** the current round, i.e. the lineage's real solutions (replay) plus 50 general dreams, 500 steps.
+- **b. Generator dreams:** the same plus 1,000 rung-shaped dreams from the rung's own generator (3 terms per equation, only x, x·y, x²).
+- **c. Library dreams:** the same plus 1,000 rung-shaped dreams of 3 terms per equation. The terms are drawn from the pieces in the learner's own verified solutions, weighted by its own library grammar: the blend's library, or for the network alone one built the same way from its solutions. Nothing in it is told the rung's pieces.
+
+**Training settings for b and c:**
+- Real solutions are held at a fixed 30% of the training examples, by repeating the replay.
+- The general dreams are kept.
+- Training steps are scaled so that each example is seen as often as in the baseline: steps = 500 × (examples in the version) / (examples in the baseline).
+
+**Held-out measure.** Because a1's held-out systems will judge the rerun's mastery, the check does not use them. It uses 20 newly drawn a1-style development systems per seed ("dreamcheck-dev-…"), checked against every earlier set.
+- For each true term of each equation, the rank under the arm's own prior after training is taken at the empty start, one short and two short. The prior is the network for the network alone, and the confidence blend for the blend.
+- **Curriculum terms:** the same ranks on the curriculum's held-out systems, 3 per level per seed.
+
+**Pass rule** (a version passes only if both parts hold):
+1. In both learner arms and all 3 seeds, the version's median rank of the development systems' true terms is better than the baseline's at one short and at two short.
+2. Its median rank of curriculum terms is no worse than the baseline's by more than 1 rank, at every point.
+
+**"Close"** (owner: prefer c if it is close to b): if both pass, c is used unless b's medians are better than c's by more than a quarter at one short or two short in a majority of the 6 arm-and-seed cases.
+
+**Reported:** examples per version, steps, and training time per round (one free GPU at the check: GPU 0).
