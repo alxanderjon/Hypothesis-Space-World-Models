@@ -629,7 +629,8 @@ def step_report(rung):
             m += r["mastered"]
             fe = [e["first_exact"] for x in r["rounds"] for y in x["wake"] if y["status"] == "done" for e in y["equations"] if e["first_exact"] is not None]
             ra = [x["reanalyse"] for x in r["rounds"]]
-            rows.append(f"s{s}: {' / '.join(str(x['test_solved']) for x in r['rounds'])} [minutes per round {' / '.join(f'{x.get("seconds", 0) / 60:.0f}' for x in r['rounds'])}] ({'mastered in ' + str(r['rounds_to_mastery']) if r['mastered'] else 'not mastered'}; "
+            mins = " / ".join(str(round(x.get("seconds", 0) / 60)) for x in r["rounds"])
+            rows.append(f"s{s}: {' / '.join(str(x['test_solved']) for x in r['rounds'])} [minutes per round {mins}] ({'mastered in ' + str(r['rounds_to_mastery']) if r['mastered'] else 'not mastered'}; "
                         f"median structures before a training solution {np.median(fe) if fe else float('nan'):.0f}; Reanalyse "
                         f"{sum(x['new_equations'] for x in ra)} equations from {sum(x['re_searched'] for x in ra)} re-searched)")
         verdict[arm] = m >= 2 if not SMOKE else m >= 1
