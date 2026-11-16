@@ -50,6 +50,20 @@ def dream_job(args):
         seed = f"{prefix}-{k}" if r == 0 else f"{prefix}-{k}-r{r}"
         if how[0] == "gen":
             desc = LD.draw(seed, how[1], (3, 3), 2)
+        elif how[0] == "bal":
+            # piece-balanced (owner, 16 Nov): a piece the learner has used, uniformly, then a term of it, uniformly
+            groups = how[1]
+            rng = np.random.default_rng(LD.stable(seed, "bal"))
+            picks_per_eq = []
+            for _ in range(2):
+                picks = []
+                while len(picks) < min(3, sum(len(g) for g in groups)):
+                    g = groups[int(rng.integers(len(groups)))]
+                    key = g[int(rng.integers(len(g)))]
+                    if key not in picks:
+                        picks.append(key)
+                picks_per_eq.append(picks)
+            desc = draw_fixed(seed, picks_per_eq)
         else:
             keys, w = how[1], np.asarray(how[2], dtype=float)
             rng = np.random.default_rng(LD.stable(seed, "lib"))
@@ -338,11 +352,191 @@ def step_report():
     print(text)
 
 
+# ---------------------------------------------------------------------------------------------------------------------
+# the learner's own dreams, rebalanced (owner, 16 November; research log "Owner: two clarifications, the learner's own
+# dreams, and rung b"): c1 piece-balanced, c2 the grammar weights flattened (power 1/3). Trained on the CPU, from the
+# same start, with the same replay, general dreams, real share and steps as version c of the a2 check.
+# ---------------------------------------------------------------------------------------------------------------------
+
+FLAT = 3.0
+CPU_THREADS = int(os.environ.get("DREAMCHECK_CPU_THREADS", "4"))
+
+
+def own_pieces(lin):
+    import dream_g2 as DR
+    usage = {}
+    for sid, eqs in lin.sols.items():
+        for eq, ks in eqs.items():
+            for k in ks:
+                rk = DR.role_key(k, int(eq), 2)
+                if rk is not None:
+                    usage[rk] = usage.get(rk, 0) + 1
+    return usage
+
+
+def piece_groups(pieces):
+    """The learner's used terms grouped by curriculum piece type (terms of no curriculum piece form one group)."""
+    keys = LD.piece_keys(2)
+    of = {k: lv for lv, ks in keys.items() for k in ks}
+    groups = {}
+    for k in pieces:
+        groups.setdefault(of.get(k, "other"), []).append(k)
+    return {str(g): v for g, v in sorted(groups.items(), key=lambda x: str(x[0]))}
+
+
+def step_gen2(workers):
+    import numpy as np
+    import search_g1 as SG
+    order = SG.vocabulary_order(2)
+    gid = {k: g for g, k in enumerate(order)}
+    info = {}
+    t0 = time.time()
+    with pool(workers) as ex:
+        L = starts(ex)
+        for (a, s), lin in L.items():
+            name = f"{a}-s{s}"
+            usage = own_pieces(lin)
+            pieces = sorted({rk for rk in usage if rk in gid})
+            groups = piece_groups(pieces)
+            tab = lin.tables.get(2) or str(OUT / "gen" / f"library-{name}.npy")
+            T = np.load(tab)
+            w = np.exp(np.array([T[gid[k], 0] for k in pieces]) / FLAT)
+            info[name] = {"pieces": len(pieces), "groups": {g: len(v) for g, v in groups.items()}}
+            for ver, how in (("c1", ("bal", list(groups.values()))), ("c2", ("lib", pieces, w.tolist()))):
+                p = OUT / "gen" / f"dreams-{ver}-{name}.pkl"
+                if not p.exists():
+                    exs = list(ex.map(dream_job, [(f"dreamcheck-{RUNG}-{ver}-{name}", k, how) for k in range(N_DREAM)], chunksize=4))
+                    p.write_bytes(pickle.dumps([e for x in exs for e in x]))
+                    print(f"{ver} dreams {name}: {len(pieces)} pieces in {len(groups)} piece types; {sum(bool(x) for x in exs)} of {N_DREAM} "
+                          f"with examples; {sum(len(x) for x in exs)} examples; {time.time() - t0:.0f}s", flush=True)
+    (OUT / "gen2.json").write_text(json.dumps(info, indent=1))
+
+
+def train_cpu_job(args):
+    """ladder.train_net_job on the CPU (owner: this check is CPU only)."""
+    paths, prev, out, seed, steps, threads = args
+    sys.path.insert(0, str(HERE))
+    import numpy as np
+    import torch
+    torch.set_num_threads(threads)
+    import movenet_g2 as MN
+    import search_g1 as SG
+    MN.SHORTLIST = int(os.environ["G2H_SHORTLIST"])
+    torch.manual_seed(seed)
+    net = MN.load_net(prev + ".pt") if prev else MN.MoveNetL2()
+    tables = {d: MN.token_table(SG.vocabulary_order(d), d) for d in LD.DIMS}
+    ex = [e for p in paths for e in pickle.loads(Path(p).read_bytes())]
+    t0 = time.time()
+    tl = MN.train(net, ex, tables, steps, batch=C.BATCH, lr=C.LR, device="cpu", seed=seed, groups=None)
+    secs = time.time() - t0
+    if out:
+        for d in LD.DIMS:
+            np.save(f"{out}_d{d}.npy", MN.encode_vocabulary(net, tables[d], device="cpu"))
+        torch.save(net.state_dict(), out + ".pt")
+    return {"examples": len(ex), "steps": steps, "seconds": secs, "last_loss": tl[-1]["loss"] if tl else None}
+
+
+def examples_for(name, s, ver):
+    load = lambda f: pickle.loads((OUT / "gen" / f).read_bytes())
+    replay, general, extra = load(f"replay-{name}.pkl"), load(f"general-{name}.pkl"), load(f"dreams-{ver}-{name}.pkl")
+    others = general + extra
+    m = max(1, round(SHARE_REAL * len(others) / ((1 - SHARE_REAL) * max(len(replay), 1))))
+    return replay * m + others, len(replay) * m
+
+
+def step_train2(workers, timing=False):
+    """workers = parallel trainings; each uses CPU_THREADS threads. Steps = version c's in the a2 check."""
+    from concurrent.futures import ProcessPoolExecutor
+    from multiprocessing import get_context
+    tr = json.loads((OUT / "train.json").read_text())
+    with pool(4) as ex:
+        L = starts(ex)
+    jobs, meta = [], {}
+    for (a, s), lin in L.items():
+        name = f"{a}-s{s}"
+        for ver in ("c1", "c2"):
+            out = OUT / "nets" / f"{name}-{ver}"
+            if Path(f"{out}.pt").exists() and not timing:
+                continue
+            exs, n_real = examples_for(name, s, ver)
+            p = OUT / "nets" / f"{name}-{ver}_examples.pkl"
+            p.write_bytes(pickle.dumps(exs))
+            steps = 50 if timing else tr[f"{name}-c"]["steps"]
+            meta[f"{name}-{ver}"] = {"examples": len(exs), "real share": n_real / len(exs), "steps": steps, "path": p}
+            jobs.append((f"{name}-{ver}", ([str(p)], lin.net, None if timing else str(out), LD.stable(name, ver), steps, CPU_THREADS)))
+            if timing:
+                break
+        if timing:
+            break
+    info = {}
+    with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as one:
+        futs = {tag: one.submit(train_cpu_job, j) for tag, j in jobs}
+        for tag, f in futs.items():
+            r = f.result()
+            meta[tag]["path"].unlink()
+            info[tag] = {k: v for k, v in meta[tag].items() if k != "path"} | {"seconds": r["seconds"], "device": f"cpu x{CPU_THREADS}"}
+            LD.log(f"dreamcheck {tag}: {r['steps']} steps on {r['examples']} examples on the CPU ({CPU_THREADS} threads) in {r['seconds']:.0f}s")
+    if timing:
+        print(json.dumps(info, indent=1))
+        return
+    p = OUT / "train.json"
+    p.write_text(json.dumps(dict(json.loads(p.read_text()), **info), indent=1))
+
+
+def step_rank2(workers):
+    jobs = []
+    with pool(workers) as ex:
+        L = starts(ex)
+        for (a, s), lin in L.items():
+            name = f"{a}-s{s}"
+            dev = json.loads((OUT / "gen" / f"dev-s{s}.json").read_text())
+            cur = json.loads((G2H / CUR[s]).read_text())
+            cur = [r for lv in (1, 2, 3, 5, 6, 7) for r in cur[str(lv)]["test"][:3]]
+            for ver in ("c1", "c2"):
+                net = str(OUT / "nets" / f"{name}-{ver}")
+                spec = ("confidence", net, lin.tables) if a == "blend" else ("net", net)
+                jobs += [(r, spec, f"{name}-{ver}", "dev") for r in dev] + [(r, spec, f"{name}-{ver}", "curriculum") for r in cur]
+        t0 = time.time()
+        rows = [x for part in ex.map(rank_job, jobs) for x in part]
+    (OUT / "ranks2.json").write_text(json.dumps(rows))
+    print(f"rank: {len(rows)} rows from {len(jobs)} jobs in {time.time() - t0:.0f}s")
+
+
+def step_report2():
+    """The a2 rule, for c1 and c2 against the baseline a (b and c shown for comparison)."""
+    import numpy as np
+    rows = json.loads((OUT / "ranks.json").read_text()) + json.loads((OUT / "ranks2.json").read_text())
+    pts = ("empty start", "one short", "two short")
+    vers = ("a", "b", "c", "c1", "c2")
+    lines = ["== Own-dream quick check (" + RUNG + "): share of development true terms ranked worse than 10 (empty / one short / two short); "
+             "curriculum mean log2 rank. a baseline, b teacher dreams, c library dreams, c1 piece-balanced, c2 flattened"]
+    wins = {"c1": 0, "c2": 0}
+    for a in ARMS:
+        for s in SEEDS:
+            name, m = f"{a}-s{s}", {}
+            for v in vers:
+                R = [x for x in rows if x["tag"] == f"{name}-{v}"]
+                dev = [x for x in R if x["kind"] == "dev"]
+                tail = [float(np.mean([x["rank"] > 10 for x in dev if x["point"] == p])) for p in pts]
+                cur = float(np.mean([np.log2(x["rank"]) for x in R if x["kind"] == "curriculum"]))
+                m[v] = (tail, cur)
+            judged = [0, 2] + ([1] if m["a"][0][1] >= 0.05 else [])
+            for v in wins:
+                wins[v] += all(m[v][0][j] < m["a"][0][j] for j in judged) and m[v][1] <= m["a"][1] + 0.25
+            lines.append(f"   {name}: " + "; ".join(f"{v} {' / '.join(f'{x:.0%}' for x in m[v][0])}, cur {m[v][1]:.2f}" for v in vers))
+    lines.append("== " + "; ".join(f"{v} passes in {wins[v]} of 6 ({'PASSES' if wins[v] >= 5 else 'does not pass'})" for v in wins))
+    text = "\n".join(lines)
+    (OUT / "report2.txt").write_text(text)
+    print(text)
+
+
 def main():
     workers, step = int(sys.argv[1]), sys.argv[2]
     OUT.mkdir(parents=True, exist_ok=True)
     {"gen": lambda: step_gen(workers), "train": lambda: step_train(workers), "rank": lambda: step_rank(workers),
-     "report": step_report if RUNG == "a1" else step_report_tail}[step]()
+     "report": step_report if RUNG == "a1" else step_report_tail,
+     "gen2": lambda: step_gen2(workers), "train2": lambda: step_train2(workers), "time2": lambda: step_train2(1, timing=True),
+     "rank2": lambda: step_rank2(workers), "report2": step_report2}[step]()
 
 
 if __name__ == "__main__":

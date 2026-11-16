@@ -32,7 +32,9 @@ RUNGS = {"a": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": 
          "a1": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3), "change": "3 terms per equation, only x, x*y, x^2", "after": None},
          "a1w": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3), "change": "3 terms, only x, x*y, x^2; wake pool of 50", "after": None, "n_train": 50},
          "a2": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "the rational pieces back (after a1w)", "after": "a1w",
-                "n_train": 50, "rung_dreams": 1000}}
+                "n_train": 50, "rung_dreams": 1000},
+         "b": {"d": 3, "terms": (1, 2), "levels": (1, 2, 3, 5, 6, 7), "change": "3 variables, 1-2 terms per equation (after a2)", "after": "a2",
+               "n_train": 50, "rung_dreams": 1000, "steps": 4500}}       # owner, 16 Nov: the same training updates for every arm
 SHARE_REAL = 0.30                                                # real solutions' share of training when rung dreams are used
 SEEDS = (1, 2, 3) if not SMOKE else (1,)
 ARMS = ("blend", "net", "fresh")
@@ -553,6 +555,8 @@ class Lineage:
                 m = max(1, round(SHARE_REAL * len(others) / ((1 - SHARE_REAL) * max(len(replay), 1))))
                 data = replay * m + others
                 steps = round(STEPS * len(data) / max(len(replay) + len(fant), 1))
+            if R.get("steps"):
+                steps = R["steps"] if not SMOKE else 10
             p = self.dir / f"{tag}_examples.pkl"
             p.write_bytes(pickle.dumps(data))
 
@@ -668,7 +672,8 @@ def step_report(rung):
             fe = [e["first_exact"] for x in r["rounds"] for y in x["wake"] if y["status"] == "done" for e in y["equations"] if e["first_exact"] is not None]
             ra = [x["reanalyse"] for x in r["rounds"]]
             mins = " / ".join(str(round(x.get("seconds", 0) / 60)) for x in r["rounds"])
-            rows.append(f"s{s}: {' / '.join(str(x['test_solved']) for x in r['rounds'])} [minutes per round {mins}] ({'mastered in ' + str(r['rounds_to_mastery']) if r['mastered'] else 'not mastered'}; "
+            first = sum(y["solved"] for y in r["rounds"][0]["wake"])
+            rows.append(f"s{s}: {' / '.join(str(x['test_solved']) for x in r['rounds'])} [minutes per round {mins}; first-wake solves {first} of {len(r['rounds'][0]['wake'])}] ({'mastered in ' + str(r['rounds_to_mastery']) if r['mastered'] else 'not mastered'}; "
                         f"median structures before a training solution {np.median(fe) if fe else float('nan'):.0f}; Reanalyse "
                         f"{sum(x['new_equations'] for x in ra)} equations from {sum(x['re_searched'] for x in ra)} re-searched)")
         verdict[arm] = m >= 2 if not SMOKE else m >= 1
