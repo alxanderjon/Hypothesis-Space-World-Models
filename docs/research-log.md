@@ -10248,3 +10248,39 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
   - each lineage trains once its c1/c2 dreams are written.
 - **Training:** the same training job, start network, replay, general dreams, 30% real share and steps as version c of the a2 check.
 - **Pass rule:** the a2 tail rule as logged above. Reported with rung b's results.
+
+#### Rung b: mastered by every arm in one round; the own-dream check: both fixes pass (16 November)
+
+**Rung b** (3 variables, 1–2 terms, the six pieces; teacher dreams; 4,500 steps per learning round for every arm). It ran 16:06–19:38 UTC. Every lineage mastered it in round 1.
+
+| arm | held-out (s1 / s2 / s3, of 10) | first-wake solves (of 50 systems) | equations solved in the first wake (of 150) | median structures before a training solution | minutes for the round |
+|---|---|---|---|---|---|
+| confidence blend | 10 / 9 / 9 | 48 / 44 / 49 | 147 / 144 / 149 | 3 / 3 / 3 | 145 / 186 / 149 |
+| network alone | 9 / 10 / 10 | 45 / 48 / 50 | 144 / 148 / 150 | 2.5 / 2 / 3.5 | 148 / 138 / 190 |
+| fresh network | 10 / 9 / 9 | 3 / 2 / 2 | 55 / 54 / 48 | 8 / 5.5 / 35.5 | 173 / 166 / 212 |
+
+- **History's effect** is in the first wake, again.
+  - The learner arms solved 44–50 of 50 training systems at 2–3.5 structures per solution, out of the box at 3 variables.
+  - The fresh network solved 2–3. Its medians cover only its 48–55 solved equations (the easy ones), so they understate its effort.
+- **After one training round** (4,500 steps for every arm) the fresh network reached 9–10 held-out too. Reanalyse rescued 41–42 of its systems (87–100 equations).
+- With matched updates and teacher dreams, rung b is mastered by every arm. History buys effort on the training systems, not the held-out end point.
+- The blend and the network alone are indistinguishable here.
+- **Caveat:** rung b's systems have only 1–2 terms per equation, so the rung is easy for a learner that has a2's 3-term experience.
+
+**Own-dream check** (a2 tail rule; GPU 1, 2, 4 and 6, never rung b's; 17:24–18:58 UTC).
+
+| case | a baseline | b teacher | c library | **c1 piece-balanced** | **c2 flattened** |
+|---|---|---|---|---|---|
+| blend s1 | 44 / 31 / 40, 1.72 | 22 / 0 / 12, 0.87 | 48 / 28 / 48, 1.77 | 23 / 18 / 23, 1.53 | 41 / 22 / 36, 1.70 |
+| blend s2 | 32 / 11 / 25, 1.03 | 22 / 1 / 8, 0.67 | 36 / 8 / 27, 0.94 | 19 / 2 / 9, 0.65 | 29 / 2 / 18, 0.76 |
+| blend s3 | 43 / 31 / 44, 1.12 | 12 / 1 / 5, 0.74 | 43 / 22 / 42, 1.08 | 15 / 0 / 8, 0.66 | 34 / 8 / 32, 0.93 |
+| net s1 | 41 / 28 / 40, 1.59 | 9 / 0 / 8, 0.71 | 36 / 23 / 35, 1.38 | 26 / 12 / 19, 1.45 | 26 / 12 / 25, 1.31 |
+| net s2 | 30 / 22 / 32, 1.22 | 7 / 0 / 3, 0.76 | 22 / 11 / 18, 1.18 | 10 / 4 / 12, 0.90 | 23 / 6 / 15, 1.06 |
+| net s3 | 39 / 29 / 46, 1.04 | 8 / 0 / 7, 0.63 | 32 / 8 / 29, 0.79 | 22 / 0 / 22, 0.87 | 24 / 1 / 22, 0.73 |
+
+How to read it: % of development true terms ranked worse than 10 (empty / one short / two short), then the curriculum mean log2 rank.
+
+- **c1 passes in 6 of 6; c2 passes in 6 of 6.**
+- **c1 is the stronger of the two.** Its empty-start tail is lower than c2's in 5 of 6 cases (equal in net s1). It roughly halves the baseline's tail at the empty start and two short. The old curriculum terms rank as well or better.
+- **The teacher dreams (b) are still clearly the best** in all 6 cases. The learner's own dreams can only cover the pieces it has already used, while the teacher's cover the rung's.
+- **Proposed:** add c1 piece-balanced own dreams alongside the teacher dreams from rung c on, within the same matched 4,500 steps.
