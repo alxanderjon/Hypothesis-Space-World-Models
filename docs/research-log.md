@@ -10119,3 +10119,28 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
 - **Generator dreams shrink the tail several-fold at every point,** and they improve old curriculum terms too.
 - **Library dreams** help the network alone a little and the blend hardly at all.
 - **Cost:** a rung-shaped round is 5,460 steps on about 12,900 examples, about 13 minutes on one GPU.
+
+### Owner: start rung a2 with generator dreams; diagnose why library dreams barely help (16 November)
+
+**Owner.** *"Start rung a2 as proposed: generator dreams for every arm, 50 training systems per seed, same rules (3 seeds, mastery in at least 2 of 3, fresh-network comparison, Reanalyse on). Report search tries per solution per arm, since history's effect on effort is part of the result. Alongside it, using no GPU, do a minutes-scale diagnosis of why library dreams barely help: check whether the learner's grammar weights make its dreams rarely include the newer pieces (e.g. the rational ones), and propose a fix to test later. I'm going to sleep, so don't wait for me: if a2 is mastered, stop there and report; if it drops off, stop and report."*
+
+**Rung a2 as run** (`ladder.py`, rung a2):
+- 2 variables, 3 terms per equation, the pilot's six pieces; 50 new training and 10 held-out systems per seed.
+- It continues from a1w.
+- **Every learning round, for every arm:** 1,000 dreams from the rung's own generator, plus the 50 general dreams. Real solutions are held at 30% of the examples, and steps are scaled to keep each example's views (the a2 dream check's version b).
+- **Rules otherwise as before:** up to 3 rounds; mastery at 8 of 10 in 2 of 3 seeds; drop-off if neither learner arm masters it; Reanalyse at 100 structures.
+- A smoke test with tiny budgets ran through first.
+
+**Why library dreams barely help (diagnosis; CPU only; the a1w states, the a2 check's library-dream setting).**
+- **Where the library dreams' weight goes,** by piece:
+  - x: 80–83% in all six arm-and-seed cases;
+  - x²: 10–14%;
+  - x·y: 2%;
+  - the three rational pieces together: 2–4% (x/(K+x) and 1/(K+x²) about 0%).
+- **For comparison:** rational pieces are 4–9% of the terms in the learners' own verified solutions, and 50% of draws in generator dreams.
+- **Cause:** the library grammar scores a term by multiplying the probabilities of each choice in its tree. Larger pieces with a constant inside therefore get exponentially less weight than one-node pieces, and x also dominates the counts. Sampling dreams from the grammar so almost never practises the newer pieces.
+
+**Proposed fix, to test later** (quick check first, same tail rule as the a2 dream check):
+- **Piece-balanced library dreams.** Group the terms of the learner's own solutions by piece, i.e. their role form through the library. Draw each dream term by first choosing a piece uniformly among the pieces it has used, then a term of that piece.
+- It stays fully self-generated: no generator and no knowledge of the rung. It simply stops the grammar's size penalty from deciding what gets practised.
+- **Variant to compare:** the grammar weights flattened by a temperature (log P divided by 3).

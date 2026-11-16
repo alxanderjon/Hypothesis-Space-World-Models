@@ -31,7 +31,9 @@ OUT = C.RUN
 RUNGS = {"a": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "3 terms per equation", "after": None},
          "a1": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3), "change": "3 terms per equation, only x, x*y, x^2", "after": None},
          "a1w": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3), "change": "3 terms, only x, x*y, x^2; wake pool of 50", "after": None, "n_train": 50},
-         "a2": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "the rational pieces back (after a1w)", "after": "a1w"}}
+         "a2": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "the rational pieces back (after a1w)", "after": "a1w",
+                "n_train": 50, "rung_dreams": 1000}}
+SHARE_REAL = 0.30                                                # real solutions' share of training when rung dreams are used
 SEEDS = (1, 2, 3) if not SMOKE else (1,)
 ARMS = ("blend", "net", "fresh")
 ARM_NAMES = {"blend": "confidence blend", "net": "network alone", "fresh": "fresh network"}
@@ -338,6 +340,29 @@ def train_net_job(args):
     return {"examples": len(ex), "last_loss": tl[-1]["loss"] if tl else None}
 
 
+def rung_dream_job(args):
+    """One accepted dream from the rung's own generator, as training examples (the a2 dream check's version b)."""
+    prefix, k, allowed, n_terms, d = args
+    import warnings
+    warnings.filterwarnings("ignore")
+    sys.path.insert(0, str(HERE))
+    import torch
+    torch.set_num_threads(1)
+    import domains_g1 as DG
+    import dream_g2 as DR
+    for r in range(200):
+        seed = f"{prefix}-{k}" if r == 0 else f"{prefix}-{k}-r{r}"
+        desc = draw(seed, allowed, n_terms, d)
+        if DR.prescreen(desc) is not None:
+            continue
+        try:
+            syn = DG.build(desc)
+            return DR.make_examples(syn.bursts(8), [eq["keys"] for eq in syn.structure], seed=10_000 + k)
+        except Exception:
+            continue
+    return []
+
+
 def table_job(args):
     """The library grammar (context-free form; compression plus counting) as log P over the d-variable language."""
     equations, path, d = args
@@ -516,17 +541,30 @@ class Lineage:
             fant = [e for f in [self.pool.submit(fantasy_job, (f"ladder-{self.rung}-{self.name}-{tag}", k, probs, self.d)) for k in range(N_FANT)]
                     for e in f.result()]
             replay = [e for s in self.sols for e in self.examples[s]["ex"]]
+            R = RUNGS[self.rung]
+            steps, data = STEPS, replay + fant
+            if R.get("rung_dreams"):
+                keys = piece_keys(self.d)
+                allowed = {lv: keys[lv] for lv in R["levels"]}
+                n = R["rung_dreams"] if not SMOKE else 4
+                rd = [e for x in self.pool.map(rung_dream_job, [(f"ladder-{self.rung}-{self.name}-{tag}-rung", k, allowed, R["terms"], self.d)
+                                                                for k in range(n)], chunksize=4) for e in x]
+                others = fant + rd
+                m = max(1, round(SHARE_REAL * len(others) / ((1 - SHARE_REAL) * max(len(replay), 1))))
+                data = replay * m + others
+                steps = round(STEPS * len(data) / max(len(replay) + len(fant), 1))
             p = self.dir / f"{tag}_examples.pkl"
-            p.write_bytes(pickle.dumps(replay + fant))
+            p.write_bytes(pickle.dumps(data))
 
             def train(g):
                 from concurrent.futures import ProcessPoolExecutor
                 from multiprocessing import get_context
                 with ProcessPoolExecutor(1, mp_context=get_context("spawn")) as one:
-                    return one.submit(train_net_job, ([str(p)], self.net, out, g, stable(self.name, self.rung, tag), STEPS)).result(), g
+                    return one.submit(train_net_job, ([str(p)], self.net, out, g, stable(self.name, self.rung, tag), steps)).result(), g
             info, g = self.gpus.run(train)
             p.unlink()
-            log(f"{self.rung} {self.name} {tag}: trained {STEPS} steps on {len(replay)} replay and {len(fant)} dream examples on GPU {g}")
+            log(f"{self.rung} {self.name} {tag}: trained {steps} steps on {len(data)} examples ({len(replay)} replay, {len(fant)} general dream"
+                f"{', with rung dreams' if R.get('rung_dreams') else ''}) on GPU {g}")
         self.net = out
         if self.arm == "blend":
             self.rebuild_library(tag)
