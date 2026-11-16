@@ -10204,3 +10204,36 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
   - its curriculum mean log2 rank is no worse than the baseline's by more than 0.25.
 - **Training updates:** these versions get the same number of updates as the a2 check's library version, for a like-for-like comparison.
 - **Training on the CPU** (owner: "CPU only"), so it does not take the one free GPU from rung b. Its speed is timed first.
+
+#### Rung b started; the own-dream check cannot train on the CPU in reasonable time (16 November)
+
+**Rung b.**
+- The smoke test passed (seed 1, small budgets): every arm got the same 10 steps, and 3-variable search and training work.
+- The real run started at 16:06 UTC on GPUs 0 and 3, both free at the start, one training at a time each.
+- **Systems:** 50 training and 10 held-out per seed, all 180 accepted. Against 2,700 earlier systems, none was identical or repeated.
+
+**Own-dream check: CPU training timed.**
+- The c1 and c2 dreams are being made on the CPU (12 workers, about 14–27 minutes per set at the current load, 12 sets).
+- **Timing:** one CPU training of 50 steps, at the like-for-like size (13,020 examples, 4 threads), took 781 s, about 16 s per step on this loaded machine (load average 46–51 on 48 cores).
+- Version c in the a2 check had about 5,400 steps, about 13 minutes each on a GPU. On the CPU each network would take about 24 hours, and the check needs 12.
+- **So the tail-based check cannot run CPU only in reasonable time.** It is not run; the owner is asked.
+
+**What the versions put into their dreams.** Computed on the CPU from the draw probabilities, with no training: the share of drawn terms per piece type for c (library weights) / c1 (piece-balanced) / c2 (flattened, power 1/3), against the share in the learner's own solution terms.
+
+| piece | c library | c1 balanced | c2 flattened | own solutions |
+|---|---|---|---|---|
+| x | 80–83% | 12–14% | 31–40% | 27–36% |
+| x·y | 2% | 12–14% | 5–7% | 21–24% |
+| x² | 10–14% | 12–14% | 16–21% | 25–28% |
+| 1/(K+x) | 2–3% | 12–14% | 9–14% | 2–4% |
+| x/(K+x) | 0% | 12–14% | 2–5% | 1–4% |
+| 1/(K+x²) | 0–1% | 12–14% | 2–7% | 1–2% |
+| other learner terms | 0–6% | 12–14% | 6–29% | 8–18% |
+
+(Ranges are over the six arm-and-seed cases. Two network-alone lineages also used a few x³ or x/(K+x²) terms, which c1 gives a share of 12%.)
+
+- **Both fixes do what they are meant to do on content:**
+  - c1 gives every used piece type an equal share. The rational pieces get 12–14% each, against 0–3%.
+  - c2 lifts the rational pieces less (2–14%) but also lifts the learner's other terms.
+- **c2 under-represents x·y** (5–7%, against 21–24% of solution terms).
+- Whether either fix improves the network's ranks needs the trained tail check.
