@@ -10339,3 +10339,37 @@ How to read it: % of development true terms ranked worse than 10 (empty / one sh
 **Not carried over:**
 - the learned dynamics model and the dual value heads (our values are exact fits);
 - AlphaDev's latency measurement and its stochastic search baseline. These are a change of direction rather than refinements.
+
+#### Rung c running; the four AlphaDev quick checks queued on spare cores (16 November)
+
+**Owner.** *"Run all four AlphaDev quick checks (A per-burst evidence, B pair gain, C pruning, D library pieces by search saved), CPU only, with the pass rules already in the log. Run them alongside rung c only if they don't slow it down: use spare CPU, a small number of workers, and no GPU. If they would compete with rung c's searches, wait until it finishes. Report each check in plain language (what was tested, the deciding number, pass or fail) together with rung c's results."*
+
+**Rung c started at 20:46 UTC** on GPU 0, the only free GPU.
+- **Systems:** 180 new (50 training and 10 held-out per seed). Against 2,880 earlier systems, none was identical.
+- **Smoke test** (one seed, small budgets):
+  - the fresh network's first round got no own dreams (0 used terms);
+  - the blend's first learning step built its piece-balanced dreams from 31 used terms in 7 piece types;
+  - training ran at the matched step count.
+
+**The checks** (`alphadev_checks.py`, launcher `/tmp/alphadev_launch.sh`).
+- **CPU and GPU:** 3 workers, no GPU. A job is submitted only while at least 4 cores are idle (48 cores minus the 1-minute load), so rung c's searches come first. At launch the load was 63, so in practice the checks wait.
+- **Systems:** 20 new rung-c-style development systems per seed (3 variables, 3 terms), checked against every earlier set, plus the a2 dream check's development systems (2 variables).
+- **Networks:** the lineages' end-of-rung-b states (6 arm-and-seed cases).
+
+**Details fixed before the run, where the logged rules left a choice:**
+- **A and B:**
+  - The tail is the (true term, point) items the network ranks worse than 10.
+  - "Moved" means ranked in the top 10 by the statistic while pooled gain ranks it worse than 10.
+  - Non-tail items are compared on mean log2 rank (statistic against pooled gain).
+  - For A, a case passes if any one of the three per-burst statistics (minimum, median or maximum over bursts) meets both parts.
+  - A check passes if it passes in at least 5 of 6 cases in each of the two settings (3 and 2 variables).
+  - **Pair gain** uses each term's best grid column against the residual.
+- **C:**
+  - "Prunable": every grid column of the term lies in the span of the current terms (residual norm below 1e-10 after projection), or the term's normalized columns equal an earlier term's on this system's data (an alias). Swaps are judged against the set without the removed term.
+  - "No true term pruned" is checked at every node: the true path and the 20 random nodes per equation.
+- **D (one change from the logged design):**
+  - At rung b's first wake the blend had no 3-variable library yet, so "outside the top 100 at the time" is undefined there.
+  - Each term's search cost is instead the mean structures to its equation's first solution (the budget if unsolved) over the blend lineage's wakes: rung b for 3 variables, a2 for 2.
+  - **Score** = usage × cost.
+  - **Search-cost ranking:** the scored terms by score, then the rest in compression order (the end-of-b library table's empty-context column).
+  - **Coverage:** top-100 coverage of rung c's held-out true terms (counts only) and of the curriculum's held-out true terms.
