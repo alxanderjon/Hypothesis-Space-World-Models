@@ -483,6 +483,74 @@ def step_train2(workers, timing=False):
     p.write_text(json.dumps(dict(json.loads(p.read_text()), **info), indent=1))
 
 
+def free_gpus(exclude):
+    """GPUs nobody is using (under 500 MiB and 10% utilization), outside `exclude` (rung b's while it runs)."""
+    import subprocess
+    out = subprocess.run(["nvidia-smi", "--query-gpu=index,utilization.gpu,memory.used", "--format=csv,noheader,nounits"],
+                         capture_output=True, text=True).stdout
+    return [int(i) for i, u, m in (l.split(", ") for l in out.strip().splitlines()) if int(m) < 500 and int(u) < 10 and int(i) not in exclude]
+
+
+def step_train2_gpu(max_gpus):
+    """Owner, 16 Nov: the trained check on a GPU, never one rung b uses (its GPUs are excluded while the ladder's launcher
+    runs: env LADDER_PID, LADDER_GPUS), one training per GPU; each lineage's training starts once its dreams exist.
+    Steps = version c's in the a2 check."""
+    import threading
+    from concurrent.futures import ProcessPoolExecutor
+    from multiprocessing import get_context
+    tr = json.loads((OUT / "train.json").read_text())
+    with pool(4) as ex:
+        L = starts(ex)
+    lpid, lgpus = int(os.environ.get("LADDER_PID", "0")), {int(g) for g in os.environ.get("LADDER_GPUS", "0,3").split(",")}
+    todo = [(f"{a}-s{s}", s, ver, lin) for (a, s), lin in L.items() for ver in ("c1", "c2")
+            if not Path(f"{OUT / 'nets' / f'{a}-s{s}-{ver}'}.pt").exists()]
+    busy, lock, info, threads = set(), threading.Lock(), {}, []
+
+    def ladder_running():
+        try:
+            os.kill(lpid, 0)
+            return lpid > 0
+        except OSError:
+            return False
+
+    def one_training(name, s, ver, lin, g):
+        try:
+            exs, n_real = examples_for(name, s, ver)
+            p = OUT / "nets" / f"{name}-{ver}_examples.pkl"
+            p.write_bytes(pickle.dumps(exs))
+            steps = tr[f"{name}-c"]["steps"]
+            t0 = time.time()
+            with ProcessPoolExecutor(1, mp_context=get_context("spawn")) as one:
+                one.submit(LD.train_net_job, ([str(p)], lin.net, str(OUT / "nets" / f"{name}-{ver}"), g, LD.stable(name, ver), steps)).result()
+            p.unlink()
+            with lock:
+                info[f"{name}-{ver}"] = {"examples": len(exs), "real share": n_real / len(exs), "steps": steps, "seconds": time.time() - t0, "gpu": g}
+            LD.log(f"dreamcheck {name}-{ver}: {steps} steps on {len(exs)} examples on GPU {g} in {time.time() - t0:.0f}s")
+        finally:
+            with lock:
+                busy.discard(g)
+
+    while todo:
+        ready = [x for x in todo if (q := OUT / "gen" / f"dreams-{x[2]}-{x[0]}.pkl").exists() and time.time() - q.stat().st_mtime > 60]
+        with lock:
+            n_busy = len(busy)
+        gs = [g for g in free_gpus(lgpus if ladder_running() else set()) if g not in busy][:max(0, max_gpus - n_busy)]
+        for x, g in zip(ready, gs):
+            todo.remove(x)
+            with lock:
+                busy.add(g)
+            LD.log(f"dreamcheck {x[0]}-{x[2]}: training on GPU {g} (free; rung b {'running on ' + str(sorted(lgpus)) if ladder_running() else 'finished'})")
+            t = threading.Thread(target=one_training, args=(*x, g))
+            t.start()
+            threads.append(t)
+            time.sleep(60)                                       # let the training claim its memory before the next check
+        time.sleep(30)
+    for t in threads:
+        t.join()
+    p = OUT / "train.json"
+    p.write_text(json.dumps(dict(json.loads(p.read_text()), **info), indent=1))
+
+
 def step_rank2(workers):
     jobs = []
     with pool(workers) as ex:
@@ -535,7 +603,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     {"gen": lambda: step_gen(workers), "train": lambda: step_train(workers), "rank": lambda: step_rank(workers),
      "report": step_report if RUNG == "a1" else step_report_tail,
-     "gen2": lambda: step_gen2(workers), "train2": lambda: step_train2(workers), "time2": lambda: step_train2(1, timing=True),
+     "gen2": lambda: step_gen2(workers), "train2": lambda: step_train2(workers), "time2": lambda: step_train2(1, timing=True), "train2gpu": lambda: step_train2_gpu(workers),
      "rank2": lambda: step_rank2(workers), "report2": step_report2}[step]()
 
 

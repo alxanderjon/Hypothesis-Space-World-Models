@@ -10237,3 +10237,14 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
   - c2 lifts the rational pieces less (2–14%) but also lifts the learner's other terms.
 - **c2 under-represents x·y** (5–7%, against 21–24% of solution terms).
 - Whether either fix improves the network's ranks needs the trained tail check.
+
+**Owner (16 November).** *"Run the own-dream trained check on a GPU: start as soon as one opens up, or right after rung b finishes, whichever comes first. Don't share a GPU with rung b and don't use the CPU version. Report it with rung b's results."*
+
+- **Started at 17:24 UTC** (`dream_check.py train2gpu`, then `rank2` and `report2`, launcher `/tmp/dreamcheck_own_launch.sh`).
+- **GPUs:** 1, 2, 4 and 7 had come free; 6 was in use only by another user's idle 384 MiB process.
+- **Rules:**
+  - rung b's GPUs (0 and 3) are excluded while its launcher runs;
+  - one training per GPU, at most 4 at once;
+  - each lineage trains once its c1/c2 dreams are written.
+- **Training:** the same training job, start network, replay, general dreams, 30% real share and steps as version c of the a2 check.
+- **Pass rule:** the a2 tail rule as logged above. Reported with rung b's results.
