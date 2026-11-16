@@ -418,7 +418,7 @@ class Lineage:
         """The lineage's state at the end of the previous rung, or of the curriculum for the first rung."""
         prev = RUNGS[self.rung]["after"]
         if prev:
-            st = json.loads((OUT / prev / f"{self.name}.state.json").read_text())
+            st = json.loads((G2H / "ladder" / prev / f"{self.name}.state.json").read_text())   # the ladder's own folder
             self.sols = {k: {int(e): v for e, v in d.items()} for k, d in st["sols"].items()}
             self.tried, self.net, self.tables = st["tried"], st["net"], {int(k): v for k, v in st["tables"].items()}
             for f in st["record_files"]:
