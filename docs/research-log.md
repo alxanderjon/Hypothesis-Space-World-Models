@@ -10327,11 +10327,10 @@ How to read it: % of development true terms ranked worse than 10 (empty / one sh
    - **Pass rule:** as in check A.
 3. **Pruning moves that cannot help.**
    - **The idea:** like AlphaDev's removal of invariances, mask adds whose columns on this system's data lie (to 1e-10) in the span of the current terms, and keep only one of any terms with identical columns on this data (aliases, for example the same expression under different role keys). Our search treats every term outside the set as legal.
-   - **Check C:** at the root and at the nodes of the recorded rung c wake searches (which keep each expanded set), count
+   - **Check C:** the wake records keep only counts and solutions, not the expanded sets, so the check builds its nodes directly, as the rank checks do: the empty start, one short and two short of each true structure, plus 20 random nodes of 1–3 terms per equation. At each node, count
      - the share of legal adds and swaps that are prunable;
-     - the share of expanded structures that were exact duplicates of an already-fitted span;
      - whether any true term would ever be pruned.
-   - **Pass rule:** at least 10% of moves or 5% of expanded structures are prunable, and no true term is ever pruned. If it passes, a search-level test with search, proposed separately.
+   - **Pass rule:** at least 10% of moves are prunable, and no true term is ever pruned. If it passes, a search-level test with search, proposed separately.
 4. **Correctness plus simplicity for choosing library pieces.**
    - **The idea:** AlphaDev's reward measures what a program costs (latency), not how short it is. The analogue for our library is to keep the pieces that save search, not only those that compress the solutions.
    - **Check D:** from every past wake (curriculum and ladder), take each solved equation's structures-to-first-solution and whether each of its true terms was in the library's top 100 at that time. Score each library term by usage × the extra structures paid when it was outside the top 100. Compare the held-out rung c true terms' coverage in the top 100 under the compression ranking against this search-cost ranking.
