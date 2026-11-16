@@ -10079,3 +10079,19 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
   1. **The tail:** its share of development true terms ranked worse than 10 is lower than the baseline's, at the empty start and at two short. One short is judged only where the baseline's share there is at least 5%.
   2. **Old terms:** its mean log2 rank of curriculum terms is no worse than the baseline's by more than 0.25.
 - **If both pass:** prefer c unless b's tail shares are lower than c's by more than 5 points at both points in a majority of cases.
+
+### Rung a1w (3 terms, x, x·y, x² only; 50 training systems per seed): results (15–16 November, 23:16–00:02 UTC, 24 workers, GPU 0)
+
+**Verdict: mastered by every arm, in one round, in all three seeds.**
+
+| arm | held-out after round 1 (s1 / s2 / s3) | training systems solved in the wake (of 50) | median structures before a training solution | minutes for the round |
+|---|---|---|---|---|
+| confidence blend | 10 / 10 / 10 | 50 / 50 / 50 | 15 / 10 / 11 | 40 / 39 / 34 |
+| network alone | 10 / 10 / 10 | 50, 50, 50 (s1–s3) | 18 / 15 / 12 | 39 / 28 / 35 |
+| fresh network | 10 / 9 / 8 | 0 / 0 / 0 | 144 / 167 / 180 | 31 / 45 / 43 |
+
+- **The fresh network** solved none of its 50 training systems in its first wake, which uses the size prior. After one training round on its dreams alone, Reanalyse rescued 37–48 of the 50 systems (76–86 equations), and the network solved 8–10 of 10 held-out.
+- **Both learner arms** solved every training system at once, at about a tenth of the fresh network's search cost.
+- **Cost of the 50-system wake:** 28–45 minutes per round per lineage, with all 9 lineages sharing 24 workers and one GPU. That is affordable.
+- **What it shows:** with pieces from x, x·y and x² only, 3 terms per equation is within reach even of a fresh network. History mainly cuts search cost, by about 10×. Rung a's failures need the rational pieces (rung a2).
+- **Next:** the a2 dream check started at 00:02 UTC from the a1w states; a2 itself is not started.
