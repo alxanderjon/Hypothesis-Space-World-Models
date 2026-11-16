@@ -115,6 +115,18 @@ def starts(ex):
     return {(a, s): LD.Lineage(a, s, RUNG, ex, gpus) for a in ARMS for s in SEEDS}
 
 
+def make_dev(ex, allowed):
+    dev = {s: [r for r in ex.map(LD.gen_job, [(f"dreamcheck-{RUNG}-dev-s{s}", k, allowed, (3, 3), 2) for k in range(N_DEV)]) if r["accepted"]] for s in SEEDS}
+    old = LD.earlier_keys("dreamcheck") | {LD.data_key(r["bursts"]) for p in (G2H / "ladder/gen").glob("*.json")
+                                            for sp in json.loads(p.read_text()).values() for r in sp}
+    clash = sum(LD.data_key(r["bursts"]) in old for s in SEEDS for r in dev[s])
+    print(f"dev systems: {sum(len(v) for v in dev.values())} accepted; identical to earlier systems {clash}")
+    if clash:
+        raise SystemExit("development systems not new")
+    for s in SEEDS:
+        (OUT / "gen" / f"dev-s{s}.json").write_text(json.dumps([dict(r, id=f"dev-s{s}-{r['k']}") for r in dev[s]]))
+
+
 def step_gen(workers):
     import numpy as np
     import dream_g1 as D1
@@ -127,16 +139,11 @@ def step_gen(workers):
     V = json.loads((SG.G1_DIR / "vocab_d2.json").read_text())["terms"]
     t0 = time.time()
     with pool(workers) as ex:
-        # development systems (a1-style), checked against every earlier set
-        dev = {s: [r for r in ex.map(LD.gen_job, [(f"dreamcheck-{RUNG}-dev-s{s}", k, allowed, (3, 3), 2) for k in range(N_DEV)]) if r["accepted"]] for s in SEEDS}
-        old = LD.earlier_keys("dreamcheck") | {LD.data_key(r["bursts"]) for p in (G2H / "ladder/gen").glob("*.json")
-                                                for sp in json.loads(p.read_text()).values() for r in sp}
-        clash = sum(LD.data_key(r["bursts"]) in old for s in SEEDS for r in dev[s])
-        print(f"dev systems: {sum(len(v) for v in dev.values())} accepted; identical to earlier systems {clash}")
-        if clash:
-            raise SystemExit("development systems not new")
-        for s in SEEDS:
-            (OUT / "gen" / f"dev-s{s}.json").write_text(json.dumps([dict(r, id=f"dev-s{s}-{r['k']}") for r in dev[s]]))
+        # development systems (a1-style), checked against every earlier set (kept if an earlier attempt already drew them)
+        if all((OUT / "gen" / f"dev-s{s}.json").exists() for s in SEEDS):
+            print("dev systems: kept from the earlier attempt")
+        else:
+            make_dev(ex, allowed)
         # generator dreams (b), shared by both arms of a seed
         for s in SEEDS:
             p = OUT / "gen" / f"dreams-gen-s{s}.pkl"
