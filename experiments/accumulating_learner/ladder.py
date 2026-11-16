@@ -34,7 +34,10 @@ RUNGS = {"a": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": 
          "a2": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "the rational pieces back (after a1w)", "after": "a1w",
                 "n_train": 50, "rung_dreams": 1000},
          "b": {"d": 3, "terms": (1, 2), "levels": (1, 2, 3, 5, 6, 7), "change": "3 variables, 1-2 terms per equation (after a2)", "after": "a2",
-               "n_train": 50, "rung_dreams": 1000, "steps": 4500}}       # owner, 16 Nov: the same training updates for every arm
+               "n_train": 50, "rung_dreams": 1000, "steps": 4500},       # owner, 16 Nov: the same training updates for every arm
+         "c": {"d": 3, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "3 variables, 3 terms per equation (after b)", "after": "b",
+               "n_train": 50, "rung_dreams": 1000, "steps": 4500, "own_dreams": 1000}}   # owner, 16 Nov: piece-balanced own dreams replace the general ones
+OTHER = 99                                                       # piece type of the learner's terms that are no curriculum piece
 SHARE_REAL = 0.30                                                # real solutions' share of training when rung dreams are used
 SEEDS = (1, 2, 3) if not SMOKE else (1,)
 ARMS = ("blend", "net", "fresh")
@@ -540,10 +543,25 @@ class Lineage:
                             usage[rk] = usage.get(rk, 0) + 1
             V = json.loads((SG.G1_DIR / f"vocab_d{self.d}.json").read_text())["terms"]
             probs = D1.term_distribution(SG.vocabulary_order(self.d), V, usage).tolist()
-            fant = [e for f in [self.pool.submit(fantasy_job, (f"ladder-{self.rung}-{self.name}-{tag}", k, probs, self.d)) for k in range(N_FANT)]
-                    for e in f.result()]
-            replay = [e for s in self.sols for e in self.examples[s]["ex"]]
             R = RUNGS[self.rung]
+            if R.get("own_dreams"):
+                # piece-balanced own dreams (owner, 16 Nov; passed the a2 own-dream check 6 of 6): a piece type the learner
+                # has used, uniformly, then a used term of it, uniformly; the rung's term count. They replace the general dreams.
+                of = {k: lv for lv, ks in piece_keys(self.d).items() for k in ks}
+                order = set(SG.vocabulary_order(self.d))
+                groups = {}
+                for k in sorted(usage):
+                    if k in order:
+                        groups.setdefault(of.get(k, OTHER), []).append(k)
+                n_own = (R["own_dreams"] if not SMOKE else 4) if sum(len(v) for v in groups.values()) >= R["terms"][1] else 0
+                fant = [e for x in self.pool.map(rung_dream_job, [(f"ladder-{self.rung}-{self.name}-{tag}-own", k, groups, R["terms"], self.d)
+                                                                  for k in range(n_own)], chunksize=4) for e in x]
+                log(f"{self.rung} {self.name} {tag}: {n_own} piece-balanced own dreams from {sum(len(v) for v in groups.values())} used terms "
+                    f"in {len(groups)} piece types ({len(fant)} examples)")
+            else:
+                fant = [e for f in [self.pool.submit(fantasy_job, (f"ladder-{self.rung}-{self.name}-{tag}", k, probs, self.d)) for k in range(N_FANT)]
+                        for e in f.result()]
+            replay = [e for s in self.sols for e in self.examples[s]["ex"]]
             steps, data = STEPS, replay + fant
             if R.get("rung_dreams"):
                 keys = piece_keys(self.d)
@@ -567,7 +585,7 @@ class Lineage:
                     return one.submit(train_net_job, ([str(p)], self.net, out, g, stable(self.name, self.rung, tag), steps)).result(), g
             info, g = self.gpus.run(train)
             p.unlink()
-            log(f"{self.rung} {self.name} {tag}: trained {steps} steps on {len(data)} examples ({len(replay)} replay, {len(fant)} general dream"
+            log(f"{self.rung} {self.name} {tag}: trained {steps} steps on {len(data)} examples ({len(replay)} replay, {len(fant)} {'own (piece-balanced)' if R.get('own_dreams') else 'general'} dream"
                 f"{', with rung dreams' if R.get('rung_dreams') else ''}) on GPU {g}")
         self.net = out
         if self.arm == "blend":

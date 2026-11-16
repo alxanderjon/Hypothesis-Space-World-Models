@@ -10284,3 +10284,59 @@ How to read it: % of development true terms ranked worse than 10 (empty / one sh
 - **c1 is the stronger of the two.** Its empty-start tail is lower than c2's in 5 of 6 cases (equal in net s1). It roughly halves the baseline's tail at the empty start and two short. The old curriculum terms rank as well or better.
 - **The teacher dreams (b) are still clearly the best** in all 6 cases. The learner's own dreams can only cover the pieces it has already used, while the teacher's cover the rung's.
 - **Proposed:** add c1 piece-balanced own dreams alongside the teacher dreams from rung c on, within the same matched 4,500 steps.
+
+### Owner: rung c, and a review of AlphaDev for refinements (16 November)
+
+**Owner.** *"Start rung c (3 variables, 3 terms per equation, same six pieces). Use teacher dreams plus the piece-balanced own dreams, with the piece-balanced dreams replacing the old own dreams, not adding to them, so every arm stays at 4,500 training updates per round. Same rules as before: 50 training systems per seed, 3 seeds, mastery in at least 2 of 3, fresh-network comparison, Reanalyse on. Report held-out results, first-try solves and search tries per solution per arm. Stop and report if it drops off. Alongside it, do a short review of the AlphaDev paper (Mankowitz et al., Nature 2023), looking only for refinements that fit our current design, not a change of direction. In particular: (1) giving the network more information about what a partial equation fails to explain in the data, as AlphaDev's network sees each partial program's effect on its inputs; (2) pruning moves that can't help (equivalent or redundant terms); (3) whether its correctness-plus-simplicity reward suggests anything for choosing library pieces beyond our compression approach. For each idea that fits, propose a minutes-scale quick check. Don't run any of them until rung c is done, and don't take GPUs from rung c."*
+
+**Rung c** (design and mastery criterion set before the run).
+- **The one change:** 3 terms per equation at 3 variables (rung b had 1–2).
+- **Unchanged from rung b:** 50 training and 10 held-out systems per seed, checked against every earlier set; the arms continuing from rung b's states, plus a fresh network; 1,000 teacher dreams per learning round; real solutions held at 30%; 4,500 steps per learning round for every arm; budgets, Reanalyse, mastery and drop-off rules.
+- **Own dreams:**
+  - 1,000 piece-balanced own dreams per learning round, as in the passing check. They replace the 50 general dreams; the training-update count is fixed regardless.
+  - Each term picks a piece type uniformly among those the lineage's 3-variable solutions use (the six pieces, plus one group for its other terms), then a used term of that type uniformly. 3 terms per equation, as in the rung.
+  - A lineage with fewer than 3 used terms (the fresh network before its first solutions) gets no own dreams that round. This is logged per round.
+
+**AlphaDev review** (read from the open-access full text, Europe PMC PMC10247365).
+- **What AlphaDev does** (from Methods):
+  - **Representation:** a transformer over the program's instructions, plus a "CPU state encoder", an MLP over the contents of every register and memory location after running the partial program on each test input. The policy is therefore conditioned on the partial program's effect on every input separately.
+  - **Pruning:** it removes illegal instructions and program invariances (for example, the order of register allocation), which "helps reduc[e] the size of the action space and increases convergence rate". No ablation number is given.
+  - **Reward:** correctness from test inputs (partial credit for correctly placed items; for the stochastic baseline, the best correctness cost was a square root of the misplaced count), plus a latency or length term.
+  - **Dual value heads:** separate heads for correctness and latency did "substantially better" than one head when latency was measured.
+  - **Effort:** AlphaDev explored orders of magnitude fewer programs than stochastic search (12 million against 31 trillion in the worst case).
+
+**Where we already are.**
+- Our search uses the true fit, so every node's value is exact. No value head is learned, so the dual-head idea does not apply.
+- Our network already sees summaries of what a partial equation fails to explain: for every candidate term,
+  - its best partial R² against the current residual;
+  - the same at the empty start;
+  - for current terms, how much residual their removal would add;
+  - plus the residual size and the noise floor.
+- These are pooled over all the data, as one number per term.
+
+**Ideas that fit, each with a proposed minutes-scale quick check** (no search, no training, CPU only; not run until rung c is done).
+
+1. **Effect per input: per-burst evidence.**
+   - **The idea:** AlphaDev sees the partial program's effect on each test input separately. Our equivalent is each data burst: a system has 8 bursts from different starting points, and our gain is pooled over them. A missing term can explain the residual well in the bursts where its variable moves, yet look weak pooled.
+   - **Check A:** on rung c's development-style systems and the a2 check's development systems, take the true terms ranked worse than 10 by the trained network (the tail). Rank them by (i) the current pooled gain, (ii) the per-burst gain (minimum, median and maximum over bursts), at the empty start, one short and two short.
+   - **Pass rule:** some per-burst statistic moves at least 30% of the tail terms into the top 10 that pooled gain leaves out, with a no-worse mean log2 rank for the non-tail true terms, in at least 5 of 6 arm-and-seed cases.
+   - **If it passes:** proposed next step, adding the per-burst gains as extra evidence features (a network change that needs retraining, so a separate proposal).
+2. **What the partial equation fails to explain jointly: one-step lookahead gain.**
+   - **The idea:** "one short" and "two short" failures are often terms that help only together with another missing term. AlphaDev's search conditions on the state after each instruction; our cheap analogue is each candidate's best gain jointly with one other candidate (pair gain).
+   - **Check B:** the same tail terms, ranked by their best pair gain. That is a rank-one update per pair over the shortlisted terms, so seconds per equation.
+   - **Pass rule:** as in check A.
+3. **Pruning moves that cannot help.**
+   - **The idea:** like AlphaDev's removal of invariances, mask adds whose columns on this system's data lie (to 1e-10) in the span of the current terms, and keep only one of any terms with identical columns on this data (aliases, for example the same expression under different role keys). Our search treats every term outside the set as legal.
+   - **Check C:** at the root and at the nodes of the recorded rung c wake searches (which keep each expanded set), count
+     - the share of legal adds and swaps that are prunable;
+     - the share of expanded structures that were exact duplicates of an already-fitted span;
+     - whether any true term would ever be pruned.
+   - **Pass rule:** at least 10% of moves or 5% of expanded structures are prunable, and no true term is ever pruned. If it passes, a search-level test with search, proposed separately.
+4. **Correctness plus simplicity for choosing library pieces.**
+   - **The idea:** AlphaDev's reward measures what a program costs (latency), not how short it is. The analogue for our library is to keep the pieces that save search, not only those that compress the solutions.
+   - **Check D:** from every past wake (curriculum and ladder), take each solved equation's structures-to-first-solution and whether each of its true terms was in the library's top 100 at that time. Score each library term by usage × the extra structures paid when it was outside the top 100. Compare the held-out rung c true terms' coverage in the top 100 under the compression ranking against this search-cost ranking.
+   - **Pass rule:** the search-cost ranking covers at least 5 percentage points more held-out true terms in the top 100, in at least 2 of 3 seeds, without losing curriculum coverage.
+
+**Not carried over:**
+- the learned dynamics model and the dual value heads (our values are exact fits);
+- AlphaDev's latency measurement and its stochastic search baseline. These are a change of direction rather than refinements.
