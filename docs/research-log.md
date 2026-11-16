@@ -10095,3 +10095,27 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
 - **Cost of the 50-system wake:** 28–45 minutes per round per lineage, with all 9 lineages sharing 24 workers and one GPU. That is affordable.
 - **What it shows:** with pieces from x, x·y and x² only, 3 terms per equation is within reach even of a fresh network. History mainly cuts search cost, by about 10×. Rung a's failures need the rational pieces (rung a2).
 - **Next:** the a2 dream check started at 00:02 UTC from the a1w states; a2 itself is not started.
+
+### The a2 dream check: results (16 November, 00:39–03:56 UTC; from the a1w states; no search; GPU 0)
+
+**Verdict on the pre-set rule (tail and old terms):**
+- **b (generator dreams): PASSES**, in 6 of 6 arm-and-seed cases.
+- **c (library dreams): does not pass** (3 of 6).
+- b is clearly ahead of c in all 6, so **b is the version to use.**
+
+**Share of a2-style development true terms ranked worse than 10** (empty start / one short / two short), with curriculum mean log2 rank in brackets:
+
+| | baseline (a) | generator dreams (b) | library dreams (c) |
+|---|---|---|---|
+| blend s1 | 44 / 31 / 40% (1.72) | 22 / 0 / 12% (0.87) | 48 / 28 / 48% (1.77) |
+| blend s2 | 32 / 11 / 25% (1.03) | 22 / 1 / 8% (0.67) | 36 / 8 / 27% (0.94) |
+| blend s3 | 43 / 31 / 44% (1.12) | 12 / 1 / 5% (0.74) | 43 / 22 / 42% (1.08) |
+| network s1 | 41 / 28 / 40% (1.59) | 9 / 0 / 8% (0.71) | 36 / 23 / 35% (1.38) |
+| network s2 | 30 / 22 / 32% (1.22) | 7 / 0 / 3% (0.76) | 22 / 11 / 18% (1.18) |
+| network s3 | 39 / 29 / 46% (1.04) | 8 / 0 / 7% (0.63) | 32 / 8 / 29% (0.79) |
+
+**What it shows:**
+- **On a2-style systems the baseline's tail is large:** 30–44% of true terms are ranked worse than 10 at the empty start, and 11–31% even one short. That is consistent with rung a's search failures.
+- **Generator dreams shrink the tail several-fold at every point,** and they improve old curriculum terms too.
+- **Library dreams** help the network alone a little and the blend hardly at all.
+- **Cost:** a rung-shaped round is 5,460 steps on about 12,900 examples, about 13 minutes on one GPU.
