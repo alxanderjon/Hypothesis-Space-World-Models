@@ -10144,3 +10144,25 @@ New terms at 30 tasks (median rank, empty start / one short / two short):
 - **Piece-balanced library dreams.** Group the terms of the learner's own solutions by piece, i.e. their role form through the library. Draw each dream term by first choosing a piece uniformly among the pieces it has used, then a term of that piece.
 - It stays fully self-generated: no generator and no knowledge of the rung. It simply stops the grammar's size penalty from deciding what gets practised.
 - **Variant to compare:** the grammar weights flattened by a temperature (log P divided by 3).
+
+### Rung a2 (rational pieces back; generator dreams; 50 training systems per seed): results (16 November, 04:26–08:54 UTC; 24 workers; GPU 0)
+
+**Verdict: mastered by every arm, in one round, in all three seeds.** Per the owner, the ladder stops here and the result is reported.
+
+| arm | held-out after round 1 (s1 / s2 / s3, of 10) | training systems solved in the first wake (of 50) | median structures before a training solution | minutes for the round |
+|---|---|---|---|---|
+| confidence blend | 10 / 10 / 9 | 28 / 30 / 16 | 31 / 22 / 40 | 109 / 237 / 264 |
+| network alone | 10 / 9 / 9 | 10 / 16 / 16 | 26 / 19 / 42 | 216 / 252 / 226 |
+| fresh network | 10 / 10 / 9 | 0 / 0 / 0 | 155 / 234 / 114 | 164 / 205 / 121 |
+
+- **Reanalyse after the learning round rescued many equations:**
+  - confidence blend: 16–36 equations (13–30 systems);
+  - network alone: 27–41 equations (23–31 systems);
+  - fresh network: 81–84 equations (35–37 systems).
+- **History's effect on effort:** the learner arms solved 10–30 training systems in their first wake, against 0 for the fresh network. They needed 19–42 structures per training solution, against 114–234.
+- **The blend against the network alone:** the blend solved more in the first wake in all three seeds (28 / 30 / 16 against 10 / 16 / 16).
+- **Rounds are slow:** 2–4.5 hours. Nine lineages shared one GPU (about 13 minutes of training each), and 50 wake systems now include rational pieces.
+
+**Caveats:**
+1. **The generator dreams are drawn by the rung's own generator,** with exactly the rung's pieces and shape. That is knowledge of the rung supplied to every arm, not discovered by it. One learning round on them took the fresh network from 0 solved training systems to mastery, so the dreams carry much of the rung. Under the standing rule (no hand-added pieces; the learner is never told the domain), this setting cannot be used for claims about real fields. The piece-balanced library dreams proposed above are the self-generated alternative to test.
+2. **The fresh network's comparison is not matched in training:** the step scaling gave it about 4× more steps (16,575–17,701 against 4,035–4,640), because its baseline set was so small.
