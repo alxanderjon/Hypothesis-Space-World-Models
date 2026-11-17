@@ -10381,3 +10381,23 @@ How to read it: % of development true terms ranked worse than 10 (empty / one sh
   - At 3 variables and 3 terms, many draws fail the prescreen or the build, and each dream is retried up to 200 times.
   - The fresh lineages' own dreams use only 5–11 terms in 2 piece types, and only about 40% of them yielded examples (4,818–4,892 examples, against about 12,600 for the others), so many of them used all 200 tries.
 - **No change made:** nothing is wrong, only slow. The machine has no spare cores (load 47 on 48), so the AlphaDev checks are still waiting.
+
+**Rung c: a bug found and fixed; the run resumed (17 November, about 08:40 UTC).**
+- **The symptom:**
+  - net-s1's first training set held 2,269 real examples (×2 for the 30% share) plus 12,598 own-dream examples, and no teacher-dream examples at all.
+  - blend-s1's and net-s3's own dreams yielded 0 examples from 1,000 dreams. Own dreams of the lineages that reached that step before about 02:00 UTC were normal.
+- **The cause:**
+  - Every simulated system loads a compiled C library (`compile_artifact.build`, via `ctypes.CDLL`) that is never unloaded.
+  - After hours of dream building, each of the run's 24 long-lived workers had 65,532 memory mappings, at the kernel's limit (`vm.max_map_count` 65,530).
+  - From then on every build failed at once, and the dream job's catch-all retry hid it.
+  - The same seeds built normally in a fresh process.
+  - Earlier rungs were not affected: their dream yields were normal (about 12 examples per dream), and fewer tries are needed per dream at 1–2 terms.
+- **What was valid and kept:** all 450 first-wake searches (finished by 22:38, every one with status "done") and the replay examples.
+- **What was discarded:** net-s1's learn1 network (trained without teacher dreams). No other lineage had trained.
+- **The fix** (`ladder.py`):
+  - dreams are built in short-lived pools of 8 workers, replaced every 100 dreams, with at most 3 pools at once;
+  - a dream batch giving fewer than 2 examples per dream stops the lineage with an error instead of training on it;
+  - teacher-dream yields are now logged like own-dream yields.
+- **Test:** 16 of 16 dreams with examples (195 examples).
+- **Design unchanged.** The run resumed from the saved first wakes.
+- **Cost:** at this rung a dream takes about 45 s of a worker under the current load, so building 2,000 dreams for each of 9 lineages takes several hours per round.

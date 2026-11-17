@@ -58,11 +58,32 @@ CURRIC = {("blend", 1): ("cblend", "net-blend-s1", "cpilot/gen/systems-s1.json")
           ("net", 3): ("cseed3", "net-s3", "cseed3/gen/systems-s3.json")}
 EARLIER = ["cpilot/gen", "curriculum/gen", "curriculum2/gen", "cseed3/gen"]
 _LOCK = threading.Lock()
+# Dreams are built in short-lived pools (rung c, 17 Nov): every simulated system loads a compiled library (compile_artifact)
+# that is never unloaded, and long-lived workers hit the kernel's 65,530 memory-map limit, after which every build failed
+# silently. A pool is replaced every DREAM_CHUNK dreams; at most DREAM_POOLS pools run at once.
+DREAM_WORKERS, DREAM_POOLS, DREAM_CHUNK = 8, 3, 100
+_DREAM_SEM = threading.Semaphore(DREAM_POOLS)
+MIN_EXAMPLES_PER_DREAM = 2.0                                     # below this a dream batch is treated as broken: stop loudly
 
 
 def log(msg):
     with _LOCK:
         C.log(msg)
+
+
+def dream_map(jobs, what):
+    """rung_dream_job over jobs in fresh pools of DREAM_WORKERS, replaced every DREAM_CHUNK jobs; checks the yield."""
+    from concurrent.futures import ProcessPoolExecutor
+    from multiprocessing import get_context
+    out = []
+    for c in range(0, len(jobs), DREAM_CHUNK):
+        with _DREAM_SEM:
+            with ProcessPoolExecutor(DREAM_WORKERS, mp_context=get_context("spawn")) as ex:
+                out += list(ex.map(rung_dream_job, jobs[c:c + DREAM_CHUNK]))
+    n_ex = sum(len(x) for x in out)
+    if jobs and n_ex < MIN_EXAMPLES_PER_DREAM * len(jobs):
+        raise RuntimeError(f"{what}: {n_ex} examples from {len(jobs)} dreams ({sum(bool(x) for x in out)} with examples): broken dream batch")
+    return [e for x in out for e in x], sum(bool(x) for x in out)
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -554,10 +575,10 @@ class Lineage:
                     if k in order:
                         groups.setdefault(of.get(k, OTHER), []).append(k)
                 n_own = (R["own_dreams"] if not SMOKE else 4) if sum(len(v) for v in groups.values()) >= R["terms"][1] else 0
-                fant = [e for x in self.pool.map(rung_dream_job, [(f"ladder-{self.rung}-{self.name}-{tag}-own", k, groups, R["terms"], self.d)
-                                                                  for k in range(n_own)], chunksize=4) for e in x]
+                fant, ok = dream_map([(f"ladder-{self.rung}-{self.name}-{tag}-own", k, groups, R["terms"], self.d) for k in range(n_own)],
+                                     f"{self.rung} {self.name} {tag} own dreams")
                 log(f"{self.rung} {self.name} {tag}: {n_own} piece-balanced own dreams from {sum(len(v) for v in groups.values())} used terms "
-                    f"in {len(groups)} piece types ({len(fant)} examples)")
+                    f"in {len(groups)} piece types ({ok} with examples; {len(fant)} examples)")
             else:
                 fant = [e for f in [self.pool.submit(fantasy_job, (f"ladder-{self.rung}-{self.name}-{tag}", k, probs, self.d)) for k in range(N_FANT)]
                         for e in f.result()]
@@ -567,8 +588,9 @@ class Lineage:
                 keys = piece_keys(self.d)
                 allowed = {lv: keys[lv] for lv in R["levels"]}
                 n = R["rung_dreams"] if not SMOKE else 4
-                rd = [e for x in self.pool.map(rung_dream_job, [(f"ladder-{self.rung}-{self.name}-{tag}-rung", k, allowed, R["terms"], self.d)
-                                                                for k in range(n)], chunksize=4) for e in x]
+                rd, ok = dream_map([(f"ladder-{self.rung}-{self.name}-{tag}-rung", k, allowed, R["terms"], self.d) for k in range(n)],
+                                   f"{self.rung} {self.name} {tag} teacher dreams")
+                log(f"{self.rung} {self.name} {tag}: {n} teacher dreams ({ok} with examples; {len(rd)} examples)")
                 others = fant + rd
                 m = max(1, round(SHARE_REAL * len(others) / ((1 - SHARE_REAL) * max(len(replay), 1))))
                 data = replay * m + others
