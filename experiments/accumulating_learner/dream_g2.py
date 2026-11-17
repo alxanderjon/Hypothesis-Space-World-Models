@@ -158,7 +158,8 @@ def prescreen(desc, steps=150, sub=4):
     except Exception:
         return "pre-screen: no motion"
     h = T / H27.STEPS / sub
-    rng = np.random.default_rng(abs(hash(desc["seed"])) % (1 << 32))
+    import hashlib                                               # stable across processes (17 Nov; was hash(), salted per process)
+    rng = np.random.default_rng(int(hashlib.sha1(str(desc["seed"]).encode()).hexdigest()[:8], 16))
     x = ic[None, :] * rng.uniform(0.5, 1.5, (4, len(ic)))
     bound = 100 * np.abs(ic).max()
     with np.errstate(all="ignore"):

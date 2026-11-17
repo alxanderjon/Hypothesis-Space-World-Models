@@ -10482,3 +10482,47 @@ How to read it: % of development true terms ranked worse than 10 (empty / one sh
 **Rung c, status at 15:35 UTC (round 1):**
 - **net-s3 mastered the rung in round 1:** 30 of 50 first-try solves, 8 of 10 held-out.
 - **The fresh network after round 1:** held-out 5 / 6 / 7 of 10 (seeds 1 / 2 / 3), 0 first-try solves. It goes on to round 2.
+
+#### Rung c: mastered by every arm; history in the first wake (17 November, finished 21:41 UTC)
+
+Rung c: 3 variables, 3 terms, teacher plus piece-balanced own dreams, 4,500 steps per round for every arm.
+
+| arm | held-out per round (s1 / s2 / s3, of 10) | first-wake solves (of 50) | equations solved in the first wake (of 150) | median structures before a training solution | minutes for round 1 |
+|---|---|---|---|---|---|
+| confidence blend | 9 / 8 / 8 (round 1) | 39 / 34 / 32 | 137 / 125 / 126 | 24 / 23 / 29 | 523 / 584 / 355 |
+| network alone | 8 / 8 / 8 (round 1) | 27 / 32 / 30 | 122 / 128 / 123 | 30 / 24 / 28 | 607 / 551 / 437 |
+| fresh network | 5→9 / 6→8 / 7→5→8 (rounds 2, 2, 3) | 0 / 0 / 0 | 1 / 3 / 6 | 39 / 58 / 26 (all rounds) | 217 / 448 / 393 |
+
+- **Every learner lineage mastered rung c in round 1.** The fresh network needed 2, 2 and 3 rounds.
+- **History again shows in the first wake:**
+  - the learner arms solved 27–39 of 50 systems (122–137 of 150 equations), against 0 systems (1–6 equations) for the fresh network;
+  - search effort was 23–30 structures per training solution.
+- **The blend ahead of the network alone:** it solved more systems in the first wake in 2 of 3 seeds (39 against 27, 34 against 32, 32 against 30), and had a higher held-out in seed 1 (9 against 8).
+- **Minutes for round 1 are inflated** by the restart after the dream bug (the restarted lineages also rebuilt their dreams) and by heavy machine load. Most of round 1 was dream building.
+- **The fresh network's first-wake medians** cover only its 1–6 solved equations.
+- Reanalyse rescued 5–15 equations per learner lineage.
+
+**Speedups applied** (`patches/rung_d_speedups.py`, after rung c's processes exited):
+- shared teacher dreams from rung d on;
+- the pre-screen's stable seed.
+
+### Proposal: rung d (coupling alone), for approval
+
+- **The one change:** each system has exactly one coupling.
+  - One term, with its rate and constants, is shared by two equations as a transfer: coefficient −a in one equation and +a in the other, the same constants K.
+  - The shared term counts as one of the 3 terms in each of the two equations; the rest are drawn as in rung c (3 variables, 3 terms, the six pieces).
+  - The generator (`coupling_gen.draw_coupled`) excludes repeats of the shared term, so every equation keeps 3 distinct terms.
+- **Pilot** (40 systems): all accepted, every one with 3 terms in each equation; median 11.5 draws and 7 s per accepted system. The shared piece covers all six piece types (x 12, x·y 13, x² 5, the three rational pieces 10).
+- **Everything else as rung c:**
+  - 50 training and 10 held-out systems per seed, checked against every earlier set;
+  - the arms continue from rung c's states, plus a fresh network;
+  - 1,000 teacher dreams per round from the coupled generator, now one shared set per round;
+  - 1,000 piece-balanced own dreams per lineage, unchanged;
+  - 4,500 steps per round for every arm; budgets 300 / 1,000 / 3,000; Reanalyse at 100 structures;
+  - mastery at 8 of 10 held-out in 2 of 3 seeds; drop-off if neither learner arm masters it.
+- **Smoke test first.**
+- **Caveat:**
+  - Our search fits each equation separately, so it cannot use the fact that a rate is shared.
+  - Rung d tests whether coupled systems (one transfer between two variables) are harder to identify, not whether the learner exploits coupling.
+  - As an extra report, at no cost: the solve rate of the two coupled equations against the uncoupled one, from the wake and test records (the generator records which pair is coupled).
+- **Expected cost:** the shared teacher set cuts dream building by about a third. A round should take about two-thirds of rung c's time under the same load.

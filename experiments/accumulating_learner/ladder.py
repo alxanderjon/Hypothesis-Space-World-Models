@@ -64,11 +64,36 @@ _LOCK = threading.Lock()
 DREAM_WORKERS, DREAM_POOLS, DREAM_CHUNK = 8, 3, 100
 _DREAM_SEM = threading.Semaphore(DREAM_POOLS)
 MIN_EXAMPLES_PER_DREAM = 2.0                                     # below this a dream batch is treated as broken: stop loudly
+SHARE_TEACHER_FROM = ("d", "e", "f", "g")                        # owner, 17 Nov: one teacher-dream set per round, shared by every lineage
+_TEACHER, _TEACHER_LOCKS = {}, {}
 
 
 def log(msg):
     with _LOCK:
         C.log(msg)
+
+
+def shared_teacher(rung, rnd, allowed, terms, d, n):
+    """The round's teacher dreams: built once by the first lineage to need them, then given to every lineage in that
+    round (and saved, so a restarted run reuses them). A new set every round."""
+    with _LOCK:
+        lock = _TEACHER_LOCKS.setdefault((rung, rnd), threading.Lock())
+    with lock:
+        if (rung, rnd) not in _TEACHER:
+            p = OUT / rung / f"teacher_round{rnd}.pkl"
+            if p.exists():
+                _TEACHER[(rung, rnd)] = pickle.loads(p.read_bytes())
+                log(f"{rung} round {rnd}: shared teacher dreams loaded ({len(_TEACHER[(rung, rnd)])} examples)")
+            else:
+                t0 = time.time()
+                ex, ok = dream_map([(f"ladder-{rung}-round{rnd}-teacher", k, allowed, terms, d) for k in range(n)],
+                                   f"{rung} round {rnd} shared teacher dreams")
+                tmp = p.with_name(p.name + ".tmp")
+                tmp.write_bytes(pickle.dumps(ex))
+                tmp.replace(p)
+                _TEACHER[(rung, rnd)] = ex
+                log(f"{rung} round {rnd}: {n} shared teacher dreams built ({ok} with examples; {len(ex)} examples) in {time.time() - t0:.0f}s")
+    return _TEACHER[(rung, rnd)]
 
 
 def dream_map(jobs, what):
@@ -588,9 +613,12 @@ class Lineage:
                 keys = piece_keys(self.d)
                 allowed = {lv: keys[lv] for lv in R["levels"]}
                 n = R["rung_dreams"] if not SMOKE else 4
-                rd, ok = dream_map([(f"ladder-{self.rung}-{self.name}-{tag}-rung", k, allowed, R["terms"], self.d) for k in range(n)],
-                                   f"{self.rung} {self.name} {tag} teacher dreams")
-                log(f"{self.rung} {self.name} {tag}: {n} teacher dreams ({ok} with examples; {len(rd)} examples)")
+                if self.rung in SHARE_TEACHER_FROM:
+                    rd = shared_teacher(self.rung, self.n_learn, allowed, R["terms"], self.d, n)
+                else:
+                    rd, ok = dream_map([(f"ladder-{self.rung}-{self.name}-{tag}-rung", k, allowed, R["terms"], self.d) for k in range(n)],
+                                       f"{self.rung} {self.name} {tag} teacher dreams")
+                    log(f"{self.rung} {self.name} {tag}: {n} teacher dreams ({ok} with examples; {len(rd)} examples)")
                 others = fant + rd
                 m = max(1, round(SHARE_REAL * len(others) / ((1 - SHARE_REAL) * max(len(replay), 1))))
                 data = replay * m + others
