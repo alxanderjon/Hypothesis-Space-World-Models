@@ -10382,7 +10382,7 @@ How to read it: % of development true terms ranked worse than 10 (empty / one sh
   - The fresh lineages' own dreams use only 5–11 terms in 2 piece types, and only about 40% of them yielded examples (4,818–4,892 examples, against about 12,600 for the others), so many of them used all 200 tries.
 - **No change made:** nothing is wrong, only slow. The machine has no spare cores (load 47 on 48), so the AlphaDev checks are still waiting.
 
-**Rung c: a bug found and fixed; the run resumed (17 November, about 08:40 UTC).**
+**Rung c: a bug found and fixed; the run resumed (17 November, 08:05 UTC; GPUs 0, 2, 4, 6 and 7 free at the restart).**
 - **The symptom:**
   - net-s1's first training set held 2,269 real examples (×2 for the 30% share) plus 12,598 own-dream examples, and no teacher-dream examples at all.
   - blend-s1's and net-s3's own dreams yielded 0 examples from 1,000 dreams. Own dreams of the lineages that reached that step before about 02:00 UTC were normal.
