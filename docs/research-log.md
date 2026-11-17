@@ -10546,3 +10546,78 @@ Rung c: 3 variables, 3 terms, teacher plus piece-balanced own dreams, 4,500 step
 - **Every suggestion is verified by the exactness check** (1e-12 recovery, held-back data), exactly like the learner's own proposals.
 - **It is approved as a tool, not a shortcut.** Its suggestions enter as proposals, never as accepted structure.
 - **Measuring its benefit:** only on systems the LLM cannot have memorized, such as newly generated systems or unpublished ones, so the gain reflects real help rather than recall.
+
+#### Stitch against our library compression (17 November)
+
+**Setup** (`stitch_check.py`; stitch_core 0.1.29 installed in a scratch folder, nothing running changed).
+- **Input:** the verified solutions of the six curriculum lineages the ladder started from (2 variables), and of the three blend lineages at the end of rung c (3 variables).
+- Both methods got the same term trees with multiplicity, and the same limits: at most 20 pieces, at most 2 holes.
+
+**Speed: no gain possible.**
+- Our compression (`library_ops.learn`, uni form) took 0.01–0.07 s per lineage; Stitch took 0.01–0.23 s.
+- Library learning is not a bottleneck: rounds take hours, mostly dream building and search.
+
+**Pieces:**
+- Stitch keeps adding pieces until its iteration limit (14–20). Ours stops when the description length stops falling (2–11). They share 0–3 pieces.
+- **The cores agree.** Both find (K + □)⁻¹ and the rational piece ((K + (□ + K·□²)))⁻¹ (Stitch as (Pow (Add K #0) nm1) and (Mul #0 (Pow (Add K (Add #0 (Mul K (Pow #0 n2)))) nm1))).
+- **Stitch's other pieces** are mostly small concrete subtrees (own², other², own·other). These are already cheap under our grammar.
+- In 5 of 9 cases Stitch also learns pieces with a repeated hole, which our piece format cannot express.
+
+**Each method's library scored under both objectives:**
+
+| | our objective, DL bits (no library / ours / Stitch's) | Stitch's objective, corpus symbols incl. library (none / ours / Stitch's) |
+|---|---|---|
+| curriculum, 6 lineages | Stitch's worse in 6 of 6, e.g. 1,424 / 1,121 / 1,581 (blend s1: worse than no library) | Stitch's smaller in every case scored, e.g. 564 / 365 / 217 |
+| end of rung c, 3 lineages | Stitch's worse in 2 of 3 (7,093 against 7,290; 7,428 against 7,775), better in 1 (7,609 against 7,584, by 0.3%) | Stitch's smaller, e.g. 4,730 / 2,679 / 1,562 |
+
+(In 3 cases Stitch's rewriter panicked on our library, so ours could not be scored under its objective there.)
+
+- **Reading:** each method wins its own objective, as expected. Ours is the description length under the grammar the search uses as its prior, so for our purpose Stitch's libraries are no better (worse in 8 of 9) and no faster where it matters.
+- **Recommendation: keep our compression.** Reconsider Stitch only if libraries grow by orders of magnitude (it is built for large corpora), or if repeated-hole pieces are wanted. No change made, as the owner asked.
+
+### Proposal: rung e, the harder fields' pieces one per sub-rung, for approval
+
+**The pieces the harder fields use** (their 100 training systems each at level 1; counts of true terms):
+- **Reaction networks:** x 34%, x·y 32%, x² 10%, x/(K+x) 7%, 1/(K+x²) 7%, **x²/(K+x²) (Hill activation) 7%**, **constant (inflow) 2%**.
+- **Flows:** x 40%, x·y 23%, x² 13%, **x/(K+x²) (saturation) 9%**, 1/(K+x²) 8%, **constant 3%**, **x³ (self-cubic) 3%**.
+
+**Not yet on the ladder** (bold above):
+- the constant;
+- x³ (curriculum level 4);
+- x/(K+x²) (curriculum level 8);
+- x²/(K+x²) (Hill activation, new).
+
+1/(K+x) is on the ladder, but neither field uses it. Every piece is in the 3-variable vocabulary: the constant 1 term, x³ 3, x/(K+x²) 5, Hill 3.
+
+**Proposed order, simplest to hardest:**
+1. **e1, constant:** no constant inside and a linear coefficient only.
+2. **e2, x³:** no constant inside; a curriculum piece.
+3. **e3, x/(K+x²):** one constant inside; a curriculum piece that builds on the mastered 1/(K+x²) and x/(K+x).
+4. **e4, Hill x²/(K+x²):** one constant inside; new; builds on e1's constant and the mastered 1/(K+x²). It is last because it is the only piece with an exact alternative: x²/(K+x²) = 1 − K/(K+x²).
+   - Alone in an equation, the search should prefer the single Hill term (fewer terms).
+   - With a constant also in the equation, {Hill, 1} and {1/(K+x²), 1} are the same function and the same size. Both are exact, and both count as solved by the fit (as always).
+   - The share of each found form will be reported.
+
+**Pilot** (`rung_e_pilot.py`, 30 systems per sub-rung): every sub-rung's generator accepted 30 of 30, with 1.5–1.8 new-piece terms per system.
+
+| new piece | median draws | median seconds per system |
+|---|---|---|
+| constant | 9 | 5 |
+| x³ | 18.5 (more pre-screen blow-ups) | 14 |
+| x/(K+x²) | 35 | 23 |
+| Hill | 13.5 | 11 |
+
+**Design of each sub-rung:**
+- Rung c's setup (3 variables, 3 terms) over the mastered pieces plus the new one.
+- **Every system has at least one term of the new piece** (draws without one are redrawn), the rest drawn uniformly over the pieces.
+- The arms continue from the previous sub-rung (e1 from rung c), plus a fresh network.
+- **Unchanged from rung c:** 50 training and 10 held-out systems per seed, checked against every earlier set; teacher dreams from the sub-rung's generator (one shared set per round); piece-balanced own dreams; 4,500 updates per round; budgets 300 / 1,000 / 3,000; Reanalyse; mastery at 8 of 10 in 2 of 3 seeds.
+- **Drop-off:** if neither learner arm masters a sub-rung, stop and report.
+- A smoke test before e1.
+- **Reported per arm:** held-out per round, first-try solves, search tries per solution, and the new piece's own solve rate (its equations against the rest).
+
+**Check D repeated:**
+- After e4, with the same rule, on e4's held-out and the curriculum's.
+- Coverage is also shown at the top 20 and top 50. With about 45 distinct piece terms at 3 variables even after e4, the top 100 may still be at its ceiling.
+- Proposed: the top 20 decides if the top 100 is at its ceiling again. To be confirmed by the owner.
+- An informative run after each sub-rung (minutes, CPU).
