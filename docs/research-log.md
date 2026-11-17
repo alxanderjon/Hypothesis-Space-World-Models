@@ -10373,3 +10373,11 @@ How to read it: % of development true terms ranked worse than 10 (empty / one sh
   - **Score** = usage × cost.
   - **Search-cost ranking:** the scored terms by score, then the rest in compression order (the end-of-b library table's empty-context column).
   - **Coverage:** top-100 coverage of rung c's held-out true terms (counts only) and of the curriculum's held-out true terms.
+
+**Rung c, status at 03:55 UTC on 17 November.**
+- **First wakes** (first-try solves, of 50): blend 39 / 34 / 32, network alone 27 / 32 / 30, fresh 0 / 0 / 0.
+- **No lineage has trained yet.** Its 24 workers are still building round 1's dreams, 2,000 per lineage (1,000 piece-balanced own dreams, then 1,000 teacher dreams).
+- **Why so slow:**
+  - At 3 variables and 3 terms, many draws fail the prescreen or the build, and each dream is retried up to 200 times.
+  - The fresh lineages' own dreams use only 5–11 terms in 2 piece types, and only about 40% of them yielded examples (4,818–4,892 examples, against about 12,600 for the others), so many of them used all 200 tries.
+- **No change made:** nothing is wrong, only slow. The machine has no spare cores (load 47 on 48), so the AlphaDev checks are still waiting.
