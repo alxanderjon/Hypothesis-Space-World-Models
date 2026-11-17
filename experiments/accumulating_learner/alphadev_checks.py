@@ -345,6 +345,65 @@ def step_libd(workers):
     print(json.dumps(out, indent=1))
 
 
+def step_libd_rung(rung):
+    """Check D again for a ladder rung (owner, 17 Nov: top 20 decides; top 20, 50 and 100 reported): each blend lineage's
+    end-of-rung library (compression ranking) against usage x search cost from the rung's own wakes; coverage of the
+    rung's held-out true terms (counts only) and of the curriculum's held-out true terms (2 variables, ranked by the
+    same lineage's 2-variable table with the cost from the same wakes' 2-variable terms, i.e. compression order there)."""
+    import numpy as np
+    import dream_g2 as DR
+    import search_g1 as SG
+    cuts = (20, 50, 100)
+    out = {}
+    for s in SEEDS:
+        st = json.loads((G2H / "ladder" / rung / f"blend-s{s}.state.json").read_text())
+        tables = {int(k): v for k, v in st["tables"].items()}
+        for d in (3, 2):
+            order = SG.vocabulary_order(d)
+            gid = {k: g for g, k in enumerate(order)}
+            comp = list(np.argsort(-np.load(tables[d])[:, 0], kind="stable"))
+            usage, cost = {}, {}
+            if d == 3:
+                rec = json.loads((G2H / "ladder" / rung / f"blend-s{s}.json").read_text())
+                struct = {r_["id"]: r_["structure"] for r_ in json.loads((G2H / "ladder" / "gen" / f"{rung}-s{s}.json").read_text())["train"]}
+                for rnd in rec["rounds"]:
+                    for y in rnd["wake"]:
+                        if y["status"] != "done" or y["id"] not in struct:
+                            continue
+                        for e in y["equations"]:
+                            i = int(e["eq"])
+                            c = e["first_exact"] if e["first_exact"] is not None else y["budget"]
+                            for k in struct[y["id"]][i]:
+                                rk = DR.role_key(k, i, d)
+                                if rk in gid:
+                                    cost.setdefault(gid[rk], []).append(c)
+                                    usage[gid[rk]] = usage.get(gid[rk], 0) + (e["first_exact"] is not None)
+            score = {g: usage[g] * float(np.mean(c)) for g, c in cost.items() if usage.get(g, 0)}
+            sc = sorted(score, key=lambda g: -score[g]) + [g for g in comp if g not in score]
+            if d == 3:
+                hs = json.loads((G2H / "ladder" / "gen" / f"{rung}-s{s}.json").read_text())["test"]
+            else:
+                cur = json.loads((G2H / CUR[s]).read_text())
+                hs = [r_ for lv in (1, 2, 3, 5, 6, 7) for r_ in cur[str(lv)]["test"]]
+            true = [gid[rk] for r_ in hs for i, ks in enumerate(r_["structure"]) for k in ks if (rk := DR.role_key(k, i, d)) in gid]
+            cov = lambda ranking, n: float(np.mean([g in set(ranking[:n]) for g in true]))
+            out[f"s{s}-d{d}"] = {"true terms": len(true), "distinct": len(set(true)),
+                                 "compression": {n: cov(comp, n) for n in cuts}, "search cost": {n: cov(sc, n) for n in cuts}}
+    lines = [f"== Check D after rung {rung}: top-20 / 50 / 100 coverage, compression -> search cost (top 20 decides)"]
+    wins = 0
+    for s in SEEDS:
+        a, b = out[f"s{s}-d3"], out[f"s{s}-d2"]
+        w = b["search cost"][20] >= b["compression"][20] and a["search cost"][20] - a["compression"][20] >= 0.05
+        wins += w
+        f = lambda x: " / ".join(f"{x[n]:.0%}" for n in cuts)
+        lines.append(f"   s{s}: rung {rung} held-out ({a['distinct']} distinct true terms) {f(a['compression'])} -> {f(a['search cost'])}; "
+                     f"curriculum {f(b['compression'])} -> {f(b['search cost'])}{' PASS' if w else ''}")
+    lines.append(f"== Check D after {rung}: {wins} of 3 seeds -> {'PASSES' if wins >= 2 else 'does not pass'}")
+    text = "\n".join(lines)
+    (OUT / f"libd_{rung}.txt").write_text(text)
+    print(text)
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 # report
 # ---------------------------------------------------------------------------------------------------------------------
@@ -414,7 +473,7 @@ def main():
     workers, step = int(sys.argv[1]), sys.argv[2]
     (OUT / "gen").mkdir(parents=True, exist_ok=True)
     {"gen": lambda: step_gen(workers), "stats": lambda: step_stats(workers), "ranks": lambda: step_ranks(workers),
-     "libd": lambda: step_libd(workers), "report": step_report}[step]()
+     "libd": lambda: step_libd(workers), "report": step_report, "libdr": lambda: step_libd_rung(sys.argv[3])}[step]()
 
 
 if __name__ == "__main__":

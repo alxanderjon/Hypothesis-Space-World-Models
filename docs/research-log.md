@@ -10621,3 +10621,24 @@ Rung c: 3 variables, 3 terms, teacher plus piece-balanced own dreams, 4,500 step
 - Coverage is also shown at the top 20 and top 50. With about 45 distinct piece terms at 3 variables even after e4, the top 100 may still be at its ceiling.
 - Proposed: the top 20 decides if the top 100 is at its ceiling again. To be confirmed by the owner.
 - An informative run after each sub-rung (minutes, CPU).
+
+### Owner: rung e approved, with e1 and e2 combined (17 November)
+
+**Owner.** *"Approved, with one change: combine e1 and e2 into a single sub-rung (constant and x³ together), since neither has a constant inside and x³ was already taught. Then e3 (x/(K+x²)) and e4 (Hill x²/(K+x²)) as proposed. Keep the at-least-one-new-piece-term rule (for the combined sub-rung, every system contains at least one constant or x³ term). Top 20 decides check D, reporting top 20, 50 and 100 coverage, after e4 and as a quick look after each sub-rung. Keep our own compression rather than Stitch. Smoke test first, then run. Stop and report if any sub-rung drops off. Report each sub-rung's held-out results, first-try solves, search tries per solution, and the new pieces' own solve rate against the other equations."*
+
+**Sub-rungs** (`ladder.py`, RUNGS):
+
+| sub-rung | new pieces | pieces available | starts from |
+|---|---|---|---|
+| e12 | the constant and x³ | the six + x³ + constant | rung c |
+| e3 | x/(K+x²) | e12's + x/(K+x²) | e12 |
+| e4 | Hill x²/(K+x²) | e3's + Hill | e3 |
+
+- **Piece groups:** the constant and Hill are new piece groups (9 and 10); x³ and x/(K+x²) are curriculum levels 4 and 8.
+- **The new-piece rule:** a training or held-out system, and a teacher dream, is redrawn unless it has at least one true term of the sub-rung's new pieces. Own dreams are not forced.
+- **Everything else as approved for rung e:** 50 training and 10 held-out systems per seed, checked against every earlier set; 3 seeds; shared teacher dreams; piece-balanced own dreams; 4,500 updates; budgets 300 / 1,000 / 3,000; Reanalyse; mastery at 8 of 10 in 2 of 3 seeds.
+- **Drop-off:** if neither learner arm masters a sub-rung, stop and report.
+- **The report adds the new pieces' own solve rate:** held-out equations solved in the final round, those with a new-piece true term against the rest (counts only). For e4 it also reports how many solved Hill equations were solved with a Hill term rather than its alternative {1/(K+x²), constant}.
+- **Check D per sub-rung** (`alphadev_checks.py libdr <rung>`): top-20, 50 and 100 coverage; the top 20 decides; the definitive run after e4.
+  - **Baseline after rung c:** top-20 coverage of rung c's held-out true terms (18–19 distinct terms) is 96–100% under compression and 100% under search cost (0 of 3 seeds pass). The top 20 is near its ceiling too before the new pieces.
+- **Smoke test of e12 started at 22:55 UTC.**

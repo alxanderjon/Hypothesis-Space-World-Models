@@ -37,6 +37,15 @@ RUNGS = {"a": {"d": 2, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": 
                "n_train": 50, "rung_dreams": 1000, "steps": 4500},       # owner, 16 Nov: the same training updates for every arm
          "c": {"d": 3, "terms": (3, 3), "levels": (1, 2, 3, 5, 6, 7), "change": "3 variables, 3 terms per equation (after b)", "after": "b",
                "n_train": 50, "rung_dreams": 1000, "steps": 4500, "own_dreams": 1000}}   # owner, 16 Nov: piece-balanced own dreams replace the general ones
+CONSTANT, HILL = 9, 10                                           # piece groups beyond the curriculum's levels 1-8
+_E = (1, 2, 3, 5, 6, 7)
+RUNGS.update({                                                   # owner, 17 Nov: the harder fields' pieces, one sub-rung each (e1+e2 combined)
+    "e12": {"d": 3, "terms": (3, 3), "levels": _E + (4, CONSTANT), "new": (4, CONSTANT), "change": "the constant and x^3 (after c)",
+            "after": "c", "n_train": 50, "rung_dreams": 1000, "steps": 4500, "own_dreams": 1000},
+    "e3": {"d": 3, "terms": (3, 3), "levels": _E + (4, CONSTANT, 8), "new": (8,), "change": "x/(K+x^2) (after e12)",
+           "after": "e12", "n_train": 50, "rung_dreams": 1000, "steps": 4500, "own_dreams": 1000},
+    "e4": {"d": 3, "terms": (3, 3), "levels": _E + (4, CONSTANT, 8, HILL), "new": (HILL,), "change": "Hill activation x^2/(K+x^2) (after e3)",
+           "after": "e3", "n_train": 50, "rung_dreams": 1000, "steps": 4500, "own_dreams": 1000}})
 OTHER = 99                                                       # piece type of the learner's terms that are no curriculum piece
 SHARE_REAL = 0.30                                                # real solutions' share of training when rung dreams are used
 SEEDS = (1, 2, 3) if not SMOKE else (1,)
@@ -64,7 +73,7 @@ _LOCK = threading.Lock()
 DREAM_WORKERS, DREAM_POOLS, DREAM_CHUNK = 8, 3, 100
 _DREAM_SEM = threading.Semaphore(DREAM_POOLS)
 MIN_EXAMPLES_PER_DREAM = 2.0                                     # below this a dream batch is treated as broken: stop loudly
-SHARE_TEACHER_FROM = ("d", "e", "f", "g")                        # owner, 17 Nov: one teacher-dream set per round, shared by every lineage
+SHARE_TEACHER_FROM = ("d", "e", "e12", "e3", "e4", "f", "g")                        # owner, 17 Nov: one teacher-dream set per round, shared by every lineage
 _TEACHER, _TEACHER_LOCKS = {}, {}
 
 
@@ -73,7 +82,7 @@ def log(msg):
         C.log(msg)
 
 
-def shared_teacher(rung, rnd, allowed, terms, d, n):
+def shared_teacher(rung, rnd, allowed, terms, d, n, new=None):
     """The round's teacher dreams: built once by the first lineage to need them, then given to every lineage in that
     round (and saved, so a restarted run reuses them). A new set every round."""
     with _LOCK:
@@ -86,7 +95,7 @@ def shared_teacher(rung, rnd, allowed, terms, d, n):
                 log(f"{rung} round {rnd}: shared teacher dreams loaded ({len(_TEACHER[(rung, rnd)])} examples)")
             else:
                 t0 = time.time()
-                ex, ok = dream_map([(f"ladder-{rung}-round{rnd}-teacher", k, allowed, terms, d) for k in range(n)],
+                ex, ok = dream_map([(f"ladder-{rung}-round{rnd}-teacher", k, allowed, terms, d, new) for k in range(n)],
                                    f"{rung} round {rnd} shared teacher dreams")
                 tmp = p.with_name(p.name + ".tmp")
                 tmp.write_bytes(pickle.dumps(ex))
@@ -125,6 +134,10 @@ def piece_keys(d):
         for lv in CC.LEVELS:
             if c in pats[lv]:
                 out[lv].append(key)
+    # rung e (owner, 17 Nov): the constant (inflow) and Hill activation x^2/(K+x^2), beyond the curriculum's levels
+    out[CONSTANT] = [k for k in SG.vocabulary_order(d) if k == "Integer(1)"]
+    out[HILL] = [k for k in SG.vocabulary_order(d) if k.startswith("Mul(Pow(Symbol") and k.count("Symbol('x") == 2
+                 and "Integer(2)), Pow(Add(Symbol('K0', real=True), Pow(" in k and k.split("Pow(Symbol(")[1][:4] == k.split("Pow(Symbol(")[2][:4]]
     return out
 
 
@@ -170,8 +183,20 @@ def draw(seed, allowed, n_terms, d):
             "params": params, "ic": ic, "positive": False}
 
 
+def new_keys(rung, keys):
+    """The rung's new-piece keys (role-relative), or None."""
+    return sorted({k for lv in RUNGS[rung].get("new", ()) for k in keys[lv]}) or None
+
+
+def has_new(structure, new, d):
+    """At least one true term of the new pieces (owner, 17 Nov: every rung-e system contains one)."""
+    import dream_g2 as DR
+    return new is None or any(DR.role_key(k, i, d) in set(new) for i, eq in enumerate(structure) for k in eq)
+
+
 def gen_job(args):
-    prefix, k, allowed, n_terms, d = args
+    prefix, k, allowed, n_terms, d = args[:5]
+    new = args[5] if len(args) > 5 else None
     import warnings
     warnings.filterwarnings("ignore")
     sys.path.insert(0, str(HERE))
@@ -191,6 +216,9 @@ def gen_job(args):
             syn = DG.build(desc)
         except Exception as ex:
             reasons.append(type(ex).__name__)
+            continue
+        if not has_new([eq["keys"] for eq in syn.structure], new, d):
+            reasons.append("no new-piece term")
             continue
         return {"k": k, "accepted": True, "tries": r + 1, "structure": [eq["keys"] for eq in syn.structure],
                 "bursts": syn.bursts(8).tolist()}
@@ -229,7 +257,8 @@ def step_gen(workers, rung):
     R = RUNGS[rung]
     keys = piece_keys(R["d"])
     allowed = {lv: keys[lv] for lv in R["levels"]}
-    jobs = [((s, split, k), (f"ladder-{rung}-s{s}-{split}", k, allowed, R["terms"], R["d"]))
+    new = new_keys(rung, keys)
+    jobs = [((s, split, k), (f"ladder-{rung}-s{s}-{split}", k, allowed, R["terms"], R["d"], new))
             for s in SEEDS for split, n in (("train", R.get("n_train", N_TRAIN)), ("test", N_TEST)) for k in range(n)]
     t0 = time.time()
     with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:
@@ -392,8 +421,10 @@ def train_net_job(args):
 
 
 def rung_dream_job(args):
-    """One accepted dream from the rung's own generator, as training examples (the a2 dream check's version b)."""
-    prefix, k, allowed, n_terms, d = args
+    """One accepted dream from the rung's own generator, as training examples (the a2 dream check's version b); with new
+    pieces given, only dreams containing one of them (teacher dreams of rung e)."""
+    prefix, k, allowed, n_terms, d = args[:5]
+    new = args[5] if len(args) > 5 else None
     import warnings
     warnings.filterwarnings("ignore")
     sys.path.insert(0, str(HERE))
@@ -408,6 +439,8 @@ def rung_dream_job(args):
             continue
         try:
             syn = DG.build(desc)
+            if not has_new([eq["keys"] for eq in syn.structure], new, d):
+                continue
             return DR.make_examples(syn.bursts(8), [eq["keys"] for eq in syn.structure], seed=10_000 + k)
         except Exception:
             continue
@@ -614,7 +647,7 @@ class Lineage:
                 allowed = {lv: keys[lv] for lv in R["levels"]}
                 n = R["rung_dreams"] if not SMOKE else 4
                 if self.rung in SHARE_TEACHER_FROM:
-                    rd = shared_teacher(self.rung, self.n_learn, allowed, R["terms"], self.d, n)
+                    rd = shared_teacher(self.rung, self.n_learn, allowed, R["terms"], self.d, n, new_keys(self.rung, keys))
                 else:
                     rd, ok = dream_map([(f"ladder-{self.rung}-{self.name}-{tag}-rung", k, allowed, R["terms"], self.d) for k in range(n)],
                                        f"{self.rung} {self.name} {tag} teacher dreams")
@@ -746,6 +779,38 @@ def step_report(rung):
                         f"{sum(x['new_equations'] for x in ra)} equations from {sum(x['re_searched'] for x in ra)} re-searched)")
         verdict[arm] = m >= 2 if not SMOKE else m >= 1
         lines.append(f"   {ARM_NAMES[arm]:>16}: " + "; ".join(rows) + f" -> {'masters' if verdict[arm] else 'does not master'} the rung")
+    if RUNGS[rung].get("new"):
+        # the new pieces' own solve rate on held-out equations (counts only), final round, against the other equations
+        import dream_g2 as DR
+        d = RUNGS[rung]["d"]
+        keys = piece_keys(d)
+        new = set(new_keys(rung, keys))
+        hill = set(keys[HILL]) if HILL in RUNGS[rung]["new"] else None
+        lines.append("   held-out equations solved in the final round: with a new-piece term / without" + ("; Hill equations solved with a Hill term" if hill else ""))
+        for arm in ARMS:
+            parts = []
+            for s in SEEDS:
+                p = OUT / rung / f"{arm}-s{s}.json"
+                if not p.exists():
+                    continue
+                st = {x["id"]: x["structure"] for x in json.loads((OUT / "gen" / f"{rung}-s{s}.json").read_text())["test"]}
+                t = json.loads(p.read_text())["rounds"][-1]["test"]
+                a = b = na = nb = hh = nh = 0
+                for y in t:
+                    if y["status"] != "done":
+                        continue
+                    for e in y["equations"]:
+                        i = int(e["eq"])
+                        true = {DR.role_key(k, i, d) for k in st[y["id"]][i]}
+                        ok = e["first_exact"] is not None
+                        if true & new:
+                            na += 1; a += ok
+                        else:
+                            nb += 1; b += ok
+                        if hill and true & hill and ok:
+                            nh += 1; hh += any(DR.role_key(k, i, d) in hill for k in (e["solution"] or []))
+                parts.append(f"s{s} {a}/{na} vs {b}/{nb}" + (f"; Hill form {hh}/{nh}" if hill else ""))
+            lines.append(f"   {ARM_NAMES[arm]:>16}: " + "; ".join(parts))
     drop = not (verdict.get("blend") or verdict.get("net"))
     lines.append(f"== Rung {rung}: {'DROP-OFF: neither learner arm masters it (stop and report)' if drop else 'mastered by ' + ', '.join(ARM_NAMES[a] for a in ('blend', 'net') if verdict.get(a))}")
     text = "\n".join(lines)
