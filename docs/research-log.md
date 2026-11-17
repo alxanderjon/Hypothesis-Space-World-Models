@@ -10434,3 +10434,51 @@ How to read it: % of development true terms ranked worse than 10 (empty / one sh
 - **Dream yields normal since the fix:** own dreams 991–999 of 1,000 with examples (about 12.6 examples per dream) for the learner arms; the fresh network 379–996 of 1,000 (5–11 used terms). Teacher dreams 1,000 of 1,000.
 - **No broken batch.**
 - **fresh-s1 finished round 1:** 0 of 50 training systems in its first wake, then 5 of 10 held-out after training. It goes on to round 2.
+
+### Owner: two dream speedups from rung d on; measured (17 November)
+
+**Owner.** *"Let rung c finish as is. From rung d onward, add two speedups that don't change what's being tested: 1. Share teacher dreams: each round, generate one fresh set of teacher dreams and give the same set to all lineages in that round, instead of each lineage generating its own. Every round still gets a brand-new set, and each lineage's own dreams stay its own. 2. Check whether the fast pre-screen from Stage 2a (rejecting draws that blow up or aren't finite before the expensive build) is used in the current rung and own-dream generators. If not, add it, validate on pilot seeds that it rejects nothing the full build would accept, and apply it identically to every arm. Report how much each speedup cuts dream-building time before starting rung d. Keep the empty-dream guard in place."*
+
+**Measurement** (`dream_speed.py`).
+- **Setup:** rung c's shape (3 variables, 3 terms); 40 dreams of each kind; 4 workers. The machine was heavily loaded (load 75 on 48 cores), so absolute times are inflated, but the kinds are compared under the same load.
+- **Worker-seconds per finished dream** (pre-screen + build + examples, including every redraw):
+
+| dream kind | worker-s per dream | draws per dream | pre-screen rejects | build rejects | examples per dream |
+|---|---|---|---|---|---|
+| teacher (the six pieces, 19 terms) | 29.0 | 14.6 | 18% | 75% | 12.5 |
+| own, a learner lineage (blend-s1, 39 used terms) | 41.2 | 41.4 | 42% | 55% | 12.2 |
+| own, a fresh lineage (fresh-s1, 5 used terms) | 73.5 | 44.1 | 1% | 97% | 12.5 |
+
+**Speedup 1, shared teacher dreams.**
+- In a round with 9 lineages (6 learner, 3 fresh), the dream work is:
+  - teacher: 9 × 1,000 × 29.0 s = 261,000 worker-s;
+  - learner own dreams: 6 × 1,000 × 41.2 s = 247,000 worker-s;
+  - fresh own dreams: 3 × 1,000 × 73.5 s = 220,000 worker-s;
+  - total 729,000 worker-s.
+- Building the teacher set once saves 8 × 29,000 = 232,000 worker-s.
+- **That cuts dream-building time by 32%** (to 497,000 worker-s), and by the same share in any round where every lineage learns.
+- **Implemented in a staged patch** (`patches/rung_d_speedups.py`), to be applied once rung c ends; its dream pools load `ladder.py` and `dream_g2.py` afresh, so neither may change while it runs.
+  - The first lineage to reach a round builds that round's 1,000 teacher dreams with new seeds per round and saves them. Every lineage in the round then uses the same set.
+  - Own dreams stay per lineage.
+  - The empty-dream guard applies to the shared batch too.
+
+**Speedup 2, the pre-screen.**
+- **It is already in use.** `dream_g2.prescreen` (finite derivatives at the start, then a rough 4th-order Runge–Kutta run that must stay finite and within 100 times the starting size) runs before every build in the rung generator (`ladder.gen_job`) and in both dream generators (`ladder.rung_dream_job`, used for teacher and own dreams). So adding it cuts nothing further.
+- **Validation** on 300 pilot draws (teacher shape), every one also given the full build:
+  - The pre-screen rejected 61. **The full build accepts none of them (0 of 61).**
+  - The 239 that passed gave 23 accepted systems.
+- **What it is worth now** (teacher dreams):
+  - the pre-screen costs 0.61 s per draw;
+  - the draws it rejects would cost 4.1 s each to build, against 1.07 s for the draws it passes;
+  - net, about 0.21 s per draw, or **13% of pre-screen-plus-build time.**
+- **Own dreams:**
+  - For a learner lineage's own dreams it rejects 42% of draws, a larger saving.
+  - For the fresh lineage's own dreams it rejects only 1% while costing 38% of their time. Their draws fail in the build instead, 97% of them, because 5 terms in 2 piece types make many systems too linear to identify.
+  - It is still applied, identically for every arm, as the owner asked.
+- **One flaw found and fixed in the staged patch:**
+  - The pre-screen seeds its random starting states with Python's `hash()` of the seed string, which differs from process to process. So the same draw could pass in one worker and fail in another.
+  - The patch replaces it with a stable hash, so a draw gets the same verdict in every worker and arm. This changes which borderline draws pass, not the rule.
+
+**Rung c, status at 15:35 UTC (round 1):**
+- **net-s3 mastered the rung in round 1:** 30 of 50 first-try solves, 8 of 10 held-out.
+- **The fresh network after round 1:** held-out 5 / 6 / 7 of 10 (seeds 1 / 2 / 3), 0 first-try solves. It goes on to round 2.
