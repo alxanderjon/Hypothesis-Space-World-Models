@@ -10536,3 +10536,13 @@ Rung c: 3 variables, 3 terms, teacher plus piece-balanced own dreams, 4,500 step
 - **Coupling is deferred to a later stage,** most naturally with partially recorded systems, where an unrecorded variable's equation must be inferred through its coupling to recorded ones.
 - The coupled generator (`coupling_gen.py`) is kept for then.
 - **Rung e follows rung c directly** (its lineages start from rung c's states).
+
+### Owner: an LLM assistant for the real-systems stage; Stitch check (17 November)
+
+**Owner.** *"Two additions alongside rung e's planning: 1. Library learning: check whether Stitch (the compression module from LILO, Grand et al. 2024) can replace or speed up our library compression. Compare it with our current approach on the curriculum solutions in a minutes-scale check: speed, and whether it finds the same or better pieces. Don't change the running setup until we've discussed the result. 2. Record for the real-systems stage: we'll add an LLM assistant that suggests candidate pieces or terms from a system's data and context, with every suggestion verified by the exactness check. This is approved as a tool, not a shortcut. When measuring its benefit, use systems the LLM can't have memorized (e.g. newly generated or unpublished ones), so results reflect real help rather than recall."*
+
+**Recorded for the real-systems stage (standing, owner-approved):**
+- An LLM assistant will suggest candidate pieces or terms from a system's data and context.
+- **Every suggestion is verified by the exactness check** (1e-12 recovery, held-back data), exactly like the learner's own proposals.
+- **It is approved as a tool, not a shortcut.** Its suggestions enter as proposals, never as accepted structure.
+- **Measuring its benefit:** only on systems the LLM cannot have memorized, such as newly generated systems or unpublished ones, so the gain reflects real help rather than recall.
