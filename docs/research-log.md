@@ -10401,3 +10401,36 @@ How to read it: % of development true terms ranked worse than 10 (empty / one sh
 - **Test:** 16 of 16 dreams with examples (195 examples).
 - **Design unchanged.** The run resumed from the saved first wakes.
 - **Cost:** at this rung a dream takes about 45 s of a worker under the current load, so building 2,000 dreams for each of 9 lineages takes several hours per round.
+
+#### The four AlphaDev quick checks: none passes (17 November, finished 10:37 UTC)
+
+**How they ran:** on spare cores beside rung c, 120 development systems (60 at 3 variables, 60 at 2), and the six end-of-rung-b networks.
+
+**A. Per-burst evidence: does not pass (0 of 6 cases in either setting).**
+- Ranking by a burst-level gain (the minimum, median or maximum over the 8 bursts) moved at most 0–7% of the network's tail terms (true terms ranked worse than 10) into the top 10 that pooled gain leaves out. The rule needs 30%.
+- It also ranked the well-ranked true terms worse than pooled gain: mean log2 rank 8.1–8.6 against 7.0–7.3 at 3 variables.
+- **Reading:** looking at the data burst by burst adds noise, not information. The pooled gain the network already sees is the better summary.
+
+**B. Pair gain: does not pass (0 of 6 in either setting) on its rule, with a partial signal.**
+- Each term's best gain jointly with one other term moved only 0–9% of the tail into the top 10 (the rule needs 30%).
+- But as a ranking of all true terms it is clearly better than pooled gain: mean log2 rank 5.3–5.8 against 7.0–7.3 at 3 variables, and 4.9–5.5 against 6.7–7.1 at 2. That is about 2.5–3.5 times better rank on average.
+- **Reading:** pair gain mostly improves terms the network already ranks well. It does not rescue the network's tail, which is what the check asked.
+
+**C. Pruning: does not pass.**
+- Only 2.4% of legal moves can be pruned, at the true-path nodes (1,800) and at the random nodes (6,000) alike.
+- Almost all of these are aliases (2.3% of the vocabulary per system). Columns in the span of the current terms are almost never seen.
+- No true term was ever prunable. The rule needs 10%.
+- **Reading:** our search wastes little on equivalent or redundant terms, because the vocabulary is already canonicalized.
+
+**D. Library pieces by search saved: does not pass, because the measure is at its ceiling.**
+- Both rankings put 100% of rung c's held-out true terms (counts only) and 100% of the curriculum's held-out true terms in the top 100, in all three seeds. So the search-cost ranking cannot gain the 5 points the rule needs.
+- **Reading:** with six piece types, the library's top 100 already contains every term these systems use. This check can only tell the rankings apart on richer fields (rung e on).
+
+**Conclusion:** no AlphaDev refinement is adopted now. Two notes for later:
+- pair gain is a better single evidence statistic than pooled gain, should evidence features be revisited;
+- check D should be repeated once the pieces outgrow the top 100.
+
+**Rung c, status at 13:15 UTC.**
+- **Dream yields normal since the fix:** own dreams 991–999 of 1,000 with examples (about 12.6 examples per dream) for the learner arms; the fresh network 379–996 of 1,000 (5–11 used terms). Teacher dreams 1,000 of 1,000.
+- **No broken batch.**
+- **fresh-s1 finished round 1:** 0 of 50 training systems in its first wake, then 5 of 10 held-out after training. It goes on to round 2.
