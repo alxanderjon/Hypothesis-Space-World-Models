@@ -10526,3 +10526,13 @@ Rung c: 3 variables, 3 terms, teacher plus piece-balanced own dreams, 4,500 step
   - Rung d tests whether coupled systems (one transfer between two variables) are harder to identify, not whether the learner exploits coupling.
   - As an extra report, at no cost: the solve rate of the two coupled equations against the uncoupled one, from the wake and test records (the generator records which pair is coupled).
 - **Expected cost:** the shared teacher set cuts dream building by about a third. A round should take about two-thirds of rung c's time under the same load.
+
+### Owner: rung d skipped; coupling deferred; rung e planned (17 November)
+
+**Owner.** *"Skip rung d: our search finds each equation separately, so coupling doesn't make identification harder or easier, and rung d wouldn't measure it. Log that coupling is deferred to a later stage (most naturally with partially recorded systems, where it actually matters). Start rung e: introduce the harder fields' pieces one per sub-rung (e1, e2, ...), each built on mastered pieces, keeping everything else as in rung c (3 variables, 3 terms per equation). First list which pieces the reaction-network and flow systems use that the ladder hasn't covered yet (e.g. Hill-type switches, inflow, saturating terms), and propose an order from simplest to hardest. Same rules as before: 50 training and 10 held-out systems per seed, 3 seeds, mastery in at least 2 of 3, fresh-network comparison, Reanalyse on, teacher dreams (shared per round) plus piece-balanced own dreams, 4,500 updates per round. Smoke test first. Also repeat AlphaDev check D (library pieces ranked by search saved) once the new pieces are in, since it was inconclusive with only six pieces. Send the piece list and order for my approval before starting e1. Stop and report if any sub-rung drops off."*
+
+**Rung d is skipped.**
+- The search identifies each equation separately, so a rate shared between two equations neither helps nor hinders identification. Rung d would not measure coupling.
+- **Coupling is deferred to a later stage,** most naturally with partially recorded systems, where an unrecorded variable's equation must be inferred through its coupling to recorded ones.
+- The coupled generator (`coupling_gen.py`) is kept for then.
+- **Rung e follows rung c directly** (its lineages start from rung c's states).
