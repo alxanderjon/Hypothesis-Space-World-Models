@@ -10740,3 +10740,30 @@ Its "drop-off" is the smoke budgets', not the rung's:
 - **Pass rule:** on new e3-style development systems, b raises the x/(K+x²) terms' top-10 share at the empty start by at least 20 points over a, without worsening the other true terms' mean log2 rank by more than 0.25, in at least 4 of 6 learner cases (blend and network alone × 3 seeds).
 - **If it passes,** rerun e3 with emphasized teacher dreams. The same emphasis would then apply in e4, and in later sub-rungs, as the rule for introducing a piece.
 - **The blend's dilution by non-piece library terms** is noted for a separate look. It may argue for weighting the library part by piece usage, as check D's search-cost ranking does. **Check D after e3:** 2 of 3 seeds pass at the top 20 (76 → 84%, 83 → 77%, 77 → 83%), mixed. The deciding run waits for e4.
+
+### Owner: the emphasized-dream quick check (18 November)
+
+**Owner.** *"Run the emphasized-dream quick check (one training round per lineage on free GPUs, no search), with these settings: 1. Teacher dreams: 90% contain at least one term of the new piece (x/(K+x²)), 10% don't. 2. Check the overall training mix (teacher dreams, own dreams and replayed solutions together) and report what share of all training examples contain the new piece. Make sure it's a large share, not diluted by the replays. 3. Pass rule: the new piece's top-10 share at the start rises by at least 20 points; other true terms rank no worse (mean log2 rank within 0.25); and an injection check: on equations without the new piece, it doesn't rise in the ranking. In at least 4 of 6 learner cases. If it passes, rerun e3 with these dreams and make this the standard way to introduce a new piece from e4 on. Report before the rerun."*
+
+**Reading of setting 1** (to be confirmed):
+- e3's teacher dreams already contain an x/(K+x²) term in 100% of dreams (rung e's new-piece rule), about 1.5 of 3 equations per dream. Taken literally, setting 1 would slightly weaken that.
+- So version b uses the strongest form consistent with it: **90% of teacher dreams have an x/(K+x²) term in every equation, and 10% have none** (the clean negatives the injection check needs).
+- Examples are made per equation, so this raises the share of teacher examples whose equation holds the new piece from about half to about 90%.
+
+**Design** (`emph_check.py`; CPU dream building in recycled pools; GPU training on free GPUs, one per GPU; no search).
+- **Start:** each learner lineage's state at the start of e3 (the end of e12, plus its e3 first-wake solutions, as e3's first learning round saw them).
+- **One round of 4,500 steps with:**
+  - **a.** e3's round-1 teacher dreams (the shared set every e3 lineage trained on);
+  - **b.** 1,000 emphasized teacher dreams (900 with the new piece in every equation, 100 without it, shared by all lineages).
+  - Both get the lineage's 1,000 piece-balanced own dreams (built afresh as e3 builds them) and its replayed solutions at 30% of the examples. The replay is the lineage's examples for those solved systems.
+- **The blend's library table is kept** at its e12 value; the one-round check does not rebuild it.
+- **Ranks** on 20 new e3-style development systems per seed (each with at least one x/(K+x²) term, checked against every earlier set):
+  - the true terms' ranks at the empty start, one short and two short;
+  - **injection:** on equations without x/(K+x²), the rank of the best-ranked x/(K+x²) term at the empty start.
+- **Mix reported:** for each version and lineage, the share of all training examples whose equation's true structure holds x/(K+x²), split by replay, own dreams and teacher dreams.
+- **Pass rule** (a lineage case passes if all three hold):
+  - the x/(K+x²) true terms' top-10 share at the empty start is at least 20 points higher in b than in a;
+  - the other true terms' mean log2 rank (all three points) is no worse in b than in a by more than 0.25;
+  - injection: the mean log2 rank of the best x/(K+x²) term on equations without one is not better (lower) in b than in a by more than 0.25.
+  - **The check passes in at least 4 of 6 learner cases** (blend and network alone × 3 seeds).
+- **If it passes:** report, then rerun e3 with version b's dreams. That becomes the standard way to introduce a new piece from e4 on.
