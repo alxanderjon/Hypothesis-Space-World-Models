@@ -2,8 +2,10 @@
 where the versions and pass rule were set before the run). From each learner lineage's state at the start of e3 (the end
 of e12), one learning round of 4,500 steps with:
   a. e3's round-1 teacher dreams (the set every e3 lineage trained on; every dream holds at least one x/(K+x^2) term);
-  b. emphasized teacher dreams: 900 with an x/(K+x^2) term in every equation, 100 with no x/(K+x^2) term;
-plus, in both, the lineage's own 1,000 piece-balanced dreams and its replayed solutions at 30% of the examples. Then, no
+  b. phase 1 of the two-phase schedule (owner, 18 Nov): the same teacher dreams as ~90% of the dream examples, own
+     piece-balanced dreams built only from pieces already learned (no x/(K+x^2)) as ~10%, and replay as ~10% of all
+     examples, drawn first from solved systems holding x/(K+x^2);
+version a also has the lineage's own 1,000 piece-balanced dreams and its replayed solutions at 30% of the examples. Then, no
 search: the ranks of the true terms of new e3-style development systems at the empty start, one short and two short, and
 the injection check (the best-ranked x/(K+x^2) term on equations without one). Also the share of all training examples
 whose equation holds the new piece, by source. Usage: emph_check.py <workers> <gen|train|rank|report>"""
@@ -26,6 +28,7 @@ C, G2H, OUT = LD.C, LD.G2H, LD.OUT
 L_DIR = G2H / "ladder"
 SEEDS, ARMS, RUNG, PREV = (1, 2, 3), ("blend", "net"), "e3", "e12"
 N_DEV, N_TEACH, N_EMPH, N_OWN, STEPS = 20, 1000, 900, 1000, 4500
+N_OWN1, OWN1_SHARE, REPLAY1_SHARE = 130, 0.10, 0.10              # phase 1: own dreams ~10% of dream examples; replay ~10% of all
 D = 3
 
 
@@ -161,17 +164,6 @@ def step_gen(workers):
             raise SystemExit("development systems not new")
         for s in SEEDS:
             (OUT / "gen" / f"dev-s{s}.json").write_text(json.dumps([dict(r, id=f"emph-dev-s{s}-{r['k']}") for r in dev[s]]))
-    # version b's teacher dreams (one set, shared by every lineage, as rung e's teacher dreams are)
-    p = OUT / "gen" / "teacher-b.pkl"
-    if not p.exists():
-        jobs = [("emph-teacher-every", k, allowed, new, "every") for k in range(N_EMPH)] + \
-               [("emph-teacher-none", k, allowed, new, "none") for k in range(N_TEACH - N_EMPH)]
-        res = recycled_map(emph_job, jobs, workers)
-        ex_ = [e for x in res for e in x]
-        if len(ex_) < 2 * len(jobs):
-            raise SystemExit(f"emphasized teacher dreams: {len(ex_)} examples from {len(jobs)} dreams: broken batch")
-        p.write_bytes(pickle.dumps(ex_))
-        print(f"teacher b: {sum(bool(x) for x in res)} of {len(jobs)} dreams with examples; {len(ex_)} examples; {time.time() - t0:.0f}s", flush=True)
     # per lineage: own piece-balanced dreams (as e3's learn1 drew them) and the replay examples
     of = {k: lv for lv, ks in keys.items() for k in ks}
     order = set(SG.vocabulary_order(D))
@@ -204,6 +196,19 @@ def step_gen(workers):
                 p.write_bytes(pickle.dumps(ex_))
                 print(f"own dreams {name}: {sum(len(v) for v in groups.values())} used terms in {len(groups)} piece types; "
                       f"{sum(bool(x) for x in res)} of {N_OWN} with examples; {len(ex_)} examples; {time.time() - t0:.0f}s", flush=True)
+                (OUT / "gen" / f"groups-{name}.json").write_text(json.dumps({str(g): v for g, v in groups.items()}))
+            p = OUT / "gen" / f"own1-{name}.pkl"
+            if not p.exists():
+                g_all = {int(g): v for g, v in json.loads((OUT / "gen" / f"groups-{name}.json").read_text()).items()}
+                g1 = {g: [k for k in v if k not in set(new)] for g, v in g_all.items()}
+                g1 = {g: v for g, v in g1.items() if v}
+                res = recycled_map(LD.rung_dream_job, [(f"emph-own1-{name}", k, g1, (3, 3), D) for k in range(N_OWN1)], workers)
+                ex_ = [e for x in res for e in x]
+                if len(ex_) < 2 * N_OWN1:
+                    raise SystemExit(f"phase-1 own dreams {name}: {len(ex_)} examples: broken batch")
+                p.write_bytes(pickle.dumps(ex_))
+                print(f"phase-1 own dreams {name}: {sum(len(v) for v in g1.values())} learned terms in {len(g1)} piece types (no new piece); "
+                      f"{sum(bool(x) for x in res)} of {N_OWN1} with examples; {len(ex_)} examples; {time.time() - t0:.0f}s", flush=True)
             p = OUT / "gen" / f"replay-{name}.pkl"
             if not p.exists():
                 ex_all = pickle.loads((L_DIR / RUNG / name / "examples.pkl").read_bytes())
@@ -213,12 +218,32 @@ def step_gen(workers):
 
 
 def mix(name, ver):
+    import random
+    import search_g1 as SG
     load = lambda f: pickle.loads((OUT / "gen" / f).read_bytes())
-    replay, own = load(f"replay-{name}.pkl"), load(f"own-{name}.pkl")
-    teacher = pickle.loads((L_DIR / RUNG / "teacher_round1.pkl").read_bytes()) if ver == "a" else load("teacher-b.pkl")
-    others = own + teacher
-    m = max(1, round(LD.SHARE_REAL * len(others) / ((1 - LD.SHARE_REAL) * max(len(replay), 1))))
-    return {"replay": replay * m, "own": own, "teacher": teacher}
+    teacher = pickle.loads((L_DIR / RUNG / "teacher_round1.pkl").read_bytes())
+    replay = load(f"replay-{name}.pkl")
+    if ver == "a":                                               # e3's own round-1 mix
+        own = load(f"own-{name}.pkl")
+        others = own + teacher
+        m = max(1, round(LD.SHARE_REAL * len(others) / ((1 - LD.SHARE_REAL) * max(len(replay), 1))))
+        return {"replay": replay * m, "own": own, "teacher": teacher}
+    # phase 1: own dreams ~10% of dream examples, replay ~10% of all, new-piece systems first
+    _, _, new = pieces()
+    newset, order = set(new), SG.vocabulary_order(D)
+    rng = random.Random(LD.stable(name, "phase1"))
+    own_all = load(f"own1-{name}.pkl")
+    n_own = round(OWN1_SHARE / (1 - OWN1_SHARE) * len(teacher))
+    own = rng.sample(own_all, min(n_own, len(own_all)))
+    n_rep = round(REPLAY1_SHARE / (1 - REPLAY1_SHARE) * (len(teacher) + len(own)))
+    first = [e for e in replay if holds_new(e, newset, order)]
+    rest = [e for e in replay if not holds_new(e, newset, order)]
+    rng.shuffle(first)
+    rng.shuffle(rest)
+    rep_ = (first + rest)[:n_rep]
+    while len(rep_) < n_rep:                                     # fewer replay examples than wanted: repeat
+        rep_ += (first + rest)[:n_rep - len(rep_)]
+    return {"replay": rep_, "own": own, "teacher": teacher}
 
 
 def holds_new(e, newset, order):
@@ -333,7 +358,7 @@ def step_report():
     import numpy as np
     rows = json.loads((OUT / "ranks.json").read_text())
     tr = json.loads((OUT / "train.json").read_text())
-    lines = ["== Emphasized-teacher-dream quick check (e3): new piece's top-10 share at the empty start; other true terms' mean log2 rank "
+    lines = ["== Phase-1 quick check (e3; a e3 round-1 mix, b phase 1): new piece's top-10 share at the empty start; other true terms' mean log2 rank "
              "(all points); injection: best x/(K+x^2) rank on equations without one (mean log2); training share of new-piece examples"]
     wins = 0
     for a in ARMS:
@@ -352,7 +377,7 @@ def step_report():
     for k, v in sorted(tr.items()):
         lines.append(f"   mix {k}: {v['examples']} examples, new-piece share {v['new-piece share']:.0%} (" +
                      ", ".join(f"{src} {x['share']:.0%} of {x['examples']}" for src, x in v["by source"].items()) + ")")
-    lines.append(f"== emphasized teacher dreams pass in {wins} of 6 ({'PASSES' if wins >= 4 else 'does not pass'})")
+    lines.append(f"== phase 1 passes in {wins} of 6 ({'PASSES' if wins >= 4 else 'does not pass'})")
     text = "\n".join(lines)
     (OUT / "report.txt").write_text(text)
     print(text)

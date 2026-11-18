@@ -10767,3 +10767,30 @@ Its "drop-off" is the smoke budgets', not the rung's:
   - injection: the mean log2 rank of the best x/(K+x²) term on equations without one is not better (lower) in b than in a by more than 0.25.
   - **The check passes in at least 4 of 6 learner cases** (blend and network alone × 3 seeds).
 - **If it passes:** report, then rerun e3 with version b's dreams. That becomes the standard way to introduce a new piece from e4 on.
+
+### Owner: a two-phase schedule for introducing a new piece (replaces the emphasized-dream mix; 18 November)
+
+**Owner.** *"Replace the earlier mix proposal with a two-phase schedule for introducing a new piece. The network doesn't distinguish teacher dreams from its own, so the split is about total exposure: Phase 1 (learning, the first few rounds of a new piece): dreams are about 90% teacher, 10% own. Every teacher dream contains at least one term of the new piece. Own dreams, built from pieces already learned, are the ~10% without it, which guards against the network injecting the piece everywhere. Replay stays about 10% of all training examples, favoring solved systems that contain the new piece. Total stays at 4,500 updates per round. Phase 2 (once the piece is known): own dreams include the new piece more heavily, and teacher dreams also produce examples without it, so it's practiced in context rather than everywhere. Propose a criterion for switching from phase 1 to phase 2 (e.g. the learner solving most new-piece equations in training or held-out) and log it before running. Report the actual share of all training examples containing the new piece in each phase. Run the quick check on e3 with phase 1 (one training round per lineage on free GPUs, no search). Pass rule: [as before]. In at least 4 of 6 learner cases. If it passes, rerun e3 with the two-phase schedule and make it the standard for introducing new pieces from e4 on. Report before the rerun."*
+
+**The emphasized-dream check was stopped** before training (only its development systems had been built; they are kept).
+
+**Phase 1, as run in the check** (`emph_check.py`, version b):
+- **Teacher dreams:** e3's round-1 shared teacher set (1,000 dreams, each with at least one x/(K+x²) term; 12,712 examples). These are about 90% of the dream examples.
+- **Own dreams:** about 10% of the dream examples (teacher examples / 9, about 1,410), sampled from 130 piece-balanced own dreams built only from the pieces the lineage had already learned (its used terms minus x/(K+x²)). None contains x/(K+x²).
+- **Replay:** about 10% of all examples ((teacher + own) / 9, about 1,570). Examples whose equation holds x/(K+x²) are taken first, then the rest at random (repeated if too few).
+- **Training:** 4,500 steps.
+- **Version a (the baseline)** is e3's own round-1 mix: the same teacher set, 1,000 piece-balanced own dreams over all used terms, and replay at 30%.
+- **Everything else** (start states, development systems, ranks, pass rule with the injection check, 4 of 6 cases) as logged for the emphasized check.
+- **The training-mix shares are reported per source:** the share of examples whose equation's true structure holds x/(K+x²).
+  - Examples are made per equation, so a teacher dream with the new piece in one of its three equations gives examples both with and without it.
+  - Phase 1's new-piece share is therefore expected near half of the teacher examples, not 90%.
+  - The figure is measured, not assumed.
+
+**Proposed for the rerun (to be confirmed with the check's report):**
+- **Switch to phase 2:** a lineage switches after the first learning round in which it has solved at least 80% of its training equations that hold the new piece (cumulative over the sub-rung's training systems, wake plus Reanalyse). Training systems only, so the held-out test stays untouched.
+- **Phase 2:**
+  - **Teacher dreams:** from the sub-rung's generator without the new-piece rule, so the new piece appears only at its natural rate (about 1 in 8–10 terms) and many dreams lack it. About 50% of the dream examples.
+  - **Own dreams:** piece-balanced, with the new piece's type chosen 3 times as often as each other type. About 50% of the dream examples.
+  - **Replay:** back to 30%.
+  - **Training:** 4,500 steps.
+- **The new-piece share in each phase** is reported per round in the rerun.
