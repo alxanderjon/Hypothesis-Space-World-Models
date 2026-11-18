@@ -10794,3 +10794,13 @@ Its "drop-off" is the smoke budgets', not the rung's:
   - **Replay:** back to 30%.
   - **Training:** 4,500 steps.
 - **The new-piece share in each phase** is reported per round in the rerun.
+
+**Owner (correction).** *"'contains the new piece' should be per equation, not per dream, since training examples are made per equation. In phase 1, every equation of every teacher dream contains an x/(K+x²) term; the network's own dreams (about 10% of dreams) are the examples without it; replay is about 10% of all training examples, favoring solved systems with the new piece. If the running check hasn't started training yet, switch it to this phase 1 setup; otherwise finish it, then run phase 1 as a second version and report both. Report the share of all training examples whose equation contains the new piece, for each version."*
+
+**Switched before training** (the check was still building version a's own dreams; it was stopped and restarted, keeping finished sets).
+- **Phase 1's teacher dreams** are now 1,000 dreams with an x/(K+x²) term in every equation (`emph_job` "every"; built once, shared by all lineages).
+- **Unchanged:**
+  - own dreams: about 10% of the dream examples, from learned pieces only, none with x/(K+x²);
+  - replay: about 10% of all examples, new-piece examples first;
+  - 4,500 steps; version a (e3's round-1 mix); the ranks, pass rule and 4 of 6.
+- **Reported for each version:** the share of all training examples whose equation's true structure holds x/(K+x²), by source.

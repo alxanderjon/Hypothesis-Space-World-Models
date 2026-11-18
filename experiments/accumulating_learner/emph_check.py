@@ -2,7 +2,8 @@
 where the versions and pass rule were set before the run). From each learner lineage's state at the start of e3 (the end
 of e12), one learning round of 4,500 steps with:
   a. e3's round-1 teacher dreams (the set every e3 lineage trained on; every dream holds at least one x/(K+x^2) term);
-  b. phase 1 of the two-phase schedule (owner, 18 Nov): the same teacher dreams as ~90% of the dream examples, own
+  b. phase 1 of the two-phase schedule (owner, 18 Nov, corrected): 1,000 teacher dreams with an x/(K+x^2) term in EVERY
+     equation (examples are per equation) as ~90% of the dream examples, own
      piece-balanced dreams built only from pieces already learned (no x/(K+x^2)) as ~10%, and replay as ~10% of all
      examples, drawn first from solved systems holding x/(K+x^2);
 version a also has the lineage's own 1,000 piece-balanced dreams and its replayed solutions at 30% of the examples. Then, no
@@ -164,6 +165,15 @@ def step_gen(workers):
             raise SystemExit("development systems not new")
         for s in SEEDS:
             (OUT / "gen" / f"dev-s{s}.json").write_text(json.dumps([dict(r, id=f"emph-dev-s{s}-{r['k']}") for r in dev[s]]))
+    # phase 1's teacher dreams: an x/(K+x^2) term in every equation (one set, shared by every lineage)
+    p = OUT / "gen" / "teacher-every.pkl"
+    if not p.exists():
+        res = recycled_map(emph_job, [("emph-teacher-every", k, allowed, new, "every") for k in range(N_TEACH)], workers)
+        ex_ = [e for x in res for e in x]
+        if len(ex_) < 2 * N_TEACH:
+            raise SystemExit(f"phase-1 teacher dreams: {len(ex_)} examples from {N_TEACH} dreams: broken batch")
+        p.write_bytes(pickle.dumps(ex_))
+        print(f"phase-1 teacher dreams: {sum(bool(x) for x in res)} of {N_TEACH} with examples; {len(ex_)} examples; {time.time() - t0:.0f}s", flush=True)
     # per lineage: own piece-balanced dreams (as e3's learn1 drew them) and the replay examples
     of = {k: lv for lv, ks in keys.items() for k in ks}
     order = set(SG.vocabulary_order(D))
@@ -221,7 +231,7 @@ def mix(name, ver):
     import random
     import search_g1 as SG
     load = lambda f: pickle.loads((OUT / "gen" / f).read_bytes())
-    teacher = pickle.loads((L_DIR / RUNG / "teacher_round1.pkl").read_bytes())
+    teacher = pickle.loads((L_DIR / RUNG / "teacher_round1.pkl").read_bytes()) if ver == "a" else load("teacher-every.pkl")
     replay = load(f"replay-{name}.pkl")
     if ver == "a":                                               # e3's own round-1 mix
         own = load(f"own-{name}.pkl")
