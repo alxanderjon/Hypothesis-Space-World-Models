@@ -10642,3 +10642,20 @@ Rung c: 3 variables, 3 terms, teacher plus piece-balanced own dreams, 4,500 step
 - **Check D per sub-rung** (`alphadev_checks.py libdr <rung>`): top-20, 50 and 100 coverage; the top 20 decides; the definitive run after e4.
   - **Baseline after rung c:** top-20 coverage of rung c's held-out true terms (18–19 distinct terms) is 96–100% under compression and 100% under search cost (0 of 3 seeds pass). The top 20 is near its ceiling too before the new pieces.
 - **Smoke test of e12 started at 22:55 UTC.**
+
+**e12 smoke test (00:16 UTC, 18 November)** (seed 1, smoke budgets of 20–40 structures, 10 steps). It ran end to end:
+- generation with the new-piece rule;
+- shared teacher dreams;
+- own dreams in 9 piece types;
+- training, Reanalyse, and the new-piece report lines.
+
+Its "drop-off" is the smoke budgets', not the rung's:
+- Rung c's smoke test was as low: 2–3 of 50 systems in the first wake, 43–57 of 150 equations. e12's was 1 of 50 systems, 41–46 of 150 equations.
+- New-piece equations were solved even at these budgets, before training:
+  - with a constant: 12 / 60 (blend), 13 / 60 (network alone);
+  - with x³: 4 / 35 and 1 / 35;
+  - neither: 30 / 55 and 27 / 55.
+
+**The real run:**
+- e12, e3 and e4 in sequence (`/tmp/rung_e_launch.sh`), each followed by its check D. The launcher stops after a drop-off.
+- Started 00:20 UTC with all 8 GPUs free.
