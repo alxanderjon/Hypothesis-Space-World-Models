@@ -10694,3 +10694,49 @@ Its "drop-off" is the smoke budgets', not the rung's:
 **Sub-rung e3 (x/(K+x²)) started at 09:13 UTC.**
 - 180 new systems, all accepted and new.
 - fresh s2 solved no equation in its first wake, so it had no own dreams in round 1, as designed.
+
+#### Sub-rung e3 (x/(K+x²)): DROP-OFF, diagnosed (18 November, finished 19:29 UTC)
+
+| arm | held-out per round (s1 / s2 / s3, of 10) | first-wake solves (of 50) | median structures before a training solution | seeds mastered |
+|---|---|---|---|---|
+| confidence blend | 5→6→5 / 7→6→6 / 5→6→6 | 11 / 14 / 11 | 26 / 31 / 28 | 0 of 3 |
+| network alone | 5→6→6 / 8 / 5→7→5 | 14 / 10 / 14 | 27 / 22 / 38 | 1 of 3 |
+| fresh network | 4→8 / 7→8 / 5→3→3 | 0 / 0 / 0 | 27 / 23 / 52 | 2 of 3 |
+
+**Drop-off:** neither learner arm mastered e3, so the ladder stopped and e4 was not started.
+
+**The new piece's own solve rate** (held-out equations, final round, with x/(K+x²) against the rest):
+- **blend:** 11/16 vs 14/14; 8/11 vs 18/19; 11/14 vs 14/16.
+- **network alone:** 12/16 vs 14/14; 9/11 vs 19/19; 9/14 vs 15/16.
+- **fresh:** 14/16 vs 13/14; 9/11 vs 19/19; 8/14 vs 14/16.
+- That is 64–82% against 88–100% for the learner arms. A held-out system fails if any one of its equations fails. With about 1.5 x/(K+x²) equations per system, that caps the system-level score near 6 of 10.
+
+**Diagnosis 1** (`diag_e3.py`; every held-out equation left unsolved in a lineage's final round, counts only):
+- **39 unsolved equations across the 9 lineages. All 39 true structures fit exactly; 32 of the 39 contain x/(K+x²).**
+- **A rerun of the same search** (final prior, test budget of 300 structures, the lineage's seed) **tried the true structure in only 3 of the 39.** It visited a median of 2–3 proper subsets of the truth.
+- The prior's rank of the x/(K+x²) term at the empty start was a median of 5–65 in the failing equations.
+- **So, as at rung a, the failure is in the search guidance, not in fitting or the language.**
+
+**Diagnosis 2** (`diag_e3_above.py`; all 44 held-out x/(K+x²) true terms per arm, the final priors, the empty start):
+
+| arm | median rank | share in the top 10 | ranked above it, per term (top types) |
+|---|---|---|---|
+| confidence blend | 20 | 18% | other (non-piece) terms 9.8, x 2.7, 1/(K+x²) 2.4, x² 2.3, 1/(K+x) 2.1, x/(K+x) 1.8 |
+| network alone | 17 | 32% | x 2.3, x² 2.0, x³ 1.7, x·y 1.6, 1/(K+x²) 1.6, x/(K+x) 1.5 |
+| fresh network | 16 | 25% | x 2.2, x² 1.9, 1/(K+x²) 1.7, x³ 1.6, x/(K+x²) 1.6, x·y 1.5 |
+
+**Reading:**
+- **Every arm, fresh included, ranks the new piece poorly after three rounds** (median 16–20). It is buried under the familiar pieces spread across the board, not under one look-alike.
+- **The blend is worst:** its library part puts about 10 non-piece terms above each x/(K+x²) term, terms its compression learned from its own history.
+- **The fresh network's 2 of 3** sits on the same weak ranks (it reached 8 exactly twice) and is not a real advantage. The arms' final held-out (5–7, against 8, 8, 3) overlap.
+- **Training solves rose with the larger wake budgets** (24–37 of 50 by round 2), **but held-out is always searched at 300 structures.** The network's ranks, not search effort, decide mastery.
+- **Why the ranks stay low:** the teacher dreams contain the new piece in only about 1.5 of 9 terms per system, and the own dreams in 1 of 10 piece types. The network sees x/(K+x²) far less than the familiar pieces.
+
+**Proposal, for approval** (nothing run):
+- **Quick check:** a minutes-scale rank check like the a2 dream check (one learning round from each e3 end state, GPU training, no search).
+- **Versions:**
+  - **a. Baseline:** e3's teacher dreams.
+  - **b. Emphasized teacher dreams:** every equation of every teacher dream contains one term of the new piece. Still teacher dreams from the rung's pieces, so no change to what is tested.
+- **Pass rule:** on new e3-style development systems, b raises the x/(K+x²) terms' top-10 share at the empty start by at least 20 points over a, without worsening the other true terms' mean log2 rank by more than 0.25, in at least 4 of 6 learner cases (blend and network alone × 3 seeds).
+- **If it passes,** rerun e3 with emphasized teacher dreams. The same emphasis would then apply in e4, and in later sub-rungs, as the rule for introducing a piece.
+- **The blend's dilution by non-piece library terms** is noted for a separate look. It may argue for weighting the library part by piece usage, as check D's search-cost ranking does. **Check D after e3:** 2 of 3 seeds pass at the top 20 (76 → 84%, 83 → 77%, 77 → 83%), mixed. The deciding run waits for e4.
