@@ -10659,3 +10659,38 @@ Its "drop-off" is the smoke budgets', not the rung's:
 **The real run:**
 - e12, e3 and e4 in sequence (`/tmp/rung_e_launch.sh`), each followed by its check D. The launcher stops after a drop-off.
 - Started 00:16 UTC with all 8 GPUs free.
+
+#### Sub-rung e12 (the constant and x³): mastered by both learner arms (18 November, finished 09:10 UTC)
+
+| arm | held-out per round (s1 / s2 / s3, of 10) | first-wake solves (of 50) | median structures before a training solution | Reanalyse equations rescued |
+|---|---|---|---|---|
+| confidence blend | 9 / 4→6→7 / 10 | 21 / 7 / 12 | 26 / 20 / 35 | 25 / 8 / 43 |
+| network alone | 8 / 8 / 10 | 16 / 12 / 18 | 25 / 22 / 37 | 37 / 41 / 37 |
+| fresh network | 6→8 / 4→9 / 8 | 0 / 0 / 0 | 26 / 25 / 145 | 1 / 5 / 103 |
+
+- **The network alone mastered e12 in round 1 in all three seeds.**
+- **The blend mastered it in round 1 in seeds 1 and 3.** In seed 2 it never reached 8 (4, 6, 7). That lineage's first wake was its weakest (7 of 50), and its Reanalyse rescued only 8 equations, against 25–43 elsewhere.
+- **The fresh network** mastered it in 2, 2 and 1 rounds.
+- **First wake:** history still gives the learner arms 7–21 first-try systems against 0. This is fewer than rung c's 27–39, because the systems now carry the new pieces.
+- **Reanalyse did much of the round-1 work:** with the round-1 network it re-solved 23–29 systems per learner lineage, and 22 for fresh s3.
+
+**The new pieces' own solve rate.** Held-out equations solved in the final round, with a constant or x³ term against the rest:
+- **blend:** 20/21 vs 8/9; 15/18 vs 12/12; 21/21 vs 9/9.
+- **network alone:** 21/21 vs 7/9; 17/18 vs 11/12; 21/21 vs 9/9.
+- **fresh:** 20/21 vs 8/9; 17/18 vs 12/12; 20/21 vs 8/9.
+
+**Reading:** after training, the new-piece equations are solved as often as the others (95–100% in 7 of 9 lineages). blend s2 is the exception (83%).
+
+**Check D, quick look after e12** (top 20 decides; compression → search cost):
+- **Rung e12 held-out true terms:**
+  - s1: 82% → 92%;
+  - s2: 92% → 94%;
+  - s3: 86% → 96%.
+- **Top 50 and top 100:** 98–100% under both rankings.
+- **Curriculum coverage** is unchanged (95–96%).
+- **2 of 3 seeds pass** (+10 points in s1 and s3; s2 +2).
+- This is the first informative result. The definitive verdict comes after e4.
+
+**Sub-rung e3 (x/(K+x²)) started at 09:13 UTC.**
+- 180 new systems, all accepted and new.
+- fresh s2 solved no equation in its first wake, so it had no own dreams in round 1, as designed.
