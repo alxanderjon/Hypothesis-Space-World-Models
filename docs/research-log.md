@@ -10658,4 +10658,4 @@ Its "drop-off" is the smoke budgets', not the rung's:
 
 **The real run:**
 - e12, e3 and e4 in sequence (`/tmp/rung_e_launch.sh`), each followed by its check D. The launcher stops after a drop-off.
-- Started 00:20 UTC with all 8 GPUs free.
+- Started 00:16 UTC with all 8 GPUs free.
