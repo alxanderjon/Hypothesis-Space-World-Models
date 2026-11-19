@@ -516,7 +516,7 @@ def step_report_v():
                 m[v] = (float(np.mean([x["rank"] <= 10 for x in R if x["kind"] == "new" and x["point"] == "empty start"])),
                         float(np.mean([math.log2(x["rank"]) for x in R if x["kind"] == "other"])),
                         float(np.mean([math.log2(x["rank"]) for x in R if x["kind"] == "injection"])),
-                        tr[f"{name}-{v}"]["new-piece share"], tr[f"{name}-{v}"]["distinct"])
+                        tr[f"{name}-{v}"]["new-piece share"], tr[f"{name}-{v}"].get("distinct") or len({id(e) for part in mix(name, v).values() for e in part}))
             txt = []
             for v in VARIANTS:
                 d_top, d_oth, d_inj = m[v][0] - m["a"][0], m[v][1] - m["a"][1], m[v][2] - m["a"][2]

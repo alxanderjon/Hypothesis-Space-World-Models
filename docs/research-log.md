@@ -10878,3 +10878,37 @@ Its "drop-off" is the smoke budgets', not the rung's:
   - each mix is built only once its training holds a GPU slot, one mix at a time, so at most one example file per GPU exists;
   - under the GPU-sharing rule, up to 2 lightly used GPUs (utilization under 50%, at least 12 GB free) are shared beside the free ones.
   - The dreams (all built: 699 of 700 extra teacher, 478 of 480 look-alike, 589–590 of 590 extra own per lineage) are kept.
+
+#### New-piece mix variants: none passes; every gain in the new piece's rank comes with injection (19 November)
+
+The training ran 08:10–11:40 UTC on GPUs 0 and 1 (free) and 2 (shared); the ranks were ready at 11:52. The report step first failed (version a's record predates the "distinct" field) and was rerun at 18:15.
+
+| case | a: top-10, share | c (≈50%): top-10 Δ, other Δ, injection Δ | d (≈65%) | e (≈65%, look-alike negatives) |
+|---|---|---|---|---|
+| blend s1 | 19%, 26% | +15, +0.06, −1.02 | +26, +0.16, −1.35 | +19, +0.04, −1.16 |
+| blend s2 | 8%, 25% | +12, +0.09, −0.89 | +23, +0.19, −1.28 | +23, +0.16, −1.34 |
+| blend s3 | 13%, 26% | +17, −0.05, −0.67 | +23, +0.00, −0.89 | +20, −0.03, −1.10 |
+| net s1 | 22%, 24% | +19, +0.16, −1.55 | +19, +0.29, −1.69 | +26, +0.11, −1.65 |
+| net s2 | 15%, 25% | +35, +0.12, −1.22 | +35, +0.20, −1.08 | +31, +0.18, −1.44 |
+| net s3 | 13%, 17% | +50, +0.11, −1.39 | +57, +0.15, −1.81 | +53, +0.13, −1.76 |
+
+How to read it: top-10 Δ is in points. "Other Δ" is the other true terms' mean log2 rank; a positive value is worse. "Injection Δ" is the mean log2 rank of the best x/(K+x²) term on equations without one; a negative value means injected.
+
+- **New-piece shares of all training examples (measured):** c 50–52%, d 65–67%, e 65–67%, against version a's 17–26% (phase 1: 81–83%).
+- **Distinct examples matched:** 28,727–29,007 per lineage, the same as version a in every case.
+- **Passes:** c 0 of 6, d 0 of 6, e 0 of 6.
+
+| variant | mean top-10 gain | mean other change | mean injection change |
+|---|---|---|---|
+| c | +24 pts | +0.08 | −1.12 |
+| d | +30 pts | +0.17 | −1.35 |
+| e | +29 pts | +0.10 | −1.41 |
+| phase 1 | +46 pts | +0.30 | −1.69 |
+
+**Reading:**
+- **The top-10 gain and the injection rise together** with the new-piece share, from c to d to phase 1.
+- Even at 50% (c), the wrongly placed x/(K+x²) term moves from about 11th to about 5th on equations without it. The other true terms cost little: +0.08 in c, within the limit everywhere.
+- **Look-alike negatives (e) did not reduce injection** against d (−1.41 against −1.35). So, at least in one round, the network did not learn to tell x/(K+x²) apart from its look-alikes. It learned how often the piece appears.
+- **The search test was not run.** The logged rule selects a variant only if its mean injection change is no worse than −0.5, and none qualifies.
+- **What the search test could still show:** the injection measure counts ranks, not cost. A wrongly proposed x/(K+x²) costs the search one fit, which is rejected unless it explains the data. So a variant may still help overall if the gain on new-piece equations outweighs the wasted tries.
+- **Proposed** (for approval): run the search test on c (least injection, smallest cost to other terms) and d (largest gain), each against version a, as logged. Their results would decide.
