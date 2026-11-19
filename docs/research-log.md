@@ -10866,3 +10866,10 @@ Its "drop-off" is the smoke budgets', not the rung's:
   - 20 new e3-style systems per seed (with the new-piece rule, checked against every earlier set, including this check's development systems);
   - the real search (300 structures, 60 thorough fits, the ladder's time cap, the lineage's seed) with version a and with the chosen variant, from each learner lineage's trained network.
   - **Reported:** systems solved exactly; the solve rate of equations holding x/(K+x²) and of the others; and, on equations without x/(K+x²), the share of tried structures that held an x/(K+x²) term (tries wasted on the piece).
+- **Disk (19 November):** /SSD was down to 8.3 GB free before the variants' trainings, which write up to 8 example files of about 1 GB at once.
+  - **Deleted (own files, no longer useful, about 6.8 GB):**
+    - e12's three shared teacher-dream sets (e12 is finished and will not be rerun);
+    - e3's round-2 and round-3 teacher sets (the e3 rerun builds new dreams);
+    - the a1 and a2 dream checks' dream pickles (both checks finished and reported; their networks, ranks and reports are kept).
+  - **Kept:** e3's round-1 teacher set and version a's own dreams, which the variants use to match version a's distinct examples.
+  - /SSD now has 15 GB free.
