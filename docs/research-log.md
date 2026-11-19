@@ -10834,3 +10834,35 @@ Its "drop-off" is the smoke budgets', not the rung's:
 - **c:** about 50% new-piece examples. The every-equation teacher dreams, with own dreams from learned pieces and replay raised to about 25% each.
 - **d:** about 65%. Own dreams and replay at about 15–20% each.
 - **Same pass rule.** If one passes, it becomes phase 1 and e3 is rerun with the two-phase schedule.
+
+### Owner: three new-piece mixes, then a short search test (19 November)
+
+**Owner.** *"Run three variants of the new-piece training mix on the same quick check as phase 1 (one training round per lineage on free GPUs, no search), each with a matched number of distinct training examples (generate more teacher dreams as needed, so no variant trains on far fewer distinct examples than version a): c. About 50% of training examples contain x/(K+x²): every-equation teacher dreams, with own dreams and replay raised to about 25% each. d. About 65%: own dreams and replay at about 15–20% each. e. Look-alike negatives: like d, but the examples without x/(K+x²) come from look-alike systems (containing 1/(K+x²), x/(K+x) and similar pieces where x/(K+x²) is absent), to teach recognition rather than frequency. Same pass rule as before. Then take the best variant (even if none passes strictly, if one clearly improves the new piece without much injection) and run a short search test: the real search at 300 tries per equation on 20 new e3-style test systems per seed, including equations with and without x/(K+x²), comparing that variant with version a. Report systems solved exactly, the new-piece equations' solve rate, and tries wasted proposing x/(K+x²) where it's absent. Report before rerunning e3."*
+
+**Design** (`emph_check.py`; set before the run).
+- **Distinct examples matched to version a:** teacher + own + the lineage's distinct replay, about 29,000 per lineage.
+  - Each variant takes the same number of distinct examples: its teacher and negative examples fill (version a's distinct total − the lineage's distinct replay), in the variant's ratio.
+  - Replay is the lineage's whole replay pool (new-piece examples first), repeated to its share, as version a repeats it.
+  - 4,500 steps.
+
+| variant | teacher (every equation holds x/(K+x²)) | negatives (no x/(K+x²)) | replay | expected new-piece share |
+|---|---|---|---|---|
+| c | 50% | 25%: own dreams from learned pieces | 25% | about 52% |
+| d | 65% | 17.5%: own dreams from learned pieces | 17.5% | about 67% |
+| e | 65% | 17.5%: look-alike teacher dreams | 17.5% | about 67% |
+
+- **Variant e's look-alike dreams:** every equation holds at least one term of 1/(K+x), x/(K+x) or 1/(K+x²), and none holds x/(K+x²).
+- **Extra dreams built:**
+  - 700 every-equation teacher dreams (1,700 in all, shared);
+  - 480 look-alike dreams (shared);
+  - 590 learned-piece own dreams per lineage (720 in all).
+- **Version a's networks and ranks are reused.**
+- **Pass rule as for phase 1,** each variant against version a, in at least 4 of 6 learner cases:
+  - the top-10 share rises at least 20 points;
+  - the other true terms stay within +0.25 mean log2 rank;
+  - injection is not better (lower) by more than 0.25.
+- **The best variant for the search test:** the one that passes in most cases. If none passes, the one with the largest mean top-10 gain among those whose mean injection change is no worse than −0.5 (about a 1.4× better rank for the wrongly placed piece).
+- **Search test:**
+  - 20 new e3-style systems per seed (with the new-piece rule, checked against every earlier set, including this check's development systems);
+  - the real search (300 structures, 60 thorough fits, the ladder's time cap, the lineage's seed) with version a and with the chosen variant, from each learner lineage's trained network.
+  - **Reported:** systems solved exactly; the solve rate of equations holding x/(K+x²) and of the others; and, on equations without x/(K+x²), the share of tried structures that held an x/(K+x²) term (tries wasted on the piece).

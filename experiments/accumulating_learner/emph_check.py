@@ -28,8 +28,15 @@ import ladder as LD                                              # noqa: E402  (
 C, G2H, OUT = LD.C, LD.G2H, LD.OUT
 L_DIR = G2H / "ladder"
 SEEDS, ARMS, RUNG, PREV = (1, 2, 3), ("blend", "net"), "e3", "e12"
+VERS = tuple(os.environ.get("EMPH_VERS", "ab"))                  # versions trained / ranked in this call
 N_DEV, N_TEACH, N_EMPH, N_OWN, STEPS = 20, 1000, 900, 1000, 4500
-N_OWN1, OWN1_SHARE, REPLAY1_SHARE = 130, 0.10, 0.10              # phase 1: own dreams ~10% of dream examples; replay ~10% of all
+N_OWN1, OWN1_SHARE, REPLAY1_SHARE = 130, 0.10, 0.10
+# variants c, d, e (owner, 19 Nov): (teacher share, negatives share, replay share) of all examples; distinct examples matched
+# to version a's (teacher + own + distinct replay); negatives are own dreams from learned pieces (c, d) or look-alike
+# teacher dreams (e: 1/(K+x), x/(K+x), 1/(K+x^2) in every equation, no x/(K+x^2))
+VARIANTS = {"c": (0.50, 0.25, 0.25, "own"), "d": (0.65, 0.175, 0.175, "own"), "e": (0.65, 0.175, 0.175, "look")}
+LOOK = (5, 6, 7)
+N_TEACH2, N_OWN2, N_LOOK = 1700, 720, 480              # phase 1: own dreams ~10% of dream examples; replay ~10% of all
 D = 3
 
 
@@ -105,6 +112,10 @@ def emph_job(args):
         seed = f"{prefix}-{k}" if r == 0 else f"{prefix}-{k}-r{r}"
         if kind == "every":
             desc = draw_forced(seed, allowed, new, (3, 3), D)
+        elif kind == "look":                                     # look-alikes in every equation, no x/(K+x^2)
+            al = {lv: v for lv, v in allowed.items() if lv != 8}
+            look = sorted({k_ for lv in LOOK for k_ in allowed.get(lv, [])})
+            desc = draw_forced(seed, al, look, (3, 3), D)
         else:
             desc = LD.draw(seed, {lv: v for lv, v in allowed.items() if lv != 8}, (3, 3), D)
         if DR.prescreen(desc) is not None:
@@ -115,7 +126,7 @@ def emph_job(args):
             continue
         st = [eq["keys"] for eq in syn.structure]
         has = [any(DR.role_key(x, i, D) in newset for x in ks) for i, ks in enumerate(st)]
-        if (kind == "every" and not all(has)) or (kind == "none" and any(has)):
+        if (kind == "every" and not all(has)) or (kind in ("none", "look") and any(has)):
             continue
         try:
             return DR.make_examples(syn.bursts(8), st, seed=10_000 + k)
@@ -227,6 +238,44 @@ def step_gen(workers):
                 print(f"replay {name}: {len(rep)} examples from {sum(sid in ex_all for sid in sols)} of {len(sols)} solved systems", flush=True)
 
 
+def step_gen2(workers):
+    """The extra dreams for variants c, d, e: teacher every-equation dreams up to N_TEACH2 (shared), look-alike dreams
+    (shared), learned-piece own dreams up to N_OWN2 per lineage."""
+    keys, allowed, new = pieces()
+    t0 = time.time()
+    p = OUT / "gen" / "teacher-every2.pkl"
+    if not p.exists():
+        res = recycled_map(emph_job, [("emph-teacher-every", k, allowed, new, "every") for k in range(N_TEACH, N_TEACH2)], workers)
+        ex_ = [e for x in res for e in x]
+        if len(ex_) < 2 * len(res):
+            raise SystemExit("extra teacher dreams: broken batch")
+        p.write_bytes(pickle.dumps(ex_))
+        print(f"extra teacher dreams: {sum(bool(x) for x in res)} of {len(res)} with examples; {len(ex_)} examples; {time.time() - t0:.0f}s", flush=True)
+    p = OUT / "gen" / "look.pkl"
+    if not p.exists():
+        res = recycled_map(emph_job, [("emph-look", k, allowed, new, "look") for k in range(N_LOOK)], workers)
+        ex_ = [e for x in res for e in x]
+        if len(ex_) < 2 * len(res):
+            raise SystemExit("look-alike dreams: broken batch")
+        p.write_bytes(pickle.dumps(ex_))
+        print(f"look-alike dreams: {sum(bool(x) for x in res)} of {len(res)} with examples; {len(ex_)} examples; {time.time() - t0:.0f}s", flush=True)
+    for a in ARMS:
+        for s in SEEDS:
+            name = f"{a}-s{s}"
+            p = OUT / "gen" / f"own2-{name}.pkl"
+            if p.exists():
+                continue
+            g_all = {int(g): v for g, v in json.loads((OUT / "gen" / f"groups-{name}.json").read_text()).items()}
+            g1 = {g: [k for k in v if k not in set(new)] for g, v in g_all.items()}
+            g1 = {g: v for g, v in g1.items() if v}
+            res = recycled_map(LD.rung_dream_job, [(f"emph-own1-{name}", k, g1, (3, 3), D) for k in range(N_OWN1, N_OWN2)], workers)
+            ex_ = [e for x in res for e in x]
+            if len(ex_) < 2 * len(res):
+                raise SystemExit(f"extra own dreams {name}: broken batch")
+            p.write_bytes(pickle.dumps(ex_))
+            print(f"extra own dreams {name}: {sum(bool(x) for x in res)} of {len(res)} with examples; {len(ex_)} examples; {time.time() - t0:.0f}s", flush=True)
+
+
 def mix(name, ver):
     import random
     import search_g1 as SG
@@ -238,6 +287,31 @@ def mix(name, ver):
         others = own + teacher
         m = max(1, round(LD.SHARE_REAL * len(others) / ((1 - LD.SHARE_REAL) * max(len(replay), 1))))
         return {"replay": replay * m, "own": own, "teacher": teacher}
+    if ver in VARIANTS:
+        import random
+        import search_g1 as SG
+        _, _, new = pieces()
+        newset, order = set(new), SG.vocabulary_order(D)
+        rng = random.Random(LD.stable(name, ver))
+        a = mix(name, "a")
+        distinct = len(a["teacher"]) + len(a["own"]) + len(replay)
+        ts, ns, rs, neg = VARIANTS[ver]
+        n_tn = distinct - len(replay)                            # teacher + negatives, distinct
+        n_t = round(n_tn * ts / (ts + ns))
+        n_n = n_tn - n_t
+        teach = load("teacher-every.pkl") + load("teacher-every2.pkl")
+        negs = load(f"own1-{name}.pkl") + load(f"own2-{name}.pkl") if neg == "own" else load("look.pkl")
+        if n_t > len(teach) or n_n > len(negs):
+            raise SystemExit(f"{name}-{ver}: needs {n_t} teacher and {n_n} negative examples, has {len(teach)} and {len(negs)}")
+        T, N = rng.sample(teach, n_t), rng.sample(negs, n_n)
+        n_r = round(rs / (ts + ns) * (n_t + n_n))
+        first = [e for e in replay if holds_new(e, newset, order)]
+        rest = [e for e in replay if not holds_new(e, newset, order)]
+        rng.shuffle(first)
+        rng.shuffle(rest)
+        pool_ = first + rest
+        R = (pool_ * (n_r // len(pool_) + 1))[:n_r]
+        return {"replay": R, "own" if neg == "own" else "look-alike": N, "teacher": T}
     # phase 1: own dreams ~10% of dream examples, replay ~10% of all, new-piece systems first
     _, _, new = pieces()
     newset, order = set(new), SG.vocabulary_order(D)
@@ -279,7 +353,7 @@ def step_train(workers):
         st, _ = lineage(a, s)
         M = mix(name, ver)
         share = {src: (sum(holds_new(e, newset, order) for e in ex) / max(1, len(ex)), len(ex)) for src, ex in M.items()}
-        exs = M["replay"] + M["own"] + M["teacher"]
+        exs = [e for part in M.values() for e in part]
         total = sum(sh * n for sh, n in share.values()) / len(exs)
         out = OUT / "nets" / f"{name}-{ver}"
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -295,14 +369,16 @@ def step_train(workers):
             p.unlink()
             LD.log(f"emph {name}-{ver}: {STEPS} steps on {len(exs)} examples on GPU {g} in {time.time() - t0:.0f}s")
         with lock:
-            info[f"{name}-{ver}"] = {"examples": len(exs), "new-piece share": total,
+            info[f"{name}-{ver}"] = {"examples": len(exs), "distinct": len({id(e) for e in exs}), "new-piece share": total,
                                      "by source": {k: {"share": v[0], "examples": v[1]} for k, v in share.items()}}
-    threads = [threading.Thread(target=one, args=(a, s, v)) for a in ARMS for s in SEEDS for v in "ab"]
+    threads = [threading.Thread(target=one, args=(a, s, v)) for a in ARMS for s in SEEDS for v in VERS]
     for t in threads:
         t.start()
     for t in threads:
         t.join()
-    (OUT / "train.json").write_text(json.dumps(info, indent=1))
+    p = OUT / "train.json"
+    old = json.loads(p.read_text()) if p.exists() else {}
+    p.write_text(json.dumps(dict(old, **info), indent=1))
 
 
 def rank_job(args):
@@ -353,14 +429,16 @@ def step_rank(workers):
             st, _ = lineage(a, s)
             tables = {int(k): v for k, v in st["tables"].items()}
             dev = json.loads((OUT / "gen" / f"dev-s{s}.json").read_text())
-            for ver in "ab":
+            for ver in VERS:
                 net = str(OUT / "nets" / f"{a}-s{s}-{ver}")
                 spec = ("confidence", net, tables) if a == "blend" else ("net", net)
                 jobs += [(r, spec, f"{a}-s{s}-{ver}", new) for r in dev]
     t0 = time.time()
     with pool(workers) as ex:
         rows = [x for part in ex.map(rank_job, jobs) for x in part]
-    (OUT / "ranks.json").write_text(json.dumps(rows))
+    p = OUT / "ranks.json"
+    old = [x for x in json.loads(p.read_text()) if x["tag"].rsplit("-", 1)[1] not in VERS] if p.exists() else []
+    p.write_text(json.dumps(old + rows))
     print(f"rank: {len(rows)} rows from {len(jobs)} jobs in {time.time() - t0:.0f}s")
 
 
@@ -393,11 +471,143 @@ def step_report():
     print(text)
 
 
+def step_report_v():
+    """Variants c, d, e against version a, by the same rule as phase 1."""
+    import numpy as np
+    rows = json.loads((OUT / "ranks.json").read_text())
+    tr = json.loads((OUT / "train.json").read_text())
+    lines = ["== Variant quick check (e3): new piece's top-10 share at the empty start; other true terms' mean log2 rank; injection "
+             "(best x/(K+x^2) rank on equations without one, mean log2); training share of new-piece examples; distinct examples"]
+    wins = {v: 0 for v in VARIANTS}
+    summ = {v: [] for v in VARIANTS}
+    for a in ARMS:
+        for s in SEEDS:
+            name, m = f"{a}-s{s}", {}
+            for v in ("a",) + tuple(VARIANTS):
+                R = [x for x in rows if x["tag"] == f"{name}-{v}"]
+                m[v] = (float(np.mean([x["rank"] <= 10 for x in R if x["kind"] == "new" and x["point"] == "empty start"])),
+                        float(np.mean([math.log2(x["rank"]) for x in R if x["kind"] == "other"])),
+                        float(np.mean([math.log2(x["rank"]) for x in R if x["kind"] == "injection"])),
+                        tr[f"{name}-{v}"]["new-piece share"], tr[f"{name}-{v}"]["distinct"])
+            txt = []
+            for v in VARIANTS:
+                d_top, d_oth, d_inj = m[v][0] - m["a"][0], m[v][1] - m["a"][1], m[v][2] - m["a"][2]
+                ok = d_top >= 0.20 and d_oth <= 0.25 and d_inj >= -0.25
+                wins[v] += ok
+                summ[v].append((d_top, d_oth, d_inj))
+                txt.append(f"{v} top-10 {m[v][0]:.0%} ({d_top:+.0%}), other {d_oth:+.2f}, injection {d_inj:+.2f}, share {m[v][3]:.0%}, "
+                           f"distinct {m[v][4]}{' PASS' if ok else ''}")
+            lines.append(f"   {name}: a top-10 {m['a'][0]:.0%}, other {m['a'][1]:.2f}, injection {m['a'][2]:.2f}, share {m['a'][3]:.0%}, "
+                         f"distinct {m['a'][4]} | " + " | ".join(txt))
+    for v in VARIANTS:
+        x = np.array(summ[v])
+        lines.append(f"== {v}: passes in {wins[v]} of 6 ({'PASSES' if wins[v] >= 4 else 'does not pass'}); mean top-10 {x[:, 0].mean():+.0%}, "
+                     f"other {x[:, 1].mean():+.2f}, injection {x[:, 2].mean():+.2f}")
+    text = "\n".join(lines)
+    (OUT / "report_v.txt").write_text(text)
+    print(text)
+
+
+N_SEARCH = 20
+
+
+def search_job(args):
+    """The real search (ladder.search_job's settings) on one system, recording per equation: solved, whether the truth
+    holds x/(K+x^2), structures tried, and structures tried that hold an x/(K+x^2) term."""
+    rec, spec, tag, seed, new = args
+    import warnings
+    warnings.filterwarnings("ignore")
+    sys.path.insert(0, str(HERE))
+    import numpy as np
+    import torch
+    torch.set_num_threads(1)
+    import dream_g2 as DR
+    import fitter_g1 as FG
+    import search_g1 as SG
+    newset = set(new)
+    ctx = SG.system_context(np.array(rec["bursts"]), seed=seed)
+    fitter = FG.make_fitter(ctx, seed=seed)
+    v = ctx["vocab"]
+    prior = LD.make_prior(spec)
+    budget, cap = LD.TEST_BUDGET
+    out = []
+    for i, keys in enumerate(rec["structure"]):
+        truth_new = any(DR.role_key(k, i, D) in newset for k in keys)
+        se = SG.EquationSearchL1(i, ctx, budget, prior, fitter, np.random.default_rng([seed, i]), time_cap=C.TIME_CAP / D,
+                                 thorough_cap=cap).run()
+        isnew = [DR.role_key(v.keys[t], i, D) in newset for t in range(v.V)]
+        tried = [S for S in se.table if S]
+        out.append({"tag": tag, "id": rec["id"], "eq": i, "truth_new": truth_new, "solved": se.eff.get("first_exact") is not None,
+                    "structures": len(tried), "with_new": sum(any(isnew[t] for t in S) for S in tried)})
+    return out
+
+
+def step_search(workers):
+    """20 new e3-style test systems per seed (checked against every earlier set), searched with version a and the
+    chosen variant (env EMPH_BEST) from each learner lineage's trained network."""
+    _, allowed, new = pieces()
+    best = os.environ["EMPH_BEST"]
+    if not all((OUT / "gen" / f"search-s{s}.json").exists() for s in SEEDS):
+        with pool(workers) as ex:
+            sy = {s: [r for r in ex.map(LD.gen_job, [(f"emph-search-s{s}", k, allowed, (3, 3), D, new) for k in range(N_SEARCH)]) if r["accepted"]]
+                  for s in SEEDS}
+        old = LD.earlier_keys("emph")
+        for p in list((L_DIR / "gen").glob("*.json")):
+            old |= {LD.data_key(r["bursts"]) for sp in json.loads(p.read_text()).values() for r in sp}
+        for s in SEEDS:
+            old |= {LD.data_key(r["bursts"]) for r in json.loads((OUT / "gen" / f"dev-s{s}.json").read_text())}
+        clash = sum(LD.data_key(r["bursts"]) in old for s in SEEDS for r in sy[s])
+        print(f"search systems: {sum(len(v) for v in sy.values())} accepted; identical to {len(old)} earlier systems: {clash}", flush=True)
+        if clash:
+            raise SystemExit("search systems not new")
+        for s in SEEDS:
+            (OUT / "gen" / f"search-s{s}.json").write_text(json.dumps([dict(r, id=f"emph-search-s{s}-{r['k']}") for r in sy[s]]))
+    jobs = []
+    for a in ARMS:
+        for s in SEEDS:
+            st, _ = lineage(a, s)
+            tables = {int(k): v for k, v in st["tables"].items()}
+            for ver in ("a", best):
+                net = str(OUT / "nets" / f"{a}-s{s}-{ver}")
+                spec = ("confidence", net, tables) if a == "blend" else ("net", net)
+                jobs += [(r, spec, f"{a}-s{s}-{ver}", s, new) for r in json.loads((OUT / "gen" / f"search-s{s}.json").read_text())]
+    t0 = time.time()
+    with pool(workers) as ex:
+        rows = [x for part in ex.map(search_job, jobs) for x in part]
+    (OUT / f"search_{best}.json").write_text(json.dumps(rows))
+    print(f"search: {len(rows)} equations from {len(jobs)} systems in {time.time() - t0:.0f}s")
+
+
+def step_report_search():
+    import numpy as np
+    best = os.environ["EMPH_BEST"]
+    rows = json.loads((OUT / f"search_{best}.json").read_text())
+    lines = [f"== Search test (300 structures per equation, 20 new e3-style systems per seed): version a against {best}"]
+    for a in ARMS:
+        for s in SEEDS:
+            parts = []
+            for v in ("a", best):
+                R = [x for x in rows if x["tag"] == f"{a}-s{s}-{v}"]
+                sysok = {}
+                for x in R:
+                    sysok[x["id"]] = sysok.get(x["id"], True) and x["solved"]
+                nw = [x for x in R if x["truth_new"]]
+                ot = [x for x in R if not x["truth_new"]]
+                wasted = sum(x["with_new"] for x in ot) / max(1, sum(x["structures"] for x in ot))
+                parts.append(f"{v}: systems {sum(sysok.values())}/{len(sysok)}, new-piece equations {sum(x['solved'] for x in nw)}/{len(nw)}, "
+                             f"others {sum(x['solved'] for x in ot)}/{len(ot)}, tries holding x/(K+x^2) on equations without it {wasted:.0%}")
+            lines.append(f"   {a}-s{s}: " + " | ".join(parts))
+    text = "\n".join(lines)
+    (OUT / f"report_search_{best}.txt").write_text(text)
+    print(text)
+
+
 def main():
     workers, step = int(sys.argv[1]), sys.argv[2]
     OUT.mkdir(parents=True, exist_ok=True)
     {"gen": lambda: step_gen(workers), "train": lambda: step_train(workers), "rank": lambda: step_rank(workers),
-     "report": step_report}[step]()
+     "report": step_report, "gen2": lambda: step_gen2(workers), "report_v": step_report_v,
+     "search": lambda: step_search(workers), "report_search": step_report_search}[step]()
 
 
 if __name__ == "__main__":
