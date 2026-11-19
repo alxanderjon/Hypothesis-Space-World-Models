@@ -10912,3 +10912,9 @@ How to read it: top-10 Δ is in points. "Other Δ" is the other true terms' mean
 - **The search test was not run.** The logged rule selects a variant only if its mean injection change is no worse than −0.5, and none qualifies.
 - **What the search test could still show:** the injection measure counts ranks, not cost. A wrongly proposed x/(K+x²) costs the search one fit, which is rejected unless it explains the data. So a variant may still help overall if the gain on new-piece equations outweighs the wasted tries.
 - **Proposed** (for approval): run the search test on c (least injection, smallest cost to other terms) and d (largest gain), each against version a, as logged. Their results would decide.
+
+**Owner:** *"yes run the test"*
+
+**Search test of variants c and d against version a, started.**
+- One run searches all three versions, so a is searched once and all three see identical systems.
+- **As logged:** 20 new e3-style systems per seed, the real search at 300 structures, and each learner lineage's trained network for each version. CPU only (40 workers), GPUs not used.

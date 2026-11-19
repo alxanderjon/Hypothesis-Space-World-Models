@@ -595,7 +595,7 @@ def step_search(workers):
         for s in SEEDS:
             st, _ = lineage(a, s)
             tables = {int(k): v for k, v in st["tables"].items()}
-            for ver in ("a", best):
+            for ver in ("a",) + tuple(best):
                 net = str(OUT / "nets" / f"{a}-s{s}-{ver}")
                 spec = ("confidence", net, tables) if a == "blend" else ("net", net)
                 jobs += [(r, spec, f"{a}-s{s}-{ver}", s, new) for r in json.loads((OUT / "gen" / f"search-s{s}.json").read_text())]
@@ -610,11 +610,11 @@ def step_report_search():
     import numpy as np
     best = os.environ["EMPH_BEST"]
     rows = json.loads((OUT / f"search_{best}.json").read_text())
-    lines = [f"== Search test (300 structures per equation, 20 new e3-style systems per seed): version a against {best}"]
+    lines = [f"== Search test (300 structures per equation, 20 new e3-style systems per seed): version a against {', '.join(best)}"]
     for a in ARMS:
         for s in SEEDS:
             parts = []
-            for v in ("a", best):
+            for v in ("a",) + tuple(best):
                 R = [x for x in rows if x["tag"] == f"{a}-s{s}-{v}"]
                 sysok = {}
                 for x in R:
@@ -625,6 +625,16 @@ def step_report_search():
                 parts.append(f"{v}: systems {sum(sysok.values())}/{len(sysok)}, new-piece equations {sum(x['solved'] for x in nw)}/{len(nw)}, "
                              f"others {sum(x['solved'] for x in ot)}/{len(ot)}, tries holding x/(K+x^2) on equations without it {wasted:.0%}")
             lines.append(f"   {a}-s{s}: " + " | ".join(parts))
+    for v in ("a",) + tuple(best):
+        R = [x for x in rows if x["tag"].endswith(f"-{v}")]
+        sysok = {}
+        for x in R:
+            sysok[(x["tag"], x["id"])] = sysok.get((x["tag"], x["id"]), True) and x["solved"]
+        nw = [x for x in R if x["truth_new"]]
+        ot = [x for x in R if not x["truth_new"]]
+        lines.append(f"== {v} overall: systems {sum(sysok.values())}/{len(sysok)}; new-piece equations {sum(x['solved'] for x in nw)}/{len(nw)}; "
+                     f"others {sum(x['solved'] for x in ot)}/{len(ot)}; mean structures on equations without x/(K+x^2) "
+                     f"{np.mean([x['structures'] for x in ot]):.0f}, of which holding x/(K+x^2) {sum(x['with_new'] for x in ot) / max(1, sum(x['structures'] for x in ot)):.0%}")
     text = "\n".join(lines)
     (OUT / f"report_search_{best}.txt").write_text(text)
     print(text)
