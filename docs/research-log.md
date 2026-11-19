@@ -10958,3 +10958,60 @@ How to read it: top-10 Δ is in points. "Other Δ" is the other true terms' mean
 1. **A minutes-scale evidence diagnosis** (CPU, no search, no training). On the e3 development systems, rank every true term by its data evidence alone (pooled gain, as in AlphaDev check A) at the empty start and one short. Compare x/(K+x²) with the other pieces, and count how often a look-alike of the same variable (x/(K+x), 1/(K+x²)) has higher evidence than the true x/(K+x²) term.
    - **If the evidence is ambiguous:** look at the grid of constants for x/(K+x²) (resolution, range) as the likely cause. This is a toolkit setting, not a piece.
 2. **Split e3 as rung a was split:** e3a introduces x/(K+x²) at 1–2 terms per equation (rung b's shape, where fewer competing terms make it easier to tell apart), then e3 again at 3 terms. Same rules, version a's mix.
+
+### Owner: the e3 evidence diagnosis (19 November)
+
+**Owner.** *"Run the evidence diagnosis first (minutes, CPU, no search or training), on the e3 development systems: 1. Rank each true term by its data evidence alone, and count how often a look-alike on the same variable (x/(K+x), 1/(K+x²), x, etc.) has stronger evidence than the true x/(K+x²) term. 2. Check the K grid: whether its resolution and range cover the true K values. 3. Check the data range: how often the recordings reach the region where x/(K+x²) differs from its look-alikes (x comparable to √K), versus staying where it behaves like x/K. Report in plain language which of these explains the ambiguity, if any. If the evidence looks fine, propose e3a (x/(K+x²) introduced with 1–2 terms per equation, same rules, version a's mix). If the data range is the problem, propose a fix to how the recordings are drawn (e.g. wider starting values) instead. Don't run either until we've discussed the diagnosis."*
+
+**Setup** (`diag_e3_evidence.py`; the 60 e3-style development systems of the emphasized-dream check; counts only; CPU, no search, no training).
+- **76 true x/(K+x²) terms in 69 equations.**
+- **The true K is taken in the learner's coordinates** (the data divided by each variable's scale), from an exact fit of the true structure.
+- **"Evidence"** is what the network sees for a candidate: the best partial R² of its grid columns against the residual.
+
+**1. Evidence: ambiguous.**
+- **At one short** (every other true term in place, so the residual is essentially this term):
+  - the true term's median rank is 20 (43% in the top 10);
+  - **a look-alike on the same variable has stronger evidence in 43% of cases**: x/(K+x) 37%, 1/(K+x) 22%, 1/(K+x²) 21%;
+  - median gains: the true term at its best grid K 0.9950, at its exact K 0.9981, the best look-alike 0.9827. The margins are about 0.01–0.02 of R².
+- **At the empty start** a look-alike is stronger in 95% of cases (x/(K+x) 78%, 1/(K+x²) 64%, 1/(K+x) 61%). There the evidence is weak for every true term (median rank 746, against 587 for the other true terms), because the residual is still the sum of three terms.
+
+**2. The K grid: not the cause.**
+- 86% of true K values lie inside the grid's range of the same sign.
+- The median distance to the nearest grid value is 0.065 decades, against a spacing of 0.25.
+- **Evaluating the true term at its exact K instead of the grid hardly changes anything:** a look-alike still beats it in 46% of cases at one short, against 43% with the grid.
+
+**3. The data range: the main cause.**
+- q = (largest recorded w²) / |K|, the learner's coordinates:
+  - **median 0.42;**
+  - **q < 0.1 in 22% of terms, 0.1–1 in 53%, at least 1 in only 25%.**
+- **So in three quarters of the terms the recordings never reach x² ≈ K,** the region where x/(K+x²) bends away from x/K. The term mostly behaves like x/K − x³/K².
+- **Its column on the data is copied by a single look-alike of the same variable** with median R² 0.9993 (above 0.999 in 54% of terms), and by span{w, w³} with median R² 0.9988:
+
+| q range | terms | best look-alike R² (median) |
+|---|---|---|
+| below 0.1 | 17 | 1.0000 |
+| 0.1–1 | 40 | 0.9994 |
+| at least 1 | 19 | 0.9810 |
+
+- **62% of the true K values are negative**: the generator's K is drawn by the natural-range rule, whose second half places the pole beyond the data. Such a term can never reach the bending region (|K| > x² always), so it is quasi-linear by construction.
+- **The real fields use only positive K:** flows' x/(K+x²) has K drawn from 0.2–2, with the variables around 0.3–1.5, so x² ≈ K is typically reached.
+
+**Reading:**
+- The ambiguity comes from the data range, through how the systems are drawn.
+  - The rung's generator gives x/(K+x²) a K that the recordings mostly do not reach: negative in 62% of cases, or large against the recorded x².
+  - On the data such a term is almost a scaled x/(K+x) or 1/(K+x²), so its evidence cannot single it out, and no training mix can teach the network to.
+- **The grid is adequate.**
+- **e3a (fewer terms) would not cure this.** The look-alike copies the column whatever the number of terms.
+
+**Proposed fix** (for approval; nothing run): draw x/(K+x²)'s constant the way the real fields do, so the recordings reach the bending region.
+1. **K positive only** for x/(K+x²), as in the real flows and reactions. No negative-K branch (pole beyond the data) for this piece.
+2. **K tied to the recorded range:** K drawn log-uniformly between the 25th and 90th percentiles of the term variable's squared values over the system's recordings, so that q = max x² / K ≥ about 1. Equivalently, the starting values are widened until the recordings sweep through x² ≈ K.
+3. **Before rerunning e3,** a minutes-scale check (CPU): regenerate the 60 development systems under the new rule (acceptance rate), rerun this diagnosis on them, and confirm that
+   - q ≥ 1 holds for most terms;
+   - the look-alike copy (single look-alike R²) falls well below 0.999;
+   - a look-alike's evidence beats the true term at one short in well under the current 43%.
+4. **The same question applies to the other pieces with a constant:**
+   - 1/(K+x) and x/(K+x) were drawn by the same rule and mastered anyway;
+   - Hill x²/(K+x²) in e4 would have the same issue;
+   - **proposed:** the same diagnosis for them in the same check, so the rule is fixed once for every K-bearing piece.
+- If approved, e3 is rerun with the new rule and version a's mix. The earlier e12 and e3 systems stay as they were.
