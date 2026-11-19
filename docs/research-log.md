@@ -10804,3 +10804,33 @@ Its "drop-off" is the smoke budgets', not the rung's:
   - replay: about 10% of all examples, new-piece examples first;
   - 4,500 steps; version a (e3's round-1 mix); the ranks, pass rule and 4 of 6.
 - **Reported for each version:** the share of all training examples whose equation's true structure holds x/(K+x²), by source.
+
+#### Phase-1 quick check: does not pass (0 of 6); the network injects the new piece (19 November, finished 01:19 UTC)
+
+| case | x/(K+x²) top-10 share at the empty start (a → b) | other true terms' mean log2 rank (a → b; limit +0.25) | injection: best x/(K+x²) rank on equations without one, mean log2 (a → b) |
+|---|---|---|---|
+| blend s1 | 19% → 44% | 1.73 → 1.97 (+0.24) | 3.64 → 2.22 |
+| blend s2 | 8% → 50% | 1.63 → 1.99 (+0.36) | 3.61 → 1.85 |
+| blend s3 | 13% → 53% | 1.80 → 2.05 (+0.25) | 3.43 → 1.77 |
+| net s1 | 22% → 74% | 1.62 → 1.94 (+0.32) | 3.55 → 1.37 |
+| net s2 | 15% → 77% | 1.65 → 2.02 (+0.37) | 3.17 → 1.33 |
+| net s3 | 13% → 80% | 1.65 → 1.90 (+0.25) | 3.64 → 1.54 |
+
+- **Phase 1 raises the new piece's top-10 share by 25–67 points** in every case. That part of the rule passes everywhere.
+- **The injection check fails in every case.** On equations without x/(K+x²), its best term moved from about 11th (2^3.5) to about 2.5th–4.5th.
+- **The other true terms rank worse by 0.24–0.37.** Three cases are within the 0.25 limit, two of them exactly at it.
+- **Passes in 0 of 6.**
+
+**Share of all training examples whose equation holds x/(K+x²):**
+- **Version a (e3's round-1 mix): 17–26%** (teacher 44%, own dreams 0–27%, replay 0–7%; 35,400–36,200 examples).
+- **Phase 1: 81–83%** (teacher 100%, own 0% by design, replay 0–15%: few solved systems held the new piece yet; 15,687 examples).
+
+**Reading:**
+- Phase 1 has the network learn "add x/(K+x²)" almost everywhere: 4 of 5 examples hold it, and the 10% of own dreams without it are too few to guard against injection. Version a has it too rare (about 25%) for good ranks.
+- **The balance point is likely in between.**
+- Phase 1 also has fewer distinct examples (15,687 against about 36,000) for the same 4,500 steps, so each is seen about twice as often. This may add to the other terms' slip.
+
+**Proposed** (for approval; nothing run): two phase-1 variants, the same in every other respect:
+- **c:** about 50% new-piece examples. The every-equation teacher dreams, with own dreams from learned pieces and replay raised to about 25% each.
+- **d:** about 65%. Own dreams and replay at about 15–20% each.
+- **Same pass rule.** If one passes, it becomes phase 1 and e3 is rerun with the two-phase schedule.
