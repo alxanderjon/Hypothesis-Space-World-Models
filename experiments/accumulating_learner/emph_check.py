@@ -330,47 +330,75 @@ def mix(name, ver):
     return {"replay": rep_, "own": own, "teacher": teacher}
 
 
+_ISNEW = {}
+
+
 def holds_new(e, newset, order):
+    """Does the example's equation hold the new piece (its true terms: those to add plus those in S not to remove)?"""
     import dream_g2 as DR
     import numpy as np
-    true = set(np.asarray(e["gids"])[np.asarray(e["add"]) | (np.asarray(e["inS"]) & ~np.asarray(e["rem"]))].tolist())
-    return any(DR.role_key(order[int(g)], int(e["eq"]), int(e["d"])) in newset for g in true)
+    true = np.asarray(e["gids"])[np.asarray(e["add"]) | (np.asarray(e["inS"]) & ~np.asarray(e["rem"]))].tolist()
+    i, d = int(e["eq"]), int(e["d"])
+    for g in true:
+        k = (int(g), i, d)
+        if k not in _ISNEW:
+            _ISNEW[k] = DR.role_key(order[int(g)], i, d) in newset
+        if _ISNEW[k]:
+            return True
+    return False
 
 
 def step_train(workers):
     from concurrent.futures import ProcessPoolExecutor
     from multiprocessing import get_context
+    import threading
     import search_g1 as SG
     _, _, new = pieces()
     newset, order = set(new), SG.vocabulary_order(D)
     gpus = LD.GPUs()
+    # the GPU-sharing rule: with few free GPUs, also share up to 2 lightly used ones (utilization < 50%, >= 12 GB free)
+    rows = gpus.rows()
+    extra = [g for g, (_, u, m, tot) in sorted(rows.items(), key=lambda x: x[1][1]) if g not in gpus.free and u < 50 and tot - m >= 12000][:2]
+    for g in extra:
+        gpus.slots[g] = threading.Semaphore(1)
+    LD.log(f"emph: GPUs {sorted(gpus.slots)} (free {gpus.free}, shared {extra})")
     info = {}
-    import threading
-    lock = threading.Lock()
+    lock, mixing = threading.Lock(), threading.Lock()
 
     def one(a, s, ver):
+        """The mix is built only once a GPU slot is held, one mix at a time (memory and disk stay bounded)."""
         name = f"{a}-s{s}"
         st, _ = lineage(a, s)
-        M = mix(name, ver)
-        share = {src: (sum(holds_new(e, newset, order) for e in ex) / max(1, len(ex)), len(ex)) for src, ex in M.items()}
-        exs = [e for part in M.values() for e in part]
-        total = sum(sh * n for sh, n in share.values()) / len(exs)
         out = OUT / "nets" / f"{name}-{ver}"
         out.parent.mkdir(parents=True, exist_ok=True)
-        if not Path(f"{out}.pt").exists():
-            p = OUT / "nets" / f"{name}-{ver}_examples.pkl"
-            p.write_bytes(pickle.dumps(exs))
+
+        def build():
+            with mixing:
+                M = mix(name, ver)
+                share = {src: (sum(holds_new(e, newset, order) for e in ex) / max(1, len(ex)), len(ex)) for src, ex in M.items()}
+                exs = [e for part in M.values() for e in part]
+                rec = {"examples": len(exs), "distinct": len({id(e) for e in exs}),
+                       "new-piece share": sum(sh * n for sh, n in share.values()) / len(exs),
+                       "by source": {k: {"share": v[0], "examples": v[1]} for k, v in share.items()}}
+                p = OUT / "nets" / f"{name}-{ver}_examples.pkl"
+                if not Path(f"{out}.pt").exists():
+                    p.write_bytes(pickle.dumps(exs))
+                return rec, p
+        if Path(f"{out}.pt").exists():
+            rec, _ = build()
+        else:
             t0 = time.time()
 
             def run(g):
+                rec, p = build()
                 with ProcessPoolExecutor(1, mp_context=get_context("spawn")) as ex1:
-                    return ex1.submit(LD.train_net_job, ([str(p)], st["net"], str(out), g, LD.stable(name, ver, "emph"), STEPS)).result(), g
-            _, g = gpus.run(run)
-            p.unlink()
-            LD.log(f"emph {name}-{ver}: {STEPS} steps on {len(exs)} examples on GPU {g} in {time.time() - t0:.0f}s")
+                    ex1.submit(LD.train_net_job, ([str(p)], st["net"], str(out), g, LD.stable(name, ver, "emph"), STEPS)).result()
+                p.unlink()
+                return rec, g
+            rec, g = gpus.run(run)
+            LD.log(f"emph {name}-{ver}: {STEPS} steps on {rec['examples']} examples on GPU {g} in {time.time() - t0:.0f}s")
         with lock:
-            info[f"{name}-{ver}"] = {"examples": len(exs), "distinct": len({id(e) for e in exs}), "new-piece share": total,
-                                     "by source": {k: {"share": v[0], "examples": v[1]} for k, v in share.items()}}
+            info[f"{name}-{ver}"] = rec
     threads = [threading.Thread(target=one, args=(a, s, v)) for a in ARMS for s in SEEDS for v in VERS]
     for t in threads:
         t.start()

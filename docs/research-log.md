@@ -10873,3 +10873,8 @@ Its "drop-off" is the smoke budgets', not the rung's:
     - the a1 and a2 dream checks' dream pickles (both checks finished and reported; their networks, ranks and reports are kept).
   - **Kept:** e3's round-1 teacher set and version a's own dreams, which the variants use to match version a's distinct examples.
   - /SSD now has 15 GB free.
+- **Variants' training restarted (19 November, 08:15 UTC).** The first attempt built all 18 training mixes at once in one process: 48 GB of memory and growing, one core busy counting new-piece examples, the GPU idle. Only GPU 0 had been free at the start. Fixed in `emph_check.py`:
+  - the new-piece test per example is cached;
+  - each mix is built only once its training holds a GPU slot, one mix at a time, so at most one example file per GPU exists;
+  - under the GPU-sharing rule, up to 2 lightly used GPUs (utilization under 50%, at least 12 GB free) are shared beside the free ones.
+  - The dreams (all built: 699 of 700 extra teacher, 478 of 480 look-alike, 589–590 of 590 extra own per lineage) are kept.
