@@ -11094,3 +11094,48 @@ Sources are the papers' abstracts, the DeepMind posts and secondary summaries fo
 **Proposed** (for discussion, nothing built): at the real-systems stage, a small test of point 1 with point 2's prompt.
 - An LLM proposes up to N term sets per equation, from the data summary, the variable names and the 3 most similar solved systems. They are inserted into the search as extra root-level candidates.
 - **Measured** on newly generated and unpublished systems: solves at fixed budget and structures to first solution, with and without the LLM.
+
+#### The K rule's quick check: does not pass, and the data-range diagnosis does not hold (19 November, 23:20 UTC)
+
+| piece | rule | systems built | terms reaching the bend (q ≥ 1) | best look-alike copy, median R² (share > 0.999) | look-alike stronger at one short | true term's evidence rank at one short (median) | true structures not exact |
+|---|---|---|---|---|---|---|---|
+| 1/(K+x) | old | 60/60 | 32% | 0.9988 (42%) | 61% | 64 | 9 |
+| 1/(K+x) | new | 60/60 | 95% | 0.9993 (69%) | 53% | 141 | 21 |
+| x/(K+x) | old | 60/60 | 37% | 0.9976 (45%) | 55% | 53 | 7 |
+| x/(K+x) | new | 59/60 | 97% | 0.9953 (22%) | 41% | 29 | 17 |
+| 1/(K+x²) | old | 60/60 | 43% | 0.9987 (46%) | 55% | 86 | 3 |
+| 1/(K+x²) | new | 59/60 | 99% | 0.9978 (19%) | 51% | 92 | 10 |
+| x/(K+x²) | old | 60/60 | 38% | 0.9987 (38%) | 47% | 33 | 5 |
+| x/(K+x²) | new | 60/60 | 95% | 0.9960 (26%) | 57% | 117 | 13 |
+| Hill x²/(K+x²) | old | 60/60 | 20% | 0.9995 (65%) | 66% | 218 | 6 |
+| Hill x²/(K+x²) | new | 60/60 | 94% | 0.9979 (31%) | 48% | 76 | 10 |
+
+**The new rule does what it was built to do: 94–99% of terms now reach the bend, against 20–43%.**
+
+**But the ambiguity barely changes:**
+- the best look-alike still copies the column to a median R² of 0.995–0.999;
+- a look-alike still has stronger evidence at one short in 41–57% of terms.
+- **For x/(K+x²) the share rose from 47% to 57%, and its evidence rank at one short worsened** (33 to 117).
+
+**x/(K+x²) under the new rule fails 2 of the 4 parts of the pass rule:**
+- acceptance 100% and q ≥ 1 in 95% pass;
+- the look-alike R² (0.996 against at most 0.99) and look-alike stronger (57% against at most 15%) fail.
+- "One rule for all": no.
+
+**The new rule also makes more true structures fail the exactness check** (10–21 per piece against 3–9): with K in the middle of the data the fits are harder.
+
+**My earlier conclusion was wrong, and the old-rule rows show why.**
+- 1/(K+x), x/(K+x) and 1/(K+x²) were mastered on earlier rungs. Under the same old rule they have the same ambiguity as x/(K+x²): look-alike stronger at one short in 55–61% of terms, against 47%, and look-alike R² about 0.998–0.999.
+- By the data evidence alone, x/(K+x²) was no worse than those pieces; its rank at one short (33) was even better.
+- **So the look-alike ambiguity is normal for every K piece, and it is not what makes e3 fail.**
+- The earlier diagnosis was right that the evidence is ambiguous. It was wrong to conclude that ambiguity, or the data range behind it, explains e3. I should have compared against the mastered pieces before proposing the fix.
+
+**The K rule is not adopted.** e3 is not rerun. The rule's code stays off by default (`krule=False`).
+
+**What this leaves:**
+- e3's failure is in how the network learns x/(K+x²), not in what the data shows.
+- The e3 lineages rank it at a median of 16–20 after three rounds. Mastered pieces were found within the 300-structure budget with similarly ambiguous evidence.
+
+**Proposed** (for approval; nothing run):
+1. **A rank comparison (minutes, CPU):** the learner networks' ranks for each mastered K piece on its own rung's held-out systems at mastery, against x/(K+x²) at e3. This shows whether x/(K+x²) is simply learned more slowly or something else differs (e.g. 5 vocabulary terms against 3, or 10 piece types competing against 6).
+2. **e3a,** the owner's earlier alternative: x/(K+x²) introduced at 1–2 terms per equation (rung b's shape), with fewer competing terms, as rung a was split. Same rules, version a's mix, the old K rule (the systems' rule all mastered pieces were learned under).
