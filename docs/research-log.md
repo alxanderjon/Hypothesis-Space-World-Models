@@ -11015,3 +11015,33 @@ How to read it: top-10 Δ is in points. "Other Δ" is the other true terms' mean
    - Hill x²/(K+x²) in e4 would have the same issue;
    - **proposed:** the same diagnosis for them in the same check, so the rule is fixed once for every K-bearing piece.
 - If approved, e3 is rerun with the new rule and version a's mix. The earlier e12 and e3 systems stay as they were.
+
+### Owner: the K rule, and a survey of LLM-driven search (19 November)
+
+**Owner.** *"1. Approved: fix how constants are drawn for pieces with a K inside. Use positive K, drawn within the range of the variable's squared values the recordings actually reach (25th to 90th percentile), so the data covers the bend. This makes the problem solvable without forcing the answer; the learner still has to find which term it is. Log for later: real systems may contain negative-K terms, and we'll need to handle those once this case works. Before any rerun, run the quick CPU check: regenerate the 60 development systems under the new rule, confirm they build, rerun the diagnosis, and confirm most terms now reach the bend, the best look-alike copy falls well below R² 0.999, and look-alikes win at 'one short' well under 43% of the time. Check the other K pieces the same way (1/(K+x), x/(K+x), 1/(K+x²), and Hill x²/(K+x²) for e4) and set one rule for all. If the check passes, rerun e3 with version a's mix. Earlier rungs keep their systems. 2. Alongside it (no GPU, don't slow the rerun): a short survey of LLM-driven program and equation search: FunSearch, AlphaEvolve, LLM-SR, and anything newer, including work using large reasoning models for inductive program synthesis. … Note how each could carry experience across problems (e.g. a database of past solutions, like our library), and keep the rule that any LLM's benefit is measured on systems it can't have memorized. Don't build anything until we've discussed it."*
+
+**Logged for later:**
+- Real systems may contain negative-K terms (a pole beyond the data, quasi-linear over the recordings).
+- They are to be handled once the positive-K case works.
+
+**The K rule** (`ladder.draw(..., krule=True)`, `ladder.k_ok`; off for every earlier rung).
+- **Applies to** every piece with one constant K inside a shifted denominator. The shifted quantity is:
+  - **|x|** for 1/(K+x) and x/(K+x);
+  - **x²** for 1/(K+x²), x/(K+x²) and Hill x²/(K+x²).
+- **At draw time,** K is positive and log-uniform between the 25th and 90th percentiles of the shifted quantity over the starting region (the 64 points around the initial state that the natural-range rule also uses).
+- **After the build,** the system is accepted only if each such K also lies between the 25th and 90th percentiles of its shifted quantity over the recorded bursts, the data the learner sees. Otherwise it is redrawn, as with any rejection.
+- **The rule fixes only where the constant lies.** The search still has to find which term it is.
+
+**The check** (`k_check.py`; CPU only, 40 workers; no search, no training).
+- **Systems:** for each K piece and each rule (old natural-range against new), 60 rung-e-style development systems: 3 variables, 3 terms, all ten pieces available, every system with at least one term of that piece, checked against every earlier set.
+- **Diagnosis**, for every true term of the piece (counts only):
+  - q = (largest recorded shifted quantity) / |K|, in the learner's coordinates, from an exact fit of the true structure;
+  - the best single same-variable look-alike column's R² against the term's column;
+  - at one short, whether a same-variable look-alike has stronger evidence.
+- **Pass rule for x/(K+x²) under the new rule (set before the run):**
+  - at least 90% of the systems accepted within the usual 200 draws;
+  - q ≥ 1 for at least 75% of the terms;
+  - the median best look-alike R² at most 0.99;
+  - a look-alike stronger at one short for at most 15% of the terms (against 43% before).
+- **One rule for all K pieces** if, for every other K piece, the new rule keeps acceptance at least 90% and does not raise the "look-alike stronger at one short" share by more than 5 points over the old rule.
+- **If both hold, e3 is rerun** (as rung e3k, from the e12 states) with the K rule and version a's mix, the same rules as e3.

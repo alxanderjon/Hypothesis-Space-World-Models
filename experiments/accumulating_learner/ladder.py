@@ -141,7 +141,40 @@ def piece_keys(d):
     return out
 
 
-def draw(seed, allowed, n_terms, d):
+K_SHIFT = {5: "x", 6: "x", 7: "x2", 8: "x2", 10: "x2"}        # pieces with K inside: the quantity K is added to
+_OF = {}
+
+
+def piece_of(key, d):
+    if d not in _OF:
+        _OF[d] = {k: lv for lv, ks in piece_keys(d).items() for k in ks}
+    return _OF[d].get(key)
+
+
+def shifted_var(key):
+    """The (1-based) variable inside the K-shifted denominator of a key: Add(K0, x_j) or Add(K0, Pow(x_j, 2))."""
+    import re
+    m = re.search(r"Add\(Symbol\('K0', real=True\), (?:Pow\()?Symbol\('x(\d)'", key)
+    return int(m.group(1)) if m else None
+
+
+def k_ok(desc, bursts):
+    """The K rule's check on the recordings (owner, 19 Nov): every K-term's K lies between the 25th and 90th percentiles of
+    its shifted quantity (|x| or x^2) over the recorded bursts."""
+    import numpy as np
+    b = np.asarray(bursts, dtype=float)
+    for i, j, K, kind in desc.get("kterms", []):
+        x = b[..., j].ravel()
+        q = np.abs(x) if kind == "x" else x ** 2
+        lo, hi = np.percentile(q, 25), np.percentile(q, 90)
+        if not (lo <= K <= hi):
+            return False
+    return True
+
+
+def draw(seed, allowed, n_terms, d, krule=False):
+    """krule (owner, 19 Nov; rung e3k on): a piece with K inside gets a positive K drawn log-uniformly between the 25th and
+    90th percentiles of its shifted quantity (|x| or x^2) over the starting region; k_ok checks it on the recordings."""
     import numpy as np
     import sympy as sp
     import torch
@@ -150,7 +183,7 @@ def draw(seed, allowed, n_terms, d):
     import language_g1 as LG
     rng = DG.rng_of(seed)
     Y, X = DG.Y4, LG.variables(4)
-    params, rhs = {}, []
+    params, rhs, kterms = {}, [], []
     ic = [float(rng.choice([-1.0, 1.0]) * rng.uniform(0.5, 2.5)) for _ in range(d)]
     for i in range(d):
         n = int(rng.integers(n_terms[0], n_terms[1] + 1))
@@ -171,6 +204,14 @@ def draw(seed, allowed, n_terms, d):
                 th = FG.natural_thetas(inf, rng.random((1, inf.k)), Wp[:, actual])[0]
                 if not np.all(np.isfinite(th)):
                     th = np.ones(inf.k)
+                lv = piece_of(key, d) if krule else None
+                if lv in K_SHIFT and inf.k == 1 and shifted_var(key):
+                    j = actual[shifted_var(key) - 1]
+                    xs = Wp[:, j].numpy()
+                    q = np.abs(xs) if K_SHIFT[lv] == "x" else xs ** 2
+                    lo, hi = np.percentile(q, 25), np.percentile(q, 90)
+                    th = np.array([float(np.exp(rng.uniform(np.log(lo), np.log(hi))))])
+                    kterms.append([i, int(j), float(th[0]), K_SHIFT[lv]])
                 for a in range(inf.k):
                     name = f"c{i}_{t}_{a}"
                     params[name] = float(th[a])
@@ -180,7 +221,7 @@ def draw(seed, allowed, n_terms, d):
             e = e + sp.Symbol(cname) * expr.xreplace(sub)
         rhs.append(e)
     return {"seed": seed, "domain": "curriculum", "form": "curriculum", "d": d, "rhs": [sp.srepr(e) for e in rhs],
-            "params": params, "ic": ic, "positive": False}
+            "params": params, "ic": ic, "positive": False, **({"kterms": kterms} if krule else {})}
 
 
 def new_keys(rung, keys):
@@ -197,6 +238,7 @@ def has_new(structure, new, d):
 def gen_job(args):
     prefix, k, allowed, n_terms, d = args[:5]
     new = args[5] if len(args) > 5 else None
+    krule = args[6] if len(args) > 6 else False
     import warnings
     warnings.filterwarnings("ignore")
     sys.path.insert(0, str(HERE))
@@ -207,7 +249,7 @@ def gen_job(args):
     reasons = []
     for r in range(200):
         seed = f"{prefix}-{k}" if r == 0 else f"{prefix}-{k}-r{r}"
-        desc = draw(seed, allowed, n_terms, d)
+        desc = draw(seed, allowed, n_terms, d, krule)
         why = DR.prescreen(desc)
         if why is not None:
             reasons.append(why)
@@ -220,8 +262,12 @@ def gen_job(args):
         if not has_new([eq["keys"] for eq in syn.structure], new, d):
             reasons.append("no new-piece term")
             continue
+        b8 = syn.bursts(8)
+        if krule and not k_ok(desc, b8):
+            reasons.append("K outside the recorded range")
+            continue
         return {"k": k, "accepted": True, "tries": r + 1, "structure": [eq["keys"] for eq in syn.structure],
-                "bursts": syn.bursts(8).tolist()}
+                "bursts": b8.tolist()}
     return {"k": k, "accepted": False, "reasons": reasons[-5:]}
 
 
@@ -425,6 +471,7 @@ def rung_dream_job(args):
     pieces given, only dreams containing one of them (teacher dreams of rung e)."""
     prefix, k, allowed, n_terms, d = args[:5]
     new = args[5] if len(args) > 5 else None
+    krule = args[6] if len(args) > 6 else False
     import warnings
     warnings.filterwarnings("ignore")
     sys.path.insert(0, str(HERE))
@@ -434,14 +481,17 @@ def rung_dream_job(args):
     import dream_g2 as DR
     for r in range(200):
         seed = f"{prefix}-{k}" if r == 0 else f"{prefix}-{k}-r{r}"
-        desc = draw(seed, allowed, n_terms, d)
+        desc = draw(seed, allowed, n_terms, d, krule)
         if DR.prescreen(desc) is not None:
             continue
         try:
             syn = DG.build(desc)
             if not has_new([eq["keys"] for eq in syn.structure], new, d):
                 continue
-            return DR.make_examples(syn.bursts(8), [eq["keys"] for eq in syn.structure], seed=10_000 + k)
+            b8 = syn.bursts(8)
+            if krule and not k_ok(desc, b8):
+                continue
+            return DR.make_examples(b8, [eq["keys"] for eq in syn.structure], seed=10_000 + k)
         except Exception:
             continue
     return []
