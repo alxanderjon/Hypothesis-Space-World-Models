@@ -11045,3 +11045,52 @@ How to read it: top-10 Δ is in points. "Other Δ" is the other true terms' mean
   - a look-alike stronger at one short for at most 15% of the terms (against 43% before).
 - **One rule for all K pieces** if, for every other K piece, the new rule keeps acceptance at least 90% and does not raise the "look-alike stronger at one short" share by more than 5 points over the old rule.
 - **If both hold, e3 is rerun** (as rung e3k, from the e12 states) with the K rule and version a's mix, the same rules as e3.
+
+#### Survey: LLM-driven program and equation search (19 November; reading only, nothing built)
+
+Sources are the papers' abstracts, the DeepMind posts and secondary summaries found by web search. Figures marked as self-reported were not verified against the full papers.
+
+**FunSearch** (Romera-Paredes et al., Nature 2023).
+- **What it does:** an LLM writes small programs (here, the priority function of a heuristic). An automatic evaluator scores them. A program database, split into islands, keeps the best programs. Each prompt shows the LLM two or three good programs from one island and asks for a better one ("best-shot prompting"); weak islands are periodically reset from strong ones.
+- **What worked:** new constructions on open problems (a larger cap set in 8 dimensions; a better asymptotic lower bound), with the evaluator, not the LLM, deciding what counts.
+- **Carrying experience:** within one problem, through the program database only. No cross-problem memory.
+
+**AlphaEvolve** (DeepMind 2025, arXiv 2506.13131).
+- **What it does:** FunSearch scaled up. It evolves whole code files: a fast model proposes many edits, a stronger one fewer and deeper. An evaluation cascade (cheap tests first) and a MAP-Elites/island database decide which programs seed later prompts.
+- **What worked (self-reported):** on 50+ open mathematical problems it matched known results in about 75% and improved them in about 20%; also production gains in Google's scheduling, kernels and chip design.
+- **Carrying experience:** again a per-problem database. Nothing is reused between problems by design, beyond what is in the model.
+
+**LLM-SR** (Shojaee et al., ICLR 2025 oral).
+- **What it does:** equation discovery from data. The LLM writes equation skeletons as Python functions with free parameters, using the variables' names and a problem description as scientific prior. The parameters are fitted to the data (BFGS), and an island-based buffer of the best skeletons feeds later prompts (FunSearch-style).
+- **What worked (self-reported):** better than symbolic-regression baselines on four custom problems, especially out of domain. The benchmarks were built to limit recitation, since well-known sets such as Feynman can be memorized.
+- **Closest to us.** It is a proposal step plus a fit plus a verifier, but its verifier is fit error, not exact recovery.
+
+**LLM-SRBench** (ICML 2025 oral).
+- **What it is:** 239 problems in four domains, built against memorization: well-known laws rewritten into unfamiliar forms (LSR-Transform) and synthetic problems (LSR-Synth).
+- **The paper's own finding:** LLM methods do much worse on the rewritten problems than on the familiar Feynman forms, a sign of recall. The best method reached only 31.5% symbolic accuracy.
+- **Bears directly on the owner's rule** (measure any LLM's benefit on systems it cannot have memorized).
+
+**Newer work, 2025–2026** (abstracts only):
+- **Experience reuse:**
+  - LLM-SR extensions keep an experience buffer of past candidates and scores;
+  - LaSR (concept library) learns a library of reusable natural-language concepts from good equations and uses it to guide later proposals, our library's analogue in words;
+  - retrieval-augmented symbolic regression and "reasoning from data and experience" (DrSR) appear in reference lists.
+- **Dynamical systems:** LLM-ODE and LLM-ACES (closed-loop adaptive search) apply the LLM-SR pattern to ODEs; a physics-guided agent configures symbolic-regression back ends with an experience log.
+- **Reasoning models for inductive program synthesis** (ARC-style tasks):
+  - large test-time search with reasoning models reaches high scores at high cost (o3 on ARC-AGI-1);
+  - CodeARC found reasoning models best at inductive synthesis from input-output examples;
+  - SOAR fine-tunes a small model on its own search traces between rounds (self-improving evolutionary synthesis), much like our wake and learning cycle.
+
+**What fits our search:**
+1. **An LLM as one more source of proposals, verified by the exactness check.** Our PUCT search already takes a prior over adds, removes and swaps. An LLM could propose whole term sets (skeletons), as in LLM-SR, from the data summary, the solved neighbours and, for real systems, the variables' names and context. Each proposal enters as a node the search must fit and verify (1e-12, held-back data).
+   - **Fits at the real-systems stage,** as already approved: there the context (names, units, field) is where an LLM's prior helps.
+   - On our synthetic ladder the variables carry no meaning, so the LLM's prior would add little beyond our own.
+2. **Best-shot prompting with our library as the database:** show the LLM the solved systems most similar to the current one (by evidence profile) and ask for a structure. This is FunSearch's island prompt with cross-problem memory, which our library and replay already hold. **Fits at the real-systems stage.**
+3. **Self-improvement from search traces** (SOAR): we already do this (wake, then learning on our own solutions and dreams). Nothing to adopt now.
+4. **Evaluation against memorization:** LLM-SRBench's transformed and synthetic problems confirm our rule. Any LLM gain must be measured on newly generated or unpublished systems, and on rewritten forms of known laws, with the LLM's suggestions logged for provenance.
+
+**What does not fit now:** replacing our search by evolutionary LLM loops (FunSearch, AlphaEvolve). They need thousands of LLM calls per problem and verify by score, not exactness. Our search is already exact and cheap per structure.
+
+**Proposed** (for discussion, nothing built): at the real-systems stage, a small test of point 1 with point 2's prompt.
+- An LLM proposes up to N term sets per equation, from the data summary, the variable names and the 3 most similar solved systems. They are inserted into the search as extra root-level candidates.
+- **Measured** on newly generated and unpublished systems: solves at fixed budget and structures to first solution, with and without the LLM.
