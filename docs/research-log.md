@@ -10918,3 +10918,43 @@ How to read it: top-10 Δ is in points. "Other Δ" is the other true terms' mean
 **Search test of variants c and d against version a, started.**
 - One run searches all three versions, so a is searched once and all three see identical systems.
 - **As logged:** 20 new e3-style systems per seed, the real search at 300 structures, and each learner lineage's trained network for each version. CPU only (40 workers), GPUs not used.
+
+#### Search test of the mix variants: no net gain; the new piece's gain is paid for by the other equations (19 November, 19:33 UTC)
+
+**Setup:** 60 new e3-style systems (20 per seed; none identical to 3,480 earlier systems); the real search at 300 structures per equation; each learner lineage's network from version a, c and d (blend and network alone × 3 seeds); 1,080 equations per version.
+
+| version | systems solved exactly (of 120) | x/(K+x²) equations solved | other equations solved | tries holding x/(K+x²) on equations without it |
+|---|---|---|---|---|
+| a (e3's round-1 mix, about 25% new-piece examples) | 60 | 122 / 172 (71%) | 169 / 188 (90%) | 7% |
+| c (about 50%) | 63 | 133 / 172 (77%) | 157 / 188 (84%) | 17% |
+| d (about 65%) | 61 | 134 / 172 (78%) | 152 / 188 (81%) | 23% |
+
+- **Per case** (systems, of 20):
+
+| case | a | c | d |
+|---|---|---|---|
+| blend s1 | 10 | 9 | 7 |
+| blend s2 | 9 | 11 | 10 |
+| blend s3 | 8 | 10 | 11 |
+| net s1 | 9 | 9 | 9 |
+| net s2 | 13 | 13 | 11 |
+| net s3 | 11 | 11 | 13 |
+
+- **c against a:** −1, +2, +2, 0, 0, 0. No consistent gain, within run-to-run noise.
+
+**Reading:**
+- **Raising the new piece's share in training moves solves from the other equations to the new-piece equations; it does not add solves.**
+  - c gains 11 new-piece equations and loses 12 others; d gains 12 and loses 17.
+  - The search's tries on equations without x/(K+x²) holding the piece rise from 7% to 17–23%. That is the injection, now measured as cost.
+- With the budget fixed at 300 structures, wrong proposals displace right ones.
+- **So no training mix tested (a, phase 1, c, d, e) makes e3 masterable.** About half of e3-style systems are solved exactly at 300 structures, whatever the mix. Mastery needs 8 of 10.
+- **Version a's mix stays.** The two-phase schedule is not adopted.
+
+**What remains open:** whether the network can tell x/(K+x²) apart from its look-alikes at all, given what it sees.
+- Its input for a candidate term is the data evidence (best partial R² against the residual over the term's grid of constants) plus the state.
+- If that evidence itself does not single out x/(K+x²) on the data, no training mix can teach discrimination. Ranks then come only from frequency, which is what the variants show.
+
+**Proposed** (for approval; nothing run):
+1. **A minutes-scale evidence diagnosis** (CPU, no search, no training). On the e3 development systems, rank every true term by its data evidence alone (pooled gain, as in AlphaDev check A) at the empty start and one short. Compare x/(K+x²) with the other pieces, and count how often a look-alike of the same variable (x/(K+x), 1/(K+x²)) has higher evidence than the true x/(K+x²) term.
+   - **If the evidence is ambiguous:** look at the grid of constants for x/(K+x²) (resolution, range) as the likely cause. This is a toolkit setting, not a piece.
+2. **Split e3 as rung a was split:** e3a introduces x/(K+x²) at 1–2 terms per equation (rung b's shape, where fewer competing terms make it easier to tell apart), then e3 again at 3 terms. Same rules, version a's mix.
