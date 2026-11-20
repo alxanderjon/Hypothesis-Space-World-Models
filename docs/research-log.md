@@ -11139,3 +11139,55 @@ Sources are the papers' abstracts, the DeepMind posts and secondary summaries fo
 **Proposed** (for approval; nothing run):
 1. **A rank comparison (minutes, CPU):** the learner networks' ranks for each mastered K piece on its own rung's held-out systems at mastery, against x/(K+x²) at e3. This shows whether x/(K+x²) is simply learned more slowly or something else differs (e.g. 5 vocabulary terms against 3, or 10 piece types competing against 6).
 2. **e3a,** the owner's earlier alternative: x/(K+x²) introduced at 1–2 terms per equation (rung b's shape), with fewer competing terms, as rung a was split. Same rules, version a's mix, the old K rule (the systems' rule all mastered pieces were learned under).
+
+### Owner: a new order for the ladder; the rank comparison (20 November)
+
+**Owner.** *"Change of order for the ladder: we've been making equations longer before the learner has all the pieces. From now on, every new piece is introduced first in the easy setting (2 variables, 1–2 terms per equation), mastered there, and only then used in longer equations or with more variables. 1. Rank comparison first (minutes, CPU, no training): how the learner networks ranked each mastered piece with a K on its own level's held-out systems at mastery, versus how they rank x/(K+x²) at e3. Report in plain language. 2. Then restructure the remaining ladder: a. Introduce x/(K+x²) at 2 variables, 1–2 terms per equation, as a curriculum level built on the mastered pieces. b. Then Hill x²/(K+x²) the same way. c. Only after both are mastered, climb again with the full set of pieces: 2 variables with 3 terms, then 3 variables with 1–2 terms, then 3 variables with 3 terms, then on to 4 variables. Keep version a's mix, the old rule for drawing K (the one all mastered pieces were learned under), and the usual rules (50 training and 10 held-out systems per seed, 3 seeds, mastery in at least 2 of 3, fresh-network comparison, Reanalyse on, shared teacher dreams plus piece-balanced own dreams, 4,500 updates per round). Smoke test first. Report the rank comparison and the restructured plan before running step 2. Stop and report at any drop-off."*
+
+**Rank comparison** (`rank_cmp.py`; CPU, no search, no training).
+- **Mastered pieces:** each mastered K piece's true terms on its own curriculum level's held-out systems (2 variables), ranked by each learner lineage's network (and, for the blend, its library) at the end of that level. These are levels 5, 6 and 7; the curriculum had no level 8.
+- **e3:** the e3 networks (end of e3) on e3's held-out systems (3 variables, 3 terms), for x/(K+x²) and, as a control, for the mastered K pieces.
+- **Counts only.**
+
+| | true terms | empty start: median rank (top 10) | one short: median rank (top 10) | vocabulary |
+|---|---|---|---|---|
+| 1/(K+x) at its curriculum level's mastery | 66 | 8 (52%) | 5 (68%) | 973 |
+| x/(K+x) at its curriculum level's mastery | 74 | 16 (35%) | 8 (57%) | 1,042 |
+| 1/(K+x²) at its curriculum level's mastery | 84 | 19 (40%) | 10 (50%) | 1,041 |
+| **x/(K+x²), e3 networks on e3's held-out** | 88 | **20 (25%)** | **3 (81%)** | 1,771 |
+| control: 1/(K+x), e3 networks on e3's held-out | 30 | 14 (33%) | 2 (87%) | 1,771 |
+| control: x/(K+x), e3 networks | 40 | 15 (30%) | 2 (78%) | 2,139 |
+| control: 1/(K+x²), e3 networks | 46 | 11 (48%) | 2 (93%) | 2,139 |
+
+**Reading:**
+- **The networks rank x/(K+x²) at e3 about as well as they ranked each mastered K piece when it was mastered.** At the empty start the median is 20 against 8–19; at one short it is better, 3 against 5–10.
+- At e3 they rank x/(K+x²) only a little below the mastered K pieces on the same systems (empty start 20 against 11–15; one short 3 against 2).
+- **So x/(K+x²) is not learned unusually badly. The setting it was introduced in is harder:**
+  - 3 variables, so a vocabulary about 1.7–2 times larger (1,771–2,139 against 973–1,042);
+  - 3 terms per equation, so all three must be found within 300 structures;
+  - 10 piece types competing, against 6.
+- With ranks like these, the mastered pieces were found at 2 variables with 1–2 terms; at e3 the same ranks are not enough.
+- **This supports the owner's new order: introduce each piece in the easy setting first.**
+
+### Proposal: the restructured ladder, for approval
+
+| rung | setting | pieces | new piece (≥ 1 term per system) | starts from |
+|---|---|---|---|---|
+| **p8** | 2 variables, 1–2 terms | the ten pieces' first nine: x, x·y, x², x³, 1/(K+x), x/(K+x), 1/(K+x²), constant, + x/(K+x²) | x/(K+x²) | e12's end states (the last mastered rung; e3's states are not used) |
+| **p10** | 2 variables, 1–2 terms | p8's + Hill x²/(K+x²) | Hill | p8 |
+| **q23** | 2 variables, 3 terms | all ten (no forced piece) | – | p10 |
+| **q31** | 3 variables, 1–2 terms | all ten | – | q23 |
+| **q33** | 3 variables, 3 terms | all ten | – | q31 |
+| **q41, q43** | 4 variables, 1–2 terms, then 3 terms | all ten | – | the previous rung |
+
+- At 2 variables the vocabulary holds the constant 1 term, x³ 2, x/(K+x²) 4 and Hill 2.
+- **Kept for every rung:**
+  - version a's mix: shared teacher dreams from the rung's generator (with the new-piece rule on p8 and p10), 1,000 piece-balanced own dreams, replay at 30%, 4,500 updates per round;
+  - the old K rule (`krule` off);
+  - 50 training and 10 held-out systems per seed, checked against every earlier set; 3 seeds;
+  - budgets 300 / 1,000 / 3,000; Reanalyse at 100 structures;
+  - mastery at 8 of 10 in at least 2 of 3 seeds; fresh-network comparison;
+  - **stop and report at any drop-off.**
+- **Reported per rung:** held-out per round, first-try solves, search tries per solution, and (on p8 and p10) the new piece's own solve rate.
+- **Smoke test before p8;** a smoke test again before the first 4-variable rung (q41), the first time the ladder runs at 4 variables.
+- **Check D:** a quick look after q31 and q33 (3 variables, where its tables apply), deciding at q33.
