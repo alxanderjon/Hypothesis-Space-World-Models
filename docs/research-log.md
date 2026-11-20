@@ -11201,3 +11201,5 @@ Sources are the papers' abstracts, the DeepMind posts and secondary summaries fo
   - x/(K+x²) equations 15/56 and 12/56;
   - so 6–7 of 50 systems.
 - **The real run** (`/tmp/ladder_pq_launch.sh`): p8, p10, q23, q31, q33, a q41 smoke test, q41, q43. Check D after q31 and q33. It stops after any drop-off.
+- **Disk (20 November):** /SSD was at 7.7 GB free when p8 started.
+  - **Deleted (own, finished):** the mix checks' dream and replay pickles (`emph_check/gen/*.pkl`; the checks are reported, and their networks, ranks and reports are kept) and e3's round-1 teacher set.
