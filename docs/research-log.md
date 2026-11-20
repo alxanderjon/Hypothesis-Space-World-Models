@@ -11246,3 +11246,24 @@ Sources are the papers' abstracts, the DeepMind posts and secondary summaries fo
 - **History again gives the first wake:** 29–39 of 50 systems against 0.
 - **The blend trails the network alone here,** as on e12 and e3: its library part may hold it back once the piece set grows. Noted for the check D quick look after q31 and q33.
 - No broken dream batches. q31 (3 variables, 1–2 terms) started at 09:16 UTC.
+
+#### q31 (all ten pieces, 3 variables, 1–2 terms): mastered by every lineage in round 1 (20 November, 09:16–11:41 UTC)
+
+| arm | held-out (s1 / s2 / s3, of 10) | first-wake solves (of 50) | median structures before a training solution |
+|---|---|---|---|
+| confidence blend | 10 / 10 / 9 | 44 / 43 / 38 | 3 / 3 / 3 |
+| network alone | 10 / 9 / 9 | 43 / 37 / 38 | 3 / 3 / 3 |
+| fresh network | 9 / 10 / 9 | 3 / 2 / 2 | 50 / 7 / 8 |
+
+- **History:** 37–44 first-try systems at 3 structures per solution, against 2–3. The fresh network got there through Reanalyse (90–93 equations rescued).
+
+**Check D after q31** (top 20 decides; compression → search-cost ranking):
+- q31's held-out true terms: 83% → 57%, 91% → 66%, 74% → 88%.
+- Curriculum: unchanged (95–100%).
+- **1 of 3 seeds pass.** Ranking the library by search saved loses coverage in two seeds. The decision is at q33.
+
+**Disk:** /SSD was at 7.9 GB free when q33 started.
+- **Deleted (own, finished rungs):** the per-lineage example caches of rungs a to q31 (`examples.pkl`, rebuilt by each rung from its states; about 4.3 GB) and the shared teacher sets of p8, p10, q23 and q31 (about 1 GB). q33's files were left alone.
+- /SSD now has 14 GB free.
+
+q33 (3 variables, 3 terms) started at 11:43 UTC.
