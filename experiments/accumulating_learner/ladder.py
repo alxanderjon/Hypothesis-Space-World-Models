@@ -46,6 +46,16 @@ RUNGS.update({                                                   # owner, 17 Nov
            "after": "e12", "n_train": 50, "rung_dreams": 1000, "steps": 4500, "own_dreams": 1000},
     "e4": {"d": 3, "terms": (3, 3), "levels": _E + (4, CONSTANT, 8, HILL), "new": (HILL,), "change": "Hill activation x^2/(K+x^2) (after e3)",
            "after": "e3", "n_train": 50, "rung_dreams": 1000, "steps": 4500, "own_dreams": 1000}})
+_ALL = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+_R = {"n_train": 50, "rung_dreams": 1000, "steps": 4500, "own_dreams": 1000}
+RUNGS.update({                                                   # owner, 20 Nov: new pieces first at 2 variables, 1-2 terms; then climb
+    "p8": dict(_R, d=2, terms=(1, 2), levels=(1, 2, 3, 4, 5, 6, 7, 9, 8), new=(8,), change="x/(K+x^2) at 2 variables, 1-2 terms (after e12)", after="e12"),
+    "p10": dict(_R, d=2, terms=(1, 2), levels=_ALL, new=(HILL,), change="Hill x^2/(K+x^2) at 2 variables, 1-2 terms (after p8)", after="p8"),
+    "q23": dict(_R, d=2, terms=(3, 3), levels=_ALL, change="all ten pieces, 2 variables, 3 terms (after p10)", after="p10"),
+    "q31": dict(_R, d=3, terms=(1, 2), levels=_ALL, change="all ten pieces, 3 variables, 1-2 terms (after q23)", after="q23"),
+    "q33": dict(_R, d=3, terms=(3, 3), levels=_ALL, change="all ten pieces, 3 variables, 3 terms (after q31)", after="q31"),
+    "q41": dict(_R, d=4, terms=(1, 2), levels=_ALL, change="all ten pieces, 4 variables, 1-2 terms (after q33)", after="q33"),
+    "q43": dict(_R, d=4, terms=(3, 3), levels=_ALL, change="all ten pieces, 4 variables, 3 terms (after q41)", after="q41")})
 OTHER = 99                                                       # piece type of the learner's terms that are no curriculum piece
 SHARE_REAL = 0.30                                                # real solutions' share of training when rung dreams are used
 SEEDS = (1, 2, 3) if not SMOKE else (1,)
@@ -73,7 +83,7 @@ _LOCK = threading.Lock()
 DREAM_WORKERS, DREAM_POOLS, DREAM_CHUNK = 8, 3, 100
 _DREAM_SEM = threading.Semaphore(DREAM_POOLS)
 MIN_EXAMPLES_PER_DREAM = 2.0                                     # below this a dream batch is treated as broken: stop loudly
-SHARE_TEACHER_FROM = ("d", "e", "e12", "e3", "e4", "f", "g")                        # owner, 17 Nov: one teacher-dream set per round, shared by every lineage
+SHARE_TEACHER_FROM = ("d", "e", "e12", "e3", "e4", "f", "g", "p8", "p10", "q23", "q31", "q33", "q41", "q43")                        # owner, 17 Nov: one teacher-dream set per round, shared by every lineage
 _TEACHER, _TEACHER_LOCKS = {}, {}
 
 

@@ -11191,3 +11191,13 @@ Sources are the papers' abstracts, the DeepMind posts and secondary summaries fo
 - **Reported per rung:** held-out per round, first-try solves, search tries per solution, and (on p8 and p10) the new piece's own solve rate.
 - **Smoke test before p8;** a smoke test again before the first 4-variable rung (q41), the first time the ladder runs at 4 variables.
 - **Check D:** a quick look after q31 and q33 (3 variables, where its tables apply), deciding at q33.
+
+**Owner:** *"Approved: run the smoke test, then p8, and continue up the restructured ladder (p10, q23, q31, q33, q41, q43) with the rules as listed. Smoke test again before q41. Stop and report at any drop-off, and check in after p10 with the new pieces' own solve rates."*
+
+**p8 smoke test (01:55 UTC, 20 November)** (seed 1, smoke budgets of 20–40 structures).
+- It ran end to end: generation with the new-piece rule (every system holds an x/(K+x²) term; 1–2 terms per equation), shared teacher dreams, own dreams in 10 piece types, training, Reanalyse and the report.
+- **Its "drop-off" is the smoke budgets'.** In the first wake, before any training on the new piece:
+  - other equations were solved 36/44 (blend) and 39/44 (network alone);
+  - x/(K+x²) equations 15/56 and 12/56;
+  - so 6–7 of 50 systems.
+- **The real run** (`/tmp/ladder_pq_launch.sh`): p8, p10, q23, q31, q33, a q41 smoke test, q41, q43. Check D after q31 and q33. It stops after any drop-off.
