@@ -11180,7 +11180,7 @@ Sources are the papers' abstracts, the DeepMind posts and secondary summaries fo
 | **q33** | 3 variables, 3 terms | all ten | – | q31 |
 | **q41, q43** | 4 variables, 1–2 terms, then 3 terms | all ten | – | the previous rung |
 
-- At 2 variables the vocabulary holds the constant 1 term, x³ 2, x/(K+x²) 4 and Hill 2.
+- At 2 variables the vocabulary holds the constant 1 term, x³ 2, x/(K+x²) 2 and Hill 2.
 - **Kept for every rung:**
   - version a's mix: shared teacher dreams from the rung's generator (with the new-piece rule on p8 and p10), 1,000 piece-balanced own dreams, replay at 30%, 4,500 updates per round;
   - the old K rule (`krule` off);
