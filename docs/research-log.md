@@ -11231,3 +11231,18 @@ Sources are the papers' abstracts, the DeepMind posts and secondary summaries fo
 - The fresh network reached the same held-out after one round, mostly through Reanalyse (55–60 equations rescued, against 2–10 for the learners).
 
 **No broken dream batches.** q23 (all ten pieces, 2 variables, 3 terms) started at 05:20 UTC. The ladder continues as approved.
+
+#### q23 (all ten pieces, 2 variables, 3 terms): mastered by both learner arms (20 November, 05:20–09:15 UTC)
+
+| arm | held-out per round (s1 / s2 / s3, of 10) | first-wake solves (of 50) | median structures before a training solution |
+|---|---|---|---|
+| confidence blend | 5→6→6 / 6→7→8 / 9 | 35 / 33 / 31 | 48 / 36 / 31 |
+| network alone | 9 / 9 / 9 | 39 / 29 / 38 | 62 / 39 / 48 |
+| fresh network | 7→8 / 9 / 7→9 | 0 / 0 / 0 | 44 / 22 / 46 |
+
+- **The network alone mastered q23 in round 1 in all three seeds.**
+- **The blend mastered it in 2 of 3 seeds** (s3 in round 1, s2 in round 3). s1 stayed at 5–6.
+- The fresh network mastered it in 2, 1 and 2 rounds.
+- **History again gives the first wake:** 29–39 of 50 systems against 0.
+- **The blend trails the network alone here,** as on e12 and e3: its library part may hold it back once the piece set grows. Noted for the check D quick look after q31 and q33.
+- No broken dream batches. q31 (3 variables, 1–2 terms) started at 09:16 UTC.
