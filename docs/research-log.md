@@ -11203,3 +11203,31 @@ Sources are the papers' abstracts, the DeepMind posts and secondary summaries fo
 - **The real run** (`/tmp/ladder_pq_launch.sh`): p8, p10, q23, q31, q33, a q41 smoke test, q41, q43. Check D after q31 and q33. It stops after any drop-off.
 - **Disk (20 November):** /SSD was at 7.7 GB free when p8 started.
   - **Deleted (own, finished):** the mix checks' dream and replay pickles (`emph_check/gen/*.pkl`; the checks are reported, and their networks, ranks and reports are kept) and e3's round-1 teacher set.
+
+#### p8 and p10: both new pieces mastered at 2 variables, by every lineage in round 1 (20 November)
+
+**p8: x/(K+x²) at 2 variables, 1–2 terms** (01:56–03:40 UTC).
+
+| arm | held-out (s1 / s2 / s3, of 10) | first-wake solves (of 50) | median structures before a training solution |
+|---|---|---|---|
+| confidence blend | 10 / 10 / 10 | 33 / 28 / 33 | 10 / 10 / 8 |
+| network alone | 10 / 9 / 10 | 30 / 35 / 36 | 7 / 8 / 12 |
+| fresh network | 10 / 9 / 9 | 4 / 3 / 4 | 76 / 106 / 84 |
+
+- **New piece's own solve rate** (held-out equations, with x/(K+x²) against the rest): blend 10/10 vs 10/10, 10/10 vs 10/10, 11/11 vs 9/9; network alone 10/10 vs 10/10, 10/10 vs 9/10, 11/11 vs 9/9; fresh 10/10 vs 10/10, 10/10 vs 9/10, 10/11 vs 9/9.
+- **The piece that dropped off at e3 is mastered in the easy setting at once.** New-piece equations are solved at 98–100%, as often as the others.
+
+**p10: Hill x²/(K+x²) at 2 variables, 1–2 terms** (03:41–05:19 UTC).
+
+| arm | held-out (s1 / s2 / s3, of 10) | first-wake solves (of 50) | median structures before a training solution |
+|---|---|---|---|
+| confidence blend | 10 / 10 / 9 | 45 / 44 / 47 | 9 / 9 / 10 |
+| network alone | 10 / 10 / 10 | 47 / 44 / 49 | 7 / 8 / 8 |
+| fresh network | 10 / 10 / 10 | 4 / 8 / 9 | 144 / 68 / 72 |
+
+- **New piece's own solve rate:** blend 10/10 vs 10/10, 10/10 vs 10/10, 9/10 vs 10/10; network alone 10/10 vs 10/10 in all three seeds; fresh 10/10 vs 10/10 in all three.
+- **Hill equations solved with a Hill term** (rather than its alternative {1/(K+x²), constant}): blend 10/10, 10/10, 8/9; network alone 10/10, 9/10, 10/10; fresh 10/10 in all three. The search almost always finds the single Hill term.
+- **History shows clearly in the first wake:** the learner arms solved 44–49 of 50 Hill systems before any training on Hill, at 7–10 structures per solution, against 4–9 systems and 68–144 structures for the fresh network. Hill had been in no lineage's history; x²/(K+x²) shares its parts with mastered pieces.
+- The fresh network reached the same held-out after one round, mostly through Reanalyse (55–60 equations rescued, against 2–10 for the learners).
+
+**No broken dream batches.** q23 (all ten pieces, 2 variables, 3 terms) started at 05:20 UTC. The ladder continues as approved.
