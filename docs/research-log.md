@@ -11387,3 +11387,17 @@ q33 (3 variables, 3 terms) started at 11:43 UTC.
   - the network alone's paired tries fell in all three seeds (26 → 17, 28 → 18, 23 → 16);
   - by the plain median they "rose" in two seeds (25 → 31, 24 → 16 → 16).
   - This is the effect the owner described: harder equations solved later raise the plain median.
+
+**Fitter fix check: no gain; not adopted** (21 November).
+
+| | exact (of 36), fitter seeds 1 / 2 / 3 | exact in all 3 seeds | exact in none | median seconds per structure |
+|---|---|---|---|---|
+| base fitter | 34 / 33 / 32 | 32 | 2 | 1.3–1.7 |
+| with the fix | 34 / 33 / 32 | 32 | 2 | 1.3–1.9 |
+
+- **The fix gains 0 fits and loses 0.**
+  - With each system's context built at the fitter's seed (as the search builds it), the precise gate was open for all 36 equations.
+  - Doubling the thorough fit's extra global starts changed no outcome.
+- **Of the 36 multi-K true structures:** 32 fit exactly whatever the seed; 2 never fit; 2 depend on the fitter's random starts.
+- **So the fitter limits about 2–4 of q33's 36 multi-K held-out equations.** The fix is not adopted, and `fitter_g1.py` stays as it is.
+- **Paired tries** become pass rule (b) from the next rung on, as the owner asked.
