@@ -11267,3 +11267,44 @@ Sources are the papers' abstracts, the DeepMind posts and secondary summaries fo
 - /SSD now has 14 GB free.
 
 q33 (3 variables, 3 terms) started at 11:43 UTC.
+
+#### q33 (all ten pieces, 3 variables, 3 terms): DROP-OFF, diagnosed (20 November, finished 22:14 UTC)
+
+| arm | held-out per round (s1 / s2 / s3, of 10) | first-wake solves (of 50) | median structures before a training solution | seeds mastered |
+|---|---|---|---|---|
+| confidence blend | 5→7→7 / 8 / 7→5→7 | 30 / 20 / 21 | 31 / 32 / 33 | 1 of 3 |
+| network alone | 4→5→6 / 6→10 / 6→7→5 | 20 / 18 / 17 | 36 / 34 / 34 | 1 of 3 |
+| fresh network | 3→5→3 / 7→8 / 3→4→7 | 0 / 0 / 0 | 65 / 40 / 34 | 1 of 3 |
+
+- **Drop-off:** neither learner arm mastered q33, so the ladder stopped before the q41 smoke test.
+- **Check D, the deciding run:** 1 of 3 seeds pass at the top 20 (68 → 74%, 74 → 78%, 79 → 66%). **Check D does not pass. The library stays ranked by compression.**
+
+**Diagnosis** (`diag_e3.py` with `DIAG_RUNG=q33`; every held-out equation left unsolved in a lineage's final round; counts only):
+- **32 unsolved equations across the 9 lineages.**
+  - **25 have true structures that fit exactly, and the search (final prior, 300 structures) tried the true structure in none of them.** It visited a median of 2–3 proper subsets of the truth. The worst-ranked true term had a median rank of 17–52 at the empty start.
+  - **7 true structures do not fit exactly** (the fitter cannot recover them, so no search could solve them).
+- **The worst-ranked true term is a piece with K inside in 23 of the 25:** 1/(K+x) 6, x/(K+x²) 6, Hill 4, x/(K+x) 4, 1/(K+x²) 3; the others are x³ 1 and x 1.
+- **The failures concentrate on equations with several K terms:**
+
+| K terms per equation | held-out equations (3 seeds) | unsolved, over the 9 lineages |
+|---|---|---|
+| 0–1 | 54 of 90 (60%) | 5 of about 162 (3%) |
+| 2–3 | 36 of 90 (40%) | 27 of about 108 (25%) |
+
+- **All 7 not-exact true structures have 2 or 3 K terms.** Of the 25 exact unsolved equations, 20 have 2 or 3.
+
+**Reading:**
+- q33 brings a difficulty no mastered rung had in this form: **several constant-bearing pieces in one equation at 3 variables.**
+  - q23 had it at 2 variables, where the vocabulary is about half the size, and it was mastered (network alone 3 of 3).
+  - At 3 variables, an equation with two K terms needs two poorly ranked terms found together within 300 structures.
+  - For 2–3 K terms the fitter sometimes cannot recover the true structure at all.
+- **Equations with at most one K term are solved 97% of the time.**
+
+**Proposed** (for approval; nothing run):
+1. **Split q33 under the owner's rule** (one new difficulty at a time, easiest setting first):
+   - **q33a:** 3 variables, 3 terms, at most one K term per equation;
+   - then **q33** again with no limit.
+   - Same rules and mix.
+2. **Fitter check** (minutes, CPU): on the 7 not-exact true structures and similar 2–3 K-term equations, see whether the thorough fit misses the true constants (its starts, its grid of constants, or the joint search over two to three constants), and propose a fitter fix if so.
+   - The fitter is part of the toolkit; no piece is added.
+   - Without it, some multi-K equations stay unsolvable whatever the network learns.

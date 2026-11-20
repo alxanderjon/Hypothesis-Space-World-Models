@@ -51,8 +51,12 @@ def job(args):
     sc = np.log(np.maximum(np.where(legal, pr.p_swap_add, 0), 1e-300))
     ranks = {v.keys[t]: MZ.rank(sc, legal, t) for t in S}
     new_ranks = [r for k, r in ranks.items() if k in newset]
+    of = {k_: lv for lv, ks in LD.piece_keys(d).items() for k_ in ks}
+    worst = max(ranks, key=ranks.get)
     return {"new": new, "fits": "fits exactly" if exact else "does not fit exactly", "tried": tried, "subsets_tried": sub,
-            "structures": len(se.table), "worst_rank": max(ranks.values()), "new_term_rank": min(new_ranks) if new_ranks else None}
+            "structures": len(se.table), "worst_rank": max(ranks.values()), "new_term_rank": min(new_ranks) if new_ranks else None,
+            "pieces": sorted(str(of.get(DR.role_key(k_, i, d), "other")) for k_ in keys),
+            "worst_piece": str(of.get(DR.role_key(worst, i, d), "other"))}
 
 
 def main():
@@ -61,7 +65,7 @@ def main():
     import numpy as np
     workers = int(sys.argv[1])
     keys = LD.piece_keys(3)
-    newset = set(LD.new_keys(RUNG, keys))
+    newset = set(LD.new_keys(RUNG, keys) or [])
     jobs, meta = [], []
     for arm in LD.ARMS:
         for s in LD.SEEDS:
@@ -94,7 +98,11 @@ def main():
                 "median worst true-term rank at the empty start": float(np.median([r["worst_rank"] for r in ok])) if ok else None,
                 "median rank of the new-piece term": float(np.median([r["new_term_rank"] for r in ok if r["new_term_rank"] is not None]))
                 if any(r["new_term_rank"] is not None for r in ok) else None}
+            out[f"{arm}-s{s}"]["worst-ranked true term's piece"] = dict(Counter(r.get("worst_piece") for r in ok))
             print(f"{arm}-s{s}: {json.dumps(out[f'{arm}-s{s}'])}", flush=True)
+    allok = [r for r in res if r.get("fits") == "fits exactly"]
+    print("all lineages: worst-ranked true term's piece in unsolved exact equations:", dict(Counter(r["worst_piece"] for r in allok)),
+          "; pieces present:", dict(Counter(pc for r in allok for pc in r["pieces"])))
     (LD.OUT / RUNG / "diagnosis.json").write_text(json.dumps({"summary": out, "rows": [dict(r, arm=m[0], seed=m[1]) for m, r in zip(meta, res)]}, indent=1))
 
 
