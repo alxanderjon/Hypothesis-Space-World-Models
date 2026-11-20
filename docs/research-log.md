@@ -11366,3 +11366,24 @@ q33 (3 variables, 3 terms) started at 11:43 UTC.
   - Budgets: wake (3,000, 600) every round; test (3,000, 600); Reanalyse (1,000, 200); time cap 10,800 s per system; 40 workers; all 8 GPUs free.
   - The fitter is unchanged (its fix awaits approval).
   - If q33g drops off, the launcher (`/tmp/ladder_q33g_launch.sh`) runs q33a, then q33h, stopping at a drop-off.
+
+**Owner (21 November).** *"1. Approved: test the fitter fix (for structures with two or more K terms, run the careful fit more often and double the random starts) with the same minutes-long check, CPU only, without touching the running q33g. If it confirms the gain, use it from the next rung on and log that. 2. Add one measure to q33g's report, without changing its pass rule mid-run: search tries per solution compared only on held-out equations solved in both the first and last rounds, per lineage. The plain median can rise when harder equations get solved later, so this isolates whether the learner needs fewer tries for the same problems. From the next rung on, use this measure in pass rule (b) instead of the plain median."*
+
+**Keeping q33g untouched:**
+- q33g's processes reload `fitter_g1.py` and `ladder.py` in fresh dream pools, so neither file changes while it runs.
+- The outer launcher (`ladder_q33g_launch.sh`, which would have started the split at once) was stopped. q33g's own run and its launcher continue and will write q33g's report.
+- **Between q33g and the next rung,** the fitter fix (if confirmed) and the new (b) are applied, then the next rung is started by hand: the split q33a and q33h if q33g drops off, or the q41 smoke test if it is mastered.
+
+**Fitter fix check** (`fitter_fix_check.py`): the fix as an in-process patch, the file unchanged.
+- **Setup:** the normal path (evaluate_structure) on q33's 36 multi-K held-out equations, with and without the fix, for fitter seeds 1, 2 and 3; seconds per structure too.
+- **Running on 3 workers** (no spare cores: q33g holds 40 of 48 and the load is 58), so it takes about 1–2 hours.
+- **The fix is adopted** if it gains fits without losing any, at a cost of at most twice the fit time on these structures.
+
+**Paired tries** (`paired_tries.py <rung>`):
+- **What it compares:** per lineage, the held-out equations solved in both the first and the last round; their median tries first against last, and the share needing fewer tries.
+- **Where it goes:** appended to q33g's report (its pass rule unchanged). It is pass rule (b) from the next rung on.
+- **The new (b):** for each learner lineage, the paired median does not rise (holds if mastered in round 1). An arm passes (b) in at least 2 of 3 seeds.
+- **Tested on q33's own records:**
+  - the network alone's paired tries fell in all three seeds (26 → 17, 28 → 18, 23 → 16);
+  - by the plain median they "rose" in two seeds (25 → 31, 24 → 16 → 16).
+  - This is the effect the owner described: harder equations solved later raise the plain median.
