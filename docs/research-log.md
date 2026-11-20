@@ -11361,3 +11361,8 @@ q33 (3 variables, 3 terms) started at 11:43 UTC.
   - then **q33** again (as "q33h", no limit, from q33a's states);
   - all under the new budget rule.
   - Stop and report at any drop-off.
+- **q33g started (20 November, 23:10 UTC).**
+  - 180 new systems; none identical to 4,320 earlier ones.
+  - Budgets: wake (3,000, 600) every round; test (3,000, 600); Reanalyse (1,000, 200); time cap 10,800 s per system; 40 workers; all 8 GPUs free.
+  - The fitter is unchanged (its fix awaits approval).
+  - If q33g drops off, the launcher (`/tmp/ladder_q33g_launch.sh`) runs q33a, then q33h, stopping at a drop-off.

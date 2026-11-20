@@ -56,6 +56,11 @@ RUNGS.update({                                                   # owner, 20 Nov
     "q33": dict(_R, d=3, terms=(3, 3), levels=_ALL, change="all ten pieces, 3 variables, 3 terms (after q31)", after="q31"),
     "q41": dict(_R, d=4, terms=(1, 2), levels=_ALL, change="all ten pieces, 4 variables, 1-2 terms (after q33)", after="q33"),
     "q43": dict(_R, d=4, terms=(3, 3), levels=_ALL, change="all ten pieces, 4 variables, 3 terms (after q41)", after="q41")})
+_G = {"budgets": ((3000, 600), (3000, 600), (3000, 600)), "test_budget": (3000, 600), "reanalyse": (1000, 200)}   # owner, 20 Nov: generous budgets
+RUNGS.update({
+    "q33g": dict(_R, **_G, d=3, terms=(3, 3), levels=_ALL, change="all ten pieces, 3 variables, 3 terms, generous budgets (after q31)", after="q31"),
+    "q33a": dict(_R, **_G, d=3, terms=(3, 3), levels=_ALL, max_k=1, change="3 variables, 3 terms, at most one K term per equation, generous budgets (after q31)", after="q31"),
+    "q33h": dict(_R, **_G, d=3, terms=(3, 3), levels=_ALL, change="all ten pieces, 3 variables, 3 terms, generous budgets (after q33a)", after="q33a")})
 OTHER = 99                                                       # piece type of the learner's terms that are no curriculum piece
 SHARE_REAL = 0.30                                                # real solutions' share of training when rung dreams are used
 SEEDS = (1, 2, 3) if not SMOKE else (1,)
@@ -92,7 +97,7 @@ def log(msg):
         C.log(msg)
 
 
-def shared_teacher(rung, rnd, allowed, terms, d, n, new=None):
+def shared_teacher(rung, rnd, allowed, terms, d, n, new=None, max_k=None):
     """The round's teacher dreams: built once by the first lineage to need them, then given to every lineage in that
     round (and saved, so a restarted run reuses them). A new set every round."""
     with _LOCK:
@@ -105,7 +110,7 @@ def shared_teacher(rung, rnd, allowed, terms, d, n, new=None):
                 log(f"{rung} round {rnd}: shared teacher dreams loaded ({len(_TEACHER[(rung, rnd)])} examples)")
             else:
                 t0 = time.time()
-                ex, ok = dream_map([(f"ladder-{rung}-round{rnd}-teacher", k, allowed, terms, d, new) for k in range(n)],
+                ex, ok = dream_map([(f"ladder-{rung}-round{rnd}-teacher", k, allowed, terms, d, new, False, max_k) for k in range(n)],
                                    f"{rung} round {rnd} shared teacher dreams")
                 tmp = p.with_name(p.name + ".tmp")
                 tmp.write_bytes(pickle.dumps(ex))
@@ -182,7 +187,7 @@ def k_ok(desc, bursts):
     return True
 
 
-def draw(seed, allowed, n_terms, d, krule=False):
+def draw(seed, allowed, n_terms, d, krule=False, max_k=None):
     """krule (owner, 19 Nov; rung e3k on): a piece with K inside gets a positive K drawn log-uniformly between the 25th and
     90th percentiles of its shifted quantity (|x| or x^2) over the starting region; k_ok checks it on the recordings."""
     import numpy as np
@@ -197,12 +202,15 @@ def draw(seed, allowed, n_terms, d, krule=False):
     ic = [float(rng.choice([-1.0, 1.0]) * rng.uniform(0.5, 2.5)) for _ in range(d)]
     for i in range(d):
         n = int(rng.integers(n_terms[0], n_terms[1] + 1))
-        picks = []
+        picks, nk = [], 0
         while len(picks) < n:
             lv = int(rng.choice(sorted(allowed)))
+            if max_k is not None and lv in K_SHIFT and nk >= max_k:   # q33a: at most max_k terms with K inside per equation
+                continue
             key = allowed[lv][int(rng.integers(len(allowed[lv])))]
             if key not in picks:
                 picks.append(key)
+                nk += lv in K_SHIFT
         actual = [i] + [j for j in range(d) if j != i]
         e = 0
         for t, key in enumerate(picks):
@@ -249,6 +257,7 @@ def gen_job(args):
     prefix, k, allowed, n_terms, d = args[:5]
     new = args[5] if len(args) > 5 else None
     krule = args[6] if len(args) > 6 else False
+    max_k = args[7] if len(args) > 7 else None
     import warnings
     warnings.filterwarnings("ignore")
     sys.path.insert(0, str(HERE))
@@ -259,7 +268,7 @@ def gen_job(args):
     reasons = []
     for r in range(200):
         seed = f"{prefix}-{k}" if r == 0 else f"{prefix}-{k}-r{r}"
-        desc = draw(seed, allowed, n_terms, d, krule)
+        desc = draw(seed, allowed, n_terms, d, krule, max_k)
         why = DR.prescreen(desc)
         if why is not None:
             reasons.append(why)
@@ -314,7 +323,7 @@ def step_gen(workers, rung):
     keys = piece_keys(R["d"])
     allowed = {lv: keys[lv] for lv in R["levels"]}
     new = new_keys(rung, keys)
-    jobs = [((s, split, k), (f"ladder-{rung}-s{s}-{split}", k, allowed, R["terms"], R["d"], new))
+    jobs = [((s, split, k), (f"ladder-{rung}-s{s}-{split}", k, allowed, R["terms"], R["d"], new, False, R.get("max_k")))
             for s in SEEDS for split, n in (("train", R.get("n_train", N_TRAIN)), ("test", N_TEST)) for k in range(n)]
     t0 = time.time()
     with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:
@@ -482,6 +491,7 @@ def rung_dream_job(args):
     prefix, k, allowed, n_terms, d = args[:5]
     new = args[5] if len(args) > 5 else None
     krule = args[6] if len(args) > 6 else False
+    max_k = args[7] if len(args) > 7 else None
     import warnings
     warnings.filterwarnings("ignore")
     sys.path.insert(0, str(HERE))
@@ -491,7 +501,7 @@ def rung_dream_job(args):
     import dream_g2 as DR
     for r in range(200):
         seed = f"{prefix}-{k}" if r == 0 else f"{prefix}-{k}-r{r}"
-        desc = draw(seed, allowed, n_terms, d, krule)
+        desc = draw(seed, allowed, n_terms, d, krule, max_k)
         if DR.prescreen(desc) is not None:
             continue
         try:
@@ -707,7 +717,7 @@ class Lineage:
                 allowed = {lv: keys[lv] for lv in R["levels"]}
                 n = R["rung_dreams"] if not SMOKE else 4
                 if self.rung in SHARE_TEACHER_FROM:
-                    rd = shared_teacher(self.rung, self.n_learn, allowed, R["terms"], self.d, n, new_keys(self.rung, keys))
+                    rd = shared_teacher(self.rung, self.n_learn, allowed, R["terms"], self.d, n, new_keys(self.rung, keys), R.get("max_k"))
                 else:
                     rd, ok = dream_map([(f"ladder-{self.rung}-{self.name}-{tag}-rung", k, allowed, R["terms"], self.d) for k in range(n)],
                                        f"{self.rung} {self.name} {tag} teacher dreams")
@@ -761,19 +771,23 @@ class Lineage:
             if r["id"] not in self.tried:
                 self.tried.append(r["id"])
         todo = [r["id"] for r in train]
-        for k, (budget, cap) in enumerate(BUDGETS):
+        R = RUNGS[self.rung]
+        budgets = R.get("budgets", BUDGETS) if not SMOKE else BUDGETS
+        test_budget = R.get("test_budget", TEST_BUDGET) if not SMOKE else TEST_BUDGET
+        reanalyse = R.get("reanalyse", REANALYSE) if not SMOKE else REANALYSE
+        for k, (budget, cap) in enumerate(budgets):
             rnd = k + 1
             t_round = time.time()
             w = self.search(self.dir / f"r{rnd}_wake.json", [self.recs[s] for s in todo], budget, cap)
             self.add(w)
             todo = self.unsolved(todo)
             self.learn()
-            t = self.search(self.dir / f"r{rnd}_test.json", test, *TEST_BUDGET)
+            t = self.search(self.dir / f"r{rnd}_test.json", test, *test_budget)
             ok = sum(y["solved"] for y in t)
             mastered = ok >= MASTERY
-            another = not mastered and rnd < len(BUDGETS) and bool(todo)
+            another = not mastered and rnd < len(budgets) and bool(todo)
             pool_ = [s for s in self.unsolved(self.tried) if not (another and s in todo)]
-            ra = self.search(self.dir / f"r{rnd}_reanalyse.json", [self.recs[s] for s in pool_], *REANALYSE) if pool_ else []
+            ra = self.search(self.dir / f"r{rnd}_reanalyse.json", [self.recs[s] for s in pool_], *reanalyse) if pool_ else []
             before = {(s, i) for s in pool_ for i in self.sols.get(s, {})}
             self.add(ra)
             new_eq = sum(1 for s in pool_ for i in self.sols.get(s, {}) if (s, i) not in before)
@@ -787,7 +801,7 @@ class Lineage:
             if mastered:
                 self.rec["mastered"] = True
                 break
-            if not todo and not mastered and rnd < len(BUDGETS):
+            if not todo and not mastered and rnd < len(budgets):
                 continue
         self.rec["rounds_to_mastery"] = len(self.rec["rounds"]) if self.rec["mastered"] else None
         (OUT / self.rung / f"{self.name}.json").write_text(json.dumps(self.rec, default=float))
@@ -808,7 +822,7 @@ def step_run(workers, rung):
             for arm in ARMS:
                 if not (OUT / rung / f"{arm}-s{s}.json").exists():
                     jobs.append((Lineage(arm, s, rung, pool, gpus), systems))
-        log(f"ladder rung {rung} ({RUNGS[rung]['change']}): {len(jobs)} lineages; budgets {BUDGETS}; Reanalyse {REANALYSE}; workers {workers}")
+        log(f"ladder rung {rung} ({RUNGS[rung]['change']}): {len(jobs)} lineages; budgets {RUNGS[rung].get('budgets', BUDGETS)}; test {RUNGS[rung].get('test_budget', TEST_BUDGET)}; Reanalyse {RUNGS[rung].get('reanalyse', REANALYSE)}; time cap {C.TIME_CAP:.0f}s per system; workers {workers}")
         threads = [threading.Thread(target=x.run, args=(sy,), name=x.name) for x, sy in jobs]
         for t in threads:
             t.start()
@@ -839,6 +853,24 @@ def step_report(rung):
                         f"{sum(x['new_equations'] for x in ra)} equations from {sum(x['re_searched'] for x in ra)} re-searched)")
         verdict[arm] = m >= 2 if not SMOKE else m >= 1
         lines.append(f"   {ARM_NAMES[arm]:>16}: " + "; ".join(rows) + f" -> {'masters' if verdict[arm] else 'does not master'} the rung")
+        if "budgets" in RUNGS[rung]:
+            ext, bok = [], 0
+            for s in SEEDS:
+                p = OUT / rung / f"{arm}-s{s}.json"
+                if not p.exists():
+                    continue
+                r = json.loads(p.read_text())
+                med, w300, capped = [], [], 0
+                for x in r["rounds"]:
+                    fe = [e["first_exact"] for y in x["test"] if y["status"] == "done" for e in y["equations"] if e["first_exact"] is not None]
+                    med.append(float(np.median(fe)) if fe else float("nan"))
+                    w300.append(sum(y["status"] == "done" and all(e["first_exact"] is not None and e["first_exact"] <= 300 for e in y["equations"]) for y in x["test"]))
+                    capped += sum(e["time_capped"] for y in x["wake"] + x["test"] if y["status"] == "done" for e in y["equations"])
+                b = len(med) == 1 or med[-1] <= med[0]
+                bok += b
+                ext.append(f"s{s}: held-out median tries per solution {' / '.join(f'{v:.0f}' for v in med)}; held-out solved within 300 {' / '.join(map(str, w300))}; "
+                           f"time-capped equations {capped}{'' if b else ' (tries rose)'}")
+            lines.append(f"   {'':>16}  " + "; ".join(ext) + f" -> (b) {'holds' if bok >= 2 else 'does not hold'} ({bok} of 3)")
     if RUNGS[rung].get("new"):
         # the new pieces' own solve rate on held-out equations (counts only), final round, against the other equations
         import dream_g2 as DR
