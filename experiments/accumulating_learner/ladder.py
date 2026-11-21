@@ -56,6 +56,9 @@ RUNGS.update({                                                   # owner, 20 Nov
     "q33": dict(_R, d=3, terms=(3, 3), levels=_ALL, change="all ten pieces, 3 variables, 3 terms (after q31)", after="q31"),
     "q41": dict(_R, d=4, terms=(1, 2), levels=_ALL, change="all ten pieces, 4 variables, 1-2 terms (after q33)", after="q33"),
     "q43": dict(_R, d=4, terms=(3, 3), levels=_ALL, change="all ten pieces, 4 variables, 3 terms (after q41)", after="q41")})
+_GB = {"budgets": ((3000, 600), (3000, 600), (3000, 600)), "test_budget": (3000, 600), "reanalyse": (1000, 200)}
+RUNGS["q41"].update(_GB, after="q33g", change="all ten pieces, 4 variables, 1-2 terms, generous budgets (after q33g)")   # owner, 21 Nov
+RUNGS["q43"].update(_GB, change="all ten pieces, 4 variables, 3 terms, generous budgets (after q41)")
 _G = {"budgets": ((3000, 600), (3000, 600), (3000, 600)), "test_budget": (3000, 600), "reanalyse": (1000, 200)}   # owner, 20 Nov: generous budgets
 RUNGS.update({
     "q33g": dict(_R, **_G, d=3, terms=(3, 3), levels=_ALL, change="all ten pieces, 3 variables, 3 terms, generous budgets (after q31)", after="q31"),
@@ -866,10 +869,13 @@ def step_report(rung):
                     med.append(float(np.median(fe)) if fe else float("nan"))
                     w300.append(sum(y["status"] == "done" and all(e["first_exact"] is not None and e["first_exact"] <= 300 for e in y["equations"]) for y in x["test"]))
                     capped += sum(e["time_capped"] for y in x["wake"] + x["test"] if y["status"] == "done" for e in y["equations"])
-                b = len(med) == 1 or med[-1] <= med[0]
+                import paired_tries as PT                         # owner, 21 Nov: (b) on paired tries from the rung after q33g
+                pt = PT.paired(r)
+                b = pt is None or not (pt[2] > pt[1])
                 bok += b
-                ext.append(f"s{s}: held-out median tries per solution {' / '.join(f'{v:.0f}' for v in med)}; held-out solved within 300 {' / '.join(map(str, w300))}; "
-                           f"time-capped equations {capped}{'' if b else ' (tries rose)'}")
+                med_txt = "one round" if pt is None else f"paired {pt[0]} equations {pt[1]:.0f} -> {pt[2]:.0f}"
+                ext.append(f"s{s}: held-out median tries per solution {' / '.join(f'{v:.0f}' for v in med)} ({med_txt}); held-out solved within 300 "
+                           f"{' / '.join(map(str, w300))}; time-capped equations {capped}{'' if b else ' (paired tries rose)'}")
             lines.append(f"   {'':>16}  " + "; ".join(ext) + f" -> (b) {'holds' if bok >= 2 else 'does not hold'} ({bok} of 3)")
     if RUNGS[rung].get("new"):
         # the new pieces' own solve rate on held-out equations (counts only), final round, against the other equations

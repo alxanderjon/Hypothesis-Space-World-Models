@@ -11418,3 +11418,31 @@ q33 (3 variables, 3 terms) started at 11:43 UTC.
   - the patch `patches/after_q33g.py` (q41 and q43 under the generous budgets, q41 after q33g; pass rule (b) on paired tries);
   - then the q41 smoke test, q41 and q43 (time cap 10,800 s), stopping at a drop-off.
   - If q33g's final report shows a drop-off after all, the split q33a then q33h runs instead.
+
+#### q33g: mastered by every lineage, the learners in round 1 (21 November, finished 13:03 UTC)
+
+**Generous budgets:** 3,000 structures for the wake and the test; Reanalyse at 1,000.
+
+| arm | held-out at 3,000 (s1 / s2 / s3, of 10) | rounds | first-wake solves (of 50) | held-out solved within 300 structures | held-out median tries per solution | time-capped equations |
+|---|---|---|---|---|---|---|
+| confidence blend | 8 / 10 / 9 | 1 / 1 / 1 | 45 / 47 / 45 | 4 / 6 / 5 | 24 / 30 / 21 | 0 |
+| network alone | 10 / 10 / 9 | 1 / 1 / 1 | 41 / 47 / 46 | 5 / 5 / 7 | 34 / 54 / 25 | 0 |
+| fresh network | 8 / 9 / 7→9 | 1 / 1 / 2 | 0 / 1 / 0 | 4 / 5 / 6→7 | 57 / 53 / 37→36 | 0 |
+
+- **(a) Mastery: every arm in 3 of 3 seeds.**
+- **(b) The plain median (q33g's logged rule) holds in 3 of 3 for every arm:** the learner arms finished in one round, and fresh s3 went 37 → 36.
+- **Paired tries** (appended; not q33g's rule): one round for all learner lineages. Fresh s3: 27 equations, 37 → 36, 59% of them needing fewer tries.
+- **Within 300 structures** the held-out picture matches the old q33: 4–7 of 10. The generous budget turns those into 8–10 of 10.
+- **The learner arms needed a median of 21–54 structures per held-out solution, against 36–57 for the fresh network.**
+- **What made the difference:**
+  - At 3,000 structures the learners' first wake found 41–47 of 50 training systems (140–146 of 150 equations), against 17–30 under the old rule.
+  - Reanalyse at 1,000 rescued 9–32 equations more.
+  - So round 1's training had most of the rung's systems to learn from.
+- **The fresh network** got there through Reanalyse after its first training (111–117 equations rescued).
+- **No equation hit the time cap** (10,800 s per system).
+
+**After q33g** (14:16 UTC):
+- Paired tries appended to q33g's report.
+- `patches/after_q33g.py` applied: q41 and q43 under the generous budgets, q41 after q33g; pass rule (b) on paired tries.
+- The q41 smoke test started.
+- **(The queued script had waited 1 hour too long.** Its `pgrep -f` wait matched the shell that wrote it, a stale shell of mine, stopped by PID. Future waits use a PID or a file.)
