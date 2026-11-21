@@ -548,6 +548,9 @@ class GPUs:
     def __init__(self):
         rows = self.rows()
         self.free = [g for g, (_, u, m, tot) in sorted(rows.items()) if u < 10 and m < 1000]
+        cap = int(os.environ.get("LADDER_MAX_TRAIN", "0"))      # at 4 variables a training's example file is ~2 GB (21 Nov)
+        if cap:
+            self.free = self.free[:cap]
         self.slots = {g: threading.Semaphore(1) for g in self.free}
         log(f"ladder GPUs: {self.free} (free at the start); one training at a time each")
 

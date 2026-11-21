@@ -11446,3 +11446,18 @@ q33 (3 variables, 3 terms) started at 11:43 UTC.
 - `patches/after_q33g.py` applied: q41 and q43 under the generous budgets, q41 after q33g; pass rule (b) on paired tries.
 - The q41 smoke test started.
 - **(The queued script had waited 1 hour too long.** Its `pgrep -f` wait matched the shell that wrote it, a stale shell of mine, stopped by PID. Future waits use a PID or a file.)
+
+#### q41: stopped by the disk guard; resumed with a training cap (21 November)
+
+- **The q41 smoke test passed** (14:16–14:36 UTC). 4-variable generation, search, own dreams (51 used terms in 11 piece types), training, Reanalyse and the paired-tries report all ran. Its "drop-off" is the smoke budgets'.
+- **q41 started at 14:37 UTC. At 17:59 the free-disk guard stopped it:** /SSD was at 267 MB free.
+  - **Cause:** at 4 variables one training's example file is about 2 GB (each example holds the 4,683-term vocabulary's features), against 0.5–1 GB at 3 variables. With 8 GPUs free, up to 8 such files were written at once.
+  - **The guard worked as intended.**
+- **Cleaned (own files):**
+  - the five half-written training files of the stopped run (9.6 GB);
+  - the example caches and shared teacher sets of the finished rungs q33 and q33g (3.0 GB).
+  - /SSD: 13 GB free.
+- **Fix:**
+  - `LADDER_MAX_TRAIN` (an environment setting read by the ladder's GPU class) caps concurrent trainings. It is set to 2 for the 4-variable rungs, so the training files take at most about 4 GB.
+  - The search is unchanged. The cap slows only the learning steps.
+- **Resumed at 22:20 UTC** (`/tmp/ladder_q4_launch.sh`: q41, then q43, stopping at a drop-off). The round-1 wakes and the shared teacher set were already saved and are reused.
