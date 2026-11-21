@@ -11401,3 +11401,20 @@ q33 (3 variables, 3 terms) started at 11:43 UTC.
 - **Of the 36 multi-K true structures:** 32 fit exactly whatever the seed; 2 never fit; 2 depend on the fitter's random starts.
 - **So the fitter limits about 2–4 of q33's 36 multi-K held-out equations.** The fix is not adopted, and `fitter_g1.py` stays as it is.
 - **Paired tries** become pass rule (b) from the next rung on, as the owner asked.
+
+**q33g, status at 10:14 UTC (21 November): mastered by both learner arms.**
+- **Round 1 at 3,000 structures:**
+  - blend s1 8, s3 9 of 10;
+  - network alone s1 10, s3 9 of 10.
+- blend s2, network alone s2 and the fresh lineages are still finishing.
+- **First wakes at 3,000 structures** (training, of 50 systems):
+  - blend 45 / 47 / 45 (within 300: 27 / 28 / 23);
+  - network alone 41 / 47 / 46 (19 / 27 / 18);
+  - fresh 0 / 1 / 0.
+  - **No equation was time-capped** under the 10,800 s cap.
+- **Reanalyse** (1,000 structures) rescued 16–32 equations per learner lineage in round 1.
+- **Queued** (`/tmp/after_q33g.sh`; it starts once q33g's processes exit):
+  - paired tries appended to q33g's report;
+  - the patch `patches/after_q33g.py` (q41 and q43 under the generous budgets, q41 after q33g; pass rule (b) on paired tries);
+  - then the q41 smoke test, q41 and q43 (time cap 10,800 s), stopping at a drop-off.
+  - If q33g's final report shows a drop-off after all, the split q33a then q33h runs instead.
