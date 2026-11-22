@@ -11466,3 +11466,30 @@ q33 (3 variables, 3 terms) started at 11:43 UTC.
   - **Fixed:** the file is now written inside the GPU slot and removed when that training ends.
   - The six leftover files (11.5 GB, own) were deleted; /SSD is at 13 GB free.
   - **Resumed at 00:13 UTC on 22 November.** blend s2's first training had finished and is kept.
+
+### Owner: a fixed probe set to measure accumulation directly (22 November)
+
+**Owner.** *"Add a fixed probe set to measure accumulation directly, without changing the running q41: 1. Build a fixed probe set of held-out systems from earlier rungs (a few per rung, e.g. from the curriculum levels, a1, a2, b, c, e12, p8, p10, q23, q31, q33g), chosen once and never trained on. 2. After each rung finishes, re-search the probe set with each lineage's current network, at the generous budget, and record per system: solved or not, and tries per solution. 3. Report, per arm and seed, how tries per solution on the same probe systems change from rung to rung (falling tries means accumulation), and whether any previously solved probe system is lost (forgetting). Use spare CPU and don't take GPUs or slow q41/q43. Run it first on the existing end-of-rung networks you still have, so we get a baseline curve, then after each new rung. Report the baseline curve in plain language."*
+
+**Design** (`probe.py`; set before any result).
+- **The probe set, chosen once by a fixed rule:** 22 systems.
+  - the first held-out system of seeds 1 and 2 from each of a1, a2, b, c, e12, p8, p10, q23, q31 and q33g;
+  - the first held-out system of curriculum levels 3 and 7 (seed 1's set).
+  - All are held-out systems, never in any lineage's training (held-out systems are only searched, never learned from or reanalysed).
+- **Checkpoints:** each learner lineage's (blend and network alone × 3 seeds) end-of-rung network and, for the blend, its library tables.
+  - The mainline: curriculum end, a1w, a2, b, c, e12, p8, p10, q23, q31, q33g; then each new rung (q41, q43, ...).
+  - The dropped-off branches e3 and q33 are not on the mainline.
+- **Which probes each checkpoint searches:** every probe from the probe's own rung on (a1's probes from a1w on, the rung that replaced it).
+  - This measures accumulation and forgetting on what the lineage has already met: 132 searches per lineage for the baseline.
+- **Reference:** q33g's fresh networks search all 22 probes.
+- **Search:**
+  - the real search, 3,000 structures and 600 thorough fits per equation, time cap 10,800 s per system;
+  - each equation's search stops at its first exact solution (the "tries" measure needs no more);
+  - the lineage's seed.
+- **Reported per arm and seed:**
+  - probes solved at each checkpoint;
+  - median tries on the probe equations solved at both consecutive checkpoints;
+  - probes lost (solved at the previous checkpoint, not now);
+  - **in one number per lineage,** each probe equation's tries at the checkpoint where its rung was learned against the latest checkpoint.
+- **CPU only, no GPU.** A search job starts only while at least 4 cores are idle, so q41 and q43 come first; 8 workers.
+- **After each new rung:** `probe.py 8 run <rung>`.
