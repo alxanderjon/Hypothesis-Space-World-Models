@@ -826,7 +826,10 @@ def step_run(workers, rung):
     gpus = GPUs()
     with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as pool:
         jobs = []
+        only = [int(x) for x in os.environ.get("LADDER_SEEDS", "").split(",") if x]   # 22 Nov: a seed at a time (memory)
         for s in SEEDS:
+            if only and s not in only:
+                continue
             systems = json.loads((OUT / "gen" / f"{rung}-s{s}.json").read_text())
             for arm in ARMS:
                 if not (OUT / rung / f"{arm}-s{s}.json").exists():

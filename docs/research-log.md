@@ -11493,3 +11493,28 @@ q33 (3 variables, 3 terms) started at 11:43 UTC.
   - **in one number per lineage,** each probe equation's tries at the checkpoint where its rung was learned against the latest checkpoint.
 - **CPU only, no GPU.** A search job starts only while at least 4 cores are idle, so q41 and q43 come first; 8 workers.
 - **After each new rung:** `probe.py 8 run <rung>`.
+
+#### q41: killed for memory; resumed one seed at a time. The probe baseline, first look (22 November)
+
+**q41's run was killed at 01:24 UTC** (exit 137, the kernel's out-of-memory kill).
+- **Cause:** another user's jobs held about 124 GB of the 188 GB, and q41 holds all 9 lineages' training data in memory (about 1–3 GB each at 4 variables). Only 21 GB were left available.
+- blend s2 had finished q41 (held-out 9 of 10, mastered in round 1) and is kept.
+- **Fixes:**
+  - `LADDER_SEEDS` (a seed filter in `step_run`): q41 and q43 now run one seed at a time (3 lineages), at most 2 trainings at once (`/tmp/ladder_q4s_launch.sh`);
+  - the probe run was stopped by its process group (57 of its 69 checkpoint runs were saved) and resumed on 4 workers, gated on spare cores and on at least 40 GB of available memory;
+  - the two half-written training files (own) were deleted.
+- **Resumed at 03:24 UTC.**
+
+**Probe baseline, the first 57 of 69 checkpoint runs** (all six learner lineages from the curriculum to q23; the blend to q31):
+- **No forgetting.**
+  - No lineage lost a probe it had solved, at any checkpoint.
+  - Every probe from a reached rung stays solved: blend 2/2, 4/4, ..., 20/20; network alone 18/18 at q23.
+  - The only miss was network alone s1, which had not solved one curriculum probe at the curriculum's end or one a1 probe at a1w; it solved both later.
+- **Tries per probe equation stay low and roughly flat:** medians of 6–15 at every checkpoint.
+  - On the probe equations solved at both consecutive checkpoints, the median moves by a few tries either way.
+  - The large falls come early: blend s1 110 → 12 and s2 20 → 4 from the curriculum to a1w.
+  - **Blend, from each probe's own rung to q31:** median 8 → 6, 8 → 8 and 8 → 10 tries on 48 equations. 21–29% needed fewer, 38–42% more, the rest the same.
+- **Reading:**
+  - **Retention is complete.**
+  - **Accumulation does not show on these probes,** because they are near the floor. When its rung is learned a probe equation already takes a median of about 8 structures, and 1–3 terms need at least 1–3. Most of these probes are 1–2-term equations from the easier rungs.
+  - To see accumulation, the probe set needs harder systems, where tries have room to fall (for example q33g's and q41's held-out). The remaining checkpoints (q31 network alone, q33g, the fresh reference) and q41 will add those.

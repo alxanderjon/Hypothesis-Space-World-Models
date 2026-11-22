@@ -26,6 +26,14 @@ SOURCE_AT = {"curriculum": "curriculum", "a1": "a1w", "a2": "a2", "b": "b", "c":
              "q23": "q23", "q31": "q31", "q33g": "q33g"}           # the checkpoint at which a probe's rung was learned
 BUDGET, CAP = 3000, 600
 SPARE = int(os.environ.get("PROBE_SPARE", "4"))
+MEM_GB = float(os.environ.get("PROBE_MEM_GB", "40"))           # 22 Nov: q41 was killed for memory; leave it room
+
+
+def mem_available_gb():
+    for line in open("/proc/meminfo"):
+        if line.startswith("MemAvailable:"):
+            return int(line.split()[1]) / 1e6
+    return 0.0
 
 
 def step_select():
@@ -118,7 +126,7 @@ def step_run(workers, cps):
         pend, nxt = {}, 0
         while nxt < len(flat) or pend:
             while nxt < len(flat) and len(pend) < workers:
-                if os.cpu_count() - os.getloadavg()[0] < SPARE:
+                if os.cpu_count() - os.getloadavg()[0] < SPARE or mem_available_gb() < MEM_GB:
                     break
                 tag, a = flat[nxt]
                 pend[ex.submit(search_job, a)] = tag
