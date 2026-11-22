@@ -11518,3 +11518,36 @@ q33 (3 variables, 3 terms) started at 11:43 UTC.
   - **Retention is complete.**
   - **Accumulation does not show on these probes,** because they are near the floor. When its rung is learned a probe equation already takes a median of about 8 structures, and 1–3 terms need at least 1–3. Most of these probes are 1–2-term equations from the easier rungs.
   - To see accumulation, the probe set needs harder systems, where tries have room to fall (for example q33g's and q41's held-out). The remaining checkpoints (q31 network alone, q33g, the fresh reference) and q41 will add those.
+
+#### q41 (all ten pieces, 4 variables, 1–2 terms): mastered by every lineage in round 1 (22 November, finished 08:00 UTC)
+
+**Generous budgets;** run one seed at a time after the memory kill.
+
+| arm | held-out at 3,000 (s1 / s2 / s3, of 10) | held-out solved within 300 | first-wake solves (of 50) | median structures before a training solution | held-out median tries per solution |
+|---|---|---|---|---|---|
+| confidence blend | 9 / 9 / 10 | 8 / 9 / 10 | 50 / 49 / 50 | 3 / 3 / 3 | 3 / 3 / 3 |
+| network alone | 10 / 9 / 10 | 9 / 9 / 10 | 50 / 48 / 50 | 3 / 3 / 3 | 3 / 3 / 3 |
+| fresh network | 9 / 9 / 10 | 8 / 9 / 10 | 9 / 5 / 10 | 668 / 673 / 615 | 3 / 3 / 3 |
+
+- **(a)** every arm masters q41, 3 of 3 seeds, in round 1.
+- **(b)** holds (one round each).
+- **No equation was time-capped.**
+- **History at 4 variables is plain in the first wake:**
+  - the learner arms found 48–50 of 50 training systems at a median of 3 structures per solution, out of the box;
+  - the fresh network found 5–10 at 615–673;
+  - after one training round and Reanalyse (63–83 equations rescued), the fresh network matched them on held-out.
+
+**The probe baseline, complete** (69 checkpoint runs: six learner lineages × 11 end-of-rung checkpoints, plus q33g's fresh networks):
+- **No forgetting:** no lineage lost a probe at any checkpoint. All six end at 22 of 22 at q33g (network alone s1 went 21 → 22).
+- **Each probe equation's tries, from the checkpoint where its rung was learned to q33g:**
+  - median 8 → 7, 8 → 8 and 8 → 8 for the blend;
+  - 9 → 8, 9 → 8 and 8 → 8 for the network alone;
+  - 20–30% of the equations needed fewer tries and 26–43% more.
+- **The reference:** q33g's fresh networks, trained on q33g alone, solve all 22 probes too, at a median of 11–14 tries per probe equation. The learners' 7–8 is about 1.5 times fewer.
+- **Reading:**
+  - Retention is complete across eleven rungs.
+  - The learners keep a modest edge over a network that saw only the last rung.
+  - On these mostly easy probes, tries do not fall further rung after rung: they sit near the floor of a few structures.
+  - q41's and q43's networks are added to the probe as each finishes (`probe.py 4 run <rung>`; q41's started at 08:28 UTC).
+
+q43 (4 variables, 3 terms) started at 08:05 UTC.
