@@ -11632,4 +11632,4 @@ q43 (4 variables, 3 terms) started at 08:05 UTC.
   - none bounded for 10 time constants;
   - **it passes.**
 
-**(3) Retroactive results:** q33g and q41 are being checked (`rollout_check.py 24 q33g q41`, started 21:25 UTC). q43 follows when it finishes.
+**(3) Retroactive results:** q33g and q41 are being checked (`rollout_check.py 24 q33g q41`, started about 21:40 UTC). q43 follows when it finishes.
