@@ -11559,3 +11559,30 @@ q43 (4 variables, 3 terms) started at 08:05 UTC.
 - **Retention holds through the first 4-variable rung.** Tries on these easy probes stay near their floor.
 
 **q43, status:** blend s1 mastered in round 1 (held-out 9 of 10; 44 of 50 first-wake training solves); fresh s1 at 7 of 10. Seeds 2 and 3 follow.
+
+### Owner: use the server's resources fully (22 November)
+
+**Owner.** *"Standing rule from now on: use the server's available resources fully (GPUs, CPU cores, memory, and both disks) instead of throttling by default. Keep only the safety guards (stop writing if any disk you use falls below 2 GB free, never interfere with other users' processes), and size parallelism to what's actually free. Apply it now, without disturbing the running q43 seed 2: 1. Use the main disk as well as /SSD for temporary training files and caches, with the disk guard watching both. 2. Raise the cap on concurrent trainings to whatever the free GPUs, memory and disk space allow. 3. Start q43 seed 3 alongside seed 2 if it can run without affecting seed 2's results. 4. Shrink the 4-variable training files (lower precision, and only each example's top candidates rather than all 4,683 terms) if it changes no results; verify on a small sample first."* Then: *"ignore 4. And only do the other 3"*
+
+**Recorded (standing):**
+- **Use the server's resources fully,** sized to what is free.
+- **The only guards kept:** stop writing if any disk in use falls below 2 GB free; never interfere with other users' processes.
+
+**Applied, without touching seed 2:**
+- Seed 2's process reloads `ladder.py` whenever it starts new worker pools, so the changes are in a copy, `ladder_next.py`. Seed 3 runs from it.
+- The copy replaces `ladder.py` once seed 2's run has exited.
+- The outer launcher (`ladder_q4s_launch.sh`, which would have started seed 3 from the old code) was stopped. Seed 2's own run and its launcher continue.
+
+1. **Both disks:**
+   - with `LADDER_TMP`, training files are written to the main disk (`/home/alex/ladder_tmp`, 389 GB free), in the same format as before, only once a GPU slot is held, and only if 2 GB remain free after the write (otherwise the training waits);
+   - outputs stay on /SSD;
+   - seed 3's launcher (`/tmp/q43_s3_launch.sh`) runs the 2 GB guard on both disks.
+2. **Training cap:** raised to 4 for seed 3, all the GPUs free at its start (4–7). `LADDER_EXCLUDE_GPUS=2,3` keeps it off seed 2's GPUs; 0 and 1 hold another user's jobs.
+3. **Seed 3 started at 20:42 UTC beside seed 2:**
+   - 20 search workers and 2 dream pools of 8, to the cores free beside seed 2's 40 (load 55 on 48);
+   - **what is shared:** nothing but the saved teacher-dream files, which are built from fixed seeds;
+   - **seed 2's results are not expected to change:** the only wall-clock limits are the 10,800 s search cap (not hit at this rung so far) and the 60 s dream-build cap (builds take seconds);
+   - **after both seeds:** q43's full report and the probe on q43's networks run automatically.
+4. **Not done** (owner).
+   - A check made before that word arrived: a 2-step training from losslessly compressed examples gave the same loss as from the plain file to 7 digits. The difference is within the logged run-to-run noise.
+   - The compression was removed again.
