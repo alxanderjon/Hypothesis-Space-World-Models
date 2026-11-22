@@ -11551,3 +11551,11 @@ q33 (3 variables, 3 terms) started at 11:43 UTC.
   - q41's and q43's networks are added to the probe as each finishes (`probe.py 4 run <rung>`; q41's started at 08:28 UTC).
 
 q43 (4 variables, 3 terms) started at 08:05 UTC.
+
+**Probe after q41** (22 November, 14:28 UTC):
+- **Probes solved at q41:** 22 of 22 for five learner lineages; 21 of 22 for network alone s1.
+- **Its one loss:** probe-a2-s2, whose second equation had needed 1,525 structures at q33g (half the budget) and was not found within 3,000 at q41. A marginal case near the budget, not a clear loss of a well-learned solution.
+- **Tries from each probe's own rung to q41:** median 8 → 9, 8 → 8 and 8 → 8 (blend); 8 → 8, 9 → 10 and 8 → 10 (network alone). 22–37% of the probe equations needed fewer tries, 30–50% more.
+- **Retention holds through the first 4-variable rung.** Tries on these easy probes stay near their floor.
+
+**q43, status:** blend s1 mastered in round 1 (held-out 9 of 10; 44 of 50 first-wake training solves); fresh s1 at 7 of 10. Seeds 2 and 3 follow.
