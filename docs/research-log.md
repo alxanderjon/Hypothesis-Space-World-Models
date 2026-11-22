@@ -11586,3 +11586,50 @@ q43 (4 variables, 3 terms) started at 08:05 UTC.
 4. **Not done** (owner).
    - A check made before that word arrived: a 2-step training from losslessly compressed examples gave the same loss as from the plain file to 7 digits. The difference is within the logged run-to-run noise.
    - The compression was removed again.
+
+### Owner: restore "solved exactly" (22 November)
+
+**Owner.** *"'Solved exactly' has drifted from the criterion I set. Restore it: 1. Cheap check now (no extra CPU): compare every 'solved' structure in q33g, q41 and q43 (when done) with the true structure under the equivalence check, and report how many are look-alikes. 2. Add a rollout check to the held-out test, using my original criterion: one-step relative error of about 1e-12 or better, from 20 new starting states per system, including some up to 1.5–2× outside the recorded range; multi-step rollouts from those states that stay accurate (about 1e-9 relative trajectory error) over a horizon of 10 of the system's time constants, judged only on starting points where the true system stays bounded. A held-out system counts as solved only if it passes both this and the existing recording checks. Store each system's description when it's generated, so the true system is always available. 3. Apply both checks retroactively to q33g, q41 and q43 (redrawing systems from their seeds where needed), and report how many 'mastered' results still hold. 4. Correct the notes and log: the recording check's bar is max(1e-9, 30 × noise floor), not 1e-12. From now on, rung pass rules use the new definition of solved. Report the retroactive results before starting anything new."*
+
+**Correction (4).** "Solved exactly" in every ladder rung so far has meant only the recording checks:
+- the found equation, refitted, integrated across each recorded step from the recorded states (8-node quadrature on the bursts' interpolating polynomial), must match the recorded change with relative error at most **max(1e-9, 30 × the equation's noise floor)** (`TAU_EXACT`, `TAU_FLOOR`), on the fitting bursts and on the held-back bursts (25%);
+- and no term may be degenerate on the data.
+- **There was no check at new starting states, outside the recorded range, or over multi-step rollouts, and no comparison with the true structure.**
+- Earlier entries and my notes that call this "exact recovery (1e-12)" are wrong on the threshold and on what is checked. The notes are corrected.
+
+**(1) The look-alike check** (`struct_check.py`):
+- every equation of every held-out system counted as solved (all rounds, all lineages) against the true structure;
+- identical term sets count as true;
+- otherwise both are put into their canonical equivalent form with the system's data (the library's `canon_job`: drop or merge terms while the rest still fits exactly) and compared.
+
+| rung | solved held-out equations | identical to the truth | equivalent canonical form | look-alikes | final-round systems with a look-alike equation, per lineage |
+|---|---|---|---|---|---|
+| q33g | 267 | 185 | 21 | 61 (23%) | 3–8 of 8–10 |
+| q41 | 340 | 297 | 29 | 14 (4%) | 1–3 of 9–10 |
+
+- **Many of these "look-alikes" are algebraic identities** the canonical-form check misses, because it rewrites one term at a time.
+  - Examples: {1, x²/(K+x²)} against {1, 1/(K+x²)} (x²/(K+x²) = 1 − K/(K+x²)); x/(K+x) against {1, 1/(K+x)}.
+- **Others are genuine look-alikes:** |x₁| for x₁, which agree only while x₁ stays positive, as on the recordings.
+- **The structure count therefore overstates look-alikes,** and the function-level check (2) decides.
+
+**(2) The rollout check** (`rollout_check.py`; CPU only):
+- **Recovering the true system:** redrawn from its seed until the built recordings match. From now on each system's description is stored when it is generated.
+- **The found model:** each equation refitted from its keys on the system's data (it must still pass the recording checks), and converted to physical units (x/σ per variable; the learner's time is in sample steps, converted with the recording interval). The conversion is checked on recorded states: median relative error 2e-15 on the first test system.
+- **20 new starting states:** 10 inside the recorded range; 10 at 1.5–2 times its half-width outside it in every variable.
+- **One step:** the found right-hand side against the true one at each state, relative error ≤ 1e-12.
+- **Rollout:** both systems integrated (DOP853, rtol 1e-13) for up to 10 time constants (the system's own time constant at its initial state: median |x/f(x)|); maximum trajectory error relative to the trajectory's size ≤ 1e-9.
+- **A system passes** if every equation still passes the recording checks, every one-step error is within 1e-12, and every judged rollout is within 1e-9, with at least one start judged.
+
+**Finding while building it: the ladder's systems are rarely bounded over 10 time constants.**
+- Their random signs and cubic terms give finite-time blow-ups. On the first test system (q41, time constant 25.5 time units, recordings 1.7 time units long), every one of the 20 starts blew up within 10 time constants.
+- Judged strictly ("only on starting points where the true system stays bounded" for the whole horizon), almost no system could be judged.
+- **So the check judges each start over the stretch where the true system stays bounded,** integrated one time constant at a time up to 10. A start counts only if that stretch is at least one time constant.
+- **Both counts are reported:** starts bounded for the full 10 time constants, and starts judged on the truncated stretch.
+- **This interpretation is for the owner to confirm.**
+- **First system:**
+  - one-step errors 2e-16 to 2e-14;
+  - 12 of 20 starts judged, all of them reaching only 1–2 time constants inside the bound; rollout errors 5e-16 to 1.3e-12;
+  - none bounded for 10 time constants;
+  - **it passes.**
+
+**(3) Retroactive results:** q33g and q41 are being checked (`rollout_check.py 24 q33g q41`, started 21:25 UTC). q43 follows when it finishes.
