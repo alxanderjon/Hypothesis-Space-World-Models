@@ -11461,3 +11461,8 @@ q33 (3 variables, 3 terms) started at 11:43 UTC.
   - `LADDER_MAX_TRAIN` (an environment setting read by the ladder's GPU class) caps concurrent trainings. It is set to 2 for the 4-variable rungs, so the training files take at most about 4 GB.
   - The search is unchanged. The cap slows only the learning steps.
 - **Resumed at 22:20 UTC** (`/tmp/ladder_q4_launch.sh`: q41, then q43, stopping at a drop-off). The round-1 wakes and the shared teacher set were already saved and are reused.
+- **Stopped again by the disk guard** (21 November, 23:13 UTC; 1.5 GB free).
+  - **Cause:** the cap limited trainings, not files. `learn()` wrote each lineage's 2 GB examples file before waiting for a GPU slot, so all lineages wrote theirs while 2 trained.
+  - **Fixed:** the file is now written inside the GPU slot and removed when that training ends.
+  - The six leftover files (11.5 GB, own) were deleted; /SSD is at 13 GB free.
+  - **Resumed at 00:13 UTC on 22 November.** blend s2's first training had finished and is kept.

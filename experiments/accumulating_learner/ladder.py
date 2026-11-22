@@ -735,15 +735,18 @@ class Lineage:
             if R.get("steps"):
                 steps = R["steps"] if not SMOKE else 10
             p = self.dir / f"{tag}_examples.pkl"
-            p.write_bytes(pickle.dumps(data))
 
             def train(g):
+                """The examples file is written only once a GPU slot is held (21 Nov: at 4 variables each is ~2 GB)."""
                 from concurrent.futures import ProcessPoolExecutor
                 from multiprocessing import get_context
-                with ProcessPoolExecutor(1, mp_context=get_context("spawn")) as one:
-                    return one.submit(train_net_job, ([str(p)], self.net, out, g, stable(self.name, self.rung, tag), steps)).result(), g
+                p.write_bytes(pickle.dumps(data))
+                try:
+                    with ProcessPoolExecutor(1, mp_context=get_context("spawn")) as one:
+                        return one.submit(train_net_job, ([str(p)], self.net, out, g, stable(self.name, self.rung, tag), steps)).result(), g
+                finally:
+                    p.unlink(missing_ok=True)
             info, g = self.gpus.run(train)
-            p.unlink()
             log(f"{self.rung} {self.name} {tag}: trained {steps} steps on {len(data)} examples ({len(replay)} replay, {len(fant)} {'own (piece-balanced)' if R.get('own_dreams') else 'general'} dream"
                 f"{', with rung dreams' if R.get('rung_dreams') else ''}) on GPU {g}")
         self.net = out
