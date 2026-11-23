@@ -11633,3 +11633,54 @@ q43 (4 variables, 3 terms) started at 08:05 UTC.
   - **it passes.**
 
 **(3) Retroactive results:** q33g and q41 are being checked (`rollout_check.py 24 q33g q41`, started about 21:40 UTC). q43 follows when it finishes.
+
+#### Retroactive check: q33g and q41 are not mastered under the restored definition (23 November)
+
+**Check:** `rollout_check.py`. 89 (q33g) and 85 (q41) system, lineage and round results that the recordings counted as solved.
+- All true systems were recovered from their seeds.
+- The unit conversion was checked on the recorded states: median 7e-15 and 4e-15.
+
+| rung | lineage | held-out solved, recordings only → restored definition |
+|---|---|---|
+| q33g | blend s1 / s2 / s3 | 8 → 4, 10 → 5, 9 → 3 |
+| q33g | network alone s1 / s2 / s3 | 10 → 3, 10 → 0, 9 → 4 |
+| q33g | fresh s1 / s2 / s3 | 8 → 3, 9 → 5, 7 → 4 then 9 → 4 |
+| q41 | blend s1 / s2 / s3 | 9 → 4, 9 → 6, 10 → 7 |
+| q41 | network alone s1 / s2 / s3 | 10 → 4, 9 → 7, 10 → 7 |
+| q41 | fresh s1 / s2 / s3 | 9 → 4, 9 → 7, 10 → 7 |
+
+- **No lineage of q33g or q41 is mastered under the restored definition** (8 of 10 needed). Neither rung is mastered by any arm.
+- **The same with the one-step bar loosened** (for the owner's "about 1e-12"):
+  - at 1e-11, still none;
+  - at 1e-10, one seed per arm at most (q33g: blend s2 at 8; q41: network alone s2 and fresh s2 at 8). Still not mastered (2 of 3 needed).
+
+**Why systems fail** (counts of results; structure as in the look-alike check):
+
+| outcome | q33g (89) | q41 (85) |
+|---|---|---|
+| **passes** | 35 (18 true structure, 17 algebraically equivalent) | 53 (39 true, 14 equivalent) |
+| one step between 1e-12 and 1e-10 (precision) | 27 (15 with the true structure) | 10 (6 true) |
+| one step fails only outside the recorded range | 9 (6 look-alike) | 12 (all differ from the true structure) |
+| one step fails inside the range too | 4 | 0 |
+| one step fine, rollout beyond 1e-9 | 7 (all look-alikes) | 8 (3 with the true structure) |
+| no longer exact on the recordings when refitted (fitter randomness) | 7 | 2 |
+
+**Reading:**
+- **Look-alikes are real.**
+  - About 20 results per rung are other functions that agree with the truth on the recordings but not outside them, at the 1.5–2× starts.
+  - Typical: |x| for x, or a different rational piece of the same variable that matches it over the recorded range.
+  - The search cannot tell these from the truth with the recordings alone: they pass the recording checks by construction.
+- **Precision is the other large cause.**
+  - True-structure solutions are rejected by the 1e-12 one-step bar: 15 in q33g, 6 in q41.
+  - Their constants are fitted only as precisely as the recording bar (1e-9) needs, about 1e-11 relative.
+  - Reaching 1e-12 needs a final high-precision fit of the constants. That is a fitter change, not a search change.
+- **Algebraic identities pass the function check,** as they should: x²/(K+x²) for 1 − K/(K+x²).
+  - So the structure-only look-alike counts (61 and 14) overstate the problem.
+  - The function check is the right judge.
+- **Rollouts:**
+  - Judged up to the point where the true system leaves the bounded region, at least one time constant: a median of 17–19 of 20 starts.
+  - Only 31–38 systems per rung had any start bounded for the full 10 time constants (median 0 of 20 starts).
+  - **The literal horizon cannot be met on most of these systems.** The truncated reading needs the owner's confirmation.
+- **Fitter randomness:** 7 and 2 results did not refit exactly. The search found them exact, and a refit with another random start missed.
+
+q43 is still running; its retroactive check follows when it finishes. Nothing new has been started.
