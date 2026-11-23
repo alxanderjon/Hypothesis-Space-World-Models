@@ -11684,3 +11684,37 @@ q43 (4 variables, 3 terms) started at 08:05 UTC.
 - **Fitter randomness:** 7 and 2 results did not refit exactly. The search found them exact, and a refit with another random start missed.
 
 q43 is still running; its retroactive check follows when it finishes. Nothing new has been started.
+
+### Owner: decisions on the restored definition of solved (23 November)
+
+**Owner.** *"1. Horizon: draw systems that stay bounded. The generator rejects any system whose true trajectories blow up within the 10-time-constant horizon from the test starting states (inside and 1.5–2× outside the recorded range), so the horizon applies as written. 2. Precision: add a final high-precision fit of the constants after a structure is accepted, aiming for one-step error of 1e-12 or better. 3. Look-alikes: record each system from a wider spread of starting states within its valid range, so the data covers where look-alikes differ. Judge the rollout check on the system's valid range: a found equation that differs from the truth only at values the system can never reach (e.g. |x| vs x for a variable that is always positive) counts as correct. Apply these, then re-check q43 (when finished) and q41 under the restored definition, and report. Don't start anything new until we've discussed the results."*
+
+**What is built.** All in new modules, because q43's running processes import `harness27`, `synthetic28`, `domains_g1` and `fitter_g1`.
+
+**(2) The precision fit** (`precise_fit.py`):
+- After a structure is accepted, all its coefficients and constants are refitted together by shooting.
+- The model is integrated from each recorded state over one sample interval (DOP853, rtol 1e-14) and compared with the next recorded state; Levenberg–Marquardt from the accepted fit.
+- The recordings come from an 8th-order Runge–Kutta reference converged to 1e-14 per step, so neither quadrature nor interpolation limits the fit.
+- **Test** on a q41 true-structure solution that had failed the 1e-12 bar:
+  - shooting residual 5.8e-13 → 5.6e-14;
+  - one-step error at the 20 new starts 5.7e-12 → 3.2e-13 (4e-15 inside the recorded range);
+  - rollout error 6e-13;
+  - **it passes.**
+
+**(3) The valid range** (rollout check and generator):
+- A variable whose recordings never change sign keeps that sign: its outside starts go out on the far side from zero, never across it.
+- So a found |x| for an always-positive x counts as correct.
+- A variable whose recordings cross zero may start on either side.
+
+**(1) The horizon as written:**
+- every test start is integrated for the full 10 time constants;
+- a system is bounded only if all 20 starts stay bounded (finite, within 100 times the larger of the start and the recorded range).
+- **New generator** (`gen_wide.build_wide`, a copy of `domains_g1.build` with two changes):
+  - the reference records from the initial state times U(0.2, 3.0) per variable (before: U(0.5, 1.5)), which keeps each variable's sign;
+  - a system is rejected unless it is bounded from all 20 of its test starts, which are stored with it, with its horizon.
+  - The generator is being piloted at 3 and 4 variables with 3 terms per equation (acceptance, draws and seconds per system).
+
+**Retroactive check** (`rollout_check.py`, now with the precision fit, the valid range and the full horizon):
+- For the existing systems (recorded under the old, narrow rule), a system the new generator would reject (not bounded from all 20 starts) is counted apart and not judged.
+- A lineage still masters the rung if it solves at least 80% of its seed's bounded held-out systems.
+- **q41 running** (started 04:06 UTC). q43 follows when it finishes. The first version's results are kept (`rollout_check_v1.json`).

@@ -26,6 +26,8 @@ sys.path.insert(0, str(HERE))
 import ladder as LD                                              # noqa: E402
 
 ONE_STEP, ROLLOUT, N_IN, N_OUT, HORIZON = 1e-12, 1e-9, 10, 10, 10.0
+PRECISE = os.environ.get("ROLLOUT_PRECISE", "1") == "1"         # owner, 23 Nov: the high-precision fit after acceptance
+FULL = os.environ.get("ROLLOUT_FULL", "1") == "1"               # owner, 23 Nov: the horizon as written (bounded systems only)
 MAX_CALLS = 200_000                                              # a rollout needing more right-hand-side calls is cut off
 
 
@@ -98,8 +100,9 @@ def check_job(args):
     c, h = (lo + hi) / 2, np.maximum((hi - lo) / 2, 1e-6)
     rng = np.random.default_rng(LD.stable(rec["id"], "rollout"))
     starts = [lo + (hi - lo) * rng.random(d) for _ in range(N_IN)]
-    for _ in range(N_OUT):
-        sign = rng.choice([-1.0, 1.0], d)
+    keep = (lo > 0) | (hi < 0)                                   # variables that never change sign on the recordings
+    for _ in range(N_OUT):                                       # owner, 23 Nov: within the system's valid range
+        sign = np.where(keep, np.sign(c), rng.choice([-1.0, 1.0], d))
         starts.append(c + sign * h * rng.uniform(1.5, 2.0, d))
     scale = max(float(np.abs(B).max()), 1e-12)
     T = HORIZON * SY.own_timescale(lambda x: np.atleast_2d(ftrue(np.ravel(x))), np.asarray(desc["ic"], dtype=float), factor=1.0)
@@ -131,6 +134,9 @@ def check_job(args):
             seg = segs[min(int(t_ / tc), len(segs) - 1)]
             yt[:, j] = seg(t_)
         true_runs.append((tt, yt, t_end >= 0.999 * T))
+    if not sols:                                                 # an unsolved system: its boundedness only
+        return [{"id": rec["id"], "tag": None, "round": None, "recovered": True,
+                 "system_bounded": all(r_ is not None and r_[2] for r_ in true_runs)}]
     ctx = SG.system_context(np.array(rec["bursts"]), seed=s)
     fitter = FG.make_fitter(ctx, seed=s)
     sig = np.asarray(ctx["view"]["sig"], dtype=float)
@@ -143,8 +149,18 @@ def check_job(args):
             rec_ok &= bool(nd["exact"])
             models.append((nd["terms"], np.asarray(nd["coefs"], dtype=float) if nd["coefs"] is not None else None))
         row["recordings_exact"] = rec_ok
+        if PRECISE and rec_ok:
+            import precise_fit as PF
+            tpe = [[(t.key, tuple(t.theta)) for t in terms] for terms, _ in models]
+            cpe = [co for _, co in models]
+            _, _, r_before, r_after, pmodel, pp = PF.precise(tpe, cpe, rec["bursts"], sig, dt)
+            row["shooting_residual_before"], row["shooting_residual_after"] = r_before, r_after
+        else:
+            pmodel = None
 
         def ffound(x):
+            if pmodel is not None:
+                return pmodel.rhs(np.asarray(x, dtype=float)[None, :], pp)[0]
             W = torch.tensor((np.asarray(x, dtype=float) / sig)[None, :])
             v = []
             for i, (terms, co) in enumerate(models):
@@ -181,10 +197,13 @@ def check_job(args):
         strict = [v for v, f_ in zip(roll, full) if v is not None and f_]
         row.update(n_full_horizon=len(strict), rollout_max_full=max(strict) if strict else None,
                    horizon_reached=[None if r_ is None else float(r_[0][-1] / tc) for r_ in true_runs])
+        sys_bounded = all(r_ is not None and r_[2] for r_ in true_runs)
+        row["system_bounded"] = sys_bounded
         row.update(one_step=one, rollout=roll, one_step_max=max(one_f) if one_f else float("inf"),
                    one_step_inside=max(one_f[:N_IN]) if one_f[:N_IN] else float("inf"),
                    rollout_max=max(bounded) if bounded else None, n_bounded=len(bounded), horizon=T,
-                   passes=bool(rec_ok and one_f and max(one_f) <= ONE_STEP and bounded and max(bounded) <= ROLLOUT))
+                   passes=bool(rec_ok and one_f and max(one_f) <= ONE_STEP and bounded and max(bounded) <= ROLLOUT
+                               and (sys_bounded or not FULL)))
         out.append(row)
     for r in out:
         r["seconds"] = time.time() - t0
@@ -200,6 +219,8 @@ def main():
         jobs = {}
         for s in LD.SEEDS:
             test = {r["id"]: r for r in json.loads((LD.OUT / "gen" / f"{rung}-s{s}.json").read_text())["test"]}
+            for rid, r in test.items():
+                jobs.setdefault(rid, (r, s, {}))
             for arm in LD.ARMS:
                 p = LD.OUT / rung / f"{arm}-s{s}.json"
                 if not p.exists():
@@ -216,7 +237,11 @@ def main():
         with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:
             rows = [x for part in ex.map(check_job, args) for x in part]
         (LD.OUT / rung / "rollout_check.json").write_text(json.dumps(rows, indent=1, default=float))
+        bounded = {r["id"]: r["system_bounded"] for r in rows if "system_bounded" in r}
+        rows = [r for r in rows if r.get("tag") is not None]
         R = [r for r in rows if r["recovered"]]
+        print(f"   held-out systems bounded over the full horizon from all 20 test starts (would pass the new generator): "
+              f"{sum(bounded.values())} of {len(bounded)}")
         print(f"== {rung}: {len(rows)} solved (system, lineage, round) results; {len(R)} with the true system recovered; "
               f"{time.time() - t0:.0f}s")
         print(f"   units check on recorded states: median relative error {np.median([r['units_check'] for r in R]):.1e}")
@@ -240,8 +265,9 @@ def main():
                     n_new = sum(r["passes"] for r in rows if r["tag"] == tag and r["round"] == rnd["round"])
                     per.append(f"{rnd['test_solved']} -> {n_new}")
                 best = max(sum(r["passes"] for r in rows if r["tag"] == tag and r["round"] == rnd["round"]) for rnd in rec_["rounds"])
-                print(f"   {tag}: held-out solved per round, old -> new definition: {' / '.join(per)} -> "
-                      f"{'still mastered' if best >= LD.MASTERY else 'NOT mastered under the new definition'}")
+                nb = sum(v for k, v in bounded.items() if k.startswith(f"{rung}-s{s}-"))
+                print(f"   {tag}: held-out solved per round, old -> new definition: {' / '.join(per)} (of {nb} bounded held-out systems) -> "
+                      f"{'still mastered' if nb and best >= 0.8 * nb else 'NOT mastered under the new definition'}")
 
 
 if __name__ == "__main__":
