@@ -64,6 +64,8 @@ RUNGS.update({
     "q33g": dict(_R, **_G, d=3, terms=(3, 3), levels=_ALL, change="all ten pieces, 3 variables, 3 terms, generous budgets (after q31)", after="q31"),
     "q33a": dict(_R, **_G, d=3, terms=(3, 3), levels=_ALL, max_k=1, change="3 variables, 3 terms, at most one K term per equation, generous budgets (after q31)", after="q31"),
     "q33h": dict(_R, **_G, d=3, terms=(3, 3), levels=_ALL, change="all ten pieces, 3 variables, 3 terms, generous budgets (after q33a)", after="q33a")})
+RUNGS["q43s"] = dict(_R, **_G, d=4, terms=(3, 3), levels=_ALL, strict=True, after="q41c",
+                     change="q43 rerun under the strict rules: 4 variables, 3 terms, wide recordings, bounded systems, from q41's cleaned states")
 OTHER = 99                                                       # piece type of the learner's terms that are no curriculum piece
 SHARE_REAL = 0.30                                                # real solutions' share of training when rung dreams are used
 SEEDS = (1, 2, 3) if not SMOKE else (1,)

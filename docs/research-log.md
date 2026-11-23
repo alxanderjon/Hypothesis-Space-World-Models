@@ -11839,3 +11839,26 @@ q43 is still running; its retroactive check follows when it finishes. Nothing ne
 - no lineage lost a probe; all six end at 22 of 22;
 - tries from each probe's own rung to q43: median 8 → 7, 8 → 8, 8 → 10 (blend); 9 → 8, 9 → 8, 8 → 8 (network alone).
 - **Retention holds through q43.**
+
+### Owner: rerun q43 under the strict rules, from q41's networks, with replay cleaned (23 November)
+
+**Owner.** *"Rerun q43 under the strict rules (wider recordings, only bounded systems, judged with the full horizon and the restored definition of solved), with two additions: 1. Start from q41's end-of-rung networks, not q43's, since q43's networks were trained partly on look-alike solutions from narrow recordings. 2. Before the rerun, check every stored solution used for replay against its true system (redrawn from seeds where needed) under the restored definition, and remove the ones that fail, so replay stops teaching look-alikes. Report how many were removed per lineage. Same rules otherwise. Stop and report at any drop-off. If q43 holds, report and wait: the next step will be broadening the library with new pieces."*
+
+**Replay cleaning** (`replay_clean.py`):
+- **What is checked:** every stored solution of the six learner lineages at q41's end, about 600 systems each: the curriculum, a1w, a2, b, c, e12, p8, p10, q23, q31, q33g and q41.
+- **Recovery:** each system's true system is redrawn from its seed (curriculum systems by the curriculum's generator, ladder systems by the ladder's).
+- **The rule:** the restored definition, with the retroactive rule (these systems were drawn under the old rules): precision fit, valid range, rollouts judged while the true system stays bounded, at least one time constant.
+- **Partly solved systems:** equations a lineage had not solved are filled with their true structure, so only the stored ones are tested.
+- **Removal:** a failing system is removed from the lineage's solutions and from its tried list (so Reanalyse cannot re-find the same look-alike).
+- **The cleaned states** go to `ladder/q41c/`. The blend's library is rebuilt from the cleaned solutions at its first learning step.
+- **Test on 3 systems** (curriculum L6, q31, q41): all pass, 8–80 s each.
+
+**The rerun, "q43s":**
+- 4 variables, 3 terms, all ten pieces, the generous budgets;
+- **the strict generator for training and test systems:** recordings from 0.3–2× the initial state; bounded from all 20 stored test starts over 10 time constants; up to 1,000 draws;
+- dreams from the cheaper generator;
+- **held-out solved:** the recordings plus the rollout check (precision fit, valid range, the full horizon on the stored starts);
+- the learner arms start from q41's cleaned states; a fresh network as always;
+- otherwise as q43.
+- **A smoke test first,** since the strict generator and the rollout-checked test have not run in a rung before.
+- **Started at 17:49 UTC:** the replay check (40 workers) and q43s's system generation (40 workers), which does not depend on the cleaned states.
