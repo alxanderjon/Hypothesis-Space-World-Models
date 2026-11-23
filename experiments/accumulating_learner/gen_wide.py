@@ -6,6 +6,7 @@ its sign is kept (before: U(0.5, 1.5)); the valid range keeps each variable's si
 build_wide mirrors domains_g1.build exactly apart from the reference's starting states and the bounded rule; the test
 starts and the horizon are stored with the system. Usage (pilot): gen_wide.py <workers> <n per shape>"""
 
+import json
 import os
 import sys
 import time
@@ -16,7 +17,8 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-SPREAD = (0.2, 3.0)                                              # the harness's out-of-range spread, now for the recordings
+SPREAD_BY_D = {2: (0.2, 3.0), 3: (0.2, 3.0), 4: (0.3, 2.0)}     # owner, 23 Nov: narrower at 4 variables
+MAX_DRAWS = 1000                                                 # owner, 23 Nov: raised so rungs still get their systems
 N_IN, N_OUT, HORIZON, MAX_CALLS = 10, 10, 10.0, 200_000
 
 
@@ -75,8 +77,9 @@ def wide_reference(system):
         def _transient_wide(self, s, rng):
             """harness27.Reference27._transient with the learning and held-out starts drawn from U(SPREAD)."""
             d = s.d
-            f_learn = s.ic * rng.uniform(*SPREAD, (H27.N_LEARN_REC, d))
-            f_held = s.ic * rng.uniform(*SPREAD, (16, d))
+            spread = SPREAD_BY_D[d]
+            f_learn = s.ic * rng.uniform(*spread, (H27.N_LEARN_REC, d))
+            f_held = s.ic * rng.uniform(*spread, (16, d))
             lo = rng.uniform(0.1, 0.15, (8, d)); hi = rng.uniform(3.5, 4.5, (8, d))
             f_oor = s.ic * np.concatenate([lo, hi])
             pre = 0
@@ -184,7 +187,7 @@ def pilot_job(args):
     keys = LD.piece_keys(d)
     allowed = {lv: keys[lv] for lv in LD._ALL}
     t0, why = time.time(), {}
-    for r in range(200):
+    for r in range(MAX_DRAWS):
         seed = f"wide-pilot-d{d}-{k}" if r == 0 else f"wide-pilot-d{d}-{k}-r{r}"
         desc = LD.draw(seed, allowed, terms, d)
         if DR.prescreen(desc) is not None:
@@ -197,14 +200,15 @@ def pilot_job(args):
             why[w] = why.get(w, 0) + 1
             continue
         return {"shape": shape, "k": k, "accepted": True, "tries": r + 1, "seconds": time.time() - t0, "why": why}
-    return {"shape": shape, "k": k, "accepted": False, "tries": 200, "seconds": time.time() - t0, "why": why}
+    return {"shape": shape, "k": k, "accepted": False, "tries": MAX_DRAWS, "seconds": time.time() - t0, "why": why}
 
 
 def main():
     from concurrent.futures import ProcessPoolExecutor
     from multiprocessing import get_context
     workers, n = int(sys.argv[1]), int(sys.argv[2])
-    shapes = [(3, (3, 3)), (4, (3, 3))]
+    shapes = [tuple(json.loads(x)) for x in os.environ.get("WIDE_SHAPES", "").split(";") if x] or [(3, (3, 3)), (4, (3, 3))]
+    shapes = [(sh[0], tuple(sh[1])) for sh in shapes]
     with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:
         res = list(ex.map(pilot_job, [(sh, k) for sh in shapes for k in range(n)]))
     for sh in shapes:

@@ -11753,3 +11753,23 @@ q43 is still running; its retroactive check follows when it finishes. Nothing ne
 - **The bounded rule rarely rejects.** The wider spread does: simulation cost (more than 64 reference substeps; more than 4 interval halvings) and failed provisional transients.
 - At 4 variables most draws fail within 200 tries. Rungs there need more tries per system, or higher cost limits, or a narrower spread (say U(0.3, 2.0)).
 - **Teacher dreams,** drawn by the same generator, would cost several times more to build.
+
+**Owner (23 November).** *"Decisions: 1. For the retroactive checks of q41 and q43 (drawn under the old rules), judge each test start for as long as the true system stays bounded, with at least one time constant required. 2. Going forward, at 4 variables, use the narrower spread (0.3–2× the initial state); keep 0.2–3× at 3 variables. Raise the draw limit if needed so rungs can still get their systems. 3. Apply the strict generator rules (bounded over the horizon, wide spread) to training and test systems only. Dreams keep the cheaper generator, since their true answers are known and look-alikes can't enter through them. 4. Keep the precision fit permanently. After q43 finishes, run its re-check under these rules and report q41 and q43 together. Don't start anything new until we've discussed it."*
+
+**Applied** (in standalone modules now; the ladder patches go in after q43):
+1. **Retroactive checks** run with `ROLLOUT_FULL=0`: each start is judged up to the point where the true system leaves the bounded region, at least one time constant.
+   - q41 under this rule (already computed, last entry): network alone 9 / 8 / 8, blend 9 / 7 / 8, fresh 9 / 7 / 7 of 10.
+   - **Mastered by the network alone (3 of 3) and the blend (2 of 3).**
+2. **Recording spread** (`gen_wide.SPREAD_BY_D`): U(0.3, 2.0) × the initial state at 4 variables, U(0.2, 3.0) at 2 and 3.
+   - The draw limit is raised from 200 to 1,000 (`gen_wide.MAX_DRAWS`).
+   - The 4-variable spread is being piloted now (24 systems, 3 terms).
+3. **The strict generator** (`patches/strict_gen.py`) builds the training and test systems of rungs marked "strict" with `gen_wide.build_wide`. They are stored with their description, test starts and horizon. Dreams keep `domains_g1.build`.
+   - The rollout check uses a system's stored test starts and the full horizon when it has them.
+4. **The precision fit is permanent:** it is on by default in the rollout check, which judges the held-out test (`patches/solved_def.py`).
+
+**Order after q43:**
+- copy `ladder_next.py` over `ladder.py`;
+- apply `patches/solved_def.py`, then `patches/strict_gen.py`;
+- run q43's retroactive check (`ROLLOUT_FULL=0`) and its look-alike check;
+- report q41 and q43 together;
+- start nothing new until discussed.

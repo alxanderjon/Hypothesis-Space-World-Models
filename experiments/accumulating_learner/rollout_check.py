@@ -27,7 +27,8 @@ import ladder as LD                                              # noqa: E402
 
 ONE_STEP, ROLLOUT, N_IN, N_OUT, HORIZON = 1e-12, 1e-9, 10, 10, 10.0
 PRECISE = os.environ.get("ROLLOUT_PRECISE", "1") == "1"         # owner, 23 Nov: the high-precision fit after acceptance
-FULL = os.environ.get("ROLLOUT_FULL", "1") == "1"               # owner, 23 Nov: the horizon as written (bounded systems only)
+FULL = os.environ.get("ROLLOUT_FULL", "1") == "1"               # owner, 23 Nov: the horizon as written (bounded systems only);
+                                                                 # ROLLOUT_FULL=0 for the old rungs' retroactive checks
 MAX_CALLS = 200_000                                              # a rollout needing more right-hand-side calls is cut off
 
 
@@ -99,11 +100,13 @@ def check_job(args):
     lo, hi = B.min(0), B.max(0)
     c, h = (lo + hi) / 2, np.maximum((hi - lo) / 2, 1e-6)
     rng = np.random.default_rng(LD.stable(rec["id"], "rollout"))
-    starts = [lo + (hi - lo) * rng.random(d) for _ in range(N_IN)]
+    starts = [lo + (hi - lo) * rng.random(d) for _ in range(N_IN)] if not rec.get("test_starts") else []
     keep = (lo > 0) | (hi < 0)                                   # variables that never change sign on the recordings
-    for _ in range(N_OUT):                                       # owner, 23 Nov: within the system's valid range
+    for _ in range(N_OUT if not rec.get("test_starts") else 0):  # owner, 23 Nov: within the system's valid range
         sign = np.where(keep, np.sign(c), rng.choice([-1.0, 1.0], d))
         starts.append(c + sign * h * rng.uniform(1.5, 2.0, d))
+    if rec.get("test_starts"):                                   # systems from the strict generator carry their test starts
+        starts = [np.asarray(x, dtype=float) for x in rec["test_starts"]]
     scale = max(float(np.abs(B).max()), 1e-12)
     T = HORIZON * SY.own_timescale(lambda x: np.atleast_2d(ftrue(np.ravel(x))), np.asarray(desc["ic"], dtype=float), factor=1.0)
     tc = T / HORIZON
