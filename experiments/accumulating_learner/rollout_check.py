@@ -268,7 +268,8 @@ def main():
                     n_new = sum(r["passes"] for r in rows if r["tag"] == tag and r["round"] == rnd["round"])
                     per.append(f"{rnd['test_solved']} -> {n_new}")
                 best = max(sum(r["passes"] for r in rows if r["tag"] == tag and r["round"] == rnd["round"]) for rnd in rec_["rounds"])
-                nb = sum(v for k, v in bounded.items() if k.startswith(f"{rung}-s{s}-"))
+                nb = sum(v for k, v in bounded.items() if k.startswith(f"{rung}-s{s}-")) if FULL else \
+                    sum(1 for k in bounded if k.startswith(f"{rung}-s{s}-"))      # judged up to escape: every held-out system counts
                 print(f"   {tag}: held-out solved per round, old -> new definition: {' / '.join(per)} (of {nb} bounded held-out systems) -> "
                       f"{'still mastered' if nb and best >= 0.8 * nb else 'NOT mastered under the new definition'}")
 

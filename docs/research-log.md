@@ -11797,3 +11797,45 @@ q43 is still running; its retroactive check follows when it finishes. Nothing ne
 - No rung has run with these yet.
 
 **Running:** q43's look-alike check, then its retroactive rollout check (`ROLLOUT_FULL=0`, judged up to the escape point, precision fit, valid range); and the probe on q43's networks.
+
+#### q41 and q43 under the restored definition of solved (23 November)
+
+**The rule used** (owner's decision 1, for these old-rule rungs):
+- each of the 20 test starts is judged for as long as the true system stays bounded, at least one time constant;
+- with the precision fit and the valid range;
+- a lineage masters the rung with at least 8 of its 10 held-out systems.
+- (The report's own verdict line had used the number of bounded systems as the denominator. Corrected in `rollout_check.py`; the counts below are out of 10.)
+
+| rung | lineage | held-out solved, recordings only → restored definition (best round) | mastered (restored) |
+|---|---|---|---|
+| q41 | blend s1 / s2 / s3 | 9 / 9 / 10 → 9 / 7 / 8 | 2 of 3 |
+| q41 | network alone s1 / s2 / s3 | 10 / 9 / 10 → 9 / 8 / 8 | **3 of 3** |
+| q41 | fresh s1 / s2 / s3 | 9 / 9 / 10 → 9 / 7 / 7 | 1 of 3 |
+| q43 | blend s1 / s2 / s3 | 9 / 8 / 7 → 8 / 5 / 5 | 1 of 3 |
+| q43 | network alone s1 / s2 / s3 | 10 / 8 / 7 → 5 / 4 / 4 | 0 of 3 |
+| q43 | fresh s1 / s2 / s3 | 9 / 8 / 7 → 7 / 5 / 6 | 0 of 3 |
+
+- **q41 still holds:** mastered by the network alone (3 of 3) and the blend (2 of 3).
+- **q43 does not:** neither learner arm masters it (blend 1 of 3, network alone 0 of 3). **Under the restored definition q43 is a drop-off.**
+
+**Why q43's solved systems fail** (136 results):
+
+| outcome | count | of these, the found structure differs from the truth |
+|---|---|---|
+| pass | 88 | 41 (algebraic identities, judged equal on the valid range) |
+| rollout beyond 1e-9 | 22 | 22 |
+| one step beyond 1e-12 inside the recorded range | 14 | 11 |
+| one step beyond 1e-12 only outside it | 8 | 2 |
+| no longer exact on the recordings when refitted | 4 | 4 |
+
+- **The look-alike check:** of 544 solved held-out equations, 428 are identical to the truth, 44 equivalent, 72 differ.
+- **Reading:**
+  - At 4 variables and 3 terms, look-alikes are the main failure: 22 rollouts and 11 one-step failures, all with a different structure.
+  - **These are functions that match the truth on q43's narrow recordings and drift away from it in rollouts.** Exactly what the wider recordings (decision 3) are meant to prevent.
+  - **6 true-structure solutions fail one step only outside the range,** even after the precision fit. Their constants are not pinned down well enough by the narrow recordings to extrapolate to 1e-12. Wider recordings should help here too.
+  - **Only 2 of q43's 30 held-out systems stay bounded over the full horizon from all 20 starts** (q41: 6 of 30). The strict generator will reject the rest of such systems from now on.
+
+**The probe after q43** (on the recordings definition, as all the probe runs so far):
+- no lineage lost a probe; all six end at 22 of 22;
+- tries from each probe's own rung to q43: median 8 → 7, 8 → 8, 8 → 10 (blend); 9 → 8, 9 → 8, 8 → 8 (network alone).
+- **Retention holds through q43.**
