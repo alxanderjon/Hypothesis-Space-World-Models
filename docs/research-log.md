@@ -11717,4 +11717,4 @@ q43 is still running; its retroactive check follows when it finishes. Nothing ne
 **Retroactive check** (`rollout_check.py`, now with the precision fit, the valid range and the full horizon):
 - For the existing systems (recorded under the old, narrow rule), a system the new generator would reject (not bounded from all 20 starts) is counted apart and not judged.
 - A lineage still masters the rung if it solves at least 80% of its seed's bounded held-out systems.
-- **q41 running** (started 04:06 UTC). q43 follows when it finishes. The first version's results are kept (`rollout_check_v1.json`).
+- **q41 running** (started about 03:45 UTC). q43 follows when it finishes. The first version's results are kept (`rollout_check_v1.json`).
