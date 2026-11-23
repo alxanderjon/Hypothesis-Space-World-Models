@@ -11718,3 +11718,38 @@ q43 is still running; its retroactive check follows when it finishes. Nothing ne
 - For the existing systems (recorded under the old, narrow rule), a system the new generator would reject (not bounded from all 20 starts) is counted apart and not judged.
 - A lineage still masters the rung if it solves at least 80% of its seed's bounded held-out systems.
 - **q41 running** (started about 03:45 UTC). q43 follows when it finishes. The first version's results are kept (`rollout_check_v1.json`).
+
+#### q41 re-checked with the precision fit and the valid range (23 November, 04:45 UTC)
+
+**Check:** `rollout_check.py`, with the precision fit, the valid range and the full horizon; 85 solved results.
+
+- **The precision fit fixes the precision failures:**
+  - one-step error within 1e-12 for 80 of 85 results (before: 53); 83 of 85 inside the recorded range;
+  - median one-step error 3.5e-14.
+- **Remaining failures:** rollout beyond 1e-9 in 8 results; one step in 3; not exact on the recordings when refitted in 2.
+- **The horizon as written:**
+  - **only 6 of q41's 30 held-out systems stay bounded from all 20 test starts over 10 time constants.** The other 24 would be rejected by the new generator.
+  - Judged on its 1–3 bounded systems per seed, a lineage's verdict means little: 1–2 solved each.
+- **Judging each start up to the point where the true system leaves the bounded region** (at least one time constant), as before:
+
+| lineage | solved on the recordings | solved under the restored definition |
+|---|---|---|
+| blend s1 / s2 / s3 | 9 / 9 / 10 | 9 / 7 / 8 |
+| network alone s1 / s2 / s3 | 10 / 9 / 10 | 9 / 8 / 8 |
+| fresh s1 / s2 / s3 | 9 / 9 / 10 | 9 / 7 / 7 |
+
+  - **So q41 is mastered by the network alone (3 of 3) and the blend (2 of 3);** the fresh network reaches it in 1 of 3.
+  - This reading holds only for these old systems, which the new generator would mostly reject.
+- **Without the precision fit** (the first check) no lineage was mastered. The difference is the 1e-12 precision and the valid range, not the search.
+
+**Generator pilot** (`gen_wide.py`; recordings from U(0.2, 3.0) × the initial state; bounded from all 20 test starts):
+
+| shape | accepted within 200 draws | median draws | median seconds per system |
+|---|---|---|---|
+| 3 variables, 3 terms | 20 of 24 | 87 | 316 |
+| 4 variables, 3 terms | 5 of 24 | 66 | 230 |
+
+- The old generator needed about 20 draws per system.
+- **The bounded rule rarely rejects.** The wider spread does: simulation cost (more than 64 reference substeps; more than 4 interval halvings) and failed provisional transients.
+- At 4 variables most draws fail within 200 tries. Rungs there need more tries per system, or higher cost limits, or a narrower spread (say U(0.3, 2.0)).
+- **Teacher dreams,** drawn by the same generator, would cost several times more to build.
