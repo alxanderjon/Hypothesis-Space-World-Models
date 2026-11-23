@@ -11861,4 +11861,4 @@ q43 is still running; its retroactive check follows when it finishes. Nothing ne
 - the learner arms start from q41's cleaned states; a fresh network as always;
 - otherwise as q43.
 - **A smoke test first,** since the strict generator and the rollout-checked test have not run in a rung before.
-- **Started at 17:49 UTC:** the replay check (40 workers) and q43s's system generation (40 workers), which does not depend on the cleaned states.
+- **Started at about 21:40 UTC:** the replay check (40 workers) and q43s's system generation (40 workers), which does not depend on the cleaned states.
