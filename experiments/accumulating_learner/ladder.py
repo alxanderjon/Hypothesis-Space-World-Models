@@ -88,7 +88,10 @@ _LOCK = threading.Lock()
 # Dreams are built in short-lived pools (rung c, 17 Nov): every simulated system loads a compiled library (compile_artifact)
 # that is never unloaded, and long-lived workers hit the kernel's 65,530 memory-map limit, after which every build failed
 # silently. A pool is replaced every DREAM_CHUNK dreams; at most DREAM_POOLS pools run at once.
-DREAM_WORKERS, DREAM_POOLS, DREAM_CHUNK = 8, 3, 100
+DREAM_WORKERS = int(os.environ.get("LADDER_DREAM_WORKERS", "8"))   # 22 Nov: sized to what is free
+DREAM_POOLS = int(os.environ.get("LADDER_DREAM_POOLS", "3"))
+DREAM_CHUNK = 100
+TMP_TRAIN = os.environ.get("LADDER_TMP")                        # 22 Nov: training files on another disk (owner: use both disks)
 _DREAM_SEM = threading.Semaphore(DREAM_POOLS)
 MIN_EXAMPLES_PER_DREAM = 2.0                                     # below this a dream batch is treated as broken: stop loudly
 SHARE_TEACHER_FROM = ("d", "e", "e12", "e3", "e4", "f", "g", "p8", "p10", "q23", "q31", "q33", "q41", "q43")                        # owner, 17 Nov: one teacher-dream set per round, shared by every lineage
@@ -261,6 +264,7 @@ def gen_job(args):
     new = args[5] if len(args) > 5 else None
     krule = args[6] if len(args) > 6 else False
     max_k = args[7] if len(args) > 7 else None
+    strict = args[8] if len(args) > 8 else False                 # owner, 23 Nov: the strict generator for training and test
     import warnings
     warnings.filterwarnings("ignore")
     sys.path.insert(0, str(HERE))
@@ -268,8 +272,9 @@ def gen_job(args):
     torch.set_num_threads(1)
     import domains_g1 as DG
     import dream_g2 as DR
+    import gen_wide as GW
     reasons = []
-    for r in range(200):
+    for r in range(GW.MAX_DRAWS if strict else 200):
         seed = f"{prefix}-{k}" if r == 0 else f"{prefix}-{k}-r{r}"
         desc = draw(seed, allowed, n_terms, d, krule, max_k)
         why = DR.prescreen(desc)
@@ -277,7 +282,7 @@ def gen_job(args):
             reasons.append(why)
             continue
         try:
-            syn = DG.build(desc)
+            syn = GW.build_wide(desc, seed_starts=stable(seed, "test starts")) if strict else DG.build(desc)
         except Exception as ex:
             reasons.append(type(ex).__name__)
             continue
@@ -289,7 +294,7 @@ def gen_job(args):
             reasons.append("K outside the recorded range")
             continue
         return {"k": k, "accepted": True, "tries": r + 1, "structure": [eq["keys"] for eq in syn.structure],
-                "bursts": b8.tolist()}
+                "bursts": b8.tolist(), "desc": desc, "test": getattr(syn, "test", None)}
     return {"k": k, "accepted": False, "reasons": reasons[-5:]}
 
 
@@ -326,7 +331,7 @@ def step_gen(workers, rung):
     keys = piece_keys(R["d"])
     allowed = {lv: keys[lv] for lv in R["levels"]}
     new = new_keys(rung, keys)
-    jobs = [((s, split, k), (f"ladder-{rung}-s{s}-{split}", k, allowed, R["terms"], R["d"], new, False, R.get("max_k")))
+    jobs = [((s, split, k), (f"ladder-{rung}-s{s}-{split}", k, allowed, R["terms"], R["d"], new, False, R.get("max_k"), R.get("strict", False)))
             for s in SEEDS for split, n in (("train", R.get("n_train", N_TRAIN)), ("test", N_TEST)) for k in range(n)]
     t0 = time.time()
     with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:
@@ -336,7 +341,9 @@ def step_gen(workers, rung):
     out = {s: {"train": [], "test": []} for s in SEEDS}
     for ((s, split, k), _), r in zip(jobs, res):
         if r["accepted"]:
-            out[s][split].append({"id": f"{rung}-s{s}-{split}-{k}", "rung": rung, "structure": r["structure"], "bursts": r["bursts"]})
+            out[s][split].append({"id": f"{rung}-s{s}-{split}-{k}", "rung": rung, "structure": r["structure"], "bursts": r["bursts"],
+                                  "desc": r.get("desc"), "test_starts": (r.get("test") or {}).get("starts"),
+                                  "horizon": (r.get("test") or {}).get("T")})
     new = [data_key(r["bursts"]) for s in SEEDS for sp in out[s].values() for r in sp]
     clash, dup = sum(k in old for k in new), len(new) - len(set(new))
     print(f"gen {rung}: {sum(r['accepted'] for r in res)} of {len(jobs)} accepted in {time.time() - t0:.0f}s; per seed "
@@ -548,6 +555,8 @@ class GPUs:
     def __init__(self):
         rows = self.rows()
         self.free = [g for g, (_, u, m, tot) in sorted(rows.items()) if u < 10 and m < 1000]
+        excl = {int(x) for x in os.environ.get("LADDER_EXCLUDE_GPUS", "").split(",") if x}   # another run's GPUs (22 Nov)
+        self.free = [g for g in self.free if g not in excl]
         cap = int(os.environ.get("LADDER_MAX_TRAIN", "0"))      # at 4 variables a training's example file is ~2 GB (21 Nov)
         if cap:
             self.free = self.free[:cap]
@@ -734,13 +743,20 @@ class Lineage:
                 steps = round(STEPS * len(data) / max(len(replay) + len(fant), 1))
             if R.get("steps"):
                 steps = R["steps"] if not SMOKE else 10
-            p = self.dir / f"{tag}_examples.pkl"
+            p = (Path(TMP_TRAIN) / f"{self.rung}-{self.name}-{tag}_examples.pkl") if TMP_TRAIN else self.dir / f"{tag}_examples.pkl"
 
             def train(g):
-                """The examples file is written only once a GPU slot is held (21 Nov: at 4 variables each is ~2 GB)."""
+                """The examples file is written only once a GPU slot is held (21 Nov: at 4 variables each is ~2 GB); with
+                LADDER_TMP, on that disk, and only with 2 GB to spare after it (22 Nov)."""
+                import shutil
                 from concurrent.futures import ProcessPoolExecutor
                 from multiprocessing import get_context
-                p.write_bytes(pickle.dumps(data))
+                blob = pickle.dumps(data)
+                while shutil.disk_usage(p.parent).free < len(blob) + 2 * 2 ** 30:
+                    log(f"{self.rung} {self.name} {tag}: waiting for disk space on {p.parent}")
+                    time.sleep(120)
+                p.write_bytes(blob)
+                del blob
                 try:
                     with ProcessPoolExecutor(1, mp_context=get_context("spawn")) as one:
                         return one.submit(train_net_job, ([str(p)], self.net, out, g, stable(self.name, self.rung, tag), steps)).result(), g
@@ -771,6 +787,30 @@ class Lineage:
                 self.pool.submit(table_job, (eqs, str(p), d)).result()
             self.tables[d] = str(p)
 
+    def strict(self, rnd, t, test):
+        """Rollout check (rollout_check.check_job) on every held-out system the search solved; cached per round."""
+        import rollout_check as RC
+        p = self.dir / f"r{rnd}_rollout.json"
+        if p.exists():
+            rows = json.loads(p.read_text())
+        else:
+            by = {r["id"]: r for r in test}
+            jobs = []
+            for y in t:
+                if y["solved"]:
+                    sol = [None] * len(by[y["id"]]["structure"])
+                    for e in y["equations"]:
+                        sol[int(e["eq"])] = e["solution"]
+                    jobs.append((by[y["id"]], self.rung, self.seed, int(y["id"].rsplit("-", 1)[1]), {(self.name, rnd): sol}))
+            rows = [x for part in self.pool.map(RC.check_job, jobs) for x in part]
+            p.write_text(json.dumps(rows, default=float))
+        passed = {r["id"] for r in rows if r.get("passes")}
+        for y in t:
+            y["solved_strict"] = y["id"] in passed
+        log(f"{self.rung} {self.name} round {rnd}: held-out solved {sum(y['solved'] for y in t)} on the recordings, "
+            f"{len(passed)} under the rollout check")
+        return len(passed)
+
     # -- the rung --
     def run(self, systems):
         train, test = systems["train"], systems["test"]
@@ -792,7 +832,8 @@ class Lineage:
             todo = self.unsolved(todo)
             self.learn()
             t = self.search(self.dir / f"r{rnd}_test.json", test, *test_budget)
-            ok = sum(y["solved"] for y in t)
+            ok_rec = sum(y["solved"] for y in t)
+            ok = self.strict(rnd, t, test) if not SMOKE else ok_rec          # owner, 22 Nov: the restored definition of solved
             mastered = ok >= MASTERY
             another = not mastered and rnd < len(budgets) and bool(todo)
             pool_ = [s for s in self.unsolved(self.tried) if not (another and s in todo)]
@@ -803,7 +844,8 @@ class Lineage:
             new_sys = sum(1 for s in pool_ if s not in self.unsolved([s]))
             yld = {"re_searched": len(pool_), "new_equations": new_eq, "new_systems": new_sys,
                    "structures": sum(e["structures"] for x in ra if x["status"] == "done" for e in x["equations"])}
-            self.rec["rounds"].append({"round": rnd, "budget": budget, "wake": w, "test": t, "test_solved": ok, "reanalyse": yld,
+            self.rec["rounds"].append({"round": rnd, "budget": budget, "wake": w, "test": t, "test_solved": ok, "test_solved_recordings": ok_rec,
+                                       "reanalyse": yld,
                                        "seconds": time.time() - t_round})
             log(f"{self.rung} {self.name} round {rnd}: training solved {sum(y['solved'] for y in w)} of {len(w)} tried; held-out "
                 f"{ok} of {len(t)}; Reanalyse {len(pool_)} re-searched, {new_eq} equations and {new_sys} systems newly solved")

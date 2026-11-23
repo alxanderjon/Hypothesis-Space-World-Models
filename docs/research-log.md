@@ -11773,3 +11773,27 @@ q43 is still running; its retroactive check follows when it finishes. Nothing ne
 - run q43's retroactive check (`ROLLOUT_FULL=0`) and its look-alike check;
 - report q41 and q43 together;
 - start nothing new until discussed.
+
+#### q43 (all ten pieces, 4 variables, 3 terms): finished on the recordings; the ladder code merged (23 November, 16:19 UTC)
+
+**On the recordings** (the definition the rung ran under):
+
+| arm | held-out per round (s1 / s2 / s3, of 10) | first-wake solves (of 50) | paired tries (first → last round) |
+|---|---|---|---|
+| confidence blend | 9 / 8 / 7→7→7 | 44 / 42 / 40 | s3: 39 → 24 on 37 equations |
+| network alone | 10 / 8 / 7→7→7 | 40 / 39 / 36 | s3: 31 → 22 on 37 equations |
+| fresh network | 7→9 / 7→7→8 / 7→7→7 | 0 / 0 / 0 | s1 42 → 34, s2 14 → 17, s3 43 → 35 |
+
+- **Every arm masters q43 in 2 of 3 seeds.**
+- **(b) on paired tries holds:** 3 of 3 for the blend and the network alone, 2 of 3 for fresh.
+- **History shows in the first wake:** 36–44 of 50 against 0.
+- Held-out solved within 300 structures: 4–6.
+- The fresh network's seed 1 and seed 2 became mastered in rounds 2 and 3.
+
+**The code, merged now that both q43 runs have exited:**
+- `ladder_next.py` replaced `ladder.py` (the old one is saved in the scratch folder), and `ladder_next.py` was removed;
+- then `patches/solved_def.py`: descriptions stored; held-out solved means recordings plus the rollout check (with the precision fit);
+- then `patches/strict_gen.py`: the strict generator for training and test systems of strict rungs; dreams keep the cheaper one.
+- No rung has run with these yet.
+
+**Running:** q43's look-alike check, then its retroactive rollout check (`ROLLOUT_FULL=0`, judged up to the escape point, precision fit, valid range); and the probe on q43's networks.
