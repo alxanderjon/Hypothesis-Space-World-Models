@@ -27,6 +27,8 @@ import ladder as LD                                              # noqa: E402
 
 ONE_STEP, ROLLOUT, N_IN, N_OUT, HORIZON = 1e-12, 1e-9, 10, 10, 10.0
 PRECISE = os.environ.get("ROLLOUT_PRECISE", "1") == "1"         # owner, 23 Nov: the high-precision fit after acceptance
+MARGIN = float(os.environ.get("ROLLOUT_MARGIN", "10"))           # owner, 24 Nov (option B): found <= MARGIN x the reference
+UNJUDGEABLE = 1e-6                                               # a reference worse than this: the system cannot be judged
 FULL = os.environ.get("ROLLOUT_FULL", "1") == "1"               # owner, 23 Nov: the horizon as written (bounded systems only);
                                                                  # ROLLOUT_FULL=0 for the old rungs' retroactive checks
 MAX_CALLS = 200_000                                              # a rollout needing more right-hand-side calls is cut off
@@ -77,7 +79,8 @@ def recover(rec, rung, s, k):
 
 
 def check_job(args):
-    rec, rung, s, k, sols = args                                   # sols: {(tag, round): [keys per equation]}
+    rec, rung, s, k, sols = args[:5]                               # sols: {(tag, round): [keys per equation]}
+    opts = args[5] if len(args) > 5 else {}                      # {"perturb": [seeds], "eps": e}: calibration refits
     import warnings
     warnings.filterwarnings("ignore")
     sys.path.insert(0, str(HERE))
@@ -147,29 +150,35 @@ def check_job(args):
             seg = segs[min(int(t_ / tc), len(segs) - 1)]
             yt[:, j] = seg(t_)
         true_runs.append((tt, yt, t_end >= 0.999 * T))
-    if not sols:                                                 # an unsolved system: its boundedness only
+    if not sols and not opts.get("perturb"):                     # an unsolved system: its boundedness only
         return [{"id": rec["id"], "tag": None, "round": None, "recovered": True,
                  "system_bounded": all(r_ is not None and r_[2] for r_ in true_runs)}]
     ctx = SG.system_context(np.array(rec["bursts"]), seed=s)
     fitter = FG.make_fitter(ctx, seed=s)
     sig = np.asarray(ctx["view"]["sig"], dtype=float)
-    out = []
-    for (tag, rd), keys_per_eq in sols.items():
-        row = {"id": rec["id"], "tag": tag, "round": rd, "recovered": True}
+
+    def judge(keys_per_eq, perturb=None):
+        """Refit a structure on the recordings (recording checks, then the precision fit) and measure it against the
+        exact true system from the 20 starts. perturb: (seed, eps) multiplies the precision fit's starting parameters
+        by (1 + eps z), for the margin's calibration (a different route to the same structure)."""
+        row = {}
         models, rec_ok = [], True
         for i, keys in enumerate(keys_per_eq):
             nd = FG.evaluate_structure(tuple(keys), ctx, i, fitter)
             rec_ok &= bool(nd["exact"])
             models.append((nd["terms"], np.asarray(nd["coefs"], dtype=float) if nd["coefs"] is not None else None))
         row["recordings_exact"] = rec_ok
+        pmodel = pp = None
         if PRECISE and rec_ok:
             import precise_fit as PF
             tpe = [[(t.key, tuple(t.theta)) for t in terms] for terms, _ in models]
             cpe = [co for _, co in models]
+            if perturb is not None:
+                pr = np.random.default_rng(perturb[0])
+                tpe = [[(kk, tuple(v * (1 + perturb[1] * pr.standard_normal()) for v in th)) for kk, th in eq] for eq in tpe]
+                cpe = [co * (1 + perturb[1] * pr.standard_normal(len(co))) for co in cpe]
             _, _, r_before, r_after, pmodel, pp = PF.precise(tpe, cpe, rec["bursts"], sig, dt)
             row["shooting_residual_before"], row["shooting_residual_after"] = r_before, r_after
-        else:
-            pmodel = None
 
         def ffound(x):
             if pmodel is not None:
@@ -183,8 +192,7 @@ def check_job(args):
                     phi = np.array([float(FG.value(t, W)[0]) for t in terms]) if terms else np.zeros(0)
                 v.append(sig[i] * float(phi @ co) / dt)
             return np.array(v)
-        # the units check: on recorded states the found model must agree with the true system to the recording bar
-        sample = B[rng.choice(len(B), size=min(20, len(B)), replace=False)]
+        sample = B[rng_units.choice(len(B), size=min(20, len(B)), replace=False)]
         units = [np.linalg.norm(ffound(x) - ftrue(x)) / (np.linalg.norm(ftrue(x)) + 1e-300) for x in sample]
         row["units_check"] = float(np.median(units))
         one = []
@@ -205,19 +213,63 @@ def check_job(args):
                 yf = None
             roll.append(float(np.abs(yf - yt).max() / (np.abs(yt).max() + 1e-300)) if yf is not None and np.all(np.isfinite(yf)) else float("inf"))
             full.append(bool(reached))
+        if opts.get("dense"):                                    # diagnostic: one step at many states of the same region
+            dr = np.random.default_rng(LD.stable(rec["id"], "dense"))
+            n = int(opts["dense"])
+            pts = [lo + (hi - lo) * dr.random(d) for _ in range(n // 2)]
+            for _ in range(n - n // 2):
+                sign = np.where(keep, np.sign(c), dr.choice([-1.0, 1.0], d))
+                pts.append(c + sign * h * dr.uniform(1.0, 2.0, d))
+            dv = []
+            for x0 in pts:
+                a_, b_ = ffound(x0), ftrue(x0)
+                if np.all(np.isfinite(b_)) and np.linalg.norm(b_) > 0:
+                    dv.append(float(np.linalg.norm(a_ - b_) / np.linalg.norm(b_)))
+            dv = np.array([v if math.isfinite(v) else 1e300 for v in dv])
+            row["one_step_dense_max"] = float(dv.max()) if len(dv) else None
+            row["one_step_dense_q99"] = float(np.percentile(dv, 99)) if len(dv) else None
         one_f = [v for v in one if math.isfinite(v)]
         bounded = [v for v in roll if v is not None]
         strict = [v for v, f_ in zip(roll, full) if v is not None and f_]
         row.update(n_full_horizon=len(strict), rollout_max_full=max(strict) if strict else None,
                    horizon_reached=[None if r_ is None else float(r_[0][-1] / tc) for r_ in true_runs])
-        sys_bounded = all(r_ is not None and r_[2] for r_ in true_runs)
-        row["system_bounded"] = sys_bounded
         row.update(one_step=one, rollout=roll, one_step_max=max(one_f) if one_f else float("inf"),
                    one_step_inside=max(one_f[:N_IN]) if one_f[:N_IN] else float("inf"),
-                   rollout_max=max(bounded) if bounded else None, n_bounded=len(bounded), horizon=T,
-                   passes=bool(rec_ok and one_f and max(one_f) <= ONE_STEP and bounded and max(bounded) <= ROLLOUT
-                               and (sys_bounded or not FULL)))
+                   rollout_max=max(bounded) if bounded else None, n_bounded=len(bounded), horizon=T)
+        return row
+
+    sys_bounded = all(r_ is not None and r_[2] for r_ in true_runs)
+    rng_units = np.random.default_rng(LD.stable(rec["id"], "units"))
+    truth = [e["keys"] if isinstance(e, dict) else e for e in rec["structure"]]
+    ref = judge(truth)                                           # owner, 24 Nov (option B): the true structure refitted
+    ref_one, ref_roll = ref["one_step_max"], ref["rollout_max"]
+    unjudgeable = (not ref["recordings_exact"] or ref["n_bounded"] == 0 or not math.isfinite(ref_one) or ref_one > UNJUDGEABLE
+                   or ref_roll is None or not math.isfinite(ref_roll) or ref_roll > UNJUDGEABLE)
+    bar_one = max(MARGIN * ref_one, ONE_STEP) if math.isfinite(ref_one) else ONE_STEP
+    bar_roll = max(MARGIN * ref_roll, ROLLOUT) if ref_roll is not None and math.isfinite(ref_roll) else ROLLOUT
+    common = {"system_bounded": sys_bounded, "unjudgeable": bool(unjudgeable), "ref_recordings_exact": ref["recordings_exact"],
+              "ref_one_step_max": ref_one, "ref_rollout_max": ref_roll, "bar_one_step": bar_one, "bar_rollout": bar_roll,
+              "margin": MARGIN}
+    out = []
+    todo = list(sols.items()) + [((("perturb", j), None), None) for j in range(len(opts.get("perturb", [])))]
+    for (tag, rd), keys_per_eq in todo:
+        if keys_per_eq is None:                                  # a calibration refit of the true structure
+            j = tag[1]
+            pj = opts["perturb"][j]
+            row = judge(truth, perturb=tuple(pj) if isinstance(pj, (list, tuple)) else (pj, opts.get("eps", 1e-6)))
+            row["perturb"] = list(pj) if isinstance(pj, (list, tuple)) else [pj, opts.get("eps", 1e-6)]
+            tag = f"perturb{j}"
+        else:
+            row = judge(keys_per_eq)
+        row.update({"id": rec["id"], "tag": tag, "round": rd, "recovered": True}, **common)
+        ok_bounded = row["n_bounded"] > 0 and (sys_bounded or not FULL)
+        row["passes_absolute"] = bool(row["recordings_exact"] and row["one_step_max"] <= ONE_STEP and ok_bounded
+                                      and row["rollout_max"] is not None and row["rollout_max"] <= ROLLOUT)
+        row["passes"] = bool(not unjudgeable and row["recordings_exact"] and ok_bounded and row["one_step_max"] <= bar_one
+                             and row["rollout_max"] is not None and row["rollout_max"] <= bar_roll)
         out.append(row)
+    ref_row = dict(ref, id=rec["id"], tag="reference", round=None, recovered=True, **common)
+    out.append(ref_row)
     for r in out:
         r["seconds"] = time.time() - t0
     return out
@@ -251,7 +303,7 @@ def main():
             rows = [x for part in ex.map(check_job, args) for x in part]
         (LD.OUT / rung / "rollout_check.json").write_text(json.dumps(rows, indent=1, default=float))
         bounded = {r["id"]: r["system_bounded"] for r in rows if "system_bounded" in r}
-        rows = [r for r in rows if r.get("tag") is not None]
+        rows = [r for r in rows if r.get("tag") is not None and r.get("tag") != "reference"]
         R = [r for r in rows if r["recovered"]]
         print(f"   held-out systems bounded over the full horizon from all 20 test starts (would pass the new generator): "
               f"{sum(bounded.values())} of {len(bounded)}")

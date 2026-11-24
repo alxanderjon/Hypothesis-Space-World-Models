@@ -12037,3 +12037,52 @@ Target was 10 of 10 per seed. **Not met.**
   any learner, so the retroactive re-check (step 3) cannot measure mastery on them as they stand.
 - Also tried: a long-shot precision fit (each recording integrated from its first state), not adopted (no gain).
 - Stopped here for the owner's decision.
+
+### Owner, 24 November: option B adopted as the definition of solved
+
+*"Decision: adopt option B as the definition of solved. No higher-precision recordings. New definition, replacing the
+absolute out-of-range bars: The recording checks stay as they are. For each system, build a reference: the true
+structure with its constants refitted from the same recordings the learner saw (with the precision fit). A found
+equation is solved if, from the same 20 new starting states, its one-step and rollout errors against the exact true
+equation are no worse than the reference's errors, within a small margin (propose the margin and justify it). Report the
+margin before using it. Safeguard: if the reference itself is worse than about 1e-6 (one-step or rollout), the system is
+unjudgeable. Replace it in new rungs, and exclude it with a count in retroactive checks, so B never becomes lenient.
+Update CLAUDE.md with this definition (keeping that proxies must be flagged, and that a rung is mastered only under this
+definition with every rung below it mastered). Then continue the earlier steps under the new definition: 1. Confirm the
+reference passes its own test, and that known look-alikes still fail. 2. Restore the removed replay solutions that pass
+under B. 3. Re-check every earlier rung retroactively under B (curriculum levels through q41, and q43s's held-out),
+reporting per rung and arm whether mastery holds, and how many systems were unjudgeable. 4. Report the first rung that
+doesn't hold and propose re-climbing from there under the strict rules (starting values from the larger range, bounded
+systems, cleaned replay). Don't start the re-climb until we've discussed it."*
+
+#### Option B: margin calibration and the owner's four questions (24 November, 20:00–23:30 UTC)
+
+*Owner: "Margin 30 is accepted only conditionally; no rule changes yet. My priority: B must never call a good
+approximation exact, but I want data before setting any hard ceiling."* No rule applied; CLAUDE.md, replay restoration
+and the retroactive checks wait for approval.
+
+- **Implementation (not yet in use):** `rollout_check.check_job` builds the reference (the true structure through the
+  same fit and judge path as a found equation), and reports for every found equation both the absolute verdict
+  (`passes_absolute`) and option B's (`passes`: at most max(margin × reference, 1e-12) one step and max(margin ×
+  reference, 1e-9) rollout; unjudgeable if the reference fails the recordings or exceeds 1e-6). Calibration refits
+  (`margin_calibration.py`) and a dense diagnostic (one step at 2,000 states of the same region) are options.
+- **Margin calibration** (277 training systems, 4 kicked refits each): kicks of 1e-6 differ from the reference by at
+  most 25x one step (99th percentile 3.4x wide, 18x narrow) and 4.2–153x rollout; kicks of 1e-3 have a tail to 2e4
+  (optimizer stalls). Margin 30 passes 503 of 516 kicked refits of the truth (7 of the misses fail the recordings).
+- **Raised bars under margin 30** (258 judgeable training systems): one-step bar median 1e-12, 90th percentile
+  3.4e-11, 99th 1.4e-8, max 4.6e-7; rollout bar median 1e-9, 90th 1.9e-9, 99th 2.7e-7, max 1.0e-5. The worst are
+  systems with several rational terms (two or three per equation) at 3–4 variables.
+- **Candidate ceilings** (a system whose raised bar would exceed the ceiling becomes unjudgeable): one step 1e-10: 16
+  of 258 unjudgeable; 1e-8: 3; rollout 1e-7: 4; 1e-5: 1; both 1e-10 / 1e-7: 18; both 1e-8 / 1e-5: 4. No look-alike
+  passes only because of a bar above a ceiling with its own error above it, except under 1e-10 one-step (2, both
+  later shown to match their reference).
+- **The 153x rollout outlier:** q43s-s1-train-9 (4 variables, three rational terms with poles in x3). Not chaotic: a
+  1e-10 start difference grows at most 500x over the horizon, fluctuating, not exponentially; trajectories stay far
+  from the poles. Its trajectories travel 10–17 recorded half-widths away from the recorded range (the test starts are
+  at 1.5–2), where the constants are least pinned: the reference's rollout error is 4.6e-8 with one step 7.4e-14.
+- **Look-alike verdict (dense test, 2,000 states):** the 34 passing "look-alike" solutions (12 distinct held-out
+  systems) differ from the true law across the region by 0.7–1.5x the reference's own error, except two systems at 18x
+  and 6x whose errors stay below 4e-13. None is a wrong law: the structure check's "look-alike" label (symbolic
+  comparison) is a proxy that flags forms equal to the truth on the valid range. The dense test also shows the
+  20-start test can miss: in one system both the found law and the reference are 1.8e-13 at the 20 starts but
+  8.5e-9 at the worst of the 2,000 states.

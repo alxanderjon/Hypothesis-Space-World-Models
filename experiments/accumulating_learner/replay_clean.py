@@ -76,7 +76,7 @@ def job(args):
     rows = RC.check_job((rec, None, seed, None, full))
     out = []
     for r in rows:
-        if r.get("tag") is None:
+        if r.get("tag") is None or r.get("tag") == "reference":
             continue
         out.append({"id": rec["id"], "lineage": r["tag"], "recovered": True, "passes": bool(r["passes"]),
                     "recordings_exact": r["recordings_exact"], "one_step_max": r["one_step_max"], "rollout_max": r["rollout_max"],
