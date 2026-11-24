@@ -11891,3 +11891,15 @@ q43 is still running; its retroactive check follows when it finishes. Nothing ne
   - Open models on ironforge: V100 16 GB cards (no bf16), so about 7–8B models at fp16 over two cards; weaker at this
     task and they take GPUs from training. API preferred; no API key or SDK is installed yet.
   - Pilots proposed; awaiting the owner's decision.
+
+**Status, 24 November 04:40 UTC** (owner asked):
+- **Replay check:** 1,810 of 1,827 systems done. The last 17 are slow precision fits; the slowest finished so far took
+  1.8 hours. Expected within 1–2 hours.
+- **Top-up:** still in its first pass (170 draws on 24 workers; saves only when the pass ends). The first q43s
+  generation took 3.4 hours for 180 draws on 40 workers, and until now the top-up shared the cores with the replay
+  check's 46 workers. Expected to end around 07:00–08:00 UTC. A second pass would cost hours more, and about a 1 in 3
+  chance that some cell is still short after one pass.
+- **Helper, on idle cores:** `topup_helper.py` draws 79 spare systems for the same cells under the same rules, from seed
+  indices the top-up never uses (from 5,000 on), at lower priority than the two jobs. It saves each result as it
+  finishes. After the top-up, `merge` fills any short cells from it, with the same freshness checks.
+- Disk: /SSD (outputs) has 7.2 GB free; training files go to /home (379 GB free).
