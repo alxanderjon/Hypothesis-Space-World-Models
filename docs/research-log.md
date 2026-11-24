@@ -11924,3 +11924,20 @@ workers). Each lineage's stored solutions at the end of q41, judged against the 
 - As instructed, every failing solution is removed (from the solutions and from the tried lists). The cleaned states are
   in `ladder/q41c/`. The helper's spare strict systems were not needed: the top-up filled every seed (50 + 10).
 - **Smoke test of q43s started** 06:08 UTC.
+
+**Smoke test and a fix before q43s** (24 November, 07:00–07:25 UTC):
+- The smoke test ran end to end (strict generation, the run from q41's cleaned states, the report). It skips the
+  held-out rollout check, so that check was exercised separately on the smoke's systems with their true structures.
+- **Bug found and fixed:** the rollout check rebuilt each system with the old narrow generator (`domains_g1.build`)
+  for its time step. For strict systems that can reject the system (seen on a smoke training system), which would have
+  crashed a lineage's held-out test. The time step can also differ. Now strict systems are rebuilt with their own
+  wide reference (`gen_wide.rebuild_wide`), checked against the stored recordings, and a failed rebuild counts as not
+  solved instead of crashing. Retested: 8 of 8 rebuilt; a wrong structure (one term dropped) fails, as it should.
+- **Ceiling check (a cap on mastery, not a result):** each q43s held-out system with its own true structure, through
+  the rung's check. Passes: seed 1 9 of 10 (1 fails one step), seed 2 8 of 10 (2 fail the recordings), seed 3 9 of 10
+  (1 fails the recordings). So the fitter, not the search, caps the rung at 9 / 8 / 9: mastery (8 of 10 in 2 of 3
+  seeds) remains reachable, with one miss allowed in seeds 1 and 3 and none in seed 2. A drop-off must be read against
+  this ceiling. Not changed during the trial (one change at a time); the fitter's failures on true structures are a
+  candidate for the next step.
+- **q43s started** at about 07:25 UTC: all 3 seeds at once, up to 6 trainings on GPUs 2–7, 44 workers, 2 GB guard
+  on both disks.
