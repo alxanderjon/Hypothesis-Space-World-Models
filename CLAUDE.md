@@ -70,6 +70,8 @@ that were wrong off the recordings.)
 - **Reanalyse in every run.** After each learning round, unsolved training systems are re-searched with the newest network.
 - **Mastery and drop-off.** A rung is mastered when an arm solves at least 8 of 10 held-out systems in at least 2 of 3
   seeds. If neither learner arm masters it, stop and report.
+- **Mastered means mastered under the real definition.** A rung counts as mastered only under the definition of solved
+  above, and **no rung is attempted until every rung below it is mastered that way.**
 - **Generous search budgets when learning** (thousands of tries per equation); report tries at 300 as well, for
   comparison with early rungs.
 - **The learning measure.** Tries per solution must fall, compared on the same held-out equations solved in both the first

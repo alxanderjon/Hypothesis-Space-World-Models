@@ -11951,3 +11951,24 @@ workers). Each lineage's stored solutions at the end of q41, judged against the 
   restarted. The round-1 searches (all 9 lineages, done by 12:06) are saved and reused. Lost: the round-1 dream building
   (own dreams for 5 lineages); no teacher dreams had finished.
 - GPUs: another user took GPUs 2–5 at 11:21; the restarted run uses GPUs 6 and 7.
+
+### Owner, 24 November 15:45 UTC: stop q43s; fix the fitter; re-check every rung
+
+*"Stop q43s now (your own processes only, by process group), keeping its saved data. We'll come back to it once every
+rung below it is genuinely mastered. Then, in order: 1. Fix the fitter so true equations pass the real definition of
+solved. Target: every held-out system's true structure passes (10 of 10 per seed) on q41, q43s and a sample of earlier
+rungs' held-out systems. Report what was wrong and what you changed, and get that number before moving on. 2. Refit the
+274 removed replay solutions that had exactly the true terms with the improved fitter, and restore any that now pass.
+3. Re-check every earlier rung retroactively under the real definition with the improved fitter, from the curriculum
+levels through a1, a2, b, c, e12, p8, p10, q23, q31, q33g and q41. CPU only: redraw held-out systems from their seeds,
+refit the found equations, run the rollout checks. Report per rung and arm whether mastery (8 of 10 in at least 2 of 3
+seeds) still holds. 4. Report the first rung that doesn't hold, and propose re-climbing from there under the strict rules
+(wide recordings, bounded systems, real definition, cleaned replay), mastering each rung before stepping up. Don't start
+the re-climb until we've discussed it. Add to CLAUDE.md: a rung counts as mastered only under the real definition of
+solved, and no rung is attempted until every rung below it is mastered that way."*
+
+- q43s stopped at 15:49 UTC by its process group; its saved data (round-1 searches and examples) kept.
+- CLAUDE.md: the rule added under "Mastery and drop-off".
+- **Pass rule for step 1 (written before the work):** with the changed fitter, every held-out system's own true
+  structure passes the full check, 10 of 10 per seed, on q41, q43s and a sample of earlier rungs. This measures the
+  checker's ceiling (that the truth can pass), not the learner; it is a precondition, not a result.
