@@ -12016,3 +12016,24 @@ through the real check (`diag_truth_fit.py`).
   to 5.7e-11.
 - The sensitivity check (`sensitivity_floor.py`: true constants nudged by 1e-14) shows the true law itself is
   judgeable on all but 3 of 150 systems. So the limit is how well the recordings pin the constants, not the bars.
+
+**Step 1's number: held-out true structures with fixes 1–3** (24 November, 19:10 UTC; counts only; `rc_ceiling2.py`).
+Target was 10 of 10 per seed. **Not met.**
+
+| Rung | Recordings | Seed 1 | Seed 2 | Seed 3 | Main failure |
+|---|---|---|---|---|---|
+| q43s | wide, bounded | 8 | 10 | 10 | 1 recordings, 1 one step |
+| q41 | narrow (retro) | 9 | 8 | 9 | 1 timed out, 1 recordings, 1 one step, 1 rollout |
+| q33g | narrow (retro) | 6 | 7 | 6 | one step 6, recordings 4 |
+| q23 | narrow (retro) | 6 | 5 | 8 | one step 5, rollout 3, recordings 3 |
+| p8 | narrow (retro) | 8 | 10 | 8 | one step 4 |
+| c | narrow (retro) | 6 | 6 | 4 | one step 11, rollout 3 |
+| a2 | narrow (retro) | 5 | 8 | 6 | one step 7, recordings 2, rollout 2 |
+
+- Before the fixes, q43s was 9 / 8 / 9; now 28 of 30 overall.
+- On the old narrow-recording rungs, even the true law fails 2–6 of 10 per seed, mostly at one step outside the
+  recorded range: the precision limit found above (recordings in float64 cannot pin the constants well enough
+  to extrapolate to 1.5–2x outside a narrow range). For several of these seeds, mastery (8 of 10) is out of reach for
+  any learner, so the retroactive re-check (step 3) cannot measure mastery on them as they stand.
+- Also tried: a long-shot precision fit (each recording integrated from its first state), not adopted (no gain).
+- Stopped here for the owner's decision.
