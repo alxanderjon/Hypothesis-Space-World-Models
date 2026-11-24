@@ -11903,3 +11903,24 @@ q43 is still running; its retroactive check follows when it finishes. Nothing ne
   indices the top-up never uses (from 5,000 on), at lower priority than the two jobs. It saves each result as it
   finishes. After the top-up, `merge` fills any short cells from it, with the same freshness checks.
 - Disk: /SSD (outputs) has 7.2 GB free; training files go to /home (379 GB free).
+
+**Replay cleaning: result** (24 November, 06:07 UTC; 1,827 systems, all redrawn from their seeds, 4.4 hours on 46
+workers). Each lineage's stored solutions at the end of q41, judged against the true system under the restored definition
+(judged while the true system stays bounded, at least one time constant). Removed per lineage:
+
+| Lineage | Solved systems | Removed | Share | Failed on: one step / rollout / recordings |
+|---|---|---|---|---|
+| blend-s1 | 608 | 193 | 32% | 100 / 67 / 26 |
+| blend-s2 | 610 | 185 | 30% | 97 / 59 / 29 |
+| blend-s3 | 609 | 157 | 26% | 103 / 40 / 14 |
+| net-s1 | 608 | 183 | 30% | 101 / 61 / 21 |
+| net-s2 | 609 | 180 | 30% | 90 / 58 / 32 |
+| net-s3 | 609 | 186 | 31% | 103 / 63 / 20 |
+
+- Removals come from every rung, curriculum included (full counts in `g2h/replay_clean_report.txt`).
+- **Of the 1,084 removed solutions, 274 (25%) have exactly the true terms** and fail on precision: one step 153, rollout
+  79, recordings 42. The other 810 differ from the truth in their term lists; some may be algebraic equivalents (this
+  count compares term lists, not functions), so 810 is an upper bound on look-alikes.
+- As instructed, every failing solution is removed (from the solutions and from the tried lists). The cleaned states are
+  in `ladder/q41c/`. The helper's spare strict systems were not needed: the top-up filled every seed (50 + 10).
+- **Smoke test of q43s started** 06:08 UTC.
