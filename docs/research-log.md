@@ -11941,3 +11941,13 @@ workers). Each lineage's stored solutions at the end of q41, judged against the 
   candidate for the next step.
 - **q43s started** at about 07:25 UTC: all 3 seeds at once, up to 6 trainings on GPUs 2–7, 44 workers, 2 GB guard
   on both disks.
+
+**q43s stopped and restarted, 24 November 15:28 UTC: a protocol deviation fixed.**
+- q43s was missing from `SHARE_TEACHER_FROM`. So instead of one shared set of 1,000 teacher dreams per round (as in
+  q41 and q43, the rule since rung d), each of the 9 lineages was building its own set, without the rung's piece
+  settings. That breaks "same rules otherwise", and is also why round 1's dream building was slow (own dreams 1–3.5
+  hours per lineage, then the teacher dreams 9 times over).
+- Found before any lineage trained or was tested. Stopped by its process group, fixed (q43s added to the list),
+  restarted. The round-1 searches (all 9 lineages, done by 12:06) are saved and reused. Lost: the round-1 dream building
+  (own dreams for 5 lineages); no teacher dreams had finished.
+- GPUs: another user took GPUs 2–5 at 11:21; the restarted run uses GPUs 6 and 7.
