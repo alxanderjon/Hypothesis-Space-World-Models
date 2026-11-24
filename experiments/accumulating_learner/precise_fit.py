@@ -64,13 +64,29 @@ class Model:
         return out
 
 
+MAX_CALLS = 20_000                                               # 24 Nov: a stiff candidate cannot stall the fit
+
+
+class TooLong(Exception):
+    pass
+
+
 def shoot(model, p, x0, dt):
-    """One sample interval from every state of x0 (n, d), all at once."""
+    """One sample interval from every state of x0 (n, d), all at once (NaN if it needs more than MAX_CALLS calls)."""
     from scipy.integrate import solve_ivp
     n, d = x0.shape
     scale = max(np.abs(x0).max(), 1e-12)
-    sol = solve_ivp(lambda t, y: model.rhs(y.reshape(n, d), p).ravel(), (0, dt), x0.ravel(), method="DOP853",
-                    rtol=1e-14, atol=1e-16 * scale)
+    calls = [0]
+
+    def f(t, y):
+        calls[0] += 1
+        if calls[0] > MAX_CALLS:
+            raise TooLong()
+        return model.rhs(y.reshape(n, d), p).ravel()
+    try:
+        sol = solve_ivp(f, (0, dt), x0.ravel(), method="DOP853", rtol=1e-14, atol=1e-16 * scale)
+    except TooLong:
+        return np.full_like(x0, np.nan)
     if not sol.success:
         return np.full_like(x0, np.nan)
     return sol.y[:, -1].reshape(n, d)
@@ -91,6 +107,8 @@ def precise(terms_per_eq, coefs_per_eq, bursts, sig, dt, max_nfev=60):
         return np.nan_to_num(r.ravel(), nan=1e6)
     r0 = res(p0)
     try:
+        if not np.all(np.abs(r0) < 1e5):                         # the accepted fit cannot even be shot: keep it
+            raise ValueError("unshootable")
         fit = least_squares(res, p0, method="lm", xtol=1e-15, ftol=1e-15, gtol=1e-15, max_nfev=max_nfev * len(p0), x_scale="jac")
         p = fit.x if np.linalg.norm(fit.fun) <= np.linalg.norm(r0) else p0
     except Exception:

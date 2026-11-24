@@ -864,6 +864,49 @@ class Lineage:
         log(f"{self.rung} {self.name}: {'mastered in ' + str(self.rec['rounds_to_mastery']) + ' rounds' if self.rec['mastered'] else 'not mastered'}")
 
 
+def step_topup(workers, rung, passes=4):
+    """Strict rungs (24 Nov): the strict generator accepts fewer systems within its draw limit, so draw more systems from
+    new seed indices (the same rules) until every seed has its training and test systems; checked against every earlier
+    set and against each other."""
+    from concurrent.futures import ProcessPoolExecutor
+    from multiprocessing import get_context
+    R = RUNGS[rung]
+    keys = piece_keys(R["d"])
+    allowed = {lv: keys[lv] for lv in R["levels"]}
+    new = new_keys(rung, keys)
+    want = {"train": R.get("n_train", N_TRAIN), "test": N_TEST}
+    out = {s: json.loads((OUT / "gen" / f"{rung}-s{s}.json").read_text()) for s in SEEDS}
+    old = earlier_keys(rung)
+    seen = {data_key(r["bursts"]) for s in SEEDS for sp in out[s].values() for r in sp}
+    for ps in range(passes):
+        need = {(s, sp): want[sp] - len(out[s][sp]) for s in SEEDS for sp in want}
+        if all(v <= 0 for v in need.values()):
+            break
+        jobs = []
+        for (s, sp), n in need.items():
+            if n <= 0:
+                continue
+            k0 = max([int(r["id"].rsplit("-", 1)[1]) for r in out[s][sp]] + [want[sp] - 1]) + 1 + 1000 * ps
+            jobs += [((s, sp, k), (f"ladder-{rung}-s{s}-{sp}", k, allowed, R["terms"], R["d"], new, False, R.get("max_k"), R.get("strict", False)))
+                     for k in range(k0, k0 + 2 * n + 2)]
+        t0 = time.time()
+        with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:
+            res = list(ex.map(gen_job, [a for _, a in jobs]))
+        for ((s, sp, k), _), r in zip(jobs, res):
+            if not r["accepted"] or len(out[s][sp]) >= want[sp]:
+                continue
+            key = data_key(r["bursts"])
+            if key in old or key in seen:
+                continue
+            seen.add(key)
+            out[s][sp].append({"id": f"{rung}-s{s}-{sp}-{k}", "rung": rung, "structure": r["structure"], "bursts": r["bursts"],
+                               "desc": r.get("desc"), "test_starts": (r.get("test") or {}).get("starts"), "horizon": (r.get("test") or {}).get("T")})
+        print(f"topup {rung} pass {ps + 1}: {sum(r['accepted'] for r in res)} of {len(jobs)} accepted in {time.time() - t0:.0f}s; now "
+              f"{ {s: {sp: len(v) for sp, v in out[s].items()} for s in SEEDS} }", flush=True)
+        for s in SEEDS:
+            (OUT / "gen" / f"{rung}-s{s}.json").write_text(json.dumps(out[s]))
+
+
 def step_run(workers, rung):
     from concurrent.futures import ProcessPoolExecutor
     from multiprocessing import get_context
@@ -977,7 +1020,8 @@ def main():
     free = shutil.disk_usage(OUT.resolve()).free / 2 ** 30
     if free < 2:
         raise SystemExit(f"not running {step}: free disk {free:.1f} GB < 2 GB on {OUT.resolve()} (owner's crash guard)")
-    {"gen": lambda: step_gen(workers, rung), "run": lambda: step_run(workers, rung), "report": lambda: step_report(rung)}[step]()
+    {"gen": lambda: step_gen(workers, rung), "run": lambda: step_run(workers, rung), "report": lambda: step_report(rung),
+     "topup": lambda: step_topup(workers, rung)}[step]()
 
 
 if __name__ == "__main__":

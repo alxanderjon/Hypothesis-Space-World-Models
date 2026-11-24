@@ -104,16 +104,25 @@ def step_check(workers):
         s = int(L[-1])
         for sid, eqs in st["sols"].items():
             jobs.setdefault(sid, (recs[sid], s, {}))[2][L] = {int(e): v for e, v in eqs.items()}
-    args = list(jobs.values())
-    print(f"replay check: {len(args)} systems, {sum(len(a[2]) for a in args)} lineage solutions", flush=True)
+    DST.mkdir(parents=True, exist_ok=True)
+    part_file = DST / "replay_check.partial.jsonl"                  # 24 Nov: saved as each system finishes; resumable
+    done = set()
+    if part_file.exists():
+        for line in part_file.read_text().splitlines():
+            done.add(json.loads(line)["id"])
+    args = [a for a in jobs.values() if a[0]["id"] not in done]
+    print(f"replay check: {len(jobs)} systems ({len(done)} already done), {sum(len(a[2]) for a in jobs.values())} lineage solutions", flush=True)
     t0 = time.time()
-    rows = []
-    with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:
-        for k, part in enumerate(ex.map(job, args, chunksize=1)):
-            rows += part
+    from concurrent.futures import as_completed
+    with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex, open(part_file, "a") as fh:
+        futs = [ex.submit(job, a) for a in args]
+        for k, f in enumerate(as_completed(futs)):
+            for r in f.result():
+                fh.write(json.dumps(r, default=float) + "\n")
+            fh.flush()
             if k % 100 == 0:
                 print(f"   {k} of {len(args)} systems ({time.time() - t0:.0f}s)", flush=True)
-    DST.mkdir(parents=True, exist_ok=True)
+    rows = [json.loads(line) for line in part_file.read_text().splitlines()]
     (DST / "replay_check.json").write_text(json.dumps(rows, default=float))
     print(f"replay check done in {time.time() - t0:.0f}s")
 

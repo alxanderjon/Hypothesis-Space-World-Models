@@ -11862,3 +11862,16 @@ q43 is still running; its retroactive check follows when it finishes. Nothing ne
 - otherwise as q43.
 - **A smoke test first,** since the strict generator and the rollout-checked test have not run in a rung before.
 - **Started at about 21:40 UTC:** the replay check (40 workers) and q43s's system generation (40 workers), which does not depend on the cleaned states.
+
+**Two problems, fixed** (24 November, 01:45 UTC):
+- **The strict generator gave q43s only 101 of its 180 systems within 1,000 draws each** (28–31 training and 3–6 held-out per seed).
+  - A top-up step (`ladder.py <workers> <rung> topup`) draws more systems from new seed indices under the same rules until every seed has 50 and 10, checked against every earlier set and against each other.
+  - Running (24 workers).
+- **The replay check stalled at 400 of 1,827 systems:**
+  - The precision fit's shooting integration had no cap on right-hand-side calls, so a stiff candidate could integrate almost without end. The ordered result stream then waited on it, with most workers idle.
+  - **Fixes:**
+    - the shooting is capped at 20,000 calls (a fit that cannot finish keeps the accepted fit);
+    - the check takes results as they finish and saves each system's result at once (`replay_check.partial.jsonl`), so it can resume;
+    - restarted on 46 workers.
+  - The results of the stalled run were held in memory only and were lost.
+  - The same cap protects the rollout check in the ladder's held-out test.
