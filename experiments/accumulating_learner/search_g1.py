@@ -51,10 +51,10 @@ class SystemVocab:
     """The vocabulary on one system: the terms defined (finite, nonzero) on its rate points at some grid placement, in
     the global order, with their grid columns (bank) and the normalized columns for the data evidence."""
 
-    def __init__(self, W, order=None):
+    def __init__(self, W, order=None, run=None):
         order = order or vocabulary_order(W.shape[1])
         self.global_index = {k: g for g, k in enumerate(order)}
-        self.bank = FG.Bank(order, W)
+        self.bank = FG.Bank(order, W, run)
         self.keys = [k for k in order if k in self.bank.bank]
         self.index = {k: i for i, k in enumerate(self.keys)}
         self.gid = np.array([self.global_index[k] for k in self.keys])
@@ -238,10 +238,23 @@ class EquationSearchL1:
         superset = any(E < set(S) for E in self.exact_sets)
         gate = bool(S) and self.fitter.precise_gate(keys, res, rel_rate, floor)
         thorough_now = False
+        if (not gate and not superset and self.fitter.rescuable(keys, res, rel_rate, floor)
+                and (self.thorough_cap is None or eff["thorough"] < self.thorough_cap)):     # 24 Nov: a wrong basin
+            try:
+                eff["thorough"] += 1
+                eff["rescues"] = eff.get("rescues", 0) + 1
+                th = time.perf_counter()
+                terms, res, coefs = self.fitter.thorough(keys, W, y, floor, (terms, res, coefs), eq=i, si_tr=self.si_tr, si_va=self.si_va)
+                eff["thorough_seconds"] += time.perf_counter() - th
+                rel_rate = res / yn if math.isfinite(res) else float("inf")
+                gate = self.fitter.precise_gate(keys, res, rel_rate, floor)
+                thorough_now = True
+            except FIT_ERRORS:
+                eff["fit_errors"] = eff.get("fit_errors", 0) + 1
         if gate and not superset:
             tp = time.perf_counter()
             try:
-                if res > 2.0 * floor:
+                if res > 2.0 * floor and not thorough_now:
                     if self.thorough_cap is None or eff["thorough"] < self.thorough_cap or rel_rate < eff["thorough_best_rel"]:
                         eff["thorough"] += 1
                         eff["thorough_best_rel"] = min(eff["thorough_best_rel"], rel_rate)
@@ -261,7 +274,7 @@ class EquationSearchL1:
             eff["precise"] += 1
             eff["precise_seconds"] += time.perf_counter() - tp
         try:
-            degen = any(FG.degenerate(t, W) for t in terms)
+            degen = any(FG.degenerate(t, W, self.ctx.get("run")) for t in terms)
         except FIT_ERRORS:
             degen = True
         rel = rel_v if math.isfinite(rel_v) and not degen else max(rel_rate, SS.PRECISE_GATE)
@@ -403,7 +416,7 @@ class EquationSearchL1:
 
 def system_context(bursts, seed=1):
     ctx = FG.system_context(bursts, seed=seed, keys=())
-    ctx["vocab"] = SystemVocab(ctx["W"])
+    ctx["vocab"] = SystemVocab(ctx["W"], run=ctx.get("run"))
     ctx["bank"] = ctx["vocab"].bank
     return ctx
 

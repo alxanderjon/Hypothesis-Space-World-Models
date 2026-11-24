@@ -35,6 +35,7 @@ import practice_net as PN
 import structure_search as SS
 
 COLLAPSE_EXACT = 1e-10       # a fitted term this close to a cubic polynomial over the data is degenerate (exactly so)
+RESCUE_MAX = 0.1              # 24 Nov: a gate miss this close, with two or more constants, gets the thorough fit
 D_DEFAULT = 4                  # terms compile for up to four variables (Stage 2a''); a system with fewer leaves the rest unused
 
 
@@ -164,9 +165,23 @@ def info(key, d=D_DEFAULT):
     return TermInfo(key, d)
 
 
-def natural_thetas(inf, U, W):
+def _gaps(f, run):
+    """Open gaps between the recordings' ranges of values f (n,), rows grouped by recording (run rows each)."""
+    if not run or f.size % run:
+        return []
+    iv = sorted((float(b.min()), float(b.max())) for b in f.reshape(-1, run) if np.all(np.isfinite(b)))
+    out, hi = [], None
+    for lo_, hi_ in iv:
+        if hi is not None and lo_ > hi:
+            out.append((hi, lo_))
+        hi = hi_ if hi is None else max(hi, hi_)
+    return out
+
+
+def natural_thetas(inf, U, W, run=None):
     """Constant values (B, k) for unit points U (B, k) by each constant's role (module docstring), constants whose
-    subexpression involves no other constant first."""
+    subexpression involves no other constant first. run: rows per recording; a singular shift's pole is then also
+    placed in the gaps between the recordings' ranges (24 Nov, patches/pole_gaps.py)."""
     B = U.shape[0]
     P = np.ones((B, inf.k))
     order = sorted(range(inf.k), key=lambda a: inf.roles[a].get("dep", False))
@@ -192,9 +207,15 @@ def natural_thetas(inf, U, W):
             if r["kind"] == "shift":
                 lo, hi = float(f.min()), float(f.max())
                 s = max(hi - lo, 1e-9 * max(abs(lo), abs(hi), 1e-300))
-                if r["singular"]:
-                    dist = s * logs((2 * u[b]) % 1.0)
-                    p = lo - dist if u[b] < 0.5 else hi + dist
+                gaps = _gaps(sub[:, b], run) if r["singular"] and run else []
+                if r["singular"] and gaps and u[b] >= 0.5:
+                    v = (u[b] - 0.5) * 2 * len(gaps)
+                    g0, g1 = gaps[min(int(v), len(gaps) - 1)]
+                    p = g0 + (g1 - g0) * (0.02 + 0.96 * (v % 1.0))
+                elif r["singular"]:
+                    uu = 2 * u[b] if gaps else u[b]
+                    dist = s * logs((2 * uu) % 1.0)
+                    p = lo - dist if uu < 0.5 else hi + dist
                 else:
                     p = lo - 0.5 * s + 2.0 * s * u[b]
                 P[b, a] = -p
@@ -248,8 +269,8 @@ def value(term, W, theta=None):
 class Bank:
     """Every key's columns on the rate points at its grid placements: bank[key] = (columns (n, g), thetas (g, k))."""
 
-    def __init__(self, keys, W):
-        self.bank, self.W = {}, W
+    def __init__(self, keys, W, run=None):
+        self.bank, self.W, self.run = {}, W, run
         for key in keys:
             self.add(key)
 
@@ -264,7 +285,7 @@ class Bank:
                 if torch.isfinite(v).all() and float(v.abs().max()) < 1e12 and float(v.norm()) > 0:
                     self.bank[key] = (v.reshape(-1, 1), np.zeros((1, 0)))
                 return self.bank.get(key)
-            th = natural_thetas(inf, unit_grid(inf.k), W)
+            th = natural_thetas(inf, unit_grid(inf.k), W, self.run)
             th = th[np.all(np.isfinite(th), 1)]
             if not len(th):
                 return None
@@ -384,11 +405,14 @@ def _cubic_residual(col, W, own=None):
     return float((col - A @ sol).norm()) / (float(col.norm()) + 1e-300)
 
 
-def degenerate(term, W):
+def degenerate(term, W, run=None):
     """True if a term with constants is singular on the data (non-finite, or a denominator, log argument or base of a
     non-integer power reaching zero there), or has collapsed exactly into a cubic polynomial over the data in its own
     variables (Stage 2a'', research log 8 November: with four variables the 35 cubic monomials in all of them exceed
-    the 30 rate points, so every term would match; a term with a constant uses at most three variables)."""
+    the 30 rate points, so every term would match; a term with a constant uses at most three variables).
+    run: rows per recording (W holds the recordings one after another). The singular test is then made within each
+    recording (24 Nov: with wide recordings, recordings can start on opposite sides of a true pole and each stays on its
+    side; the true term is finite on every recorded state, and the box-wide test rejected it)."""
     if term.k == 0:
         return False
     if not all(math.isfinite(v) for v in term.theta):
@@ -403,9 +427,11 @@ def degenerate(term, W):
             v = s(W, th)
             if not bool(torch.isfinite(v).all()):
                 return True
-            vmin, vmax = float(v.min()), float(v.max())
-            if vmin <= 0 <= vmax or min(abs(vmin), abs(vmax)) < 1e-9 * max(abs(vmin), abs(vmax), 1e-300):
-                return True
+            blocks = v.reshape(-1, run) if run and v.numel() % run == 0 else v.reshape(1, -1)
+            for vb in blocks:
+                vmin, vmax = float(vb.min()), float(vb.max())
+                if vmin <= 0 <= vmax or min(abs(vmin), abs(vmax)) < 1e-9 * max(abs(vmin), abs(vmax), 1e-300):
+                    return True
         X = LG.variables(W.shape[1])
         own = [j for j, x in enumerate(X) if x in inf.expr.free_symbols]
         return _cubic_residual(col, W, own) < COLLAPSE_EXACT
@@ -419,7 +445,7 @@ def _free(terms):
     return [(m, a) for m, t in enumerate(terms) for a in range(t.k) if a not in t.fixed]
 
 
-def _thetas_from_unit(terms, slots, U, W):
+def _thetas_from_unit(terms, slots, U, W, run=None):
     """Constant arrays per term (B, k) for unit points U (B, len(slots)); fixed constants keep their values."""
     B = U.shape[0]
     out = []
@@ -431,7 +457,7 @@ def _thetas_from_unit(terms, slots, U, W):
         for s_, (mm, a) in enumerate(slots):
             if mm == m:
                 Um[:, a] = U[:, s_]
-        P = natural_thetas(info(t.key), Um, W)
+        P = natural_thetas(info(t.key), Um, W, run)
         for a in t.fixed:
             P[:, a] = t.theta[a]
         out.append(P)
@@ -459,7 +485,7 @@ def _batch_resid(terms, thetas, W, y):
     return torch.where(good & torch.isfinite(rn), rn, torch.full_like(rn, float("inf"))).numpy()
 
 
-def global_search(terms, W, y, rng):
+def global_search(terms, W, y, rng, run=None):
     """Joint search over all free constants in their natural ranges (Sobol points, then refinement around the best),
     as fitter30.global_search. Returns up to REFINE_TOP distinct term lists, best first."""
     from scipy.stats import qmc
@@ -469,7 +495,7 @@ def global_search(terms, W, y, rng):
     h = len(slots)
     sob = qmc.Sobol(h, scramble=True, seed=int(rng.integers(1 << 31)))
     U = sob.random(min(2048, max(F30.SOBOL_N // 4, 256 * h)))
-    TH = _thetas_from_unit(terms, slots, U, W)
+    TH = _thetas_from_unit(terms, slots, U, W, run)
     rn = _batch_resid(terms, TH, W, y)
     for rnd in range(F30.REFINE_ROUNDS):
         order = np.argsort(rn)
@@ -485,7 +511,7 @@ def global_search(terms, W, y, rng):
             break
         rad = 0.15 * 0.4 ** rnd
         newU = np.concatenate([np.clip(U[k] + rad * (rng.random((F30.REFINE_N, h)) * 2 - 1), 0, 1) for k in top])
-        newTH = _thetas_from_unit(terms, slots, newU, W)
+        newTH = _thetas_from_unit(terms, slots, newU, W, run)
         U = np.concatenate([U, newU])
         TH = [None if a is None else np.concatenate([a, b]) for a, b in zip(TH, newTH)]
         rn = np.concatenate([rn, _batch_resid(terms, newTH, W, y)])
@@ -604,6 +630,11 @@ class FitterL1:
     @staticmethod
     def nonlinear(keys):
         return sum(1 for k in keys if info(k).k > 0)
+
+    def rescuable(self, keys, res, rel_rate, floor):
+        """Missed the gate, but two or more terms with constants and within RESCUE_MAX: worth a thorough fit (24 Nov)."""
+        return (bool(keys) and math.isfinite(rel_rate) and self.nonlinear(keys) >= 2 and rel_rate <= RESCUE_MAX
+                and not self.precise_gate(keys, res, rel_rate, floor))
 
     def precise_gate(self, keys, res, rel_rate, floor):
         if rel_rate <= SS.PRECISE_GATE and res <= SS.PRECISE_FLOOR * floor:
@@ -744,11 +775,11 @@ class FitterL1:
         if eq is not None:
             for cand in algebraic_start(current[0], self.Wd, self.dense.dZ[:, eq]):
                 cands.append((cand, "algebraic"))
-        for cand in global_search(current[0], W, y, self.rng):
+        for cand in global_search(current[0], W, y, self.rng, self.bank.run):
             cands.append((cand, "global"))
         if eq is not None:
             rng = np.random.default_rng([31, int(eq), zlib.crc32(repr(tuple(keys)).encode())])
-            for cand in global_search(current[0], W, y, rng)[:self.keep]:
+            for cand in global_search(current[0], W, y, rng, self.bank.run)[:self.keep]:
                 if self.prepolish:
                     try:
                         cand = fast_refine(cand, W, y, iters=self.prepolish, stop_below=1e-14 * float(y.norm()))[0]
@@ -815,9 +846,9 @@ def system_context(bursts, seed=1, keys=()):
     mu, sig = view["mu"], view["sig"]
     W = (view["Zc"] * sig + mu) / sig
     dense = F30.DenseRates(view["Ztr"], mu, sig)
-    ctx = {"view": view, "W": W, "G": view["G"], "noise": view["noise"],
+    ctx = {"view": view, "W": W, "G": view["G"], "noise": view["noise"], "run": view["Ztr"].shape[1] - 8,
            "si_tr": StepIntegrals(view["Ztr"], mu, sig), "si_va": StepIntegrals(view["Zva"], mu, sig),
-           "bank": Bank(keys, W), "dense": dense}
+           "bank": Bank(keys, W, view["Ztr"].shape[1] - 8), "dense": dense}
     return ctx
 
 
@@ -848,9 +879,20 @@ def evaluate_structure(keys, ctx, i, fitter, warm=None):
     rel_t = rel_v = float("inf")
     thorough_now, t_th = False, 0.0
     gate = bool(keys) and fitter.precise_gate(keys, res, rel_rate, floor)
+    rescued = False
+    if not gate and fitter.rescuable(keys, res, rel_rate, floor):    # 24 Nov: a wrong basin for the constants
+        try:
+            th = time.perf_counter()
+            terms, res, coefs = fitter.thorough(keys, W, y, floor, (terms, res, coefs), eq=i, si_tr=ctx["si_tr"], si_va=ctx["si_va"])
+            t_th += time.perf_counter() - th
+            rel_rate = res / yn if math.isfinite(res) else float("inf")
+            gate = fitter.precise_gate(keys, res, rel_rate, floor)
+            rescued = thorough_now = True
+        except (RuntimeError, ValueError):
+            pass
     if gate:
         try:
-            if res > 2.0 * floor:
+            if res > 2.0 * floor and not rescued:
                 th = time.perf_counter()
                 terms, res, coefs = fitter.thorough(keys, W, y, floor, (terms, res, coefs), eq=i, si_tr=ctx["si_tr"],
                                                     si_va=ctx["si_va"])
@@ -863,7 +905,7 @@ def evaluate_structure(keys, ctx, i, fitter, warm=None):
         except (RuntimeError, ValueError):
             pass
     try:
-        degen = any(degenerate(t, W) for t in terms)
+        degen = any(degenerate(t, W, ctx.get("run")) for t in terms)
     except (RuntimeError, ValueError, ZeroDivisionError):
         degen = True
     return {"keys": keys, "terms": terms, "coefs": coefs, "res": res, "rel_rate": rel_rate, "rel_t": rel_t, "rel_v": rel_v,

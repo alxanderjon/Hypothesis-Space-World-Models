@@ -11972,3 +11972,47 @@ solved, and no rung is attempted until every rung below it is mastered that way.
 - **Pass rule for step 1 (written before the work):** with the changed fitter, every held-out system's own true
   structure passes the full check, 10 of 10 per seed, on q41, q43s and a sample of earlier rungs. This measures the
   checker's ceiling (that the truth can pass), not the learner; it is a precondition, not a result.
+
+#### Step 1: why true structures fail, and three fitter fixes (24 November, 16:00–19:00 UTC)
+
+**Diagnosis on training systems only** (held-out systems used for counts only). Each system's own true structure goes
+through the real check (`diag_truth_fit.py`).
+- q43s's 150 training systems: the true structure fails on 38 of 149 (one did not finish).
+- The 197 systems behind replay's 274 true-term removals: 177 of 194 still fail.
+- q43s failures by cause: a true term flagged degenerate 12, the rate-fit gate missed (wrong constants) 10, the
+  step-integral refit or held-back check above the bar 6, one step above 1e-12 7, rollout above 1e-9 5.
+
+**Fix 1: the singularity test per recording** (`fitter_g1.degenerate`, used by the search and the check).
+- All 12 "degenerate" cases were the singular test, not the polynomial-collapse test.
+- With wide recordings, recordings can start on opposite sides of a true pole (a denominator positive in some
+  recordings and negative in others, never changing sign within one). The true term is finite on every recorded
+  state; the test judged the whole data box as one region and called it singular.
+- Now judged within each recording.
+- Development set (the 38 failures and 20 passes; 56 finished): passes 20 → 29, none lost.
+
+**Fix 2: poles also tried between recordings** (`patches/pole_gaps.py`).
+- The fitter only ever tried a denominator's constant with the pole outside the data range, so a true pole between
+  recordings was never tried.
+- Now half the tries go into the gaps between the recordings' ranges, when there are gaps.
+- Development set: 29 → 31. The 2 systems lost are at the threshold edge (one step 7.4e-13 → 1.2e-12; rollout
+  9.5e-10 → 1.1e-9), so it is noise.
+
+**Fix 3: gate rescue** (`patches/gate_rescue.py`).
+- Structures with two or more terms with constants whose ordinary fit lands in a wrong basin (rate error 4–8e-2) missed
+  the gate (1e-2), so they never got the thorough fit (joint global search).
+- The thorough fit rescues 4 of 6 such true structures, in 1–3 s each.
+- Now such a structure (within 0.1) gets the thorough fit and re-takes the gate. In the search, this counts against the
+  existing thorough-fit cap.
+
+**The precision failures are mostly a data limit, not the fitter** (`oracle_precision.py`, 16 systems).
+- With oracle constants (the structure fitted to the true right-hand side), every structure reproduces the truth to
+  about 1e-16 at the test starts.
+- But on the recordings, the oracle and our fit have the same shooting residual (about 1e-14 to 1e-13), while our fit is
+  100–100,000 times worse at one step outside the range. Started from the oracle, the shooting fit drifts back.
+- The oracle's residual is 1–4 times the float64 rounding floor of the stored states, measured against each step's
+  change (14 of 16). The recordings carry only about 1e-14 of each step's change, which does not pin the constants
+  to 1e-12 one-step outside the recorded range for ill-conditioned systems.
+- A minority are optimizer stalls (2 of 16 with a clearly lower oracle residual), and in 1 the oracle itself fits only
+  to 5.7e-11.
+- The sensitivity check (`sensitivity_floor.py`: true constants nudged by 1e-14) shows the true law itself is
+  judgeable on all but 3 of 150 systems. So the limit is how well the recordings pin the constants, not the bars.
