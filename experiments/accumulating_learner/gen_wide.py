@@ -174,6 +174,19 @@ def build_wide(desc, seed_starts=0):
     return syn
 
 
+def rebuild_wide(desc):
+    """The system build_wide accepted, rebuilt for checking (same reference, so the same recordings and time step),
+    without its acceptance rules: the rollout check rebuilds strict systems with this, not domains_g1.build (24 Nov)."""
+    import domains_g1 as DG
+    structure = DG.true_structure(desc)
+    for eq in structure:
+        eq["keys"] = sorted({DG.representative(k, desc["d"]) for k in eq["keys"]})
+        eq["nonpoly"] = sorted({DG.representative(k, desc["d"]) for k in eq["nonpoly"]})
+    with np.errstate(all="ignore"):
+        ref = wide_reference(DG.G1System(desc))
+    return DG.G1(desc, ref, structure, 0.0)
+
+
 def pilot_job(args):
     shape, k = args
     import warnings

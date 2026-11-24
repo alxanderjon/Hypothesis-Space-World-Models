@@ -50,6 +50,12 @@ def capped(f):
 def recover(rec, rung, s, k):
     import domains_g1 as DG
     import dream_g2 as DR
+    if rec.get("desc") and rec.get("test_starts"):              # strict generator (24 Nov): its own wide reference
+        import gen_wide as GW
+        syn = GW.rebuild_wide(rec["desc"])
+        if LD.data_key(syn.bursts(8)) != LD.data_key(rec["bursts"]):
+            raise RuntimeError(f"{rec['id']}: rebuilt recordings differ from the stored ones")
+        return rec["desc"], syn
     if rec.get("desc"):
         return rec["desc"], DG.build(rec["desc"])
     R = LD.RUNGS[rung]
@@ -85,9 +91,13 @@ def check_job(args):
     import search_g1 as SG
     import synthetic28 as SY
     t0 = time.time()
-    desc, syn = recover(rec, rung, s, k)
+    try:
+        desc, syn = recover(rec, rung, s, k)
+        why = None
+    except Exception as ex:                                      # counted as not solved, with the reason, not a crash
+        desc, why = None, f"{type(ex).__name__}: {ex}"[:200]
     if desc is None:
-        return [{"id": rec["id"], "tag": t, "round": rd, "recovered": False} for (t, rd) in sols]
+        return [{"id": rec["id"], "tag": t, "round": rd, "recovered": False, "passes": False, "error": why} for (t, rd) in sols]
     d = desc["d"]
     xs = sp.symbols(" ".join(f"x{j}" for j in range(d)))
     ftrue_ = sp.lambdify(xs, DG.numeric_rhs(desc), "numpy")
