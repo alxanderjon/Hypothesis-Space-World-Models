@@ -11875,3 +11875,19 @@ q43 is still running; its retroactive check follows when it finishes. Nothing ne
     - restarted on 46 workers.
   - The results of the stalled run were held in memory only and were lost.
   - The same cap protects the rollout check in the ladder's held-out test.
+
+### CLAUDE.md and the AlphaEvolve-style feasibility study (owner, 24 November)
+
+- **`CLAUDE.md` written at the repository root**, committed and pushed: the end goal, the one definition of solved, the
+  rule that every task states how it measures the end goal and that proxies are named as proxies, and the standing rules.
+  Sent to the owner for review.
+- **Feasibility study, no building** (reported in the conversation). In short:
+  - (a) *Evolving equations* (an LLM proposes equation programs, our fitter sets the constants, our checks are the
+    evaluation cascade): cheap in LLM cost (Haiku 5.5 about $0.001 a call, Sonnet 5.5 about $0.01–0.03), dominated by our
+    own fitting time. Selection can use only the recordings (a proxy); the full definition judges the result.
+  - (b) *Evolving the search procedure* (an LLM proposes changes to the search or fitting code, judged on a benchmark):
+    LLM cost small (about $0.1–0.3 a call with Opus 5.5), cost dominated by evaluation (each candidate needs a benchmark
+    run of tens of minutes on all cores); the deciding risk is benchmark noise.
+  - Open models on ironforge: V100 16 GB cards (no bf16), so about 7–8B models at fp16 over two cards; weaker at this
+    task and they take GPUs from training. API preferred; no API key or SDK is installed yet.
+  - Pilots proposed; awaiting the owner's decision.
