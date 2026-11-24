@@ -96,7 +96,7 @@ DREAM_CHUNK = 100
 TMP_TRAIN = os.environ.get("LADDER_TMP")                        # 22 Nov: training files on another disk (owner: use both disks)
 _DREAM_SEM = threading.Semaphore(DREAM_POOLS)
 MIN_EXAMPLES_PER_DREAM = 2.0                                     # below this a dream batch is treated as broken: stop loudly
-SHARE_TEACHER_FROM = ("d", "e", "e12", "e3", "e4", "f", "g", "p8", "p10", "q23", "q31", "q33", "q41", "q43")                        # owner, 17 Nov: one teacher-dream set per round, shared by every lineage
+SHARE_TEACHER_FROM = ("d", "e", "e12", "e3", "e4", "f", "g", "p8", "p10", "q23", "q31", "q33", "q41", "q43", "q43s")                # owner, 17 Nov: one teacher-dream set per round, shared by every lineage
 _TEACHER, _TEACHER_LOCKS = {}, {}
 
 
