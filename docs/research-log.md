@@ -12177,3 +12177,18 @@ q23 → q31 → q33g → q41 → q43s, each mastered before stepping up; stop an
   network control.
 - **Re-climb started** (`/tmp/reclimb_launch.sh`, 44 workers): cL5s → … → q41r, stopping at a drop-off or failure,
   and before q43r (to ask whether to reuse q43s's strict systems).
+
+**cL5s (re-climb, curriculum level 5, 1/(K+x)): MASTERED** (25 November, 17:08–20:20 UTC; held-out under option B,
+10 judgeable per seed; 3 unjudgeable held-out systems replaced by the vet step).
+
+| Arm | Seed 1 | Seed 2 | Seed 3 | First-wake training solves (of 50) |
+|---|---|---|---|---|
+| blend | 10 | 8 | 9 | 50, 46, 49 |
+| network | 10 | 9 | 9 | 49, 46, 50 |
+| fresh | 9 | 8 | 9 | 28, 29, 26 |
+
+- All arms mastered in one round. On the recordings alone every arm solved 10 of 10 in every seed; option B removed
+  1–2 per seed.
+- The fresh network also masters (generous budget); the learners' head start shows in the first wake (46–50 of 50
+  training systems against 26–29) and in structures before a training solution (median 9–24 against 179).
+- cL6s started 20:34 UTC on GPUs 0, 6, 7 (another user holds 1–5).
