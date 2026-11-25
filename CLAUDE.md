@@ -24,18 +24,33 @@ A system counts as **solved** only if all of the following hold.
    - no term degenerate on the data.
 2. **High-precision fit.** After a structure is accepted, all its coefficients and constants are refitted together by
    shooting: the model is integrated over each recorded sample interval and matched to the next recorded state.
-3. **One step from new starting states.** From **20 new starting states** (10 inside the recorded range, 10 at 1.5–2× its
-   half-width outside it), the found right-hand side matches the true one with relative error of about **1e-12 or better**.
-4. **Rollouts.** From those 20 states, the found system's trajectories stay within about **1e-9** (relative) of the true
-   trajectories over **10 of the system's time constants**.
-5. **Bounded systems.** Training and test systems are drawn so that the true system stays bounded over that horizon from
-   all 20 test starting states. Systems that blow up are rejected by the generator.
-6. **The valid range.** Systems are judged on the states they can actually take. A variable whose recordings never change
-   sign keeps its sign in the test starts, so an equation that differs from the truth only at unreachable values (for
-   example |x| for an always-positive x) counts as correct.
+3. **The reference.** For each system, the **true structure** goes through the same recording checks and high-precision
+   fit, **from the same recordings the learner saw**. Its errors (items 4–5) set the system's bars: the recordings, in
+   float64, can pin the constants only so far, and no learner can be asked to beat the true law refitted from them.
+4. **One step from new starting states.** The found right-hand side is compared with the exact true one:
+   - at **20 new starting states** (10 inside the recorded range, 10 at 1.5–2× its half-width outside it), and
+   - at **2,000 states** of the same region (half inside, half at 1–2× the half-width outside).
 
-**Implementation.** `experiments/accumulating_learner/rollout_check.py` (with `precise_fit.py`) judges held-out systems;
-`gen_wide.py` draws bounded systems from wide recordings.
+   On each set, its largest relative error must be at most **max(30 × the reference's, 1e-12)**.
+5. **Rollouts.** From the 20 starts, the found system's trajectories over **10 of the system's time constants** must stay
+   within **max(30 × the reference's error, 1e-9)** (relative) of the true trajectories.
+6. **Unjudgeable systems.** A system cannot be judged if the reference fails the recording checks, if the reference's
+   one-step (20 starts or 2,000 states) or rollout error exceeds 1e-6, or if a raised bar exceeds **1e-8 one step** or
+   **1e-5 rollout**. New rungs replace such systems; retroactive checks exclude them and report how many.
+7. **Bounded systems.** Training and test systems are drawn so that the true system stays bounded over that horizon from
+   all 20 test starting states. Systems that blow up are rejected by the generator.
+8. **The valid range.** Systems are judged on the states they can actually take. A variable whose recordings never change
+   sign keeps its sign in the test starts and the 2,000 states, so an equation that differs from the truth only at
+   unreachable values (for example |x| for an always-positive x) counts as correct.
+
+**Why these numbers** (calibrated on training systems, 24–25 November; research log): refitting the true structure from
+starting constants kicked by 1e-6 shows how far a correct answer can land from the reference by chance. The margin 30
+rejects 11 of 474 such correct refits (10x rejected 19). The floors (1e-12, 1e-9) mean the rule is never stricter than
+the absolute bars. The ceilings stop a good approximation from passing as exact on systems the recordings pin poorly.
+
+**Implementation.** `experiments/accumulating_learner/rollout_check.py` (with `precise_fit.py` and `fitter_g1.py`) judges
+held-out systems, building the reference and reporting the absolute verdict alongside; `gen_wide.py` draws bounded
+systems from wide recordings.
 - Recording spread: 0.2–3× the initial state at 2–3 variables, 0.3–2× at 4.
 - Each system's description, test starting states and horizon are stored when it is generated.
 - Dreams (practice systems whose true answers are known) may use the cheaper generator.
@@ -51,7 +66,8 @@ Any proxy must be **flagged as a proxy** and **never reported as "solved"**, for
 - recordings-only exactness;
 - ranks of true terms;
 - top-10 shares;
-- fit error.
+- fit error;
+- symbolic look-alike labels (comparing forms: they flag equations equal to the truth on the valid range).
 
 (Until 22 November 2026 the ladder's "solved" was recordings-only. That was a proxy, and it passed look-alike equations
 that were wrong off the recordings.)
@@ -71,7 +87,9 @@ that were wrong off the recordings.)
 - **Mastery and drop-off.** A rung is mastered when an arm solves at least 8 of 10 held-out systems in at least 2 of 3
   seeds. If neither learner arm masters it, stop and report.
 - **Mastered means mastered under the real definition.** A rung counts as mastered only under the definition of solved
-  above, and **no rung is attempted until every rung below it is mastered that way.**
+  above, and **no rung is attempted until every rung below it is mastered that way.** New rungs replace unjudgeable
+  held-out systems (always 10 judgeable); retroactive checks count mastery as at least 80% of the judgeable held-out
+  systems and report the unjudgeable count.
 - **Generous search budgets when learning** (thousands of tries per equation); report tries at 300 as well, for
   comparison with early rungs.
 - **The learning measure.** Tries per solution must fall, compared on the same held-out equations solved in both the first

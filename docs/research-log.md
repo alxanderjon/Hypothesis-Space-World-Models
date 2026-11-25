@@ -12086,3 +12086,15 @@ and the retroactive checks wait for approval.
   comparison) is a proxy that flags forms equal to the truth on the valid range. The dense test also shows the
   20-start test can miss: in one system both the found law and the reference are 1.8e-13 at the 20 starts but
   8.5e-9 at the worst of the 2,000 states.
+
+### Owner, 25 November: option B approved, with settings
+
+*"Approved, with these settings for option B: 1. Margin: report how many correct answers (refitted true structures and
+passing true-term solutions) would fail at 10x versus 30x. Use 10x unless it rejects correct answers; otherwise use
+30x. Tell me which you chose and why. 2. Ceiling: a system is unjudgeable if its raised bar exceeds 1e-8 one-step or
+1e-5 rollout. Replace such systems in new rungs; exclude them with a count in retroactive checks. 3. Add the one-step
+comparison on the 2,000 states to the rule, alongside the 20 starts, for both the found law and the reference. Then
+apply everything: update CLAUDE.md with the full definition, restore the removed replay solutions that pass, and
+re-check every earlier rung retroactively under it (curriculum levels through q41, plus q43s's held-out). Report per rung
+and arm whether mastery holds and how many systems were unjudgeable, name the first rung that doesn't hold, and propose
+re-climbing from there. Don't start the re-climb until we've discussed it."*

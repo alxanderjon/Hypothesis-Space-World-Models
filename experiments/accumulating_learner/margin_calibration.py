@@ -52,7 +52,7 @@ def job(args):
             rec = dict(rec, desc=desc)
         rows = RC.check_job((rec, None, s, None, {}, {"perturb": KICKS}))
         return {"id": rec["id"], "full": full, "rows": [{k: r.get(k) for k in ("tag", "perturb", "recordings_exact", "one_step_max",
-                "rollout_max", "n_bounded", "unjudgeable")} for r in rows], "seconds": time.time() - t0}
+                "rollout_max", "n_bounded", "unjudgeable", "one_step_dense_max", "ref_one_step_dense_max", "unjudgeable_why")} for r in rows], "seconds": time.time() - t0}
     except Cap:
         return {"id": rec["id"], "skip": "timed out"}
     finally:

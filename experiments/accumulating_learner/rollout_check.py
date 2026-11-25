@@ -27,8 +27,10 @@ import ladder as LD                                              # noqa: E402
 
 ONE_STEP, ROLLOUT, N_IN, N_OUT, HORIZON = 1e-12, 1e-9, 10, 10, 10.0
 PRECISE = os.environ.get("ROLLOUT_PRECISE", "1") == "1"         # owner, 23 Nov: the high-precision fit after acceptance
-MARGIN = float(os.environ.get("ROLLOUT_MARGIN", "10"))           # owner, 24 Nov (option B): found <= MARGIN x the reference
+MARGIN = float(os.environ.get("ROLLOUT_MARGIN", "30"))           # owner, 25 Nov (option B): found <= MARGIN x the reference
 UNJUDGEABLE = 1e-6                                               # a reference worse than this: the system cannot be judged
+CEIL_ONE, CEIL_ROLL = 1e-8, 1e-5                                 # owner, 25 Nov: a raised bar above these: unjudgeable
+N_DENSE = int(os.environ.get("ROLLOUT_DENSE", "2000"))           # owner, 25 Nov: one step also at 2,000 states of the region
 FULL = os.environ.get("ROLLOUT_FULL", "1") == "1"               # owner, 23 Nov: the horizon as written (bounded systems only);
                                                                  # ROLLOUT_FULL=0 for the old rungs' retroactive checks
 MAX_CALLS = 200_000                                              # a rollout needing more right-hand-side calls is cut off
@@ -150,7 +152,7 @@ def check_job(args):
             seg = segs[min(int(t_ / tc), len(segs) - 1)]
             yt[:, j] = seg(t_)
         true_runs.append((tt, yt, t_end >= 0.999 * T))
-    if not sols and not opts.get("perturb"):                     # an unsolved system: its boundedness only
+    if not sols and not opts.get("perturb") and not opts.get("reference"):   # an unsolved system: its boundedness only
         return [{"id": rec["id"], "tag": None, "round": None, "recovered": True,
                  "system_bounded": all(r_ is not None and r_[2] for r_ in true_runs)}]
     ctx = SG.system_context(np.array(rec["bursts"]), seed=s)
@@ -213,9 +215,9 @@ def check_job(args):
                 yf = None
             roll.append(float(np.abs(yf - yt).max() / (np.abs(yt).max() + 1e-300)) if yf is not None and np.all(np.isfinite(yf)) else float("inf"))
             full.append(bool(reached))
-        if opts.get("dense"):                                    # diagnostic: one step at many states of the same region
+        if opts.get("dense", N_DENSE):                           # owner, 25 Nov: part of the rule (one step at 2,000 states)
             dr = np.random.default_rng(LD.stable(rec["id"], "dense"))
-            n = int(opts["dense"])
+            n = int(opts.get("dense", N_DENSE))
             pts = [lo + (hi - lo) * dr.random(d) for _ in range(n // 2)]
             for _ in range(n - n // 2):
                 sign = np.where(keep, np.sign(c), dr.choice([-1.0, 1.0], d))
@@ -243,13 +245,24 @@ def check_job(args):
     truth = [e["keys"] if isinstance(e, dict) else e for e in rec["structure"]]
     ref = judge(truth)                                           # owner, 24 Nov (option B): the true structure refitted
     ref_one, ref_roll = ref["one_step_max"], ref["rollout_max"]
-    unjudgeable = (not ref["recordings_exact"] or ref["n_bounded"] == 0 or not math.isfinite(ref_one) or ref_one > UNJUDGEABLE
-                   or ref_roll is None or not math.isfinite(ref_roll) or ref_roll > UNJUDGEABLE)
-    bar_one = max(MARGIN * ref_one, ONE_STEP) if math.isfinite(ref_one) else ONE_STEP
-    bar_roll = max(MARGIN * ref_roll, ROLLOUT) if ref_roll is not None and math.isfinite(ref_roll) else ROLLOUT
+    ref_dense = ref.get("one_step_dense_max")
+    fin = lambda v: v is not None and math.isfinite(v)
+    bar_one = max(MARGIN * ref_one, ONE_STEP) if fin(ref_one) else ONE_STEP
+    bar_dense = max(MARGIN * ref_dense, ONE_STEP) if fin(ref_dense) else ONE_STEP
+    bar_roll = max(MARGIN * ref_roll, ROLLOUT) if fin(ref_roll) else ROLLOUT
+    why = [w for w, bad in (("reference fails the recordings", not ref["recordings_exact"]),
+                            ("no bounded start", ref["n_bounded"] == 0),
+                            ("reference one step not finite or > 1e-6", not fin(ref_one) or ref_one > UNJUDGEABLE),
+                            ("reference dense one step not finite or > 1e-6", N_DENSE > 0 and (not fin(ref_dense) or ref_dense > UNJUDGEABLE)),
+                            ("reference rollout not finite or > 1e-6", not fin(ref_roll) or ref_roll > UNJUDGEABLE),
+                            ("raised one-step bar > 1e-8", max(bar_one, bar_dense if N_DENSE > 0 else 0) > CEIL_ONE),
+                            ("raised rollout bar > 1e-5", bar_roll > CEIL_ROLL)) if bad]
+    unjudgeable = bool(why)
     common = {"system_bounded": sys_bounded, "unjudgeable": bool(unjudgeable), "ref_recordings_exact": ref["recordings_exact"],
-              "ref_one_step_max": ref_one, "ref_rollout_max": ref_roll, "bar_one_step": bar_one, "bar_rollout": bar_roll,
-              "margin": MARGIN}
+              "ref_one_step_max": ref_one, "ref_rollout_max": ref_roll, "ref_one_step_dense_max": ref_dense,
+              "bar_one_step": bar_one, "bar_one_step_dense": bar_dense, "bar_rollout": bar_roll, "margin": MARGIN,
+              "unjudgeable_why": why}
+    cache = {}                                                   # 25 Nov: a solution is judged once per system
     out = []
     todo = list(sols.items()) + [((("perturb", j), None), None) for j in range(len(opts.get("perturb", [])))]
     for (tag, rd), keys_per_eq in todo:
@@ -260,13 +273,17 @@ def check_job(args):
             row["perturb"] = list(pj) if isinstance(pj, (list, tuple)) else [pj, opts.get("eps", 1e-6)]
             tag = f"perturb{j}"
         else:
-            row = judge(keys_per_eq)
+            ck = tuple(tuple(sorted(e or ())) for e in keys_per_eq)
+            if ck not in cache:
+                cache[ck] = judge(keys_per_eq)
+            row = dict(cache[ck])
         row.update({"id": rec["id"], "tag": tag, "round": rd, "recovered": True}, **common)
         ok_bounded = row["n_bounded"] > 0 and (sys_bounded or not FULL)
         row["passes_absolute"] = bool(row["recordings_exact"] and row["one_step_max"] <= ONE_STEP and ok_bounded
                                       and row["rollout_max"] is not None and row["rollout_max"] <= ROLLOUT)
+        dense_ok = N_DENSE == 0 or (fin(row.get("one_step_dense_max")) and row["one_step_dense_max"] <= bar_dense)
         row["passes"] = bool(not unjudgeable and row["recordings_exact"] and ok_bounded and row["one_step_max"] <= bar_one
-                             and row["rollout_max"] is not None and row["rollout_max"] <= bar_roll)
+                             and dense_ok and row["rollout_max"] is not None and row["rollout_max"] <= bar_roll)
         out.append(row)
     ref_row = dict(ref, id=rec["id"], tag="reference", round=None, recovered=True, **common)
     out.append(ref_row)
