@@ -12166,3 +12166,14 @@ q23 → q31 → q33g → q41 → q43s, each mastered before stepping up; stop an
   parent gone, asleep, 0% GPU, writing to `ladder_q41_run.log`). Stopped by PID; both GPUs free. The exclusion is
   dropped.
 - Smoke test of cL5s started (gen, vet, run, report).
+- Smoke test of cL5s passed end to end (gen 2 min; vet replaced 1 unjudgeable held-out system; run trained on GPUs 0
+  and 1; report).
+- The re-climb's later rungs defined as strict copies of the originals, each after the previous re-climb rung: a1wr,
+  a2r, br, cr, e12r, p8r, p10r, q23r, q31r, q33gr, q41r, q43r (all with today's protocol: generous budgets, rung and
+  own dreams, 4,500 updates per round, shared teacher dreams).
+- **Pass rule (written before the run):** a rung is mastered when an arm solves at least 8 of its 10 judgeable
+  held-out systems under option B in at least 2 of 3 seeds; if neither learner arm masters it, stop and report.
+  Learning measures as before: paired tries on held-out equations solved in the first and last round, and the fresh
+  network control.
+- **Re-climb started** (`/tmp/reclimb_launch.sh`, 44 workers): cL5s → … → q41r, stopping at a drop-off or failure,
+  and before q43r (to ask whether to reuse q43s's strict systems).

@@ -74,6 +74,22 @@ RUNGS.update({
                  change="re-climb: curriculum level 6, x/(K+x), 2 variables, 1-2 terms, strict rules (after cL5s)"),
     "cL7s": dict(_CS, levels=(1, 2, 3, 5, 6, 7), new=(7,), after="cL6s",
                  change="re-climb: curriculum level 7, 1/(K+x^2), 2 variables, 1-2 terms, strict rules (after cL6s)")})
+_RS = dict(_R, **_G, strict=True)                               # the re-climb's later rungs: the originals, strict
+_E3 = _E + (4, CONSTANT)
+RUNGS.update({
+    "a1wr": dict(_RS, d=2, terms=(3, 3), levels=(1, 2, 3), after="cL7s", change="re-climb: a1w (2 variables, 3 terms, x, x*y, x^2), strict"),
+    "a2r": dict(_RS, d=2, terms=(3, 3), levels=(1, 2, 3, 5, 6, 7), after="a1wr", change="re-climb: a2 (the rational pieces back), strict"),
+    "br": dict(_RS, d=3, terms=(1, 2), levels=(1, 2, 3, 5, 6, 7), after="a2r", change="re-climb: b (3 variables, 1-2 terms), strict"),
+    "cr": dict(_RS, d=3, terms=(3, 3), levels=(1, 2, 3, 5, 6, 7), after="br", change="re-climb: c (3 variables, 3 terms), strict"),
+    "e12r": dict(_RS, d=3, terms=(3, 3), levels=_E3, new=(4, CONSTANT), after="cr", change="re-climb: e12 (the constant and x^3), strict"),
+    "p8r": dict(_RS, d=2, terms=(1, 2), levels=(1, 2, 3, 4, 5, 6, 7, 9, 8), new=(8,), after="e12r",
+                change="re-climb: p8 (x/(K+x^2) at 2 variables, 1-2 terms), strict"),
+    "p10r": dict(_RS, d=2, terms=(1, 2), levels=_ALL, new=(HILL,), after="p8r", change="re-climb: p10 (Hill x^2/(K+x^2) at 2 variables), strict"),
+    "q23r": dict(_RS, d=2, terms=(3, 3), levels=_ALL, after="p10r", change="re-climb: q23 (all ten pieces, 2 variables, 3 terms), strict"),
+    "q31r": dict(_RS, d=3, terms=(1, 2), levels=_ALL, after="q23r", change="re-climb: q31 (all ten pieces, 3 variables, 1-2 terms), strict"),
+    "q33gr": dict(_RS, d=3, terms=(3, 3), levels=_ALL, after="q31r", change="re-climb: q33g (all ten pieces, 3 variables, 3 terms), strict"),
+    "q41r": dict(_RS, d=4, terms=(1, 2), levels=_ALL, after="q33gr", change="re-climb: q41 (all ten pieces, 4 variables, 1-2 terms), strict"),
+    "q43r": dict(_RS, d=4, terms=(3, 3), levels=_ALL, after="q41r", change="re-climb: q43 (all ten pieces, 4 variables, 3 terms), strict")})
 OTHER = 99                                                       # piece type of the learner's terms that are no curriculum piece
 SHARE_REAL = 0.30                                                # real solutions' share of training when rung dreams are used
 SEEDS = (1, 2, 3) if not SMOKE else (1,)
@@ -104,7 +120,8 @@ DREAM_CHUNK = 100
 TMP_TRAIN = os.environ.get("LADDER_TMP")                        # 22 Nov: training files on another disk (owner: use both disks)
 _DREAM_SEM = threading.Semaphore(DREAM_POOLS)
 MIN_EXAMPLES_PER_DREAM = 2.0                                     # below this a dream batch is treated as broken: stop loudly
-SHARE_TEACHER_FROM = ("d", "e", "e12", "e3", "e4", "f", "g", "p8", "p10", "q23", "q31", "q33", "q41", "q43", "q43s", "cL5s", "cL6s", "cL7s")                # owner, 17 Nov: one teacher-dream set per round, shared by every lineage
+SHARE_TEACHER_FROM = ("d", "e", "e12", "e3", "e4", "f", "g", "p8", "p10", "q23", "q31", "q33", "q41", "q43", "q43s", "cL5s", "cL6s", "cL7s", "a1wr", "a2r", "br", "cr", "e12r", "p8r", "p10r",
+                      "q23r", "q31r", "q33gr", "q41r", "q43r")                # owner, 17 Nov: one teacher-dream set per round, shared by every lineage
 _TEACHER, _TEACHER_LOCKS = {}, {}
 
 
