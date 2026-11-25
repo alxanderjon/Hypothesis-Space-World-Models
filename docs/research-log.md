@@ -12098,3 +12098,50 @@ apply everything: update CLAUDE.md with the full definition, restore the removed
 re-check every earlier rung retroactively under it (curriculum levels through q41, plus q43s's held-out). Report per rung
 and arm whether mastery holds and how many systems were unjudgeable, name the first rung that doesn't hold, and propose
 re-climbing from there. Don't start the re-climb until we've discussed it."*
+
+#### Option B applied (25 November)
+
+- **Margin: 30.** On the same 239 training systems judgeable at both margins, of 474 refitted true structures (kicks of
+  1e-6) passing the recordings, 10x rejects 19 and 30x rejects 11; by the owner's rule (10x unless it rejects correct
+  answers), 30x. The 34 solutions shown equal to the truth pass at both margins wherever judgeable. Margin 30 makes 5
+  more of 275 systems unjudgeable (36 vs 31) through the ceilings.
+- **CLAUDE.md** updated with the full definition (reference, margin 30, one step at the 20 starts and at 2,000 states,
+  rollouts, ceilings 1e-8 / 1e-5, unjudgeable rules, why these numbers; symbolic look-alike labels added to the proxies;
+  retroactive mastery as 80% of judgeable held-out systems).
+- **Replay restoration** (`replay_restore.py`; 1,084 removed solutions, 662 systems, 2.7 hours): restored 235 (blend-s1
+  45, s2 37, s3 38; net-s1 44, s2 41, s3 30); still failing 439; in unjudgeable systems 362 (not restored); timed out 48
+  (not restored). Written into `ladder/q41c/` (the state before restoration kept in `ladder/q41c.before_restore/`).
+- **Retroactive check** (`retro_b.py`; 660 held-out systems; 1.4 hours; report in `g2h/retro_b/report.txt`). A system
+  that did not finish within 30 minutes counts as judgeable and failed. Mastery under option B (an arm masters a rung in
+  at least 2 of 3 seeds, a seed when some round solves at least 80% of its judgeable held-out systems):
+
+| Rung | Unjudgeable (of 30) | Not finished | Blend | Network | Fresh |
+|---|---|---|---|---|---|
+| curriculum L1 | 0 | 0 | holds | holds | – |
+| curriculum L2 | 0 | 0 | holds | holds | – |
+| curriculum L3 | 1 | 0 | holds | holds | – |
+| **curriculum L5** (1/(K+x)) | 0 | 0 | **no** (7, 9, 7 of 10) | **no** (7, 6, 8) | – |
+| curriculum L6 | 2 | 0 | holds | holds | – |
+| curriculum L7 | 2 | 1 | no | no | – |
+| a (dropped off) | 5 | 2 | no | no | no |
+| a1w | 1 | 0 | no | no | no |
+| a2 | 8 | 1 | holds | holds | holds |
+| b | 0 | 1 | holds | holds | holds |
+| c | 8 | 0 | no | no | no |
+| e12 | 4 | 3 | no | no | no |
+| e3 (dropped off) | 7 | 1 | no | no | no |
+| p8 | 2 | 0 | holds | holds | holds |
+| p10 | 1 | 2 | holds | holds | holds |
+| q23 | 3 | 4 | no | no | no |
+| q31 | 3 | 1 | no | no | no |
+| q33 (dropped off) | 8 | 0 | no | no | no |
+| q33g | 10 | 0 | holds | holds | holds |
+| q41 | 3 | 1 | holds | holds | holds |
+| q43 | 7 | 3 | no | no | holds |
+| q43s (held-out only) | 1 | 0 | – | – | – |
+
+- **The first rung that does not hold: curriculum level 5** (the piece 1/(K+x), 2 variables). Of its 11 failing
+  solutions, all have terms different from the truth's; 7 match the true law to about 1e-14 at the 20 starts and at the
+  2,000 states but fail their rollouts badly (1e-3 to 35, two blow up): the trajectories leave the region the one-step
+  tests cover, and there these laws differ from the truth. Genuine look-alikes, correctly failed. 2 fail the
+  recordings; 2 are near the bars (one step 1.7e-12 against 1e-12; rollout 2.3e-8 against 1e-9).

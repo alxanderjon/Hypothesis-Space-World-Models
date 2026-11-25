@@ -150,7 +150,8 @@ def step_report():
         if not R:
             continue
         status = Counter(r["status"] for r in R)
-        judg = {s: sum(1 for r in R if r["seed"] == s and r["status"] == "done" and not r["unjudgeable"]) for s in LD.SEEDS}
+        judg = {s: sum(1 for r in R if r["seed"] == s and (r["status"] == "timed out" or (r["status"] == "done" and not r["unjudgeable"])))
+                for s in LD.SEEDS}                                   # a system that did not finish counts as judgeable and failed
         unj = Counter(w for r in R if r["status"] == "done" and r["unjudgeable"] for w in (r["why"] or ["?"])[:1])
         per = defaultdict(lambda: defaultdict(int))                # lineage -> round -> solved
         per_abs = defaultdict(lambda: defaultdict(int))
@@ -169,7 +170,7 @@ def step_report():
         if g == "q43s":
             continue
         holds = {}
-        for arm in LD.ARMS + (["blend", "net"] if g.startswith("curriculum") else []):
+        for arm in list(LD.ARMS):
             if arm in holds:
                 continue
             m, txt = 0, []
