@@ -66,6 +66,14 @@ RUNGS.update({
     "q33h": dict(_R, **_G, d=3, terms=(3, 3), levels=_ALL, change="all ten pieces, 3 variables, 3 terms, generous budgets (after q33a)", after="q33a")})
 RUNGS["q43s"] = dict(_R, **_G, d=4, terms=(3, 3), levels=_ALL, strict=True, after="q41c",
                      change="q43 rerun under the strict rules: 4 variables, 3 terms, wide recordings, bounded systems, from q41's cleaned states")
+_CS = dict(_R, **_G, d=2, terms=(1, 2), strict=True)            # owner, 25 Nov: the re-climb, curriculum levels as rungs
+RUNGS.update({
+    "cL5s": dict(_CS, levels=(1, 2, 3, 5), new=(5,), after="cL3",
+                 change="re-climb: curriculum level 5, 1/(K+x), 2 variables, 1-2 terms, strict rules (from the end of level 3)"),
+    "cL6s": dict(_CS, levels=(1, 2, 3, 5, 6), new=(6,), after="cL5s",
+                 change="re-climb: curriculum level 6, x/(K+x), 2 variables, 1-2 terms, strict rules (after cL5s)"),
+    "cL7s": dict(_CS, levels=(1, 2, 3, 5, 6, 7), new=(7,), after="cL6s",
+                 change="re-climb: curriculum level 7, 1/(K+x^2), 2 variables, 1-2 terms, strict rules (after cL6s)")})
 OTHER = 99                                                       # piece type of the learner's terms that are no curriculum piece
 SHARE_REAL = 0.30                                                # real solutions' share of training when rung dreams are used
 SEEDS = (1, 2, 3) if not SMOKE else (1,)
@@ -96,7 +104,7 @@ DREAM_CHUNK = 100
 TMP_TRAIN = os.environ.get("LADDER_TMP")                        # 22 Nov: training files on another disk (owner: use both disks)
 _DREAM_SEM = threading.Semaphore(DREAM_POOLS)
 MIN_EXAMPLES_PER_DREAM = 2.0                                     # below this a dream batch is treated as broken: stop loudly
-SHARE_TEACHER_FROM = ("d", "e", "e12", "e3", "e4", "f", "g", "p8", "p10", "q23", "q31", "q33", "q41", "q43", "q43s")                # owner, 17 Nov: one teacher-dream set per round, shared by every lineage
+SHARE_TEACHER_FROM = ("d", "e", "e12", "e3", "e4", "f", "g", "p8", "p10", "q23", "q31", "q33", "q41", "q43", "q43s", "cL5s", "cL6s", "cL7s")                # owner, 17 Nov: one teacher-dream set per round, shared by every lineage
 _TEACHER, _TEACHER_LOCKS = {}, {}
 
 
@@ -864,7 +872,7 @@ class Lineage:
         log(f"{self.rung} {self.name}: {'mastered in ' + str(self.rec['rounds_to_mastery']) + ' rounds' if self.rec['mastered'] else 'not mastered'}")
 
 
-def step_topup(workers, rung, passes=4):
+def step_topup(workers, rung, passes=4, rejected=()):
     """Strict rungs (24 Nov): the strict generator accepts fewer systems within its draw limit, so draw more systems from
     new seed indices (the same rules) until every seed has its training and test systems; checked against every earlier
     set and against each other."""
@@ -878,6 +886,8 @@ def step_topup(workers, rung, passes=4):
     out = {s: json.loads((OUT / "gen" / f"{rung}-s{s}.json").read_text()) for s in SEEDS}
     old = earlier_keys(rung)
     seen = {data_key(r["bursts"]) for s in SEEDS for sp in out[s].values() for r in sp}
+    gone = list(rejected)                                        # 25 Nov: held-out systems vetted out (unjudgeable)
+    seen |= {data_key(r["bursts"]) for r in gone}
     for ps in range(passes):
         need = {(s, sp): want[sp] - len(out[s][sp]) for s in SEEDS for sp in want}
         if all(v <= 0 for v in need.values()):
@@ -886,7 +896,8 @@ def step_topup(workers, rung, passes=4):
         for (s, sp), n in need.items():
             if n <= 0:
                 continue
-            k0 = max([int(r["id"].rsplit("-", 1)[1]) for r in out[s][sp]] + [want[sp] - 1]) + 1 + 1000 * ps
+            k0 = max([int(r["id"].rsplit("-", 1)[1]) for r in out[s][sp] + [g for g in gone if g["id"].startswith(f"{rung}-s{s}-{sp}-")]]
+                     + [want[sp] - 1]) + 1 + 1000 * ps
             jobs += [((s, sp, k), (f"ladder-{rung}-s{s}-{sp}", k, allowed, R["terms"], R["d"], new, False, R.get("max_k"), R.get("strict", False)))
                      for k in range(k0, k0 + 2 * n + 2)]
         t0 = time.time()
@@ -905,6 +916,41 @@ def step_topup(workers, rung, passes=4):
               f"{ {s: {sp: len(v) for sp, v in out[s].items()} for s in SEEDS} }", flush=True)
         for s in SEEDS:
             (OUT / "gen" / f"{rung}-s{s}.json").write_text(json.dumps(out[s]))
+
+
+def step_vet(workers, rung, rounds=4):
+    """Option B (owner, 25 Nov): every held-out system must be judgeable. Each new held-out system's reference (its true
+    structure refitted from its recordings, rollout_check.check_job) is judged; unjudgeable ones are removed and replaced
+    by step_topup's draws (new seed indices, the same rules, fresh against every earlier set and the removed ones), until
+    every seed has N_TEST judgeable held-out systems. Results in <rung>/vet.json."""
+    from concurrent.futures import ProcessPoolExecutor
+    from multiprocessing import get_context
+    import rollout_check as RC
+    vp = OUT / rung / "vet.json"
+    vet = json.loads(vp.read_text()) if vp.exists() else {"verdicts": {}, "removed": []}
+    for rd in range(rounds):
+        out = {s: json.loads((OUT / "gen" / f"{rung}-s{s}.json").read_text()) for s in SEEDS}
+        todo = [(r, rung, s, int(r["id"].rsplit("-", 1)[1]), {}, {"reference": True})
+                for s in SEEDS for r in out[s]["test"] if r["id"] not in vet["verdicts"]]
+        if todo:
+            with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:
+                for a, rows in zip(todo, ex.map(RC.check_job, todo)):
+                    ref = [x for x in rows if x.get("tag") == "reference"]
+                    vet["verdicts"][a[0]["id"]] = {"unjudgeable": bool(not ref or ref[0]["unjudgeable"]),
+                                                   "why": ref[0].get("unjudgeable_why") if ref else ["not recovered"]}
+        bad = {i for i, v in vet["verdicts"].items() if v["unjudgeable"]}
+        for s in SEEDS:
+            keep = [r for r in out[s]["test"] if r["id"] not in bad]
+            vet["removed"] += [r for r in out[s]["test"] if r["id"] in bad and r["id"] not in {g["id"] for g in vet["removed"]}]
+            out[s]["test"] = keep
+            (OUT / "gen" / f"{rung}-s{s}.json").write_text(json.dumps(out[s]))
+        vp.write_text(json.dumps(vet))
+        short = {s: N_TEST - len(out[s]["test"]) for s in SEEDS}
+        print(f"vet {rung} round {rd + 1}: {len(todo)} judged, {len(bad)} unjudgeable so far; short per seed {short}", flush=True)
+        if all(v <= 0 for v in short.values()):
+            return
+        step_topup(workers, rung, rejected=vet["removed"])
+    raise SystemExit(f"vet {rung}: still short after {rounds} rounds")
 
 
 def step_run(workers, rung):
@@ -1021,7 +1067,7 @@ def main():
     if free < 2:
         raise SystemExit(f"not running {step}: free disk {free:.1f} GB < 2 GB on {OUT.resolve()} (owner's crash guard)")
     {"gen": lambda: step_gen(workers, rung), "run": lambda: step_run(workers, rung), "report": lambda: step_report(rung),
-     "topup": lambda: step_topup(workers, rung)}[step]()
+     "topup": lambda: step_topup(workers, rung), "vet": lambda: step_vet(workers, rung)}[step]()
 
 
 if __name__ == "__main__":

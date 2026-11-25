@@ -12145,3 +12145,24 @@ re-climbing from there. Don't start the re-climb until we've discussed it."*
   2,000 states but fail their rollouts badly (1e-3 to 35, two blow up): the trajectories leave the region the one-step
   tests cover, and there these laws differ from the truth. Genuine look-alikes, correctly failed. 2 fail the
   recordings; 2 are near the bars (one step 1.7e-12 against 1e-12; rollout 2.3e-8 against 1e-9).
+
+### Owner, 25 November: re-climb approved
+
+*"approved"* (the proposal above: re-climb from curriculum L5 under the strict rules; start from each learner lineage's
+network at the end of curriculum L3, its replay limited to L1–L3 solutions passing option B, plus a fresh network;
+fresh strict systems with unjudgeable held-out systems replaced; L5 → L6 → L7 → a1w → a2 → b → c → e12 → p8 → p10 →
+q23 → q31 → q33g → q41 → q43s, each mastered before stepping up; stop and report at a drop-off; quick checks first).
+
+**Re-climb set-up** (25 November, 16:30–17:00 UTC):
+- `make_cl3.py`: the starting states `ladder/cL3/` (each learner lineage's curriculum checkpoint after level 3, learn3,
+  the blend arm with library3). Its level 1–3 replay judged again under option B: all 168 solutions pass (27–29 per
+  lineage); nothing dropped.
+- `ladder.py`: rungs cL5s, cL6s, cL7s (2 variables, 1–2 terms, the curriculum's pieces; generous budgets, rung and own
+  dreams, 4,500 updates per round as in the ladder; strict generator); on the shared-teacher list; a new step `vet`
+  judges every held-out system's reference and replaces unjudgeable ones (top-up from new seed indices, fresh against
+  every earlier set and the removed ones) until every seed has 10 judgeable held-out systems.
+- **A GPU finding, my error:** GPUs 0 and 1, excluded since 22 November as "another run's", were held by two orphaned
+  training workers of my own q41 run (spawned 01:20–01:23 UTC on 22 November, just before q41's out-of-memory kill;
+  parent gone, asleep, 0% GPU, writing to `ladder_q41_run.log`). Stopped by PID; both GPUs free. The exclusion is
+  dropped.
+- Smoke test of cL5s started (gen, vet, run, report).
