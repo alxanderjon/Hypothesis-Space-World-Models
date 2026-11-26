@@ -12192,3 +12192,9 @@ q23 → q31 → q33g → q41 → q43s, each mastered before stepping up; stop an
 - The fresh network also masters (generous budget); the learners' head start shows in the first wake (46–50 of 50
   training systems against 26–29) and in structures before a training solution (median 9–24 against 179).
 - cL6s started 20:34 UTC on GPUs 0, 6, 7 (another user holds 1–5).
+
+**cL6s (re-climb, curriculum level 6, x/(K+x)): MASTERED** (25 November, 20:20–23:38 UTC; 2 unjudgeable held-out
+systems replaced). Held-out solved under option B (of 10): blend 10 / 9 / 10, network 10 / 9 / 9, fresh 10 / 9 / 9; all in
+one round. First-wake training solves: learners 49–50 of 50, fresh 24–30. Median structures before a training
+solution: blend 6 / 10 / 5, network 3 / 3 / 4, fresh 196 / 250 / 163.
+- cL7s started 23:58 UTC on GPU 0 only (another user holds GPUs 1–7).
