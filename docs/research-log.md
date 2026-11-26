@@ -12216,3 +12216,6 @@ seeds), network (2 of 3) and fresh (3 of 3).
   fresh 7 / 7 / 4 of 50. Median structures before a training solution: blend 46 / 96 / 102, network 110 / 155 / 172,
   fresh 746 / 562 / 670.
 - a2r started 18:46 UTC (gen 180 of 180; vet replaced 3 unjudgeable held-out systems).
+- **Disk:** /SSD (outputs) was down to 3.7 GB. Deleted the smoke-test outputs (`g2h/ladder_smoke`, 2.0 GB, no longer
+  useful) and moved the old stage directories `g2h/run1`, `run2`, `stageX`, `step2` (about 16 GB) to
+  `/home/alex/ssd_overflow/g2h/` with symlinks in place, so every path still works. /SSD now 22 GB free; /home 207 GB.
