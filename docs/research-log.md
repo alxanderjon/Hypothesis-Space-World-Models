@@ -12198,3 +12198,12 @@ systems replaced). Held-out solved under option B (of 10): blend 10 / 9 / 10, ne
 one round. First-wake training solves: learners 49–50 of 50, fresh 24–30. Median structures before a training
 solution: blend 6 / 10 / 5, network 3 / 3 / 4, fresh 196 / 250 / 163.
 - cL7s started 23:58 UTC on GPU 0 only (another user holds GPUs 1–7).
+
+**cL7s (re-climb, curriculum level 7, 1/(K+x^2)): MASTERED** (25–26 November, 23:38–10:05 UTC; slow: other users'
+CPU load up to ~98 on 48 cores and only GPU 0 free; 3 unjudgeable held-out systems replaced). Held-out solved under
+option B (of 10): blend 10 / 10 / 10, network 10 / 9 / 10, fresh 9 / 10 / 10; all in one round. First-wake training
+solves: blend 42–45, network 44–50, fresh 22–27 of 50. Median structures before a training solution: blend 12 / 25 /
+7, network 16 / 4 / 8, fresh 264 / 239 / 258.
+- **The curriculum levels are re-mastered** (L1–L3 held retroactively; L5–L7 re-climbed under the strict rules).
+- a1wr started 10:06 UTC (gen 37 s; vet: 0 of 30 unjudgeable); GPUs free at its start: 0, 3–7, but another user has
+  since taken 1–7 at full use, so trainings will mostly queue on GPU 0.
