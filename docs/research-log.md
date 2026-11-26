@@ -12207,3 +12207,12 @@ solves: blend 42–45, network 44–50, fresh 22–27 of 50. Median structures b
 - **The curriculum levels are re-mastered** (L1–L3 held retroactively; L5–L7 re-climbed under the strict rules).
 - a1wr started 10:06 UTC (gen 37 s; vet: 0 of 30 unjudgeable); GPUs free at its start: 0, 3–7, but another user has
   since taken 1–7 at full use, so trainings will mostly queue on GPU 0.
+
+**a1wr (re-climb, 2 variables, 3 terms, x / x*y / x^2): MASTERED** (26 November, 10:06–18:28 UTC; 0 unjudgeable).
+Held-out solved under option B (of 10): blend 9 / 8 / 9; network 8 / 9 / then seed 3 6, 7, 6 over three rounds (10 of
+10 on the recordings each round: look-alikes caught by the rollouts); fresh 8 / 8 / 9. Mastered by blend (3 of 3
+seeds), network (2 of 3) and fresh (3 of 3).
+- **The learners' head start is large here:** first-wake training solves blend 50 / 50 / 50, network 50 / 46 / 48 against
+  fresh 7 / 7 / 4 of 50. Median structures before a training solution: blend 46 / 96 / 102, network 110 / 155 / 172,
+  fresh 746 / 562 / 670.
+- a2r started 18:46 UTC (gen 180 of 180; vet replaced 3 unjudgeable held-out systems).
