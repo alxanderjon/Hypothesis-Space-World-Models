@@ -12227,3 +12227,9 @@ solves: blend 50 / 49 / 50, network 50 / 48 / 48, fresh 2 / 1 / 4 of 50. Median 
 blend 18 / 15 / 12, network 20 / 16 / 14, fresh 516 / 792 / 348.
 - br started 06:10 UTC (3 variables, 1–2 terms; gen 180 of 180; 0 of 30 unjudgeable) on GPU 0 only (another user
   holds 1–7). Memory recovered (107 GB available).
+
+**br (re-climb, 3 variables, 1–2 terms): MASTERED** (27 November, 06:00–13:55 UTC; trainings on GPU 0 only; 0
+unjudgeable). Held-out solved under option B (of 10): blend 10 / 9 / 9, network 9 / 10 / 9, fresh 9 / 9 / 10; all in one
+round. First-wake training solves: blend 49 / 50 / 50, network 46 / 50 / 50, fresh 26 / 25 / 23 of 50. Median
+structures before a training solution: blend 2 / 2 / 3, network 2 / 2 / 3, fresh 370 / 345 / 229.
+- cr (3 variables, 3 terms) generation started 13:56 UTC.
