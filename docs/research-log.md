@@ -12219,3 +12219,11 @@ seeds), network (2 of 3) and fresh (3 of 3).
 - **Disk:** /SSD (outputs) was down to 3.7 GB. Deleted the smoke-test outputs (`g2h/ladder_smoke`, 2.0 GB, no longer
   useful) and moved the old stage directories `g2h/run1`, `run2`, `stageX`, `step2` (about 16 GB) to
   `/home/alex/ssd_overflow/g2h/` with symlinks in place, so every path still works. /SSD now 22 GB free; /home 207 GB.
+
+**a2r (re-climb, 2 variables, 3 terms, the rational pieces back): MASTERED** (26–27 November, 18:29–06:00 UTC; slow
+under memory pressure: swap full, another user at ~98 GB; 3 unjudgeable held-out systems replaced). Held-out solved
+under option B (of 10): blend 10 / 8 / 10, network 9 / 9 / 9, fresh 10 / 10 / 9; all in one round. First-wake training
+solves: blend 50 / 49 / 50, network 50 / 48 / 48, fresh 2 / 1 / 4 of 50. Median structures before a training solution:
+blend 18 / 15 / 12, network 20 / 16 / 14, fresh 516 / 792 / 348.
+- br started 06:10 UTC (3 variables, 1–2 terms; gen 180 of 180; 0 of 30 unjudgeable) on GPU 0 only (another user
+  holds 1–7). Memory recovered (107 GB available).
