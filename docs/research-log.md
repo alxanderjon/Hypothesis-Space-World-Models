@@ -12233,3 +12233,24 @@ unjudgeable). Held-out solved under option B (of 10): blend 10 / 9 / 9, network 
 round. First-wake training solves: blend 49 / 50 / 50, network 46 / 50 / 50, fresh 26 / 25 / 23 of 50. Median
 structures before a training solution: blend 2 / 2 / 3, network 2 / 2 / 3, fresh 370 / 345 / 229.
 - cr (3 variables, 3 terms) generation started 13:56 UTC.
+
+**cr (re-climb, 3 variables, 3 terms): MASTERED by the blend arm** (27–28 November, 13:56–08:26 UTC; 2 unjudgeable
+held-out systems replaced). Held-out solved under option B per round (of 10):
+
+| Arm | Seed 1 | Seed 2 | Seed 3 | Seeds mastered |
+|---|---|---|---|---|
+| blend | 8 | 6, 8 | 7, 8 | 3 of 3 |
+| network | 7, 6, 6 | 6, 6, 8 | 5, 5, 6 | 1 of 3 |
+| fresh | 7, 6, 6 | 6, 10 | 8 | 2 of 3 |
+
+- On the recordings alone, nearly every lineage found 9–10 of 10 in every round.
+- First-wake training solves: blend 47 / 47 / 47, network 48 / 45 / 46, fresh 0 / 0 / 0 of 50. Held-out median tries
+  per solution in round 1: blend 12 / 10 / 16, network 10 / 14 / 32, fresh 18 / 20 / 34. Paired tries (first to last
+  round, same held-out equations): blend 10 → 10, 16 → 17; network 10 → 8, 14 → 16, 32 → 24; fresh 18 → 15, 20 → 14.
+- **Look-alike rate** (held-out solutions exact on the recordings that fail option B, summed over seeds and rounds),
+  by rung — blend / network / fresh: cL5s 10 / 7 / 13%; cL6s 3 / 7 / 7%; cL7s 0 / 3 / 3%; a1wr 13 / 28 / 17%; a2r
+  7 / 7 / 0%; br 7 / 7 / 7%; **cr 24 / 38 / 28%**. The rise at cr is shared by every arm, so it comes with the setting
+  (3 variables, 3 terms), not with one arm; the network arm's rate is the highest there (and at a1wr), which is why it
+  stalls at 5–7 while the blend arm reaches 8. Noted for a comparison against the mastered rungs if a later rung drops
+  off; no change made (one change at a time).
+- e12r started 09:07 UTC (gen 180 of 180 in 19 min; vet replaced 3 unjudgeable held-out systems), all 8 GPUs.
